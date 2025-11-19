@@ -2,10 +2,25 @@ import React, { useState, useEffect } from 'react';
 import Layout from './Layout';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useCompany } from '../context/CompanyContext';
 
 const Profile = () => {
+  const { state: companyState } = useCompany();
+  const toast = useToast();
+
+  // Helper function to get full image URL
+  const getImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('data:')) return url; // Base64 image
+    if (url.startsWith('http')) return url; // Absolute URL
+    return `http://localhost:5000${url}`; // Relative URL from server
+  };
+
   const [profile, setProfile] = useState({
     name: '',
+    email: '',
+    role: '',
+    createdAt: '',
     profile: {
       profilePicture: '',
       coverPhoto: '',
@@ -28,7 +43,6 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState('basic');
   const [skillInput, setSkillInput] = useState('');
-  const toast = useToast();
 
   useEffect(() => {
     fetchProfile();
@@ -40,6 +54,9 @@ const Profile = () => {
       const profileData = response.data.profile || {};
       setProfile({
         name: response.data.name,
+        email: response.data.email,
+        role: response.data.role,
+        createdAt: response.data.createdAt,
         profile: {
           profilePicture: profileData.profilePicture || '',
           coverPhoto: profileData.coverPhoto || '',
@@ -159,66 +176,72 @@ const Profile = () => {
     }
   };
 
-  const handleFileUpload = (e, type = 'profile') => {
+  const handleFileUpload = async (e, type = 'profile') => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         toast.error('File size must be less than 5MB');
         return;
       }
-      
+
       if (!file.type.startsWith('image/')) {
         toast.error('Please select an image file');
         return;
       }
-      
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
-          const maxSize = type === 'cover' ? 800 : 400;
-          let { width, height } = img;
-          
-          if (type === 'cover') {
-            if (width > maxSize) {
-              height = (height * maxSize) / width;
-              width = maxSize;
-            }
-          } else {
-            if (width > height) {
-              if (width > maxSize) {
-                height = (height * maxSize) / width;
-                width = maxSize;
-              }
-            } else {
-              if (height > maxSize) {
-                width = (width * maxSize) / height;
-                height = maxSize;
-              }
-            }
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+      try {
+        // Show preview immediately
+        const reader = new FileReader();
+        reader.onload = (event) => {
           const fieldName = type === 'cover' ? 'coverPhoto' : 'profilePicture';
-          
-          // Store base64 locally for immediate display
           setLocalImages(prev => ({
             ...prev,
-            [fieldName]: compressedDataUrl
+            [fieldName]: event.target.result
           }));
-          
-          toast.success(`${type === 'cover' ? 'Cover photo' : 'Profile picture'} updated! Remember to save your profile.`);
         };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+        reader.readAsDataURL(file);
+
+        // Upload to server
+        const formData = new FormData();
+        formData.append(type === 'cover' ? 'coverPhoto' : 'profilePicture', file);
+
+        toast.info(`Uploading ${type === 'cover' ? 'cover photo' : 'profile picture'}...`);
+
+        const response = await api.post('/users/upload-photo', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        // Update profile with the server URL
+        const fieldName = type === 'cover' ? 'coverPhoto' : 'profilePicture';
+        const serverUrl = response.data.profile[fieldName];
+
+        setProfile(prev => ({
+          ...prev,
+          profile: {
+            ...prev.profile,
+            [fieldName]: serverUrl
+          }
+        }));
+
+        // Update local images with server URL
+        setLocalImages(prev => ({
+          ...prev,
+          [fieldName]: serverUrl
+        }));
+
+        toast.success(`${type === 'cover' ? 'Cover photo' : 'Profile picture'} uploaded successfully!`);
+      } catch (error) {
+        console.error('Error uploading photo:', error);
+        toast.error('Error uploading photo: ' + (error.response?.data?.error || 'Please try again'));
+        // Reset the preview on error
+        const fieldName = type === 'cover' ? 'coverPhoto' : 'profilePicture';
+        setLocalImages(prev => ({
+          ...prev,
+          [fieldName]: profile.profile[fieldName] || ''
+        }));
+      }
     }
   };
 
@@ -248,35 +271,128 @@ const Profile = () => {
 
   const inputStyle = {
     width: '100%',
-    padding: '12px 16px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
+    padding: '14px 16px',
+    border: '2px solid #e2e8f0',
+    borderRadius: '10px',
     fontSize: '14px',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    transition: 'all 0.2s',
+    fontFamily: 'inherit'
+  };
+
+  const labelStyle = {
+    marginBottom: '10px',
+    fontSize: '14px',
+    fontWeight: '700',
+    color: '#1e293b',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px'
   };
 
   const sections = [
-    { id: 'basic', label: 'Basic Info', icon: '👤' },
-    { id: 'experience', label: 'Experience', icon: '💼' },
-    { id: 'education', label: 'Education', icon: '🎓' },
-    { id: 'projects', label: 'Projects', icon: '🚀' },
-    { id: 'skills', label: 'Skills', icon: '⚡' }
+    {
+      id: 'basic',
+      label: 'Basic Info',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+    },
+    {
+      id: 'experience',
+      label: 'Experience',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+    },
+    {
+      id: 'education',
+      label: 'Education',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+    },
+    {
+      id: 'projects',
+      label: 'Projects',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M2 12h20"></path><circle cx="12" cy="12" r="10"></circle></svg>
+    },
+    {
+      id: 'skills',
+      label: 'Skills',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+    }
   ];
 
   const renderBasicInfo = () => (
     <div>
+      {/* Account Information Card */}
+      <div style={{
+        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '24px',
+        border: '1px solid #cbd5e1'
+      }}>
+        <h3 style={{
+          margin: '0 0 16px 0',
+          fontSize: '16px',
+          fontWeight: '700',
+          color: '#1e293b',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path>
+            <path d="M12 6v6l4 2"></path>
+          </svg>
+          Account Information
+        </h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', fontWeight: '600' }}>Email Address</div>
+            <div style={{ fontSize: '14px', color: '#1e293b', fontWeight: '500' }}>{profile.email}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', fontWeight: '600' }}>Account Type</div>
+            <div style={{
+              fontSize: '14px',
+              color: '#1e293b',
+              fontWeight: '500',
+              textTransform: 'capitalize'
+            }}>
+              {profile.role}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', fontWeight: '600' }}>Member Since</div>
+            <div style={{ fontSize: '14px', color: '#1e293b', fontWeight: '500' }}>
+              {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              }) : 'N/A'}
+            </div>
+          </div>
+          {companyState.companies.length > 0 && (
+            <div>
+              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', fontWeight: '600' }}>Companies</div>
+              <div style={{ fontSize: '14px', color: '#1e293b', fontWeight: '500' }}>
+                {companyState.companies.map(c => c.name).join(', ')}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div style={{ position: 'relative', marginBottom: '60px' }}>
         <div style={{
           width: '100%',
           height: '240px',
           borderRadius: '16px',
           backgroundColor: '#f8fafc',
-          backgroundImage: (localImages.coverPhoto || profile.profile.coverPhoto) ? `url(${localImages.coverPhoto || profile.profile.coverPhoto})` : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+          backgroundImage: (localImages.coverPhoto || profile.profile.coverPhoto) ? `url(${getImageUrl(localImages.coverPhoto || profile.profile.coverPhoto)})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           position: 'relative',
           overflow: 'hidden',
-          border: '1px solid #e2e8f0'
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
         }}>
           {!(localImages.coverPhoto || profile.profile.coverPhoto) && (
             <div style={{
@@ -285,9 +401,9 @@ const Profile = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'rgba(255,255,255,0.7)',
+              color: 'rgba(255,255,255,0.9)',
               fontSize: '16px',
-              fontWeight: '500'
+              fontWeight: '600'
             }}>
               Click to add cover photo
             </div>
@@ -312,44 +428,50 @@ const Profile = () => {
             }}
           >
             <div style={{
-              backgroundColor: 'rgba(0,0,0,0.7)',
+              backgroundColor: 'rgba(0,0,0,0.75)',
               color: 'white',
-              borderRadius: '8px',
-              padding: '8px 12px',
-              fontSize: '12px',
-              fontWeight: '500',
+              borderRadius: '10px',
+              padding: '10px 16px',
+              fontSize: '13px',
+              fontWeight: '600',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '8px',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.1)'
             }}>
-              📷 Change Cover
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
+              Change Cover
             </div>
           </label>
         </div>
         
         <div style={{
           position: 'absolute',
-          bottom: '-30px',
+          bottom: '-40px',
           left: '32px',
           zIndex: 2
         }}>
           <div style={{ position: 'relative' }}>
             <div style={{
-              width: '120px',
-              height: '120px',
+              width: '140px',
+              height: '140px',
               borderRadius: '50%',
               backgroundColor: '#ffffff',
-              backgroundImage: (localImages.profilePicture || profile.profile.profilePicture) ? `url(${localImages.profilePicture || profile.profile.profilePicture})` : 'none',
+              backgroundImage: (localImages.profilePicture || profile.profile.profilePicture) ? `url(${getImageUrl(localImages.profilePicture || profile.profile.profilePicture)})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              border: '4px solid white',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+              border: '5px solid white',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '36px',
-              color: '#64748b',
-              fontWeight: '600'
+              fontSize: '48px',
+              color: 'white',
+              fontWeight: '700'
             }}>
               {!(localImages.profilePicture || profile.profile.profilePicture) && (profile.name.charAt(0).toUpperCase() || 'U')}
             </div>
@@ -364,92 +486,138 @@ const Profile = () => {
               htmlFor="profile-upload"
               style={{
                 position: 'absolute',
-                bottom: '4px',
-                right: '4px',
-                backgroundColor: '#3b82f6',
+                bottom: '8px',
+                right: '8px',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 color: 'white',
                 borderRadius: '50%',
-                width: '32px',
-                height: '32px',
+                width: '40px',
+                height: '40px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                border: '2px solid white',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                fontSize: '14px'
+                border: '3px solid white',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
               }}
             >
-              📷
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
             </label>
           </div>
         </div>
       </div>
       
-      <div style={{ display: 'grid', gap: '20px', marginTop: '20px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+      <div style={{ display: 'grid', gap: '24px', marginTop: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Full Name</label>
+            <label style={labelStyle}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              Full Name
+            </label>
             <input
               type="text"
               placeholder="Enter your full name"
               value={profile.name}
               onChange={(e) => setProfile({...profile, name: e.target.value})}
               style={inputStyle}
+              onFocus={(e) => e.target.style.borderColor = '#667eea'}
+              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Phone</label>
+            <label style={labelStyle}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+              Phone
+            </label>
             <input
               type="tel"
               placeholder="+1 (555) 123-4567"
               value={profile.profile.phone}
               onChange={(e) => setProfile({...profile, profile: {...profile.profile, phone: e.target.value}})}
               style={inputStyle}
+              onFocus={(e) => e.target.style.borderColor = '#667eea'}
+              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
             />
           </div>
         </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Location</label>
+            <label style={labelStyle}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              Location
+            </label>
             <input
               type="text"
               placeholder="City, Country"
               value={profile.profile.location}
               onChange={(e) => setProfile({...profile, profile: {...profile.profile, location: e.target.value}})}
               style={inputStyle}
+              onFocus={(e) => e.target.style.borderColor = '#667eea'}
+              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Job Title</label>
+            <label style={labelStyle}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+              Job Title
+            </label>
             <input
               type="text"
               placeholder="Software Engineer, Designer, etc."
               value={profile.profile.title}
               onChange={(e) => setProfile({...profile, profile: {...profile.profile, title: e.target.value}})}
               style={inputStyle}
+              onFocus={(e) => e.target.style.borderColor = '#667eea'}
+              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
             />
           </div>
         </div>
-        
+
         <div>
-          <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Professional Summary</label>
+          <label style={labelStyle}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Professional Summary
+          </label>
           <textarea
             placeholder="Tell us about yourself, your experience, and what makes you unique..."
             value={profile.profile.summary}
             onChange={(e) => setProfile({...profile, profile: {...profile.profile, summary: e.target.value}})}
-            rows="4"
+            rows="5"
             style={{
-              width: '100%',
-              padding: '12px 16px',
-              border: '1px solid #d1d5db',
-              borderRadius: '8px',
-              fontSize: '14px',
-              boxSizing: 'border-box',
+              ...inputStyle,
               resize: 'vertical',
-              fontFamily: 'inherit'
+              minHeight: '120px'
             }}
+            onFocus={(e) => e.target.style.borderColor = '#667eea'}
+            onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
           />
         </div>
       </div>
@@ -998,63 +1166,216 @@ const Profile = () => {
 
   return (
     <Layout>
-      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Professional Header */}
         <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '30px'
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          borderRadius: '16px',
+          padding: '32px',
+          marginBottom: '24px',
+          boxShadow: '0 10px 40px rgba(102, 126, 234, 0.2)',
+          color: 'white'
         }}>
-          <div>
-            <h2 style={{ margin: '0 0 5px 0', color: '#1e293b', fontSize: '24px' }}>My Profile</h2>
-            <p style={{ margin: 0, color: '#64748b' }}>Build your professional profile and showcase your experience</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              backgroundImage: (localImages.profilePicture || profile.profile.profilePicture) ? `url(${getImageUrl(localImages.profilePicture || profile.profile.profilePicture)})` : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              border: '3px solid rgba(255, 255, 255, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '32px',
+              fontWeight: '700',
+              backdropFilter: 'blur(10px)'
+            }}>
+              {!(localImages.profilePicture || profile.profile.profilePicture) && (profile.name.charAt(0).toUpperCase() || 'U')}
+            </div>
+            <div style={{ flex: 1 }}>
+              <h1 style={{ margin: '0 0 8px 0', fontSize: '32px', fontWeight: '700' }}>
+                {profile.name || 'Your Name'}
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', fontSize: '15px', opacity: 0.95 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                  {profile.email}
+                </div>
+                {profile.profile.title && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>
+                    {profile.profile.title}
+                  </div>
+                )}
+                {profile.profile.location && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                      <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    {profile.profile.location}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Statistics Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '12px',
+              padding: '16px',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>Experience</div>
+              <div style={{ fontSize: '28px', fontWeight: '700' }}>{profile.profile.experience.length}</div>
+              <div style={{ fontSize: '12px', opacity: 0.8 }}>Positions</div>
+            </div>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '12px',
+              padding: '16px',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>Education</div>
+              <div style={{ fontSize: '28px', fontWeight: '700' }}>{profile.profile.education.length}</div>
+              <div style={{ fontSize: '12px', opacity: 0.8 }}>Degrees</div>
+            </div>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '12px',
+              padding: '16px',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>Projects</div>
+              <div style={{ fontSize: '28px', fontWeight: '700' }}>{profile.profile.projects.length}</div>
+              <div style={{ fontSize: '12px', opacity: 0.8 }}>Completed</div>
+            </div>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '12px',
+              padding: '16px',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>Skills</div>
+              <div style={{ fontSize: '28px', fontWeight: '700' }}>{profile.profile.skills.length}</div>
+              <div style={{ fontSize: '12px', opacity: 0.8 }}>Technologies</div>
+            </div>
+            {companyState.companies.length > 0 && (
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px',
+                padding: '16px',
+                border: '1px solid rgba(255, 255, 255, 0.2)'
+              }}>
+                <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>Companies</div>
+                <div style={{ fontSize: '28px', fontWeight: '700' }}>{companyState.companies.length}</div>
+                <div style={{ fontSize: '12px', opacity: 0.8 }}>Affiliated</div>
+              </div>
+            )}
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '24px' }}>
           <div style={{
-            width: '240px',
+            width: '260px',
             backgroundColor: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            borderRadius: '16px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
             border: '1px solid #e2e8f0',
-            padding: '20px',
+            padding: '24px',
             height: 'fit-content'
           }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>Sections</h3>
+            <h3 style={{
+              margin: '0 0 20px 0',
+              fontSize: '18px',
+              fontWeight: '700',
+              color: '#1e293b',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+              Profile Sections
+            </h3>
             {sections.map((section) => (
               <div
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
                 style={{
-                  padding: '12px 16px',
-                  borderRadius: '8px',
+                  padding: '14px 16px',
+                  borderRadius: '10px',
                   cursor: 'pointer',
-                  marginBottom: '4px',
-                  backgroundColor: activeSection === section.id ? '#3b82f6' : 'transparent',
-                  color: activeSection === section.id ? 'white' : '#374151',
+                  marginBottom: '6px',
+                  background: activeSection === section.id
+                    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                    : 'transparent',
+                  color: activeSection === section.id ? 'white' : '#475569',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  transition: 'all 0.2s'
+                  fontSize: '15px',
+                  fontWeight: activeSection === section.id ? '600' : '500',
+                  transition: 'all 0.2s',
+                  boxShadow: activeSection === section.id ? '0 4px 12px rgba(102, 126, 234, 0.3)' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (activeSection !== section.id) {
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeSection !== section.id) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }
                 }}
               >
-                <span style={{ fontSize: '16px' }}>{section.icon}</span>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  {section.icon}
+                </div>
                 {section.label}
               </div>
             ))}
           </div>
 
           <div style={{ flex: 1 }}>
+            <style>
+              {`
+                @keyframes spin {
+                  from { transform: rotate(0deg); }
+                  to { transform: rotate(360deg); }
+                }
+              `}
+            </style>
             <form onSubmit={handleSubmit}>
               <div style={{
                 backgroundColor: 'white',
-                borderRadius: '12px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                borderRadius: '16px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                 border: '1px solid #e2e8f0',
-                padding: '32px',
+                padding: '36px',
                 marginBottom: '24px'
               }}>
                 {renderActiveSection()}
@@ -1069,21 +1390,57 @@ const Profile = () => {
                   type="submit"
                   disabled={saving}
                   style={{
-                    padding: '12px 24px',
-                    backgroundColor: saving ? '#9ca3af' : '#3b82f6',
+                    padding: '14px 32px',
+                    background: saving ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '12px',
                     cursor: saving ? 'not-allowed' : 'pointer',
-                    fontWeight: '500',
-                    fontSize: '14px',
+                    fontWeight: '700',
+                    fontSize: '15px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: '10px',
+                    boxShadow: saving ? 'none' : '0 4px 12px rgba(102, 126, 234, 0.4)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!saving) {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.5)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!saving) {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+                    }
                   }}
                 >
-                  {saving && <span>⏳</span>}
-                  {saving ? 'Saving...' : 'Save Profile'}
+                  {saving ? (
+                    <>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
+                        <line x1="12" y1="2" x2="12" y2="6"></line>
+                        <line x1="12" y1="18" x2="12" y2="22"></line>
+                        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                        <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                        <line x1="2" y1="12" x2="6" y2="12"></line>
+                        <line x1="18" y1="12" x2="22" y2="12"></line>
+                        <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                        <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                      </svg>
+                      Save Profile
+                    </>
+                  )}
                 </button>
               </div>
             </form>

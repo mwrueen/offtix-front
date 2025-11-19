@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../services/api';
 import AuthLayout from './auth/AuthLayout';
+import SocialLoginButtons from './auth/SocialLoginButtons';
 
 const SignIn = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +11,7 @@ const SignIn = () => {
     password: ''
   });
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { state, dispatch } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,6 +24,15 @@ const SignIn = () => {
     }
   }, [state.isAuthenticated, navigate, from]);
 
+  // Handle URL parameters for social login errors
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const errorParam = urlParams.get('error');
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam));
+    }
+  }, [location.search]);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -32,6 +43,7 @@ const SignIn = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
@@ -41,6 +53,7 @@ const SignIn = () => {
     } catch (error) {
       setError(error.response?.data?.error || 'Sign in failed');
       dispatch({ type: 'SET_LOADING', payload: false });
+      setIsLoading(false);
     }
   };
 
@@ -57,11 +70,33 @@ const SignIn = () => {
           padding: '12px 16px',
           borderRadius: '8px',
           marginBottom: '24px',
-          fontSize: '14px'
+          fontSize: '14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
         }}>
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
           {error}
         </div>
       )}
+
+      {/* Social Login Buttons */}
+      <SocialLoginButtons />
+
+      {/* Divider */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        margin: '24px 0',
+        color: '#6b7280',
+        fontSize: '14px'
+      }}>
+        <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }}></div>
+        <span style={{ padding: '0 16px' }}>or continue with email</span>
+        <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }}></div>
+      </div>
       
       <form onSubmit={handleSubmit} style={{ marginBottom: '24px' }}>
         <div style={{ marginBottom: '20px' }}>
@@ -86,21 +121,36 @@ const SignIn = () => {
               border: '1px solid #d1d5db',
               borderRadius: '8px',
               fontSize: '16px',
-              outline: 'none'
+              outline: 'none',
+              transition: 'border-color 0.2s',
+              boxSizing: 'border-box'
             }}
+            onFocus={(e) => e.target.style.borderColor = '#667eea'}
+            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
           />
         </div>
         
         <div style={{ marginBottom: '24px' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '6px',
-            fontSize: '14px',
-            fontWeight: '600',
-            color: '#374151'
-          }}>
-            Password
-          </label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <label style={{
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#374151'
+            }}>
+              Password
+            </label>
+            <Link 
+              to="/forgot-password" 
+              style={{
+                color: '#667eea',
+                textDecoration: 'none',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
+            >
+              Forgot password?
+            </Link>
+          </div>
           <input
             type="password"
             name="password"
@@ -113,26 +163,44 @@ const SignIn = () => {
               border: '1px solid #d1d5db',
               borderRadius: '8px',
               fontSize: '16px',
-              outline: 'none'
+              outline: 'none',
+              transition: 'border-color 0.2s',
+              boxSizing: 'border-box'
             }}
+            onFocus={(e) => e.target.style.borderColor = '#667eea'}
+            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
           />
         </div>
         
         <button
           type="submit"
+          disabled={isLoading}
           style={{
             width: '100%',
             padding: '12px 16px',
-            backgroundColor: '#667eea',
+            backgroundColor: isLoading ? '#9ca3af' : '#667eea',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
             fontSize: '16px',
             fontWeight: '600',
-            cursor: 'pointer'
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            transition: 'background-color 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
           }}
         >
-          Sign in
+          {isLoading && (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="31.416" strokeDashoffset="31.416">
+                <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+              </circle>
+            </svg>
+          )}
+          {isLoading ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
       

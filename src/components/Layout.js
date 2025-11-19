@@ -2,28 +2,194 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCompany } from '../context/CompanyContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { getCookie } from '../utils/cookies';
+import { companyAPI } from '../services/api';
 
 const Layout = ({ children }) => {
   const { state, dispatch } = useAuth();
-  const { state: companyState, selectCompany, createCompany } = useCompany();
+  const { state: companyState, selectCompany } = useCompany();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
-  const [showCreateCompanyModal, setShowCreateCompanyModal] = useState(false);
-  const [newCompanyName, setNewCompanyName] = useState('');
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [companyData, setCompanyData] = useState(null);
+  const [canManageSettings, setCanManageSettings] = useState(false);
+
+  // Fetch unread notifications count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const token = getCookie('authToken');
+        const response = await fetch('/api/invitations/my-invitations', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUnreadCount(data.length);
+        }
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+
+    fetchUnreadCount();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch company data and check permissions
+  useEffect(() => {
+    const fetchCompanyPermissions = async () => {
+      if (!companyState.selectedCompany || companyState.selectedCompany.id === 'personal') {
+        setCanManageSettings(false);
+        setCompanyData(null);
+        return;
+      }
+
+      try {
+        const response = await companyAPI.getById(companyState.selectedCompany.id);
+        const company = response.data;
+        setCompanyData(company);
+
+        // Check if user has permission to manage company settings
+        const userId = state.user?._id;
+        const ownerId = company.owner?._id || company.owner;
+        const isOwner = ownerId?.toString() === userId?.toString();
+        const isSuperAdmin = state.user?.role === 'superadmin';
+
+        console.log('Permission check:', {
+          userId,
+          ownerId,
+          isOwner,
+          isSuperAdmin,
+          companyName: company.name
+        });
+
+        let hasPermission = false;
+        if (isOwner || isSuperAdmin) {
+          hasPermission = true;
+        } else {
+          const memberInfo = company.members?.find(m => {
+            const memberId = m.user?._id || m.user;
+            return memberId?.toString() === userId?.toString();
+          });
+          if (memberInfo) {
+            const designation = company.designations?.find(d => d.name === memberInfo.designation);
+            if (designation?.permissions?.manageCompanySettings) {
+              hasPermission = true;
+            }
+          }
+        }
+
+        console.log('Has permission to manage settings:', hasPermission);
+        setCanManageSettings(hasPermission);
+      } catch (error) {
+        console.error('Error fetching company permissions:', error);
+        setCanManageSettings(false);
+        setCompanyData(null);
+      }
+    };
+
+    fetchCompanyPermissions();
+  }, [companyState.selectedCompany, state.user]);
 
   const handleLogout = () => {
     dispatch({ type: 'LOGOUT' });
     navigate('/');
   };
 
+  // SVG Icon Components
+  const DashboardIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7"></rect>
+      <rect x="14" y="3" width="7" height="7"></rect>
+      <rect x="14" y="14" width="7" height="7"></rect>
+      <rect x="3" y="14" width="7" height="7"></rect>
+    </svg>
+  );
+
+  const ProjectsIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+    </svg>
+  );
+
+  const OverviewIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="1" x2="12" y2="23"></line>
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+    </svg>
+  );
+
+  const UsersIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+      <circle cx="9" cy="7" r="4"></circle>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+    </svg>
+  );
+
+  const CompanyIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+    </svg>
+  );
+
+  const SettingsIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M12 1v6m0 6v6m5.66-13.66l-4.24 4.24m0 6l-4.24 4.24M23 12h-6m-6 0H1m18.66 5.66l-4.24-4.24m0-6l-4.24-4.24"></path>
+    </svg>
+  );
+
+  const EmployeesIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+      <circle cx="8.5" cy="7" r="4"></circle>
+      <line x1="20" y1="8" x2="20" y2="14"></line>
+      <line x1="23" y1="11" x2="17" y2="11"></line>
+    </svg>
+  );
+
+  const HolidaysIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+      <line x1="16" y1="2" x2="16" y2="6"></line>
+      <line x1="8" y1="2" x2="8" y2="6"></line>
+      <line x1="3" y1="10" x2="21" y2="10"></line>
+    </svg>
+  );
+
+  const LeavesIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+      <circle cx="12" cy="7" r="4"></circle>
+      <path d="M22 11h-4"></path>
+    </svg>
+  );
+
   const menuItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: '📊', iconSvg: '📊' },
-    { path: '/projects', label: 'Projects', icon: '📁', iconSvg: '📁' },
-    { path: '/overview', label: 'Overview', icon: '🧭', iconSvg: '🧭' },
+    { path: '/dashboard', label: 'Dashboard', icon: DashboardIcon, category: 'main' },
+    { path: '/projects', label: 'Projects', icon: ProjectsIcon, category: 'main' },
+    { path: '/overview', label: 'Overview', icon: OverviewIcon, category: 'main' },
+    ...(companyState.selectedCompany?.id !== 'personal' ? [
+      { path: '/employees', label: 'Employees', icon: EmployeesIcon, category: 'company' },
+      { path: '/leaves', label: 'Leaves', icon: LeavesIcon, category: 'company' },
+      { path: '/holidays', label: 'Holidays', icon: HolidaysIcon, category: 'company' }
+    ] : []),
     ...(state.user?.role === 'admin' || state.user?.role === 'superadmin' ? [
-      { path: '/users', label: 'Users', icon: '👥', iconSvg: '👥' }
+      { path: '/users', label: 'Users', icon: UsersIcon, category: 'admin' }
+    ] : []),
+    ...(canManageSettings && companyState.selectedCompany?.id !== 'personal' ? [
+      { path: '/company-settings', label: 'Settings', icon: SettingsIcon, category: 'company' }
     ] : [])
   ];
 
@@ -31,24 +197,11 @@ const Layout = ({ children }) => {
     if (company === 'Personal') {
       selectCompany({ id: 'personal', name: 'Personal' });
     } else if (company === 'Create Company') {
-      setShowCreateCompanyModal(true);
+      navigate('/create-company');
     } else {
       selectCompany(company);
     }
     setIsCompanyDropdownOpen(false);
-  };
-
-  const handleCreateCompany = async () => {
-    if (!newCompanyName.trim()) return;
-
-    try {
-      await createCompany({ name: newCompanyName.trim() });
-      setNewCompanyName('');
-      setShowCreateCompanyModal(false);
-    } catch (error) {
-      console.error('Failed to create company:', error);
-      // You can add toast notification here
-    }
   };
 
   // Close dropdown when clicking outside
@@ -69,8 +222,17 @@ const Layout = ({ children }) => {
       '/projects': 'Projects',
       '/overview': 'Overview',
       '/users': 'Users',
+      '/employees': 'Employees',
+      '/leaves': 'Leave Management',
+      '/holidays': 'Holidays',
       '/profile': 'My Profile'
     };
+
+    // Handle dynamic routes
+    if (location.pathname.startsWith('/employees/')) {
+      return 'Employee Details';
+    }
+
     return titles[location.pathname] || 'Tabredon';
   };
 
@@ -87,43 +249,84 @@ const Layout = ({ children }) => {
       <div style={{
         width: sidebarWidth,
         height: '100vh',
-        background: '#ffffff',
-        color: '#1e293b',
+        background: '#0f172a',
+        color: '#f1f5f9',
         display: 'flex',
         flexDirection: 'column',
         position: 'fixed',
         left: 0,
         top: 0,
         transition: 'width 0.3s ease',
-        boxShadow: '2px 0 10px rgba(0, 0, 0, 0.08), 4px 0 20px rgba(0, 0, 0, 0.04), 8px 0 40px rgba(0, 0, 0, 0.02)',
-        zIndex: 1000,
-        borderRight: '1px solid #e2e8f0'
+        boxShadow: '4px 0 24px rgba(0, 0, 0, 0.12)',
+        zIndex: 1000
       }}>
         {/* Logo & Toggle */}
         <div style={{
-          padding: sidebarCollapsed ? '20px 15px' : '24px',
-          borderBottom: '1px solid #e2e8f0',
+          padding: sidebarCollapsed ? '20px 12px' : '24px 20px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: sidebarCollapsed ? 'center' : 'space-between'
+          alignItems: sidebarCollapsed ? 'center' : 'flex-start',
+          justifyContent: 'space-between',
+          background: 'rgba(255, 255, 255, 0.02)',
+          position: 'relative'
         }}>
-          {!sidebarCollapsed && (
-            <div>
-              <h2 style={{
-                margin: 0,
-                background: 'linear-gradient(135deg, #60a5fa, #3b82f6)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                fontSize: '24px',
+          {sidebarCollapsed ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%'
+            }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '6px',
+                background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '16px',
                 fontWeight: '700',
-                letterSpacing: '-0.5px'
-              }}>Tabredon</h2>
-              <p style={{
-                margin: '4px 0 8px 0',
-                fontSize: '12px',
-                color: 'rgba(0, 17, 110, 1)',
-                fontWeight: '500'
-              }}>Project Management Suite</p>
+                color: 'white',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)'
+              }}>
+                T
+              </div>
+            </div>
+          ) : (
+            <div style={{ flex: 1, marginRight: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '18px',
+                  fontWeight: '700',
+                  color: 'white',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)'
+                }}>
+                  T
+                </div>
+                <div>
+                  <h2 style={{
+                    margin: 0,
+                    color: '#ffffff',
+                    fontSize: '20px',
+                    fontWeight: '700',
+                    letterSpacing: '-0.3px'
+                  }}>Tabredon</h2>
+                  <p style={{
+                    margin: 0,
+                    fontSize: '11px',
+                    color: '#94a3b8',
+                    fontWeight: '500'
+                  }}>Project Management</p>
+                </div>
+              </div>
 
               {/* Company Selector Dropdown */}
               <div className="company-dropdown" style={{ position: 'relative' }}>
@@ -131,48 +334,56 @@ const Layout = ({ children }) => {
                   onClick={() => setIsCompanyDropdownOpen(!isCompanyDropdownOpen)}
                   style={{
                     width: '100%',
-                    padding: '8px 12px',
-                    background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)',
-                    border: '1px solid #e2e8f0',
+                    padding: '10px 12px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: '8px',
                     cursor: 'pointer',
                     fontSize: '13px',
                     fontWeight: '500',
-                    color: '#1e293b',
+                    color: '#f1f5f9',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+                    transition: 'all 0.2s'
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.background = 'linear-gradient(135deg, #f1f5f9, #e2e8f0)';
-                    e.target.style.borderColor = '#cbd5e1';
+                    e.target.style.background = 'rgba(255, 255, 255, 0.08)';
+                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.background = 'linear-gradient(135deg, #f8fafc, #f1f5f9)';
-                    e.target.style.borderColor = '#e2e8f0';
+                    e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '16px' }}>🏢</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <CompanyIcon />
                     <span style={{
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      maxWidth: '140px'
+                      maxWidth: '150px'
                     }}>
                       {companyState.selectedCompany?.name || 'Select Company'}
                     </span>
                   </div>
-                  <span style={{
-                    fontSize: '12px',
-                    color: '#64748b',
-                    transform: isCompanyDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s'
-                  }}>
-                    ▼
-                  </span>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                      transform: isCompanyDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s',
+                      opacity: 0.6
+                    }}
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
                 </button>
 
                 {/* Dropdown Menu */}
@@ -182,14 +393,16 @@ const Layout = ({ children }) => {
                     top: '100%',
                     left: 0,
                     right: 0,
-                    marginTop: '4px',
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
+                    marginTop: '8px',
+                    background: '#1e293b',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: '8px',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)',
+                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
                     zIndex: 1001,
-                    maxHeight: '200px',
-                    overflowY: 'auto'
+                    maxHeight: '280px',
+                    overflowY: 'auto',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
                   }}>
                     {/* Company List */}
                     {companyState.companies.map((company) => (
@@ -200,30 +413,32 @@ const Layout = ({ children }) => {
                           padding: '10px 12px',
                           cursor: 'pointer',
                           fontSize: '13px',
-                          color: '#1e293b',
-                          borderBottom: '1px solid #f1f5f9',
+                          color: '#f1f5f9',
+                          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '8px',
+                          gap: '10px',
                           transition: 'all 0.2s'
                         }}
                         onMouseEnter={(e) => {
-                          e.target.style.background = '#f8fafc';
+                          e.target.style.background = 'rgba(59, 130, 246, 0.1)';
                         }}
                         onMouseLeave={(e) => {
                           e.target.style.background = 'transparent';
                         }}
                       >
-                        <span style={{ fontSize: '14px' }}>🏢</span>
-                        <span>{company.name}</span>
+                        <CompanyIcon />
+                        <span style={{ flex: 1 }}>{company.name}</span>
                         {companyState.selectedCompany?.id === company.id && (
-                          <span style={{ marginLeft: 'auto', color: '#3b82f6', fontSize: '12px' }}>✓</span>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
                         )}
                       </div>
                     ))}
 
                     {/* Separator */}
-                    <div style={{ height: '1px', background: '#e2e8f0', margin: '4px 0' }} />
+                    <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.1)', margin: '4px 0' }} />
 
                     {/* Personal Option */}
                     <div
@@ -232,23 +447,28 @@ const Layout = ({ children }) => {
                         padding: '10px 12px',
                         cursor: 'pointer',
                         fontSize: '13px',
-                        color: '#1e293b',
+                        color: '#f1f5f9',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px',
+                        gap: '10px',
                         transition: 'all 0.2s'
                       }}
                       onMouseEnter={(e) => {
-                        e.target.style.background = '#f8fafc';
+                        e.target.style.background = 'rgba(59, 130, 246, 0.1)';
                       }}
                       onMouseLeave={(e) => {
                         e.target.style.background = 'transparent';
                       }}
                     >
-                      <span style={{ fontSize: '14px' }}>👤</span>
-                      <span>Personal</span>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      <span style={{ flex: 1 }}>Personal</span>
                       {companyState.selectedCompany?.id === 'personal' && (
-                        <span style={{ marginLeft: 'auto', color: '#3b82f6', fontSize: '12px' }}>✓</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
                       )}
                     </div>
 
@@ -260,21 +480,24 @@ const Layout = ({ children }) => {
                         cursor: 'pointer',
                         fontSize: '13px',
                         color: '#3b82f6',
-                        fontWeight: '500',
+                        fontWeight: '600',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px',
+                        gap: '10px',
                         transition: 'all 0.2s',
-                        borderTop: '1px solid #f1f5f9'
+                        borderTop: '1px solid rgba(255, 255, 255, 0.1)'
                       }}
                       onMouseEnter={(e) => {
-                        e.target.style.background = '#f0f9ff';
+                        e.target.style.background = 'rgba(59, 130, 246, 0.15)';
                       }}
                       onMouseLeave={(e) => {
                         e.target.style.background = 'transparent';
                       }}
                     >
-                      <span style={{ fontSize: '14px' }}>➕</span>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                      </svg>
                       <span>Create Company</span>
                     </div>
                   </div>
@@ -282,74 +505,173 @@ const Layout = ({ children }) => {
               </div>
             </div>
           )}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            style={{
-              background: '#f1f5f9',
-              border: '1px solid #e2e8f0',
-              color: '#64748b',
-              padding: '8px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '16px',
-              transition: 'all 0.2s',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-            }}
-          >
-            {sidebarCollapsed ? '→' : '←'}
-          </button>
+          
+          {!sidebarCollapsed && (
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: '#94a3b8',
+                padding: '8px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '32px',
+                height: '32px',
+                flexShrink: 0
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.target.style.color = '#f1f5f9';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.target.style.color = '#94a3b8';
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+            </button>
+          )}
+          
+          {/* Collapsed Toggle Button */}
+          {sidebarCollapsed && (
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              style={{
+                position: 'absolute',
+                top: '50%',
+                right: '-16px',
+                transform: 'translateY(-50%)',
+                background: '#1e293b',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: '#94a3b8',
+                padding: '6px',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                fontSize: '14px',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '32px',
+                height: '32px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                zIndex: 1000
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(59, 130, 246, 0.1)';
+                e.target.style.color = '#3b82f6';
+                e.target.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = '#1e293b';
+                e.target.style.color = '#94a3b8';
+                e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(180deg)' }}>
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Navigation */}
         <nav style={{
           flex: 1,
-          padding: sidebarCollapsed ? '20px 8px' : '24px 16px',
+          padding: sidebarCollapsed ? '16px 12px' : '20px 16px',
           overflowY: 'auto',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(255, 255, 255, 0.1) transparent'
         }}>
+          {/* Main Navigation Label */}
+          {!sidebarCollapsed && (
+            <div style={{
+              fontSize: '11px',
+              fontWeight: '600',
+              color: '#64748b',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              marginBottom: '12px',
+              paddingLeft: '12px'
+            }}>
+              Main Menu
+            </div>
+          )}
+
           {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path ||
+                           (item.path === '/employees' && location.pathname.startsWith('/employees/'));
+            const IconComponent = item.icon;
+
             return (
               <div
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 style={{
-                  padding: sidebarCollapsed ? '10px 8px' : '10px 16px',
-                  margin: '2px 0',
+                  padding: sidebarCollapsed ? '12px' : '12px 16px',
+                  margin: '4px 0',
                   cursor: 'pointer',
-                  background: isActive ? '#f1f5f9' : 'transparent',
-                  borderRadius: '12px',
-                  border: isActive ? '1px solid #e2e8f0' : '1px solid transparent',
+                  background: isActive
+                    ? 'linear-gradient(135deg, #3b82f6, #2563eb)'
+                    : 'transparent',
+                  borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: sidebarCollapsed ? '0' : '16px',
+                  gap: sidebarCollapsed ? '0' : '12px',
                   justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                  transition: 'all 0.3s ease',
+                  transition: 'all 0.2s ease',
                   position: 'relative',
-                  overflow: 'hidden'
+                  color: isActive ? '#ffffff' : '#94a3b8',
+                  boxShadow: isActive ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = '#f8fafc';
+                  if (!isActive) {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                    e.currentTarget.style.color = '#f1f5f9';
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = 'transparent';
+                  if (!isActive) {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = '#94a3b8';
+                  }
                 }}
               >
-                <span style={{
-                  fontSize: '20px',
-                  filter: isActive ? 'brightness(1.2)' : 'brightness(0.8)'
-                }}>{item.icon}</span>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  opacity: isActive ? 1 : 0.8
+                }}>
+                  <IconComponent />
+                </div>
                 {!sidebarCollapsed && (
                   <span style={{
-                    fontWeight: isActive ? '700' : '500',
-                    fontSize: '15px',
-                    color: isActive ? '#1e293b' : '#64748b'
+                    fontWeight: isActive ? '600' : '500',
+                    fontSize: '14px',
+                    flex: 1
                   }}>
                     {item.label}
                   </span>
                 )}
-
+                {!sidebarCollapsed && isActive && (
+                  <div style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: '#ffffff',
+                    boxShadow: '0 0 8px rgba(255, 255, 255, 0.5)'
+                  }} />
+                )}
               </div>
             );
           })}
@@ -357,9 +679,9 @@ const Layout = ({ children }) => {
 
         {/* User Profile Section */}
         <div style={{
-          padding: sidebarCollapsed ? '16px 8px' : '20px 16px',
-          borderTop: '1px solid #e2e8f0',
-          background: '#f8fafc'
+          padding: sidebarCollapsed ? '16px 12px' : '16px',
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          background: 'rgba(0, 0, 0, 0.2)'
         }}>
           {!sidebarCollapsed ? (
             <div>
@@ -370,32 +692,38 @@ const Layout = ({ children }) => {
                   alignItems: 'center',
                   gap: '12px',
                   padding: '12px',
-                  borderRadius: '12px',
+                  borderRadius: '10px',
                   cursor: 'pointer',
                   background: location.pathname === '/profile'
-                    ? 'linear-gradient(135deg, #3b82f6, #2563eb)'
-                    : 'transparent',
-                  border: location.pathname === '/profile'
-                    ? 'none'
-                    : '1px solid transparent',
-                  boxShadow: location.pathname === '/profile'
-                    ? '0 2px 8px rgba(59, 130, 246, 0.25)'
-                    : 'none',
+                    ? 'rgba(59, 130, 246, 0.15)'
+                    : 'rgba(255, 255, 255, 0.03)',
+                  border: `1px solid ${location.pathname === '/profile' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(255, 255, 255, 0.05)'}`,
                   transition: 'all 0.2s',
-                  marginBottom: '16px'
+                  marginBottom: '12px'
+                }}
+                onMouseEnter={(e) => {
+                  if (location.pathname !== '/profile') {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (location.pathname !== '/profile') {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                  }
                 }}
               >
                 <div style={{
                   width: '40px',
                   height: '40px',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(135deg, #60a5fa, #3b82f6)',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '18px',
-                  fontWeight: 'bold',
-                  color: 'white'
+                  fontSize: '16px',
+                  fontWeight: '700',
+                  color: 'white',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
                 }}>
                   {state.user?.name?.charAt(0)?.toUpperCase() || 'U'}
                 </div>
@@ -403,7 +731,7 @@ const Layout = ({ children }) => {
                   <div style={{
                     fontWeight: '600',
                     fontSize: '14px',
-                    color: location.pathname === '/profile' ? 'white' : '#1e293b',
+                    color: '#f1f5f9',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -412,7 +740,7 @@ const Layout = ({ children }) => {
                   </div>
                   <div style={{
                     fontSize: '12px',
-                    color: location.pathname === '/profile' ? 'rgba(255, 255, 255, 0.8)' : '#64748b',
+                    color: '#94a3b8',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -422,50 +750,39 @@ const Layout = ({ children }) => {
                 </div>
               </div>
 
-              {/* <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <span style={{
-                  background: state.user?.role === 'superadmin' 
-                    ? 'linear-gradient(135deg, #ef4444, #dc2626)' 
-                    : state.user?.role === 'admin' 
-                    ? 'linear-gradient(135deg, #06b6d4, #0891b2)' 
-                    : 'linear-gradient(135deg, #10b981, #059669)',
-                  color: 'white',
-                  padding: '6px 12px',
-                  borderRadius: '20px',
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  {state.user?.role}
-                </span>
-              </div> */}
-
               <button
                 onClick={handleLogout}
                 style={{
                   width: '100%',
-                  padding: '12px',
-                  background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '10px',
+                  padding: '10px 16px',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  color: '#f87171',
+                  border: '1px solid rgba(239, 68, 68, 0.2)',
+                  borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '13px',
                   fontWeight: '600',
                   transition: 'all 0.2s',
-                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = '0 6px 16px rgba(239, 68, 68, 0.4)';
+                  e.target.style.background = 'rgba(239, 68, 68, 0.15)';
+                  e.target.style.borderColor = 'rgba(239, 68, 68, 0.3)';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
+                  e.target.style.background = 'rgba(239, 68, 68, 0.1)';
+                  e.target.style.borderColor = 'rgba(239, 68, 68, 0.2)';
                 }}
               >
-                🚪 Sign Out
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Sign Out
               </button>
             </div>
           ) : (
@@ -473,18 +790,27 @@ const Layout = ({ children }) => {
               <div
                 onClick={() => navigate('/profile')}
                 style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(135deg, #60a5fa, #3b82f6)',
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '20px',
-                  fontWeight: 'bold',
+                  fontSize: '18px',
+                  fontWeight: '700',
                   color: 'white',
                   cursor: 'pointer',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
                 }}
               >
                 {state.user?.name?.charAt(0)?.toUpperCase() || 'U'}
@@ -492,18 +818,31 @@ const Layout = ({ children }) => {
               <button
                 onClick={handleLogout}
                 style={{
-                  width: '48px',
-                  height: '48px',
-                  background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
+                  width: '44px',
+                  height: '44px',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  color: '#f87171',
+                  border: '1px solid rgba(239, 68, 68, 0.2)',
+                  borderRadius: '10px',
                   cursor: 'pointer',
-                  fontSize: '18px',
-                  transition: 'all 0.2s'
+                  fontSize: '16px',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(239, 68, 68, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(239, 68, 68, 0.1)';
                 }}
               >
-                🚪
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
               </button>
             </div>
           )}
@@ -554,6 +893,62 @@ const Layout = ({ children }) => {
               alignItems: 'center',
               gap: '16px'
             }}>
+              {/* Notification Bell */}
+              <div
+                onClick={() => navigate('/notifications')}
+                style={{
+                  position: 'relative',
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '12px',
+                  background: 'white',
+                  border: '1px solid #e2e8f0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.borderColor = '#cbd5e1';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)';
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                {unreadCount > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    minWidth: '20px',
+                    height: '20px',
+                    borderRadius: '10px',
+                    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                    color: 'white',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0 6px',
+                    boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)',
+                    border: '2px solid white'
+                  }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </div>
+                )}
+              </div>
+
               <div style={{
                 padding: '8px 16px',
                 background: 'linear-gradient(135deg, #f1f5f9, #e2e8f0)',
@@ -591,136 +986,6 @@ const Layout = ({ children }) => {
         </main>
       </div>
 
-      {/* Create Company Modal */}
-      {showCreateCompanyModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 2000
-        }}>
-          <div style={{
-            background: '#ffffff',
-            borderRadius: '12px',
-            padding: '24px',
-            width: '400px',
-            maxWidth: '90vw',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
-          }}>
-            <h3 style={{
-              margin: '0 0 16px 0',
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#1e293b'
-            }}>
-              Create New Company
-            </h3>
-
-            <input
-              type="text"
-              placeholder="Enter company name"
-              value={newCompanyName}
-              onChange={(e) => setNewCompanyName(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleCreateCompany();
-                }
-              }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                fontSize: '14px',
-                marginBottom: '20px',
-                outline: 'none',
-                transition: 'border-color 0.2s',
-                boxSizing: 'border-box'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#3b82f6';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#e2e8f0';
-              }}
-              autoFocus
-            />
-
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              justifyContent: 'flex-end'
-            }}>
-              <button
-                onClick={() => {
-                  setShowCreateCompanyModal(false);
-                  setNewCompanyName('');
-                }}
-                style={{
-                  padding: '10px 20px',
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#64748b',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = '#f1f5f9';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = '#f8fafc';
-                }}
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleCreateCompany}
-                disabled={!newCompanyName.trim()}
-                style={{
-                  padding: '10px 20px',
-                  background: newCompanyName.trim()
-                    ? 'linear-gradient(135deg, #3b82f6, #2563eb)'
-                    : '#e2e8f0',
-                  color: newCompanyName.trim() ? 'white' : '#94a3b8',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: newCompanyName.trim() ? 'pointer' : 'not-allowed',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s',
-                  boxShadow: newCompanyName.trim()
-                    ? '0 4px 12px rgba(59, 130, 246, 0.3)'
-                    : 'none'
-                }}
-                onMouseEnter={(e) => {
-                  if (newCompanyName.trim()) {
-                    e.target.style.transform = 'translateY(-1px)';
-                    e.target.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (newCompanyName.trim()) {
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
-                  }
-                }}
-              >
-                Create Company
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

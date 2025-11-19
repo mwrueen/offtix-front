@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import Layout from '../Layout';
 import CompanyForm from './CompanyForm';
 import MemberForm from './MemberForm';
+import CompanySettings from './CompanySettings';
 import { companyApi } from '../../services/companyApi';
 
 const SalaryForm = ({ member, onClose, onUpdate }) => {
@@ -388,7 +389,8 @@ const CompanyManagement = () => {
   const tabs = [
     { id: 'employees', label: 'Employees', icon: '👥' },
     { id: 'designations', label: 'Designations', icon: '🏆' },
-    { id: 'permissions', label: 'Permissions', icon: '🔐' }
+    { id: 'permissions', label: 'Permissions', icon: '🔐' },
+    { id: 'settings', label: 'Settings', icon: '⚙️' }
   ];
 
   const renderEmployees = () => (
@@ -628,17 +630,25 @@ const CompanyManagement = () => {
 
         {/* Tab Content */}
         <div style={{ flex: 1 }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            border: '1px solid #e2e8f0',
-            padding: '32px'
-          }}>
-            {activeTab === 'employees' && renderEmployees()}
-            {activeTab === 'designations' && renderDesignations()}
-            {activeTab === 'permissions' && renderPermissions()}
-          </div>
+          {activeTab === 'settings' ? (
+            <CompanySettings
+              company={company}
+              isOwner={isOwner}
+              onRefresh={fetchMyCompany}
+            />
+          ) : (
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              border: '1px solid #e2e8f0',
+              padding: '32px'
+            }}>
+              {activeTab === 'employees' && renderEmployees()}
+              {activeTab === 'designations' && renderDesignations()}
+              {activeTab === 'permissions' && renderPermissions()}
+            </div>
+          )}
         </div>
       </div>
 

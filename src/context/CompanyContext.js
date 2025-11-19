@@ -83,8 +83,12 @@ export const CompanyProvider = ({ children }) => {
   // Create new company
   const createCompany = async (companyData) => {
     if (!authState.token) return;
-    
+
     try {
+      console.log('=== COMPANY CONTEXT - CREATE COMPANY ===');
+      console.log('Data being sent to API:', companyData);
+      console.log('========================================');
+
       const response = await fetch('/api/companies', {
         method: 'POST',
         headers: {
@@ -96,11 +100,16 @@ export const CompanyProvider = ({ children }) => {
 
       if (response.ok) {
         const newCompany = await response.json();
+        console.log('=== COMPANY CONTEXT - RESPONSE ===');
+        console.log('Created company:', newCompany);
+        console.log('===================================');
         dispatch({ type: 'SET_COMPANIES', payload: [...state.companies, newCompany] });
         dispatch({ type: 'SET_SELECTED_COMPANY', payload: newCompany });
         return newCompany;
       } else {
-        throw new Error('Failed to create company');
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+        throw new Error(errorData.message || 'Failed to create company');
       }
     } catch (error) {
       console.error('Error creating company:', error);
