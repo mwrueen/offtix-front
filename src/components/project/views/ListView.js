@@ -1,4 +1,21 @@
 import React, { useState } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // Add CSS animations
 const style = document.createElement('style');
@@ -31,6 +48,19 @@ if (!document.head.querySelector('style[data-listview-animations]')) {
 
 const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskId, onSelectTask, onReorderTasks }) => {
   const [expandedTasks, setExpandedTasks] = useState(new Set());
+  const [activeTask, setActiveTask] = useState(null);
+
+  // Setup sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement required before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
   
   // Build task hierarchy
   const buildTaskHierarchy = (tasks) => {
@@ -77,14 +107,51 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
     return task.children.length + task.children.reduce((sum, child) => sum + countSubtasks(child), 0);
   };
 
+  // Handle drag start
+  const handleDragStart = (event) => {
+    const { active } = event;
+    const task = tasks.find(t => t._id === active.id);
+    setActiveTask(task);
+  };
+
+  // Handle drag end
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    setActiveTask(null);
+
+    if (over && active.id !== over.id) {
+      const oldIndex = tasks.findIndex((task) => task._id === active.id);
+      const newIndex = tasks.findIndex((task) => task._id === over.id);
+
+      const reorderedTasks = arrayMove(tasks, oldIndex, newIndex);
+
+      // Call the parent component's reorder handler
+      if (onReorderTasks) {
+        onReorderTasks(reorderedTasks);
+      }
+    }
+  };
+
+  // Handle drag cancel
+  const handleDragCancel = () => {
+    setActiveTask(null);
+  };
+
   return (
-    <div style={{
-      backgroundColor: 'white',
-      border: '1px solid #dfe1e6',
-      borderRadius: '3px',
-      boxShadow: '0 1px 2px rgba(9, 30, 66, 0.08)',
-      overflow: 'hidden'
-    }}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+      <div style={{
+        backgroundColor: 'white',
+        border: '1px solid #dfe1e6',
+        borderRadius: '3px',
+        boxShadow: '0 1px 2px rgba(9, 30, 66, 0.08)',
+        overflow: 'hidden'
+      }}>
       {/* Header */}
       <div style={{
         padding: '12px 16px',
@@ -124,86 +191,125 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
       </div>
 
       {/* Task List */}
-      <div>
-        {tasks.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '80px 24px',
-            color: '#5e6c84',
-            backgroundColor: '#fafbfc'
-          }}>
-            <div style={{ 
-              fontSize: '64px', 
-              marginBottom: '20px',
-              opacity: 0.5
-            }}>📋</div>
-            <h4 style={{ 
-              margin: '0 0 12px 0', 
-              fontSize: '18px', 
-              color: '#172b4d',
-              fontWeight: '600'
-            }}>No issues yet</h4>
-            <p style={{ 
-              margin: 0, 
-              fontSize: '14px',
+      <SortableContext
+        items={tasks.map(t => t._id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <div>
+          {tasks.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '80px 24px',
               color: '#5e6c84',
-              lineHeight: '1.6'
-            }}>Create an issue to get started with your project tracking.</p>
-          </div>
-        ) : (
-          <div>
-            {hierarchicalTasks.map(task => (
-              <TaskRow
-                key={task._id}
-                task={task}
-                level={0}
-                onEdit={onEditTask}
-                onDelete={onDeleteTask}
-                onAddSubtask={onAddSubtask}
-                isSelected={selectedTaskId === task._id}
-                onSelect={() => onSelectTask(task)}
-                isExpanded={expandedTasks.has(task._id)}
-                onToggleExpand={() => toggleExpand(task._id)}
-                countSubtasks={countSubtasks}
-              />
-            ))}
-          </div>
-        )}
+              backgroundColor: '#fafbfc'
+            }}>
+              <div style={{
+                fontSize: '64px',
+                marginBottom: '20px',
+                opacity: 0.5
+              }}>📋</div>
+              <h4 style={{
+                margin: '0 0 12px 0',
+                fontSize: '18px',
+                color: '#172b4d',
+                fontWeight: '600'
+              }}>No issues yet</h4>
+              <p style={{
+                margin: 0,
+                fontSize: '14px',
+                color: '#5e6c84',
+                lineHeight: '1.6'
+              }}>Create an issue to get started with your project tracking.</p>
+            </div>
+          ) : (
+            <div>
+              {hierarchicalTasks.map(task => (
+                <SortableTaskRow
+                  key={task._id}
+                  task={task}
+                  level={0}
+                  onEdit={onEditTask}
+                  onDelete={onDeleteTask}
+                  onAddSubtask={onAddSubtask}
+                  isSelected={selectedTaskId === task._id}
+                  onSelect={() => onSelectTask(task)}
+                  isExpanded={expandedTasks.has(task._id)}
+                  onToggleExpand={() => toggleExpand(task._id)}
+                  countSubtasks={countSubtasks}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </SortableContext>
       </div>
-    </div>
+
+      <DragOverlay>
+        {activeTask ? (
+          <div style={{ opacity: 0.9, cursor: 'grabbing' }}>
+            <TaskListRowContent task={activeTask} isDragging />
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 };
 
-const TaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isExpanded, onToggleExpand, countSubtasks }) => {
+// Sortable wrapper for TaskRow
+const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isExpanded, onToggleExpand, countSubtasks }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: task._id,
+    data: {
+      type: 'task',
+      task,
+    },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   const hasChildren = task.children && task.children.length > 0;
   const subtaskCount = countSubtasks(task);
   const indent = level * 24;
 
   return (
-    <>
-      <TaskListRow
-        task={task}
-        level={level}
-        indent={indent}
-        hasChildren={hasChildren}
-        subtaskCount={subtaskCount}
-        isExpanded={isExpanded}
-        onToggleExpand={onToggleExpand}
-        onEdit={onEdit}
-        onDelete={onDelete}
-        onAddSubtask={onAddSubtask}
-        isSelected={isSelected}
-        onSelect={onSelect}
-      />
-      
+    <div ref={setNodeRef} style={style}>
+      <div {...attributes} {...listeners}>
+        <TaskListRow
+          task={task}
+          level={level}
+          indent={indent}
+          hasChildren={hasChildren}
+          subtaskCount={subtaskCount}
+          isExpanded={isExpanded}
+          onToggleExpand={onToggleExpand}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onAddSubtask={onAddSubtask}
+          isSelected={isSelected}
+          onSelect={onSelect}
+          isDragging={isDragging}
+        />
+      </div>
+
       {/* Render children if expanded */}
       {hasChildren && isExpanded && (
-        <div style={{ 
+        <div style={{
           animation: 'slideDown 0.2s ease-out',
           overflow: 'hidden'
         }}>
           {task.children.map(child => (
-            <TaskRow
+            <SortableTaskRow
               key={child._id}
               task={child}
               level={level + 1}
@@ -219,11 +325,31 @@ const TaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelected, onSe
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 };
 
-const TaskListRow = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect }) => {
+const TaskListRow = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging }) => {
+  return (
+    <TaskListRowContent
+      task={task}
+      level={level}
+      indent={indent}
+      hasChildren={hasChildren}
+      subtaskCount={subtaskCount}
+      isExpanded={isExpanded}
+      onToggleExpand={onToggleExpand}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      onAddSubtask={onAddSubtask}
+      isSelected={isSelected}
+      onSelect={onSelect}
+      isDragging={isDragging}
+    />
+  );
+};
+
+const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging }) => {
   const getPriorityColor = (priority) => {
     const colors = {
       urgent: '#de350b',
@@ -271,16 +397,17 @@ const TaskListRow = ({ task, level, indent, hasChildren, subtaskCount, isExpande
         alignItems: 'center',
         backgroundColor: isSelected ? '#f0f6ff' : 'white',
         borderLeft: isSelected ? '3px solid #0052cc' : '3px solid transparent',
-        cursor: 'pointer',
-        transition: 'all 0.15s ease-in-out'
+        cursor: isDragging ? 'grabbing' : 'grab',
+        transition: 'all 0.15s ease-in-out',
+        boxShadow: isDragging ? '0 4px 12px rgba(0,0,0,0.15)' : 'none'
       }}
       onMouseEnter={(e) => {
-        if (!isSelected) {
+        if (!isSelected && !isDragging) {
           e.currentTarget.style.backgroundColor = '#fafbfc';
         }
       }}
       onMouseLeave={(e) => {
-        if (!isSelected) {
+        if (!isSelected && !isDragging) {
           e.currentTarget.style.backgroundColor = 'white';
         }
       }}

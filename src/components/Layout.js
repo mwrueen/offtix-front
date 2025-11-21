@@ -136,10 +136,12 @@ const Layout = ({ children }) => {
     </svg>
   );
 
-  const CompanyIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+  const CompanyIcon = ({ size = 20 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="9" rx="1"></rect>
+      <rect x="14" y="3" width="7" height="5" rx="1"></rect>
+      <rect x="14" y="12" width="7" height="9" rx="1"></rect>
+      <rect x="3" y="16" width="7" height="5" rx="1"></rect>
     </svg>
   );
 
@@ -330,14 +332,27 @@ const Layout = ({ children }) => {
 
               {/* Company Selector Dropdown */}
               <div className="company-dropdown" style={{ position: 'relative' }}>
+                <div style={{
+                  fontSize: '10px',
+                  fontWeight: '600',
+                  color: '#64748b',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.8px',
+                  marginBottom: '8px',
+                  paddingLeft: '2px'
+                }}>
+                  Workspace
+                </div>
                 <button
                   onClick={() => setIsCompanyDropdownOpen(!isCompanyDropdownOpen)}
                   style={{
                     width: '100%',
-                    padding: '10px 12px',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '8px',
+                    padding: '12px 14px',
+                    background: isCompanyDropdownOpen
+                      ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.1))'
+                      : 'rgba(255, 255, 255, 0.06)',
+                    border: `1px solid ${isCompanyDropdownOpen ? 'rgba(59, 130, 246, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+                    borderRadius: '10px',
                     cursor: 'pointer',
                     fontSize: '13px',
                     fontWeight: '500',
@@ -345,41 +360,88 @@ const Layout = ({ children }) => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: isCompanyDropdownOpen
+                      ? '0 4px 12px rgba(59, 130, 246, 0.15)'
+                      : '0 2px 4px rgba(0, 0, 0, 0.1)'
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.background = 'rgba(255, 255, 255, 0.08)';
-                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                    if (!isCompanyDropdownOpen) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.09)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.background = 'rgba(255, 255, 255, 0.05)';
-                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    if (!isCompanyDropdownOpen) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <CompanyIcon />
-                    <span style={{
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      maxWidth: '150px'
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      background: companyState.selectedCompany?.id === 'personal'
+                        ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)'
+                        : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
                     }}>
-                      {companyState.selectedCompany?.name || 'Select Company'}
-                    </span>
+                      {companyState.selectedCompany?.id === 'personal' ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                      ) : (
+                        <CompanyIcon size={16} />
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                      <div style={{
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        color: '#ffffff',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        marginBottom: '2px'
+                      }}>
+                        {companyState.selectedCompany?.name || 'Select Workspace'}
+                      </div>
+                      <div style={{
+                        fontSize: '11px',
+                        color: '#94a3b8',
+                        fontWeight: '500'
+                      }}>
+                        {companyState.selectedCompany?.id === 'personal'
+                          ? 'Personal workspace'
+                          : companyState.companies.length > 0
+                            ? `${companyState.companies.length} workspace${companyState.companies.length !== 1 ? 's' : ''}`
+                            : 'No workspace'}
+                      </div>
+                    </div>
                   </div>
                   <svg
-                    width="16"
-                    height="16"
+                    width="18"
+                    height="18"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     style={{
                       transform: isCompanyDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.2s',
-                      opacity: 0.6
+                      transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                      opacity: 0.7,
+                      flexShrink: 0
                     }}
                   >
                     <polyline points="6 9 12 15 18 9"></polyline>
@@ -393,115 +455,206 @@ const Layout = ({ children }) => {
                     top: '100%',
                     left: 0,
                     right: 0,
-                    marginTop: '8px',
-                    background: '#1e293b',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '8px',
-                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+                    marginTop: '10px',
+                    background: 'linear-gradient(to bottom, #1e293b, #1a2332)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '12px',
+                    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)',
                     zIndex: 1001,
-                    maxHeight: '280px',
+                    maxHeight: '400px',
                     overflowY: 'auto',
                     scrollbarWidth: 'thin',
-                    scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
+                    scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
+                    animation: 'slideDown 0.2s ease-out'
                   }}>
+                    {/* Header */}
+                    {companyState.companies.length > 0 && (
+                      <div style={{
+                        padding: '12px 14px 8px',
+                        fontSize: '10px',
+                        fontWeight: '600',
+                        color: '#64748b',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.8px',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.06)'
+                      }}>
+                        Your Workspaces
+                      </div>
+                    )}
+
                     {/* Company List */}
-                    {companyState.companies.map((company) => (
+                    <div style={{ padding: '6px' }}>
+                      {companyState.companies.map((company) => (
+                        <div
+                          key={company.id}
+                          onClick={() => handleCompanySelect(company)}
+                          style={{
+                            padding: '10px 12px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            color: '#f1f5f9',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            marginBottom: '2px',
+                            background: companyState.selectedCompany?.id === company.id
+                              ? 'rgba(59, 130, 246, 0.15)'
+                              : 'transparent'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = companyState.selectedCompany?.id === company.id
+                              ? 'rgba(59, 130, 246, 0.2)'
+                              : 'rgba(255, 255, 255, 0.08)';
+                            e.currentTarget.style.transform = 'translateX(2px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = companyState.selectedCompany?.id === company.id
+                              ? 'rgba(59, 130, 246, 0.15)'
+                              : 'transparent';
+                            e.currentTarget.style.transform = 'translateX(0)';
+                          }}
+                        >
+                          <div style={{
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '6px',
+                            background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            boxShadow: '0 2px 6px rgba(59, 130, 246, 0.3)'
+                          }}>
+                            <CompanyIcon size={14} />
+                          </div>
+                          <span style={{ flex: 1, fontWeight: '500' }}>{company.name}</span>
+                          {companyState.selectedCompany?.id === company.id && (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Separator */}
+                    <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '6px 14px' }} />
+
+                    {/* Personal Option */}
+                    <div style={{ padding: '6px' }}>
                       <div
-                        key={company.id}
-                        onClick={() => handleCompanySelect(company)}
+                        onClick={() => handleCompanySelect('Personal')}
                         style={{
                           padding: '10px 12px',
                           cursor: 'pointer',
                           fontSize: '13px',
                           color: '#f1f5f9',
-                          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                          borderRadius: '8px',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '10px',
-                          transition: 'all 0.2s'
+                          gap: '12px',
+                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                          background: companyState.selectedCompany?.id === 'personal'
+                            ? 'rgba(139, 92, 246, 0.15)'
+                            : 'transparent'
                         }}
                         onMouseEnter={(e) => {
-                          e.target.style.background = 'rgba(59, 130, 246, 0.1)';
+                          e.currentTarget.style.background = companyState.selectedCompany?.id === 'personal'
+                            ? 'rgba(139, 92, 246, 0.2)'
+                            : 'rgba(255, 255, 255, 0.08)';
+                          e.currentTarget.style.transform = 'translateX(2px)';
                         }}
                         onMouseLeave={(e) => {
-                          e.target.style.background = 'transparent';
+                          e.currentTarget.style.background = companyState.selectedCompany?.id === 'personal'
+                            ? 'rgba(139, 92, 246, 0.15)'
+                            : 'transparent';
+                          e.currentTarget.style.transform = 'translateX(0)';
                         }}
                       >
-                        <CompanyIcon />
-                        <span style={{ flex: 1 }}>{company.name}</span>
-                        {companyState.selectedCompany?.id === company.id && (
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <div style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '6px',
+                          background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          boxShadow: '0 2px 6px rgba(139, 92, 246, 0.3)'
+                        }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                          </svg>
+                        </div>
+                        <span style={{ flex: 1, fontWeight: '500' }}>Personal</span>
+                        {companyState.selectedCompany?.id === 'personal' && (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="20 6 9 17 4 12"></polyline>
                           </svg>
                         )}
                       </div>
-                    ))}
-
-                    {/* Separator */}
-                    <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.1)', margin: '4px 0' }} />
-
-                    {/* Personal Option */}
-                    <div
-                      onClick={() => handleCompanySelect('Personal')}
-                      style={{
-                        padding: '10px 12px',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        color: '#f1f5f9',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.background = 'rgba(59, 130, 246, 0.1)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.background = 'transparent';
-                      }}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                      </svg>
-                      <span style={{ flex: 1 }}>Personal</span>
-                      {companyState.selectedCompany?.id === 'personal' && (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                      )}
                     </div>
 
+                    {/* Separator */}
+                    <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '6px 14px' }} />
+
                     {/* Create Company Option */}
-                    <div
-                      onClick={() => handleCompanySelect('Create Company')}
-                      style={{
-                        padding: '10px 12px',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        color: '#3b82f6',
-                        fontWeight: '600',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        transition: 'all 0.2s',
-                        borderTop: '1px solid rgba(255, 255, 255, 0.1)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.background = 'rgba(59, 130, 246, 0.15)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.background = 'transparent';
-                      }}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                      </svg>
-                      <span>Create Company</span>
+                    <div style={{ padding: '8px' }}>
+                      <div
+                        onClick={() => handleCompanySelect('Create Company')}
+                        style={{
+                          padding: '12px 14px',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '10px',
+                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                          background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                          color: 'white',
+                          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                        }}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="12" y1="5" x2="12" y2="19"></line>
+                          <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Create New Workspace</span>
+                      </div>
                     </div>
                   </div>
                 )}
+
+                {/* Add CSS animation */}
+                <style>{`
+                  @keyframes slideDown {
+                    from {
+                      opacity: 0;
+                      transform: translateY(-10px);
+                    }
+                    to {
+                      opacity: 1;
+                      transform: translateY(0);
+                    }
+                  }
+                `}</style>
               </div>
             </div>
           )}

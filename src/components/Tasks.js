@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { projectAPI, taskAPI, taskStatusAPI, sprintAPI, phaseAPI, userAPI, companyAPI } from '../services/api';
+import { projectAPI, taskAPI, taskStatusAPI, sprintAPI, phaseAPI, userAPI, companyAPI, leaveAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Layout from './Layout';
 import Breadcrumb from './project/Breadcrumb';
@@ -21,6 +21,7 @@ const Tasks = () => {
   const [taskStatuses, setTaskStatuses] = useState([]);
   const [sprints, setSprints] = useState([]);
   const [phases, setPhases] = useState([]);
+  const [employeeLeaves, setEmployeeLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
   const [selectedSprint, setSelectedSprint] = useState('');
@@ -54,8 +55,21 @@ const Tasks = () => {
       // Fetch company data if project has a company
       if (projectData.company) {
         try {
-          const companyRes = await companyAPI.getById(projectData.company);
+          // Extract company ID - it might be an object or a string
+          const companyId = typeof projectData.company === 'object'
+            ? projectData.company._id
+            : projectData.company;
+          const companyRes = await companyAPI.getById(companyId);
           setCompany(companyRes.data);
+
+          // Fetch employee leaves for auto-scheduling
+          try {
+            const leavesRes = await leaveAPI.getAll(companyId, { status: 'approved' });
+            setEmployeeLeaves(leavesRes.data.leaves || []);
+          } catch (leaveError) {
+            console.error('Error fetching employee leaves:', leaveError);
+            setEmployeeLeaves([]);
+          }
         } catch (error) {
           console.error('Error fetching company data:', error);
         }
@@ -93,6 +107,24 @@ const Tasks = () => {
       }
     } catch (error) {
       console.error('Error fetching project data:', error);
+
+      // Check if it's an access denied error (403)
+      if (error.response && error.response.status === 403) {
+        setError({
+          type: 'access_denied',
+          message: error.response.data.message || 'You do not have permission to view tasks for this project.'
+        });
+      } else if (error.response && error.response.status === 404) {
+        setError({
+          type: 'not_found',
+          message: 'Project not found.'
+        });
+      } else {
+        setError({
+          type: 'error',
+          message: 'An error occurred while loading the project data.'
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -230,6 +262,54 @@ const Tasks = () => {
   });
 
   if (loading) return <Layout><div>Loading...</div></Layout>;
+
+  if (error) {
+    return (
+      <Layout>
+        <div style={{
+          padding: '40px',
+          textAlign: 'center',
+          maxWidth: '600px',
+          margin: '0 auto'
+        }}>
+          <div style={{
+            fontSize: '48px',
+            marginBottom: '20px'
+          }}>
+            {error.type === 'access_denied' ? '🔒' : '❌'}
+          </div>
+          <h2 style={{
+            marginBottom: '10px',
+            color: '#333'
+          }}>
+            {error.type === 'access_denied' ? 'Access Denied' : error.type === 'not_found' ? 'Project Not Found' : 'Error'}
+          </h2>
+          <p style={{
+            color: '#666',
+            marginBottom: '30px',
+            lineHeight: '1.6'
+          }}>
+            {error.message}
+          </p>
+          <button
+            onClick={() => navigate('/projects')}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Go to Projects
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
   if (!project) return <Layout><div>Project not found</div></Layout>;
 
   const isProjectOwner = authState.user && project.owner === authState.user.id;
@@ -415,6 +495,10 @@ const Tasks = () => {
                 onEditTask={() => {}}
                 onDeleteTask={handleDeleteTask}
                 onAddSubtask={() => {}}
+                project={project}
+                company={company}
+                onUpdateTask={handleUpdateTask}
+                employeeLeaves={employeeLeaves}
               />
             )}
           </div>

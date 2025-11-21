@@ -27,6 +27,7 @@ const ProjectDetails = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [error, setError] = useState(null);
   const [requirements, setRequirements] = useState([]);
   const [meetingNotes, setMeetingNotes] = useState([]);
   const [sprints, setSprints] = useState([]);
@@ -84,19 +85,48 @@ const ProjectDetails = () => {
       await fetchTabData('overview');
     } catch (error) {
       console.error('Error fetching project data:', error);
-      
-      // Fallback: if company filtering fails, try to get all users
-      try {
-        console.log('Fallback: Trying to get all users without company filter');
-        const projectRes = await projectAPI.getById(id);
-        const usersRes = await userAPI.getAll(null); // Get all users
-        
-        setProject(projectRes.data);
-        setUsers(usersRes.data);
-        
-        console.log('Fallback successful - got', usersRes.data.length, 'users');
-      } catch (fallbackError) {
-        console.error('Fallback also failed:', fallbackError);
+
+      // Check if it's an access denied error (403)
+      if (error.response && error.response.status === 403) {
+        setError({
+          type: 'access_denied',
+          message: error.response.data.message || 'You do not have permission to view this project.'
+        });
+      } else if (error.response && error.response.status === 404) {
+        setError({
+          type: 'not_found',
+          message: 'Project not found.'
+        });
+      } else {
+        // Fallback: if company filtering fails, try to get all users
+        try {
+          console.log('Fallback: Trying to get all users without company filter');
+          const projectRes = await projectAPI.getById(id);
+          const usersRes = await userAPI.getAll(null); // Get all users
+
+          setProject(projectRes.data);
+          setUsers(usersRes.data);
+
+          console.log('Fallback successful - got', usersRes.data.length, 'users');
+        } catch (fallbackError) {
+          console.error('Fallback also failed:', fallbackError);
+          if (fallbackError.response && fallbackError.response.status === 403) {
+            setError({
+              type: 'access_denied',
+              message: fallbackError.response.data.message || 'You do not have permission to view this project.'
+            });
+          } else if (fallbackError.response && fallbackError.response.status === 404) {
+            setError({
+              type: 'not_found',
+              message: 'Project not found.'
+            });
+          } else {
+            setError({
+              type: 'error',
+              message: 'An error occurred while loading the project.'
+            });
+          }
+        }
       }
     } finally {
       setLoading(false);
@@ -144,6 +174,54 @@ const ProjectDetails = () => {
   );
 
   if (loading) return <Layout><div>Loading...</div></Layout>;
+
+  if (error) {
+    return (
+      <Layout>
+        <div style={{
+          padding: '40px',
+          textAlign: 'center',
+          maxWidth: '600px',
+          margin: '0 auto'
+        }}>
+          <div style={{
+            fontSize: '48px',
+            marginBottom: '20px'
+          }}>
+            {error.type === 'access_denied' ? '🔒' : '❌'}
+          </div>
+          <h2 style={{
+            marginBottom: '10px',
+            color: '#333'
+          }}>
+            {error.type === 'access_denied' ? 'Access Denied' : error.type === 'not_found' ? 'Project Not Found' : 'Error'}
+          </h2>
+          <p style={{
+            color: '#666',
+            marginBottom: '30px',
+            lineHeight: '1.6'
+          }}>
+            {error.message}
+          </p>
+          <button
+            onClick={() => navigate('/projects')}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Go to Projects
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
   if (!project) return <Layout><div>Project not found</div></Layout>;
 
   const tabs = [

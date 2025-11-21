@@ -110,18 +110,6 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
                   {task.description}
                 </p>
               )}
-              
-              {/* Dependencies Info */}
-              {task.dependencies && task.dependencies.length > 0 && (
-                <div style={{ 
-                  marginBottom: '8px',
-                  fontSize: '11px', 
-                  color: '#5e6c84',
-                  fontStyle: 'italic'
-                }}>
-                  <span style={{ fontWeight: '600' }}>Depends on:</span> {task.dependencies.map(dep => `${dep.title}${dep.status ? ` (${dep.status.name})` : ''}`).join(', ')}
-                </div>
-              )}
             </div>
             
             {/* Right Side - Metadata */}
@@ -133,7 +121,7 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
               minWidth: '200px'
             }}>
               
-              {/* Status and Dependencies Row */}
+              {/* Status Row */}
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                 {task.status && (
                   <span style={{
@@ -148,22 +136,6 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
                     letterSpacing: '0.3px'
                   }}>
                     {task.status.name}
-                  </span>
-                )}
-                
-                {task.dependencies && task.dependencies.length > 0 && (
-                  <span style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '4px',
-                    padding: '2px 6px',
-                    backgroundColor: '#fff4e6',
-                    border: '1px solid #ffcc95',
-                    borderRadius: '11px',
-                    fontSize: '10px',
-                    color: '#974f0c'
-                  }}>
-                    🔗 {task.dependencies.length}
                   </span>
                 )}
               </div>

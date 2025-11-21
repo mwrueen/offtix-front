@@ -851,46 +851,6 @@ const TaskFormJira = ({
                       fontWeight: '600', 
                       color: '#5e6c84'
                     }}>
-                      Dependencies
-                    </label>
-                    <select
-                      multiple
-                      value={taskForm.dependencies}
-                      onChange={(e) => {
-                        const values = Array.from(e.target.selectedOptions, option => option.value);
-                        setTaskForm({...taskForm, dependencies: values});
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: '6px 8px',
-                        border: '1px solid #dfe1e6',
-                        borderRadius: '3px',
-                        fontSize: '13px',
-                        backgroundColor: 'white',
-                        minHeight: '60px'
-                      }}
-                    >
-                      {availableTasks
-                        .filter(task => task._id !== editingTask?._id)
-                        .map(task => (
-                        <option key={task._id} value={task._id}>
-                          {task.title} {task.status ? `(${task.status.name})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                    <div style={{ fontSize: '11px', color: '#6b778c', marginTop: '4px' }}>
-                      Hold Ctrl/Cmd to select multiple
-                    </div>
-                  </div>
-                  
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ 
-                      display: 'block', 
-                      marginBottom: '6px', 
-                      fontSize: '12px', 
-                      fontWeight: '600', 
-                      color: '#5e6c84'
-                    }}>
                       Original Estimate (hours)
                     </label>
                     <input

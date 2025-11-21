@@ -108,7 +108,6 @@ export const taskStatusAPI = {
   create: (projectId, statusData) => api.post(`/projects/${projectId}/task-statuses`, statusData),
   update: (projectId, statusId, statusData) => api.put(`/projects/${projectId}/task-statuses/${statusId}`, statusData),
   delete: (projectId, statusId) => api.delete(`/projects/${projectId}/task-statuses/${statusId}`),
-  checkStatusChange: (projectId, taskId, statusId) => api.get(`/projects/${projectId}/tasks/${taskId}/status-check/${statusId}`),
 };
 
 export const requirementAPI = {
