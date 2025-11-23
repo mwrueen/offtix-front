@@ -4,6 +4,8 @@ import { useCompanyFilter } from '../hooks/useCompanyFilter';
 import { useNavigate } from 'react-router-dom';
 import { getCookie } from '../utils/cookies';
 import Layout from './Layout';
+import { companyAPI } from '../services/api';
+import { useToast } from '../context/ToastContext';
 
 const Company = () => {
   const { state } = useAuth();
@@ -874,6 +876,11 @@ const Company = () => {
         )}
       </div>
 
+      {/* Company Settings Section */}
+      {isCompanyCreator && (
+        <CompanySettingsSection company={company} onRefresh={fetchCompany} />
+      )}
+
       {/* Add Employee Modal */}
       {showAddEmployee && (
         <AddEmployeeModal
@@ -1694,6 +1701,301 @@ const CreateCompanyModal = ({ onClose, onSuccess }) => {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+};
+
+// Company Settings Section Component
+const CompanySettingsSection = ({ company, onRefresh }) => {
+  const { showToast } = useToast();
+  const [settings, setSettings] = useState({
+    timeTracking: {
+      defaultDurationUnit: 'hours',
+      hoursPerDay: 8,
+      daysPerWeek: 5,
+      workingHoursStart: '09:00',
+      workingHoursEnd: '17:00'
+    },
+    workingDays: [1, 2, 3, 4, 5],
+    weekends: [0, 6],
+    holidays: []
+  });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (company?.settings) {
+      setSettings({
+        timeTracking: company.settings.timeTracking || {
+          defaultDurationUnit: 'hours',
+          hoursPerDay: 8,
+          daysPerWeek: 5,
+          workingHoursStart: '09:00',
+          workingHoursEnd: '17:00'
+        },
+        workingDays: company.settings.workingDays || [1, 2, 3, 4, 5],
+        weekends: company.settings.weekends || [0, 6],
+        holidays: company.settings.holidays || []
+      });
+    }
+  }, [company]);
+
+  const handleTimeTrackingChange = (field, value) => {
+    setSettings(prev => ({
+      ...prev,
+      timeTracking: {
+        ...prev.timeTracking,
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSaveSettings = async () => {
+    setSaving(true);
+    try {
+      await companyAPI.updateSettings(company._id, settings);
+      showToast('Settings saved successfully', 'success');
+      if (onRefresh) onRefresh();
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      showToast('Failed to save settings', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{
+      background: 'white',
+      padding: '28px',
+      borderRadius: '12px',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+      border: '1px solid #e2e8f0',
+      marginTop: '30px'
+    }}>
+      <h3 style={{
+        margin: '0 0 24px 0',
+        fontSize: '20px',
+        fontWeight: '700',
+        color: '#1e293b',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px'
+      }}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M23 12h-6m-6 0H1m18.2 5.2l-4.2-4.2m0-6l4.2-4.2"></path>
+        </svg>
+        Company Settings
+      </h3>
+
+      {/* Time Tracking Settings */}
+      <div style={{
+        padding: '20px',
+        background: '#f8fafc',
+        borderRadius: '8px',
+        border: '1px solid #e2e8f0',
+        marginBottom: '20px'
+      }}>
+        <h4 style={{
+          margin: '0 0 16px 0',
+          fontSize: '16px',
+          fontWeight: '600',
+          color: '#1e293b',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          ⏱️ Time Tracking
+        </h4>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '16px',
+          marginBottom: '16px'
+        }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
+              DEFAULT DURATION UNIT
+            </label>
+            <select
+              value={settings.timeTracking.defaultDurationUnit}
+              onChange={(e) => handleTimeTrackingChange('defaultDurationUnit', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #dfe1e6',
+                borderRadius: '3px',
+                fontSize: '14px',
+                backgroundColor: 'white'
+              }}
+            >
+              <option value="minutes">Minutes</option>
+              <option value="hours">Hours</option>
+              <option value="days">Days</option>
+              <option value="weeks">Weeks</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
+              HOURS PER DAY
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="24"
+              value={settings.timeTracking.hoursPerDay}
+              onChange={(e) => handleTimeTrackingChange('hoursPerDay', parseInt(e.target.value))}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #dfe1e6',
+                borderRadius: '3px',
+                fontSize: '14px',
+                backgroundColor: 'white'
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
+              DAYS PER WEEK
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="7"
+              value={settings.timeTracking.daysPerWeek}
+              onChange={(e) => handleTimeTrackingChange('daysPerWeek', parseInt(e.target.value))}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #dfe1e6',
+                borderRadius: '3px',
+                fontSize: '14px',
+                backgroundColor: 'white'
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Working Hours Section */}
+        <div style={{
+          marginTop: '24px',
+          paddingTop: '24px',
+          borderTop: '1px solid #dfe1e6',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '20px'
+        }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
+              WORKING HOURS START
+            </label>
+            <input
+              type="time"
+              value={settings.timeTracking.workingHoursStart}
+              onChange={(e) => handleTimeTrackingChange('workingHoursStart', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #dfe1e6',
+                borderRadius: '3px',
+                fontSize: '14px',
+                backgroundColor: 'white'
+              }}
+            />
+            <div style={{ fontSize: '11px', color: '#5e6c84', marginTop: '4px' }}>
+              Daily work start time (e.g., 09:00)
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
+              WORKING HOURS END
+            </label>
+            <input
+              type="time"
+              value={settings.timeTracking.workingHoursEnd}
+              onChange={(e) => handleTimeTrackingChange('workingHoursEnd', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #dfe1e6',
+                borderRadius: '3px',
+                fontSize: '14px',
+                backgroundColor: 'white'
+              }}
+            />
+            <div style={{ fontSize: '11px', color: '#5e6c84', marginTop: '4px' }}>
+              Daily work end time (e.g., 17:00)
+            </div>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '12px',
+            backgroundColor: '#f4f5f7',
+            borderRadius: '3px',
+            border: '1px solid #dfe1e6'
+          }}>
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '4px' }}>
+                TOTAL HOURS
+              </div>
+              <div style={{ fontSize: '20px', fontWeight: '700', color: '#0052cc' }}>
+                {(() => {
+                  const start = settings.timeTracking.workingHoursStart.split(':');
+                  const end = settings.timeTracking.workingHoursEnd.split(':');
+                  const startMinutes = parseInt(start[0]) * 60 + parseInt(start[1]);
+                  const endMinutes = parseInt(end[0]) * 60 + parseInt(end[1]);
+                  const totalMinutes = endMinutes - startMinutes;
+                  const hours = Math.floor(totalMinutes / 60);
+                  const minutes = totalMinutes % 60;
+                  return `${hours}h ${minutes}m`;
+                })()}
+              </div>
+              <div style={{ fontSize: '11px', color: '#5e6c84', marginTop: '2px' }}>
+                per working day
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Save Button */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          onClick={handleSaveSettings}
+          disabled={saving}
+          style={{
+            padding: '12px 24px',
+            background: saving ? '#9ca3af' : 'linear-gradient(135deg, #667eea, #764ba2)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: saving ? 'not-allowed' : 'pointer',
+            fontSize: '14px',
+            fontWeight: '600',
+            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            if (!saving) {
+              e.target.style.transform = 'translateY(-1px)';
+              e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.3)';
+          }}
+        >
+          {saving ? 'Saving...' : 'Save Settings'}
+        </button>
       </div>
     </div>
   );

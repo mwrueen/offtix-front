@@ -6,7 +6,9 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
     timeTracking: {
       defaultDurationUnit: 'hours',
       hoursPerDay: 8,
-      daysPerWeek: 5
+      daysPerWeek: 5,
+      workingHoursStart: '09:00',
+      workingHoursEnd: '17:00'
     },
     workingDays: [1, 2, 3, 4, 5], // Monday to Friday
     holidays: []
@@ -27,7 +29,9 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
         timeTracking: project.settings.timeTracking || {
           defaultDurationUnit: 'hours',
           hoursPerDay: 8,
-          daysPerWeek: 5
+          daysPerWeek: 5,
+          workingHoursStart: '09:00',
+          workingHoursEnd: '17:00'
         },
         workingDays: project.settings.workingDays || [1, 2, 3, 4, 5],
         holidays: project.settings.holidays || []
@@ -186,6 +190,79 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
                 cursor: isProjectOwner ? 'text' : 'not-allowed'
               }}
             />
+          </div>
+
+          {/* Working Hours Start */}
+          <div>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
+              Working Hours Start
+            </label>
+            <input
+              type="time"
+              value={settings.timeTracking.workingHoursStart}
+              onChange={(e) => handleTimeTrackingChange('workingHoursStart', e.target.value)}
+              disabled={!isProjectOwner}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid #dfe1e6',
+                borderRadius: '3px',
+                fontSize: '14px',
+                cursor: isProjectOwner ? 'text' : 'not-allowed'
+              }}
+            />
+            <div style={{ fontSize: '12px', color: '#5e6c84', marginTop: '4px' }}>
+              Daily work start time (e.g., 09:00)
+            </div>
+          </div>
+
+          {/* Working Hours End */}
+          <div>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
+              Working Hours End
+            </label>
+            <input
+              type="time"
+              value={settings.timeTracking.workingHoursEnd}
+              onChange={(e) => handleTimeTrackingChange('workingHoursEnd', e.target.value)}
+              disabled={!isProjectOwner}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid #dfe1e6',
+                borderRadius: '3px',
+                fontSize: '14px',
+                cursor: isProjectOwner ? 'text' : 'not-allowed'
+              }}
+            />
+            <div style={{ fontSize: '12px', color: '#5e6c84', marginTop: '4px' }}>
+              Daily work end time (e.g., 17:00)
+            </div>
+          </div>
+        </div>
+
+        {/* Total Working Hours Display */}
+        <div style={{
+          marginTop: '16px',
+          padding: '16px',
+          backgroundColor: '#f4f5f7',
+          borderRadius: '3px',
+          border: '1px solid #dfe1e6'
+        }}>
+          <div style={{ fontSize: '14px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
+            Total Working Hours per Day
+          </div>
+          <div style={{ fontSize: '24px', fontWeight: '700', color: '#0052cc' }}>
+            {(() => {
+              const start = settings.timeTracking.workingHoursStart.split(':');
+              const end = settings.timeTracking.workingHoursEnd.split(':');
+              const startMinutes = parseInt(start[0]) * 60 + parseInt(start[1]);
+              const endMinutes = parseInt(end[0]) * 60 + parseInt(end[1]);
+              const totalMinutes = endMinutes - startMinutes;
+              const hours = Math.floor(totalMinutes / 60);
+              const minutes = totalMinutes % 60;
+              return `${hours}h ${minutes}m`;
+            })()}
           </div>
         </div>
       </div>

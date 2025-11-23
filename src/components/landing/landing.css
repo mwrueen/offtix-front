@@ -1,0 +1,156 @@
+/* Landing Page Responsive Styles */
+
+/* Animations */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}
+
+/* Responsive breakpoints */
+@media (max-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: 40px !important;
+    text-align: center;
+  }
+  
+  .hero-title {
+    font-size: 2.75rem !important;
+  }
+  
+  .hero-mockup {
+    width: 100% !important;
+    max-width: 500px !important;
+    margin: 0 auto;
+  }
+  
+  .floating-card {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-nav {
+    display: none !important;
+  }
+  
+  .hero-title {
+    font-size: 2.25rem !important;
+  }
+  
+  .hero-description {
+    font-size: 1.125rem !important;
+  }
+  
+  .hero-buttons {
+    flex-direction: column !important;
+    width: 100%;
+  }
+  
+  .hero-buttons button {
+    width: 100% !important;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+  
+  .section-title {
+    font-size: 2rem !important;
+  }
+  
+  .hero-mockup {
+    width: 100% !important;
+    height: 280px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 1.875rem !important;
+  }
+  
+  .section-title {
+    font-size: 1.75rem !important;
+  }
+  
+  .hero-badge {
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+  }
+}
+

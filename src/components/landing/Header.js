@@ -1,8 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import './landing.css';
 
 const Header = () => {
   const navigate = useNavigate();
+  const { state } = useAuth();
 
   return (
     <header style={{
@@ -50,8 +53,8 @@ const Header = () => {
             Tabredon
           </span>
         </div>
-        
-        <nav style={{
+
+        <nav className="header-nav" style={{
           display: 'flex',
           alignItems: 'center',
           gap: '32px'
@@ -87,36 +90,78 @@ const Header = () => {
           alignItems: 'center',
           gap: '12px'
         }}>
-          <button
-            onClick={() => navigate('/signin')}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: 'transparent',
-              color: '#64748b',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}
-          >
-            Sign In
-          </button>
-          <button
-            onClick={() => navigate('/signup')}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#667eea',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}
-          >
-            Get Started
-          </button>
+          {state.isAuthenticated ? (
+            <button
+              onClick={() => navigate('/dashboard')}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#667eea',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#5568d3';
+                e.target.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#667eea';
+                e.target.style.transform = 'translateY(0)';
+              }}
+            >
+              Go to Dashboard
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate('/signin')}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: 'transparent',
+                  color: '#64748b',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'color 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.target.style.color = '#1e293b'}
+                onMouseLeave={(e) => e.target.style.color = '#64748b'}
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => navigate('/signup')}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#667eea',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#5568d3';
+                  e.target.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#667eea';
+                  e.target.style.transform = 'translateY(0)';
+                }}
+              >
+                Get Started
+              </button>
+            </>
+          )}
         </div>
       </div>
     </header>

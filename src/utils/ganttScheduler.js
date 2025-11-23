@@ -4,9 +4,16 @@
  * - Task duration
  * - Project start date
  * - Company working days
+ * - Company working hours (start and end time)
  * - Company holidays
  * - Employee leaves
  * - Task dependencies
+ *
+ * Working Hours Feature:
+ * - Uses workingHoursStart and workingHoursEnd from company/project settings
+ * - Calculates actual working hours per day (e.g., 09:00 to 17:00 = 8 hours)
+ * - Task durations are converted based on actual working hours
+ * - Example: If working hours are 09:00-13:00 (4 hours), an 8-hour task takes 2 days
  */
 
 /**
@@ -60,19 +67,44 @@ const addWorkingDays = (startDate, daysToAdd, workingDays, holidays, employeeLea
 };
 
 /**
+ * Calculate actual working hours per day from start and end times
+ */
+const calculateWorkingHoursPerDay = (timeTrackingSettings) => {
+  const { workingHoursStart = '09:00', workingHoursEnd = '17:00', hoursPerDay = 8 } = timeTrackingSettings;
+
+  // If working hours are defined, calculate from them
+  if (workingHoursStart && workingHoursEnd) {
+    const [startHour, startMinute] = workingHoursStart.split(':').map(Number);
+    const [endHour, endMinute] = workingHoursEnd.split(':').map(Number);
+
+    const startMinutes = startHour * 60 + startMinute;
+    const endMinutes = endHour * 60 + endMinute;
+    const totalMinutes = endMinutes - startMinutes;
+
+    return totalMinutes / 60; // Convert to hours
+  }
+
+  // Fallback to hoursPerDay setting
+  return hoursPerDay;
+};
+
+/**
  * Convert duration to working days
  */
 const convertDurationToWorkingDays = (duration, timeTrackingSettings) => {
   if (!duration || !duration.value) return 0;
-  
+
   const { value, unit } = duration;
-  const { hoursPerDay = 8, daysPerWeek = 5 } = timeTrackingSettings;
-  
+  const { daysPerWeek = 5 } = timeTrackingSettings;
+
+  // Calculate actual working hours per day
+  const actualHoursPerDay = calculateWorkingHoursPerDay(timeTrackingSettings);
+
   switch (unit) {
     case 'minutes':
-      return Math.ceil(value / (hoursPerDay * 60));
+      return Math.ceil(value / (actualHoursPerDay * 60));
     case 'hours':
-      return Math.ceil(value / hoursPerDay);
+      return Math.ceil(value / actualHoursPerDay);
     case 'days':
       return value;
     case 'weeks':

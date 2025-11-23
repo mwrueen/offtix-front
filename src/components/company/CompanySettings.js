@@ -8,7 +8,9 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
     timeTracking: {
       defaultDurationUnit: 'hours',
       hoursPerDay: 8,
-      daysPerWeek: 5
+      daysPerWeek: 5,
+      workingHoursStart: '09:00',
+      workingHoursEnd: '17:00'
     },
     workingDays: [1, 2, 3, 4, 5], // Monday to Friday
     weekends: [0, 6], // Sunday and Saturday
@@ -30,7 +32,9 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
         timeTracking: company.settings.timeTracking || {
           defaultDurationUnit: 'hours',
           hoursPerDay: 8,
-          daysPerWeek: 5
+          daysPerWeek: 5,
+          workingHoursStart: '09:00',
+          workingHoursEnd: '17:00'
         },
         workingDays: company.settings.workingDays || [1, 2, 3, 4, 5],
         weekends: company.settings.weekends || [0, 6],
@@ -211,6 +215,91 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
                 backgroundColor: isOwner ? 'white' : '#f4f5f7'
               }}
             />
+          </div>
+        </div>
+
+        <div style={{
+          marginTop: '24px',
+          paddingTop: '24px',
+          borderTop: '1px solid #dfe1e6',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '20px'
+        }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
+              WORKING HOURS START
+            </label>
+            <input
+              type="time"
+              value={settings.timeTracking.workingHoursStart}
+              onChange={(e) => handleTimeTrackingChange('workingHoursStart', e.target.value)}
+              disabled={!isOwner}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #dfe1e6',
+                borderRadius: '3px',
+                fontSize: '14px',
+                backgroundColor: isOwner ? 'white' : '#f4f5f7'
+              }}
+            />
+            <div style={{ fontSize: '11px', color: '#5e6c84', marginTop: '4px' }}>
+              Daily work start time (e.g., 09:00)
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
+              WORKING HOURS END
+            </label>
+            <input
+              type="time"
+              value={settings.timeTracking.workingHoursEnd}
+              onChange={(e) => handleTimeTrackingChange('workingHoursEnd', e.target.value)}
+              disabled={!isOwner}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #dfe1e6',
+                borderRadius: '3px',
+                fontSize: '14px',
+                backgroundColor: isOwner ? 'white' : '#f4f5f7'
+              }}
+            />
+            <div style={{ fontSize: '11px', color: '#5e6c84', marginTop: '4px' }}>
+              Daily work end time (e.g., 17:00)
+            </div>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '12px',
+            backgroundColor: '#f4f5f7',
+            borderRadius: '3px',
+            border: '1px solid #dfe1e6'
+          }}>
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '4px' }}>
+                TOTAL HOURS
+              </div>
+              <div style={{ fontSize: '20px', fontWeight: '700', color: '#0052cc' }}>
+                {(() => {
+                  const start = settings.timeTracking.workingHoursStart.split(':');
+                  const end = settings.timeTracking.workingHoursEnd.split(':');
+                  const startMinutes = parseInt(start[0]) * 60 + parseInt(start[1]);
+                  const endMinutes = parseInt(end[0]) * 60 + parseInt(end[1]);
+                  const totalMinutes = endMinutes - startMinutes;
+                  const hours = Math.floor(totalMinutes / 60);
+                  const minutes = totalMinutes % 60;
+                  return `${hours}h ${minutes}m`;
+                })()}
+              </div>
+              <div style={{ fontSize: '11px', color: '#5e6c84', marginTop: '2px' }}>
+                per working day
+              </div>
+            </div>
           </div>
         </div>
       </div>

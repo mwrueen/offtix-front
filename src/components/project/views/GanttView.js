@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { autoScheduleAllTasks } from '../../../utils/ganttScheduler';
 import AutoScheduleGuide from '../AutoScheduleGuide';
 
@@ -16,6 +16,46 @@ const GanttView = ({
   const [isAutoScheduling, setIsAutoScheduling] = useState(false);
   const [showAutoScheduleModal, setShowAutoScheduleModal] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [showScrollShadow, setShowScrollShadow] = useState(true);
+
+  // Add custom scrollbar styles
+  useEffect(() => {
+    const styleId = 'gantt-scrollbar-styles';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        .gantt-scroll-container::-webkit-scrollbar {
+          height: 12px;
+          width: 12px;
+        }
+        .gantt-scroll-container::-webkit-scrollbar-track {
+          background: #f4f5f7;
+          border-radius: 6px;
+        }
+        .gantt-scroll-container::-webkit-scrollbar-thumb {
+          background: #0052cc;
+          border-radius: 6px;
+          border: 2px solid #f4f5f7;
+        }
+        .gantt-scroll-container::-webkit-scrollbar-thumb:hover {
+          background: #0065ff;
+        }
+        .gantt-scroll-container {
+          scrollbar-width: thin;
+          scrollbar-color: #0052cc #f4f5f7;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    return () => {
+      const style = document.getElementById(styleId);
+      if (style) {
+        style.remove();
+      }
+    };
+  }, []);
 
   const today = new Date();
   const startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
@@ -110,6 +150,14 @@ const GanttView = ({
 
   const dateHeaders = generateDateHeaders();
 
+  // Handle scroll synchronization
+  const handleScroll = (e) => {
+    const { scrollLeft, scrollWidth, clientWidth } = e.target;
+    setScrollLeft(scrollLeft);
+    // Hide shadow when scrolled to the end
+    setShowScrollShadow(scrollLeft + clientWidth < scrollWidth - 10);
+  };
+
   // Auto-schedule handler
   const handleAutoSchedule = async () => {
     if (!project || !project.startDate) {
@@ -130,6 +178,16 @@ const GanttView = ({
           defaultDurationUnit: 'hours'
         }
       };
+
+      // Debug logging
+      console.log('=== AUTO-SCHEDULE DEBUG ===');
+      console.log('Company settings:', company?.settings);
+      console.log('Project settings:', project?.settings);
+      console.log('Final settings used:', settings);
+      console.log('Working hours:', settings.timeTracking.workingHoursStart, '-', settings.timeTracking.workingHoursEnd);
+      console.log('Working days:', settings.workingDays);
+      console.log('Holidays count:', settings.holidays.length);
+      console.log('========================');
 
       // Auto-schedule all tasks
       const scheduledTasks = autoScheduleAllTasks(
@@ -188,7 +246,8 @@ const GanttView = ({
       border: '1px solid #dfe1e6',
       borderRadius: '3px',
       overflow: 'hidden',
-      boxShadow: '0 1px 2px rgba(9, 30, 66, 0.08)'
+      boxShadow: '0 1px 2px rgba(9, 30, 66, 0.08)',
+      position: 'relative'
     }}>
       {/* Auto-Schedule Button */}
       <div style={{
@@ -275,89 +334,128 @@ const GanttView = ({
         </button>
       </div>
 
-      {/* Header */}
+      {/* Gantt Container with Single Horizontal Scroll */}
       <div style={{
         display: 'flex',
-        borderBottom: '2px solid #dfe1e6',
-        position: 'sticky',
-        top: 0,
-        zIndex: 10,
-        backgroundColor: '#f4f5f7'
+        flexDirection: 'column',
+        maxHeight: 'calc(100vh - 300px)',
+        overflow: 'hidden',
+        position: 'relative'
       }}>
+        {/* Scroll Shadow Indicator */}
+        {showScrollShadow && (
+          <div style={{
+            position: 'absolute',
+            right: 0,
+            top: '60px',
+            bottom: 0,
+            width: '30px',
+            background: 'linear-gradient(to left, rgba(0, 0, 0, 0.1), transparent)',
+            pointerEvents: 'none',
+            zIndex: 5
+          }} />
+        )}
+        {/* Header */}
         <div style={{
-          width: '350px',
-          padding: '12px 16px',
-          backgroundColor: '#f4f5f7',
-          borderRight: '2px solid #dfe1e6',
-          fontSize: '11px',
-          fontWeight: '700',
-          color: '#5e6c84',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px'
-        }}>
-          Issue
-        </div>
-
-        <div style={{
-          flex: 1,
-          overflowX: 'auto',
+          display: 'flex',
+          borderBottom: '2px solid #dfe1e6',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
           backgroundColor: '#f4f5f7'
         }}>
           <div style={{
-            display: 'flex',
-            width: totalDays * dayWidth
+            width: '350px',
+            padding: '12px 16px',
+            backgroundColor: '#f4f5f7',
+            borderRight: '2px solid #dfe1e6',
+            fontSize: '11px',
+            fontWeight: '700',
+            color: '#5e6c84',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            flexShrink: 0
           }}>
-            {dateHeaders.map((date, index) => {
-              const isToday = date.toDateString() === today.toDateString();
-              const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-              const isHol = isHoliday(date);
-              const holidayName = isHol ? getHolidayName(date) : '';
+            Issue
+          </div>
 
-              return (
-                <div
-                  key={index}
-                  title={isHol ? `Holiday: ${holidayName}` : ''}
-                  style={{
-                    width: dayWidth,
-                    padding: '6px 4px',
-                    borderRight: '1px solid #e1e4e8',
-                    fontSize: '10px',
-                    textAlign: 'center',
-                    color: isToday ? '#0052cc' : (isHol ? '#de350b' : '#5e6c84'),
-                    backgroundColor: isToday ? '#deebff' : (isHol ? '#ffebe6' : (isWeekend ? '#fafbfc' : 'transparent')),
-                    fontWeight: isToday || isHol ? '700' : '400',
-                    position: 'relative'
-                  }}
-                >
-                  <div style={{ fontSize: '11px', marginBottom: '2px' }}>
-                    {date.getDate()}
-                    {isHol && <span style={{ marginLeft: '2px' }}>🎉</span>}
+          <div style={{
+            flex: 1,
+            backgroundColor: '#f4f5f7',
+            overflow: 'hidden',
+            position: 'relative'
+          }}>
+            <div style={{
+              display: 'flex',
+              width: totalDays * dayWidth,
+              transform: `translateX(-${scrollLeft}px)`,
+              transition: 'transform 0.05s linear'
+            }}>
+              {dateHeaders.map((date, index) => {
+                const isToday = date.toDateString() === today.toDateString();
+                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                const isHol = isHoliday(date);
+                const holidayName = isHol ? getHolidayName(date) : '';
+
+                return (
+                  <div
+                    key={index}
+                    title={isHol ? `Holiday: ${holidayName}` : ''}
+                    style={{
+                      width: dayWidth,
+                      padding: '6px 4px',
+                      borderRight: '1px solid #e1e4e8',
+                      fontSize: '10px',
+                      textAlign: 'center',
+                      color: isToday ? '#0052cc' : (isHol ? '#de350b' : '#5e6c84'),
+                      backgroundColor: isToday ? '#deebff' : (isHol ? '#ffebe6' : (isWeekend ? '#fafbfc' : 'transparent')),
+                      fontWeight: isToday || isHol ? '700' : '400',
+                      position: 'relative',
+                      flexShrink: 0
+                    }}
+                  >
+                    <div style={{ fontSize: '11px', marginBottom: '2px' }}>
+                      {date.getDate()}
+                      {isHol && <span style={{ marginLeft: '2px' }}>🎉</span>}
+                    </div>
+                    <div style={{ fontSize: '9px', opacity: 0.8 }}>
+                      {date.toLocaleDateString('en', { weekday: 'short' })}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '9px', opacity: 0.8 }}>
-                    {date.toLocaleDateString('en', { weekday: 'short' })}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Tasks */}
-      <div style={{ maxHeight: 'calc(100vh - 300px)', overflowY: 'auto' }}>
-        {tasks.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '80px 24px',
-            color: '#5e6c84'
-          }}>
-            <div style={{ fontSize: '64px', marginBottom: '20px', opacity: 0.5 }}>📊</div>
-            <h4 style={{ margin: '0 0 12px 0', fontSize: '18px', color: '#172b4d', fontWeight: '600' }}>No tasks to display</h4>
-            <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.6' }}>Create tasks with dates to see them in the Gantt chart.</p>
-          </div>
-        ) : (
-          renderTaskRows(hierarchicalTasks)
-        )}
+        {/* Tasks Container with Unified Scroll */}
+        <div
+          className="gantt-scroll-container"
+          style={{
+            flex: 1,
+            overflow: 'auto',
+            position: 'relative'
+          }}
+          onScroll={handleScroll}
+        >
+          {tasks.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '80px 24px',
+              color: '#5e6c84'
+            }}>
+              <div style={{ fontSize: '64px', marginBottom: '20px', opacity: 0.5 }}>📊</div>
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '18px', color: '#172b4d', fontWeight: '600' }}>No tasks to display</h4>
+              <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.6' }}>Create tasks with dates to see them in the Gantt chart.</p>
+            </div>
+          ) : (
+            <div style={{
+              minWidth: `${350 + totalDays * dayWidth}px`
+            }}>
+              {renderTaskRows(hierarchicalTasks)}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Auto-Schedule Confirmation Modal */}
@@ -419,6 +517,21 @@ const GanttView = ({
               </div>
               <div style={{ fontSize: '13px', color: '#5e6c84', marginBottom: '8px' }}>
                 <strong>Working Days:</strong> {(company?.settings?.workingDays || project?.settings?.workingDays || [1, 2, 3, 4, 5]).map(d => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(', ')}
+              </div>
+              <div style={{ fontSize: '13px', color: '#5e6c84', marginBottom: '8px' }}>
+                <strong>Working Hours:</strong> {
+                  (() => {
+                    const timeTracking = company?.settings?.timeTracking || project?.settings?.timeTracking || {};
+                    const start = timeTracking.workingHoursStart || '09:00';
+                    const end = timeTracking.workingHoursEnd || '17:00';
+                    const [startHour, startMin] = start.split(':');
+                    const [endHour, endMin] = end.split(':');
+                    const totalMinutes = (parseInt(endHour) * 60 + parseInt(endMin)) - (parseInt(startHour) * 60 + parseInt(startMin));
+                    const hours = Math.floor(totalMinutes / 60);
+                    const minutes = totalMinutes % 60;
+                    return `${start} - ${end} (${hours}h ${minutes}m per day)`;
+                  })()
+                }
               </div>
               <div style={{ fontSize: '13px', color: '#5e6c84' }}>
                 <strong>Holidays:</strong> {(company?.settings?.holidays || project?.settings?.holidays || []).length} configured
@@ -527,7 +640,9 @@ const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, o
         borderRight: '2px solid #dfe1e6',
         display: 'flex',
         alignItems: 'center',
-        gap: '8px'
+        gap: '8px',
+        flexShrink: 0,
+        backgroundColor: level > 0 ? '#fafbfc' : 'white'
       }}>
         {/* Expand/Collapse Button */}
         <div style={{ paddingLeft: `${indent}px`, display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -620,13 +735,14 @@ const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, o
       <div style={{
         flex: 1,
         position: 'relative',
-        overflowX: 'auto',
-        backgroundColor: 'white'
+        overflow: 'visible',
+        backgroundColor: level > 0 ? '#fafbfc' : 'white'
       }}>
         <div style={{
           width: totalDays * dayWidth,
           height: '100%',
-          position: 'relative'
+          position: 'relative',
+          minHeight: '52px'
         }}>
           {/* Grid lines for weekends and holidays */}
           {Array.from({ length: totalDays }).map((_, index) => {
