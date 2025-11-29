@@ -6,7 +6,7 @@ const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     description: initialData?.description || '',
-    status: initialData?.status || 'planning',
+    status: initialData?.status || 'not_started',
     priority: initialData?.priority || 'medium',
     endDate: initialData?.endDate ? new Date(initialData.endDate).toISOString().split('T')[0] : '',
   });
@@ -240,10 +240,11 @@ const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
                 e.target.style.boxShadow = 'none';
               }}
             >
-              <option value="planning">📋 Planning</option>
-              <option value="active">🚀 Active</option>
-              <option value="completed">✅ Completed</option>
-              <option value="on-hold">⏸️ On Hold</option>
+              <option value="not_started">⏳ Not Started</option>
+              <option value="running">🚀 Running</option>
+              <option value="paused">⏸️ Paused</option>
+              <option value="cancelled">❌ Cancelled</option>
+              <option value="closed">✅ Closed</option>
             </select>
           </div>
 

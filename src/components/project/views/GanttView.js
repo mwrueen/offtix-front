@@ -19,6 +19,12 @@ const GanttView = ({
   const [scrollLeft, setScrollLeft] = useState(0);
   const [showScrollShadow, setShowScrollShadow] = useState(true);
 
+  // Scheduling options
+  const [schedulingMode, setSchedulingMode] = useState('sequential'); // 'sequential' or 'parallel'
+  const [maxParallelTasks, setMaxParallelTasks] = useState(3);
+  const [scheduleStartFrom, setScheduleStartFrom] = useState('project'); // 'project' or 'today'
+  const [scheduleResult, setScheduleResult] = useState(null);
+
   // Add custom scrollbar styles
   useEffect(() => {
     const styleId = 'gantt-scrollbar-styles';
@@ -58,8 +64,48 @@ const GanttView = ({
   }, []);
 
   const today = new Date();
-  const startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
-  const endDate = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000); // 60 days from now
+  today.setHours(0, 0, 0, 0);
+
+  // Calculate date range based on tasks with dates, or use defaults
+  const calculateDateRange = () => {
+    let minDate = null;
+    let maxDate = null;
+
+    tasks.forEach(task => {
+      if (task.startDate) {
+        const start = new Date(task.startDate);
+        start.setHours(0, 0, 0, 0);
+        if (!minDate || start < minDate) minDate = start;
+      }
+      if (task.dueDate) {
+        const end = new Date(task.dueDate);
+        end.setHours(0, 0, 0, 0);
+        if (!maxDate || end > maxDate) maxDate = end;
+      }
+    });
+
+    // If no task dates, use project dates or defaults
+    if (!minDate) {
+      minDate = project?.startDate ? new Date(project.startDate) : new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+    if (!maxDate) {
+      maxDate = project?.endDate ? new Date(project.endDate) : new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000);
+    }
+
+    // Add padding: 7 days before and 14 days after
+    const paddedStart = new Date(minDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const paddedEnd = new Date(maxDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+    // Ensure today is visible
+    if (paddedStart > today) paddedStart.setTime(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    if (paddedEnd < today) paddedEnd.setTime(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    return { start: paddedStart, end: paddedEnd };
+  };
+
+  const dateRange = calculateDateRange();
+  const startDate = dateRange.start;
+  const endDate = dateRange.end;
 
   const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
   const dayWidth = 40;
@@ -102,16 +148,72 @@ const GanttView = ({
     setExpandedTasks(newExpanded);
   };
 
+  // Convert task duration to days for display
+  const getDurationInDays = (task) => {
+    if (!task.duration || !task.duration.value) return null;
+
+    const value = parseFloat(task.duration.value);
+    const unit = task.duration.unit || 'hours';
+    const hoursPerDay = company?.settings?.timeTracking?.hoursPerDay || 8;
+
+    switch (unit) {
+      case 'minutes': return value / 60 / hoursPerDay;
+      case 'hours': return value / hoursPerDay;
+      case 'days': return value;
+      case 'weeks': return value * 5; // Working days in a week
+      default: return value / hoursPerDay;
+    }
+  };
+
   const getTaskPosition = (task) => {
-    const taskStart = task.startDate ? new Date(task.startDate) : today;
-    const taskEnd = task.dueDate ? new Date(task.dueDate) : new Date(taskStart.getTime() + 7 * 24 * 60 * 60 * 1000);
-    
-    const startOffset = Math.max(0, (taskStart - startDate) / (1000 * 60 * 60 * 24));
-    const duration = Math.max(1, (taskEnd - taskStart) / (1000 * 60 * 60 * 1000));
-    
+    const taskStart = task.startDate ? new Date(task.startDate) : null;
+    const taskEnd = task.dueDate ? new Date(task.dueDate) : null;
+
+    // If no dates, calculate from duration if available
+    let effectiveStart = taskStart;
+    let effectiveEnd = taskEnd;
+
+    if (!effectiveStart && !effectiveEnd) {
+      // No dates at all - show at today with estimated duration
+      effectiveStart = new Date(today);
+      const durationDays = getDurationInDays(task);
+      if (durationDays) {
+        effectiveEnd = new Date(today.getTime() + durationDays * 24 * 60 * 60 * 1000);
+      } else {
+        effectiveEnd = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000); // Default 3 days
+      }
+    } else if (effectiveStart && !effectiveEnd) {
+      // Has start but no end - calculate from duration
+      const durationDays = getDurationInDays(task);
+      if (durationDays) {
+        effectiveEnd = new Date(effectiveStart.getTime() + durationDays * 24 * 60 * 60 * 1000);
+      } else {
+        effectiveEnd = new Date(effectiveStart.getTime() + 3 * 24 * 60 * 60 * 1000);
+      }
+    } else if (!effectiveStart && effectiveEnd) {
+      // Has end but no start - calculate backwards from duration
+      const durationDays = getDurationInDays(task);
+      if (durationDays) {
+        effectiveStart = new Date(effectiveEnd.getTime() - durationDays * 24 * 60 * 60 * 1000);
+      } else {
+        effectiveStart = new Date(effectiveEnd.getTime() - 3 * 24 * 60 * 60 * 1000);
+      }
+    }
+
+    // Reset time parts for accurate day calculations
+    effectiveStart.setHours(0, 0, 0, 0);
+    effectiveEnd.setHours(23, 59, 59, 999);
+
+    const startOffset = (effectiveStart - startDate) / (1000 * 60 * 60 * 24);
+    const durationDays = Math.max(1, Math.ceil((effectiveEnd - effectiveStart) / (1000 * 60 * 60 * 24)));
+
     return {
       left: startOffset * dayWidth,
-      width: Math.max(dayWidth, duration * dayWidth)
+      width: Math.max(dayWidth, durationDays * dayWidth),
+      startDate: effectiveStart,
+      endDate: effectiveEnd,
+      durationDays,
+      hasDates: !!(task.startDate || task.dueDate)
     };
   };
 
@@ -160,8 +262,27 @@ const GanttView = ({
 
   // Auto-schedule handler
   const handleAutoSchedule = async () => {
-    if (!project || !project.startDate) {
-      alert('Please set a project start date first');
+    // Determine start date based on user selection
+    const startDateToUse = scheduleStartFrom === 'today'
+      ? new Date().toISOString()
+      : project?.startDate;
+
+    if (!startDateToUse) {
+      setScheduleResult({ success: false, error: 'Please set a project start date first' });
+      setShowAutoScheduleModal(false);
+      return;
+    }
+
+    // Filter tasks with duration (only these can be scheduled)
+    const tasksWithDuration = tasks.filter(t => t.duration?.value);
+    const tasksNoDuration = tasks.filter(t => !t.duration?.value);
+
+    if (tasksWithDuration.length === 0) {
+      setScheduleResult({
+        success: false,
+        error: `No tasks have duration set. Please add duration to tasks first.`
+      });
+      setShowAutoScheduleModal(false);
       return;
     }
 
@@ -179,22 +300,17 @@ const GanttView = ({
         }
       };
 
-      // Debug logging
-      console.log('=== AUTO-SCHEDULE DEBUG ===');
-      console.log('Company settings:', company?.settings);
-      console.log('Project settings:', project?.settings);
-      console.log('Final settings used:', settings);
-      console.log('Working hours:', settings.timeTracking.workingHoursStart, '-', settings.timeTracking.workingHoursEnd);
-      console.log('Working days:', settings.workingDays);
-      console.log('Holidays count:', settings.holidays.length);
-      console.log('========================');
-
-      // Auto-schedule all tasks
+      // Auto-schedule all tasks with duration (reschedule everything)
       const scheduledTasks = autoScheduleAllTasks(
-        tasks,
-        project.startDate,
+        tasksWithDuration,
+        startDateToUse,
         settings,
-        employeeLeaves
+        employeeLeaves,
+        {
+          mode: schedulingMode,
+          maxParallel: maxParallelTasks,
+          forceReschedule: true
+        }
       );
 
       // Update each task with calculated dates
@@ -206,14 +322,27 @@ const GanttView = ({
       }
 
       setShowAutoScheduleModal(false);
-      alert(`Successfully scheduled ${scheduledTasks.length} tasks!`);
+      setScheduleResult({
+        success: true,
+        count: scheduledTasks.length,
+        noDuration: tasksNoDuration.length,
+        mode: schedulingMode,
+        maxParallel: maxParallelTasks,
+        startedFrom: scheduleStartFrom,
+        projectName: project.title
+      });
     } catch (error) {
       console.error('Error auto-scheduling tasks:', error);
-      alert('Failed to auto-schedule tasks. Please try again.');
+      setShowAutoScheduleModal(false);
+      setScheduleResult({ success: false, error: 'Failed to auto-schedule tasks. Please try again.' });
     } finally {
       setIsAutoScheduling(false);
     }
   };
+
+  // Calculate today's position for the "Today" marker line
+  const todayOffset = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+  const todayPosition = todayOffset * dayWidth;
 
   const renderTaskRows = (tasks, level = 0) => {
     return tasks.map(task => (
@@ -232,6 +361,7 @@ const GanttView = ({
           hasChildren={task.children && task.children.length > 0}
           isHoliday={isHoliday}
           startDate={startDate}
+          todayPosition={todayPosition}
         />
         {task.children && task.children.length > 0 && expandedTasks.has(task._id) && (
           renderTaskRows(task.children, level + 1)
@@ -484,25 +614,181 @@ const GanttView = ({
               ⚡ Auto-Schedule Tasks
             </h3>
 
+            {/* Scheduling Mode Selection */}
             <div style={{
-              backgroundColor: '#deebff',
-              border: '1px solid #0052cc',
+              backgroundColor: '#f4f5f7',
               borderRadius: '4px',
               padding: '16px',
-              marginBottom: '24px'
+              marginBottom: '16px'
             }}>
-              <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600', color: '#0052cc' }}>
-                How it works:
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#172b4d' }}>
+                📊 Scheduling Mode
               </h4>
-              <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: '#172b4d', lineHeight: '1.6' }}>
-                <li>Tasks will be scheduled sequentially starting from the project start date</li>
-                <li>Only working days will be counted (excluding weekends and holidays)</li>
-                <li>Employee leaves will be considered for assigned tasks</li>
-                <li>Task duration will be converted to working days automatically</li>
-                <li>Existing start/due dates will be overwritten</li>
-              </ul>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+                <label style={{
+                  flex: 1,
+                  padding: '12px',
+                  border: schedulingMode === 'sequential' ? '2px solid #0052cc' : '2px solid #dfe1e6',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  backgroundColor: schedulingMode === 'sequential' ? '#deebff' : 'white',
+                  transition: 'all 0.2s'
+                }}>
+                  <input
+                    type="radio"
+                    name="schedulingMode"
+                    value="sequential"
+                    checked={schedulingMode === 'sequential'}
+                    onChange={(e) => setSchedulingMode(e.target.value)}
+                    style={{ display: 'none' }}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '18px' }}>📋</span>
+                    <strong style={{ color: '#172b4d', fontSize: '13px' }}>Sequential</strong>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#5e6c84', lineHeight: '1.4' }}>
+                    Tasks run one after another based on priority. Higher priority tasks start first.
+                  </p>
+                </label>
+
+                <label style={{
+                  flex: 1,
+                  padding: '12px',
+                  border: schedulingMode === 'parallel' ? '2px solid #0052cc' : '2px solid #dfe1e6',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  backgroundColor: schedulingMode === 'parallel' ? '#deebff' : 'white',
+                  transition: 'all 0.2s'
+                }}>
+                  <input
+                    type="radio"
+                    name="schedulingMode"
+                    value="parallel"
+                    checked={schedulingMode === 'parallel'}
+                    onChange={(e) => setSchedulingMode(e.target.value)}
+                    style={{ display: 'none' }}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '18px' }}>⚡</span>
+                    <strong style={{ color: '#172b4d', fontSize: '13px' }}>Parallel</strong>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#5e6c84', lineHeight: '1.4' }}>
+                    Multiple tasks can start at the same time. Great for team collaboration.
+                  </p>
+                </label>
+              </div>
+
+              {schedulingMode === 'parallel' && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px',
+                  backgroundColor: '#e3fcef',
+                  borderRadius: '4px',
+                  border: '1px solid #36b37e'
+                }}>
+                  <label style={{ fontSize: '13px', color: '#172b4d', fontWeight: '500' }}>
+                    Max parallel tasks:
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {[2, 3, 4, 5].map(num => (
+                      <button
+                        key={num}
+                        onClick={() => setMaxParallelTasks(num)}
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '50%',
+                          border: maxParallelTasks === num ? '2px solid #0052cc' : '1px solid #dfe1e6',
+                          backgroundColor: maxParallelTasks === num ? '#0052cc' : 'white',
+                          color: maxParallelTasks === num ? 'white' : '#172b4d',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          fontSize: '14px',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {num}
+                      </button>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#5e6c84' }}>
+                    tasks at the same time
+                  </span>
+                </div>
+              )}
             </div>
 
+            {/* Priority Info */}
+            <div style={{
+              backgroundColor: '#fffae6',
+              border: '1px solid #ffab00',
+              borderRadius: '4px',
+              padding: '12px',
+              marginBottom: '16px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <span>🎯</span>
+                <strong style={{ fontSize: '13px', color: '#172b4d' }}>Priority-Based Scheduling</strong>
+              </div>
+              <p style={{ margin: 0, fontSize: '12px', color: '#5e6c84', lineHeight: '1.5' }}>
+                Tasks are automatically sorted by priority before scheduling:
+                <span style={{ marginLeft: '8px' }}>
+                  🔴 Urgent → 🟠 High → 🟡 Medium → 🟢 Low
+                </span>
+              </p>
+            </div>
+
+            {/* Start Date Selection */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#172b4d', marginBottom: '8px' }}>
+                Start Scheduling From
+              </label>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <label style={{
+                  flex: 1, padding: '12px', border: scheduleStartFrom === 'project' ? '2px solid #0052cc' : '1px solid #dfe1e6',
+                  borderRadius: '4px', cursor: 'pointer', backgroundColor: scheduleStartFrom === 'project' ? '#deebff' : 'white'
+                }}>
+                  <input
+                    type="radio" name="ganttStartFrom" value="project"
+                    checked={scheduleStartFrom === 'project'}
+                    onChange={() => setScheduleStartFrom('project')}
+                    style={{ marginRight: '8px' }}
+                  />
+                  <strong>Project Start</strong>
+                  <div style={{ fontSize: '12px', color: '#5e6c84', marginTop: '4px' }}>
+                    {project?.startDate ? new Date(project.startDate).toLocaleDateString() : 'Not set'}
+                  </div>
+                </label>
+                <label style={{
+                  flex: 1, padding: '12px', border: scheduleStartFrom === 'today' ? '2px solid #0052cc' : '1px solid #dfe1e6',
+                  borderRadius: '4px', cursor: 'pointer', backgroundColor: scheduleStartFrom === 'today' ? '#deebff' : 'white'
+                }}>
+                  <input
+                    type="radio" name="ganttStartFrom" value="today"
+                    checked={scheduleStartFrom === 'today'}
+                    onChange={() => setScheduleStartFrom('today')}
+                    style={{ marginRight: '8px' }}
+                  />
+                  <strong>Today</strong>
+                  <div style={{ fontSize: '12px', color: '#5e6c84', marginTop: '4px' }}>
+                    {new Date().toLocaleDateString()}
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Warning about rescheduling */}
+            <div style={{
+              padding: '10px 14px', backgroundColor: '#fef3c7', borderRadius: '6px',
+              fontSize: '12px', color: '#92400e', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px'
+            }}>
+              <span>⚠️</span>
+              <span>This will reschedule all tasks with duration. Existing dates will be replaced.</span>
+            </div>
+
+            {/* Project Info */}
             <div style={{
               backgroundColor: '#f4f5f7',
               borderRadius: '4px',
@@ -510,28 +796,10 @@ const GanttView = ({
               marginBottom: '24px'
             }}>
               <div style={{ fontSize: '13px', color: '#5e6c84', marginBottom: '8px' }}>
-                <strong>Project Start Date:</strong> {project?.startDate ? new Date(project.startDate).toLocaleDateString() : 'Not set'}
-              </div>
-              <div style={{ fontSize: '13px', color: '#5e6c84', marginBottom: '8px' }}>
                 <strong>Tasks to Schedule:</strong> {tasks.filter(t => t.duration && t.duration.value).length} tasks with duration
               </div>
               <div style={{ fontSize: '13px', color: '#5e6c84', marginBottom: '8px' }}>
                 <strong>Working Days:</strong> {(company?.settings?.workingDays || project?.settings?.workingDays || [1, 2, 3, 4, 5]).map(d => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(', ')}
-              </div>
-              <div style={{ fontSize: '13px', color: '#5e6c84', marginBottom: '8px' }}>
-                <strong>Working Hours:</strong> {
-                  (() => {
-                    const timeTracking = company?.settings?.timeTracking || project?.settings?.timeTracking || {};
-                    const start = timeTracking.workingHoursStart || '09:00';
-                    const end = timeTracking.workingHoursEnd || '17:00';
-                    const [startHour, startMin] = start.split(':');
-                    const [endHour, endMin] = end.split(':');
-                    const totalMinutes = (parseInt(endHour) * 60 + parseInt(endMin)) - (parseInt(startHour) * 60 + parseInt(startMin));
-                    const hours = Math.floor(totalMinutes / 60);
-                    const minutes = totalMinutes % 60;
-                    return `${start} - ${end} (${hours}h ${minutes}m per day)`;
-                  })()
-                }
               </div>
               <div style={{ fontSize: '13px', color: '#5e6c84' }}>
                 <strong>Holidays:</strong> {(company?.settings?.holidays || project?.settings?.holidays || []).length} configured
@@ -557,14 +825,14 @@ const GanttView = ({
               </button>
               <button
                 onClick={handleAutoSchedule}
-                disabled={isAutoScheduling || !project?.startDate}
+                disabled={isAutoScheduling || (scheduleStartFrom === 'project' && !project?.startDate)}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: isAutoScheduling || !project?.startDate ? '#dfe1e6' : '#0052cc',
+                  backgroundColor: isAutoScheduling || (scheduleStartFrom === 'project' && !project?.startDate) ? '#dfe1e6' : '#0052cc',
                   color: 'white',
                   border: 'none',
                   borderRadius: '3px',
-                  cursor: isAutoScheduling || !project?.startDate ? 'not-allowed' : 'pointer',
+                  cursor: isAutoScheduling || (scheduleStartFrom === 'project' && !project?.startDate) ? 'not-allowed' : 'pointer',
                   fontSize: '14px',
                   fontWeight: '600',
                   display: 'flex',
@@ -591,11 +859,97 @@ const GanttView = ({
 
       {/* Guide Modal */}
       {showGuide && <AutoScheduleGuide onClose={() => setShowGuide(false)} />}
+
+      {/* Schedule Result Modal */}
+      {scheduleResult && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1001
+        }}>
+          <div style={{
+            backgroundColor: 'white', borderRadius: '12px', padding: '32px',
+            maxWidth: '480px', width: '90%', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+          }}>
+            {scheduleResult.success ? (
+              <>
+                <div style={{
+                  width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#d1fae5',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 20px', fontSize: '32px'
+                }}>✅</div>
+                <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: '#065f46' }}>
+                  Tasks Scheduled!
+                </h2>
+                <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#6b7280' }}>
+                  Tasks have been scheduled based on priority and duration.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '20px' }}>
+                  <div style={{ padding: '14px 20px', backgroundColor: '#f0fdf4', borderRadius: '12px', border: '1px solid #bbf7d0', minWidth: '100px' }}>
+                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#16a34a' }}>{scheduleResult.count}</div>
+                    <div style={{ fontSize: '11px', color: '#15803d', fontWeight: '500' }}>SCHEDULED</div>
+                  </div>
+                  <div style={{ padding: '14px 20px', backgroundColor: '#eff6ff', borderRadius: '12px', border: '1px solid #bfdbfe', minWidth: '100px' }}>
+                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#2563eb' }}>
+                      {scheduleResult.mode === 'parallel' ? `${scheduleResult.maxParallel}x` : '1x'}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#1d4ed8', fontWeight: '500' }}>
+                      {scheduleResult.mode === 'parallel' ? 'PARALLEL' : 'SEQUENTIAL'}
+                    </div>
+                  </div>
+                  {scheduleResult.noDuration > 0 && (
+                    <div style={{ padding: '14px 20px', backgroundColor: '#fef3c7', borderRadius: '12px', border: '1px solid #fde68a', minWidth: '100px' }}>
+                      <div style={{ fontSize: '24px', fontWeight: '700', color: '#92400e' }}>{scheduleResult.noDuration}</div>
+                      <div style={{ fontSize: '11px', color: '#92400e', fontWeight: '500' }}>NO DURATION</div>
+                    </div>
+                  )}
+                </div>
+                <div style={{ padding: '10px 14px', backgroundColor: '#f0fdf4', borderRadius: '6px', fontSize: '13px', color: '#065f46', marginBottom: '16px' }}>
+                  📅 Scheduled from: <strong>{scheduleResult.startedFrom === 'today' ? 'Today' : 'Project Start Date'}</strong>
+                </div>
+                {scheduleResult.noDuration > 0 && (
+                  <div style={{ padding: '10px 14px', backgroundColor: '#fef3c7', borderRadius: '6px', fontSize: '12px', color: '#92400e', marginBottom: '16px' }}>
+                    ⚠ <strong>{scheduleResult.noDuration}</strong> task(s) have no duration - add duration to schedule them
+                  </div>
+                )}
+                <button
+                  onClick={() => setScheduleResult(null)}
+                  style={{
+                    padding: '12px 32px', backgroundColor: '#0052cc', border: 'none',
+                    borderRadius: '8px', cursor: 'pointer', fontSize: '14px', color: 'white', fontWeight: '600'
+                  }}
+                >Close</button>
+              </>
+            ) : (
+              <>
+                <div style={{
+                  width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#fee2e2',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 20px', fontSize: '32px'
+                }}>⚠️</div>
+                <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: '#dc2626' }}>
+                  Scheduling Failed
+                </h2>
+                <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#6b7280' }}>
+                  {scheduleResult.error}
+                </p>
+                <button
+                  onClick={() => setScheduleResult(null)}
+                  style={{
+                    padding: '12px 32px', backgroundColor: '#dc2626', border: 'none',
+                    borderRadius: '8px', cursor: 'pointer', fontSize: '14px', color: 'white', fontWeight: '600'
+                  }}
+                >Close</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, onDelete, onAddSubtask, isExpanded, onToggleExpand, hasChildren, isHoliday, startDate }) => {
+const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, onDelete, onAddSubtask, isExpanded, onToggleExpand, hasChildren, isHoliday, startDate, todayPosition }) => {
   const position = getTaskPosition(task);
   const indent = level * 20;
 
@@ -618,6 +972,13 @@ const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, o
       subtask: { icon: '↳', color: '#5e6c84', bg: '#f4f5f7' }
     };
     return types[type] || (level > 0 ? types.subtask : types.task);
+  };
+
+  // Format date for display
+  const formatDate = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   const issueType = getIssueTypeIcon(task.issueType || (level > 0 ? 'subtask' : 'task'));
@@ -697,7 +1058,7 @@ const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, o
             fontSize: '13px',
             fontWeight: '500',
             color: '#172b4d',
-            marginBottom: '4px',
+            marginBottom: '2px',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap'
@@ -705,19 +1066,41 @@ const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, o
             {task.title}
           </div>
           <div style={{
-            fontSize: '11px',
+            fontSize: '10px',
             color: '#5e6c84',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px'
+            gap: '6px',
+            flexWrap: 'wrap'
           }}>
-            {task.assignees && task.assignees.length > 0 && (
-              <span>{task.assignees[0].name}</span>
+            {/* Date range */}
+            {(task.startDate || task.dueDate) && (
+              <span style={{
+                color: '#0052cc',
+                fontWeight: '500'
+              }}>
+                📅 {formatDate(task.startDate) || '?'} → {formatDate(task.dueDate) || '?'}
+              </span>
             )}
+            {/* Duration */}
+            {task.duration?.value && (
+              <>
+                {(task.startDate || task.dueDate) && <span>•</span>}
+                <span>⏱️ {task.duration.value} {task.duration.unit}</span>
+              </>
+            )}
+            {/* Assignee */}
+            {task.assignees && task.assignees.length > 0 && (
+              <>
+                <span>•</span>
+                <span>👤 {task.assignees[0].name}</span>
+              </>
+            )}
+            {/* Priority */}
             {task.priority && (
               <>
                 <span>•</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                   <div style={{
                     width: '6px',
                     height: '6px',
@@ -765,57 +1148,122 @@ const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, o
             );
           })}
 
+          {/* Today marker line */}
+          {todayPosition >= 0 && todayPosition <= totalDays * dayWidth && (
+            <div
+              style={{
+                position: 'absolute',
+                left: todayPosition + dayWidth / 2,
+                top: 0,
+                bottom: 0,
+                width: '2px',
+                backgroundColor: '#0052cc',
+                zIndex: 10,
+                pointerEvents: 'none'
+              }}
+            />
+          )}
+
           {/* Task Bar */}
           <div
+            title={`${task.title}\n${position.startDate ? position.startDate.toLocaleDateString() : 'No start'} → ${position.endDate ? position.endDate.toLocaleDateString() : 'No end'}\nDuration: ${position.durationDays} day${position.durationDays !== 1 ? 's' : ''}${task.duration?.value ? ` (${task.duration.value} ${task.duration.unit})` : ''}`}
             style={{
               position: 'absolute',
-              left: position.left,
+              left: Math.max(0, position.left),
               width: position.width,
-              height: level > 0 ? '16px' : '24px',
-              top: level > 0 ? '18px' : '14px',
-              backgroundColor: priorityColor,
-              borderRadius: level > 0 ? '8px' : '12px',
+              height: level > 0 ? '20px' : '28px',
+              top: level > 0 ? '16px' : '12px',
+              backgroundColor: position.hasDates ? priorityColor : '#c1c7d0',
+              borderRadius: '4px',
               display: 'flex',
               alignItems: 'center',
-              padding: '0 10px',
+              justifyContent: 'space-between',
+              padding: '0 8px',
               color: 'white',
               fontSize: level > 0 ? '10px' : '11px',
-              fontWeight: '600',
+              fontWeight: '500',
               cursor: 'pointer',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+              boxShadow: position.hasDates ? '0 2px 4px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.1)',
               zIndex: 5,
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              border: position.hasDates ? 'none' : '2px dashed #8993a4',
+              opacity: position.hasDates ? 1 : 0.7
             }}
             onClick={() => onEdit(task)}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.transform = 'translateY(-1px)';
               e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.25)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.15)';
+              e.currentTarget.style.boxShadow = position.hasDates ? '0 2px 4px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.1)';
             }}
           >
+            {/* Task title (left side) */}
             <span style={{
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              flex: 1
             }}>
+              {!position.hasDates && '⚠️ '}
               {task.title}
             </span>
+
+            {/* Duration badge (right side) */}
+            {position.width > 80 && (
+              <span style={{
+                backgroundColor: 'rgba(255,255,255,0.25)',
+                padding: '2px 6px',
+                borderRadius: '3px',
+                fontSize: '10px',
+                marginLeft: '6px',
+                flexShrink: 0
+              }}>
+                {position.durationDays}d
+              </span>
+            )}
           </div>
 
-          {/* Progress indicator */}
+          {/* Start date marker */}
+          {task.startDate && (
+            <div style={{
+              position: 'absolute',
+              left: position.left - 1,
+              top: level > 0 ? '14px' : '10px',
+              width: '2px',
+              height: level > 0 ? '24px' : '32px',
+              backgroundColor: '#172b4d',
+              zIndex: 7
+            }} />
+          )}
+
+          {/* Due date marker (deadline indicator) */}
+          {task.dueDate && (
+            <div style={{
+              position: 'absolute',
+              left: position.left + position.width - 1,
+              top: level > 0 ? '14px' : '10px',
+              width: '2px',
+              height: level > 0 ? '24px' : '32px',
+              backgroundColor: '#de350b',
+              zIndex: 7
+            }} />
+          )}
+
+          {/* Progress indicator based on status */}
           {task.status && task.status.name && (
             <div
               style={{
                 position: 'absolute',
-                left: position.left,
-                width: position.width * 0.5, // Assume 50% progress
-                height: level > 0 ? '16px' : '24px',
-                top: level > 0 ? '18px' : '14px',
-                backgroundColor: 'rgba(255,255,255,0.25)',
-                borderRadius: level > 0 ? '8px' : '12px',
+                left: Math.max(0, position.left),
+                width: task.status.name.toLowerCase() === 'done' ? position.width :
+                       task.status.name.toLowerCase().includes('progress') ? position.width * 0.5 :
+                       position.width * 0.1,
+                height: level > 0 ? '20px' : '28px',
+                top: level > 0 ? '16px' : '12px',
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                borderRadius: '4px',
                 zIndex: 6,
                 pointerEvents: 'none'
               }}

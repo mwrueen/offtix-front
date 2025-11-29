@@ -93,6 +93,9 @@ export const projectAPI = {
   updateSettings: (id, settings) => api.put(`/projects/${id}/settings`, { settings }),
   addHoliday: (id, holidayData) => api.post(`/projects/${id}/holidays`, holidayData),
   removeHoliday: (id, holidayId) => api.delete(`/projects/${id}/holidays/${holidayId}`),
+
+  // Status management
+  updateStatus: (id, status, scheduledStartDate) => api.put(`/projects/${id}/status`, { status, scheduledStartDate }),
 };
 
 export const taskAPI = {

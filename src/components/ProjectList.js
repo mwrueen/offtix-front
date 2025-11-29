@@ -36,10 +36,16 @@ const ProjectList = ({ projects, onUpdate, onDelete }) => {
 
   const getStatusConfig = (status) => {
     const configs = {
-      planning: { bg: '#fef3c7', text: '#92400e', border: '#fde68a', icon: '📋', label: 'Planning' },
-      active: { bg: '#d1fae5', text: '#065f46', border: '#a7f3d0', icon: '🚀', label: 'Active' },
-      completed: { bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe', icon: '✅', label: 'Completed' },
-      'on-hold': { bg: '#fee2e2', text: '#991b1b', border: '#fecaca', icon: '⏸️', label: 'On Hold' }
+      'not_started': { bg: '#f3f4f6', text: '#374151', border: '#d1d5db', icon: '⏳', label: 'Not Started' },
+      'running': { bg: '#d1fae5', text: '#065f46', border: '#a7f3d0', icon: '🚀', label: 'Running' },
+      'paused': { bg: '#fef3c7', text: '#92400e', border: '#fde68a', icon: '⏸️', label: 'Paused' },
+      'cancelled': { bg: '#fee2e2', text: '#991b1b', border: '#fecaca', icon: '❌', label: 'Cancelled' },
+      'closed': { bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe', icon: '✅', label: 'Closed' },
+      // Legacy statuses (for backward compatibility)
+      'planning': { bg: '#f3f4f6', text: '#374151', border: '#d1d5db', icon: '⏳', label: 'Not Started' },
+      'active': { bg: '#d1fae5', text: '#065f46', border: '#a7f3d0', icon: '🚀', label: 'Running' },
+      'completed': { bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe', icon: '✅', label: 'Closed' },
+      'on-hold': { bg: '#fef3c7', text: '#92400e', border: '#fde68a', icon: '⏸️', label: 'Paused' }
     };
     return configs[status] || { bg: '#f3f4f6', text: '#374151', border: '#e5e7eb', icon: '❓', label: 'Unknown' };
   };

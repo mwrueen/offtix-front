@@ -355,10 +355,11 @@ const ProjectDetails = () => {
         projectTitle={project.title}
       />
       
-      <ProjectHeader 
+      <ProjectHeader
         project={project}
         onNavigateToTasks={() => navigate(`/projects/${id}/tasks`)}
         isProjectOwner={isProjectOwner}
+        onRefresh={fetchProjectData}
       />
 
       {/* Navigation Tabs */}

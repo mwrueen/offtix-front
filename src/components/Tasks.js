@@ -4,11 +4,12 @@ import { projectAPI, taskAPI, taskStatusAPI, sprintAPI, phaseAPI, userAPI, compa
 import { useAuth } from '../context/AuthContext';
 import Layout from './Layout';
 import Breadcrumb from './project/Breadcrumb';
-import TaskDetailsSidebar from './project/TaskDetailsSidebar';
+import TaskDetailModal from './project/TaskDetailModal';
 import InlineTaskCreator from './project/InlineTaskCreator';
 import ListView from './project/views/ListView';
 import BoardView from './project/views/BoardView';
 import GanttView from './project/views/GanttView';
+import { autoScheduleAllTasks } from '../utils/ganttScheduler';
 
 const Tasks = () => {
   const { id } = useParams();
@@ -29,7 +30,22 @@ const Tasks = () => {
   const [currentView, setCurrentView] = useState('list');
   const [showInlineCreator, setShowInlineCreator] = useState(false);
   const [error, setError] = useState(null);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // New filter states
+  const [selectedAssignee, setSelectedAssignee] = useState('');
+  const [selectedPriority, setSelectedPriority] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [dueDateFrom, setDueDateFrom] = useState('');
+  const [dueDateTo, setDueDateTo] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Auto-schedule states
+  const [showAutoScheduleModal, setShowAutoScheduleModal] = useState(false);
+  const [isAutoScheduling, setIsAutoScheduling] = useState(false);
+  const [schedulingMode, setSchedulingMode] = useState('sequential');
+  const [maxParallelTasks, setMaxParallelTasks] = useState(3);
+  const [scheduleStartFrom, setScheduleStartFrom] = useState('project'); // 'project' or 'today'
+  const [scheduleResult, setScheduleResult] = useState(null); // { success: bool, count: number, mode: string }
 
   useEffect(() => {
     fetchProjectData();
@@ -254,12 +270,124 @@ const Tasks = () => {
     }
   };
 
-  // Filter tasks based on selected sprint/phase
+  // Auto-schedule handler
+  const handleAutoSchedule = async () => {
+    // Determine start date based on user selection
+    const startDate = scheduleStartFrom === 'today'
+      ? new Date().toISOString()
+      : project?.startDate;
+
+    if (!startDate) {
+      setScheduleResult({ success: false, error: 'Please set a project start date first' });
+      setShowAutoScheduleModal(false);
+      return;
+    }
+
+    // Filter tasks with duration (only these can be scheduled)
+    const tasksWithDuration = tasks.filter(t => t.duration?.value);
+    const tasksNoDuration = tasks.filter(t => !t.duration?.value);
+
+    if (tasksWithDuration.length === 0) {
+      setScheduleResult({
+        success: false,
+        error: `No tasks have duration set. Please add duration to tasks first.`
+      });
+      setShowAutoScheduleModal(false);
+      return;
+    }
+
+    setIsAutoScheduling(true);
+
+    try {
+      // Get settings from company or project
+      const settings = {
+        workingDays: company?.settings?.workingDays || project?.settings?.workingDays || [1, 2, 3, 4, 5],
+        holidays: company?.settings?.holidays || project?.settings?.holidays || [],
+        timeTracking: company?.settings?.timeTracking || project?.settings?.timeTracking || {
+          hoursPerDay: 8,
+          daysPerWeek: 5,
+          defaultDurationUnit: 'hours'
+        }
+      };
+
+      // Auto-schedule all tasks with duration (reschedule everything)
+      const scheduledTasks = autoScheduleAllTasks(
+        tasksWithDuration,
+        startDate,
+        settings,
+        employeeLeaves,
+        {
+          mode: schedulingMode,
+          maxParallel: maxParallelTasks,
+          forceReschedule: true // Always reschedule
+        }
+      );
+
+      // Update each task with calculated dates
+      for (const scheduledTask of scheduledTasks) {
+        await handleUpdateTask(scheduledTask.taskId, {
+          startDate: scheduledTask.startDate,
+          dueDate: scheduledTask.dueDate
+        });
+      }
+
+      setShowAutoScheduleModal(false);
+      setScheduleResult({
+        success: true,
+        count: scheduledTasks.length,
+        noDuration: tasksNoDuration.length,
+        mode: schedulingMode,
+        maxParallel: maxParallelTasks,
+        startedFrom: scheduleStartFrom,
+        projectName: project.title
+      });
+    } catch (error) {
+      console.error('Error auto-scheduling tasks:', error);
+      setShowAutoScheduleModal(false);
+      setScheduleResult({ success: false, error: 'Failed to auto-schedule tasks. Please try again.' });
+    } finally {
+      setIsAutoScheduling(false);
+    }
+  };
+
+  // Filter tasks based on all filters
   const filteredTasks = tasks.filter(task => {
+    // Sprint filter
     if (selectedSprint && task.sprint?._id !== selectedSprint) return false;
+    // Phase filter
     if (selectedPhase && task.phase?._id !== selectedPhase) return false;
+    // Assignee filter
+    if (selectedAssignee) {
+      const hasAssignee = task.assignees?.some(a => a._id === selectedAssignee);
+      if (!hasAssignee) return false;
+    }
+    // Priority filter
+    if (selectedPriority && task.priority !== selectedPriority) return false;
+    // Status filter
+    if (selectedStatus && task.status?._id !== selectedStatus) return false;
+    // Due date range filter
+    if (dueDateFrom || dueDateTo) {
+      const taskDueDate = task.dueDate ? new Date(task.dueDate) : null;
+      if (!taskDueDate) return false;
+      if (dueDateFrom && taskDueDate < new Date(dueDateFrom)) return false;
+      if (dueDateTo && taskDueDate > new Date(dueDateTo + 'T23:59:59')) return false;
+    }
     return true;
   });
+
+  // Count active filters
+  const activeFilterCount = [selectedAssignee, selectedPriority, selectedStatus, dueDateFrom, dueDateTo].filter(Boolean).length;
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSelectedAssignee('');
+    setSelectedPriority('');
+    setSelectedStatus('');
+    setDueDateFrom('');
+    setDueDateTo('');
+    setSelectedSprint('');
+    setSelectedPhase('');
+  };
 
   if (loading) return <Layout><div>Loading...</div></Layout>;
 
@@ -323,10 +451,8 @@ const Tasks = () => {
         onNavigateToProject={() => navigate(`/projects/${id}`)}
       />
 
-      {/* Main Container with Sidebar */}
-      <div style={{ display: 'flex', gap: '0', height: 'calc(100vh - 200px)' }}>
-        {/* Main Content Area */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Main Container */}
+      <div style={{ height: 'calc(100vh - 200px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {/* Tasks Header */}
           <div style={{
             backgroundColor: '#ffffff',
@@ -374,60 +500,119 @@ const Tasks = () => {
                 </div>
               </div>
 
-              {/* Filters */}
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84' }}>
-                    PHASE:
-                  </label>
-                  <select
-                    value={selectedPhase}
-                    onChange={(e) => setSelectedPhase(e.target.value)}
-                    style={{
-                      padding: '6px 8px',
-                      border: '1px solid #dfe1e6',
-                      borderRadius: '3px',
-                      fontSize: '13px',
-                      backgroundColor: 'white',
-                      minWidth: '150px'
-                    }}
-                  >
-                    <option value="">All Phases</option>
-                    {phases.map(phase => (
-                      <option key={phase._id} value={phase._id}>{phase.name}</option>
-                    ))}
-                  </select>
-                </div>
+              {/* Filter Bar */}
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                {/* Filter Toggle Button */}
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    padding: '6px 12px', backgroundColor: showFilters ? '#deebff' : 'white',
+                    border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '13px',
+                    cursor: 'pointer', color: '#172b4d', fontWeight: '500'
+                  }}
+                >
+                  🔍 Filters
+                  {activeFilterCount > 0 && (
+                    <span style={{
+                      backgroundColor: '#0052cc', color: 'white', borderRadius: '10px',
+                      padding: '2px 6px', fontSize: '11px', fontWeight: '600'
+                    }}>{activeFilterCount}</span>
+                  )}
+                </button>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84' }}>
-                    SPRINT:
-                  </label>
-                  <select
-                    value={selectedSprint}
-                    onChange={(e) => setSelectedSprint(e.target.value)}
-                    style={{
-                      padding: '6px 8px',
-                      border: '1px solid #dfe1e6',
-                      borderRadius: '3px',
-                      fontSize: '13px',
-                      backgroundColor: 'white',
-                      minWidth: '150px'
-                    }}
-                  >
-                    <option value="">All Sprints</option>
-                    {sprints.map(sprint => (
-                      <option key={sprint._id} value={sprint._id}>
-                        {sprint.name} (Sprint #{sprint.sprintNumber})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* Quick Filters - Always visible */}
+                <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}
+                  style={{ padding: '6px 8px', border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '13px', backgroundColor: selectedStatus ? '#e6f0ff' : 'white', minWidth: '120px' }}>
+                  <option value="">All Status</option>
+                  {taskStatuses.map(status => (<option key={status._id} value={status._id}>{status.name}</option>))}
+                </select>
 
-                <div style={{ fontSize: '12px', color: '#5e6c84' }}>
+                <select value={selectedAssignee} onChange={(e) => setSelectedAssignee(e.target.value)}
+                  style={{ padding: '6px 8px', border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '13px', backgroundColor: selectedAssignee ? '#e6f0ff' : 'white', minWidth: '130px' }}>
+                  <option value="">All Assignees</option>
+                  {users.map(user => (<option key={user._id} value={user._id}>{user.name}</option>))}
+                </select>
+
+                <select value={selectedPriority} onChange={(e) => setSelectedPriority(e.target.value)}
+                  style={{ padding: '6px 8px', border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '13px', backgroundColor: selectedPriority ? '#e6f0ff' : 'white', minWidth: '110px' }}>
+                  <option value="">All Priority</option>
+                  <option value="urgent">⬆️ Urgent</option>
+                  <option value="high">⬆ High</option>
+                  <option value="medium">➡ Medium</option>
+                  <option value="low">⬇ Low</option>
+                </select>
+
+                <div style={{ flex: 1 }} />
+
+                {/* Auto-Schedule Button */}
+                <button
+                  onClick={() => setShowAutoScheduleModal(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    padding: '6px 12px', backgroundColor: '#0052cc',
+                    border: 'none', borderRadius: '3px', fontSize: '13px',
+                    cursor: 'pointer', color: 'white', fontWeight: '500'
+                  }}
+                  title="Auto-schedule tasks based on priority and duration"
+                >
+                  ⚡ Auto-Schedule
+                </button>
+
+                <div style={{ fontSize: '12px', color: '#5e6c84', fontWeight: '500' }}>
                   {filteredTasks.length} {filteredTasks.length === 1 ? 'issue' : 'issues'}
                 </div>
               </div>
+
+              {/* Extended Filters Panel */}
+              {showFilters && (
+                <div style={{
+                  marginTop: '16px', padding: '16px', backgroundColor: '#fafbfc',
+                  borderRadius: '3px', border: '1px solid #dfe1e6'
+                }}>
+                  <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                    {/* Phase Filter */}
+                    <div>
+                      <label style={{ fontSize: '11px', fontWeight: '600', color: '#5e6c84', display: 'block', marginBottom: '4px' }}>PHASE</label>
+                      <select value={selectedPhase} onChange={(e) => setSelectedPhase(e.target.value)}
+                        style={{ padding: '6px 8px', border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '13px', backgroundColor: 'white', minWidth: '140px' }}>
+                        <option value="">All Phases</option>
+                        {phases.map(phase => (<option key={phase._id} value={phase._id}>{phase.name}</option>))}
+                      </select>
+                    </div>
+
+                    {/* Sprint Filter */}
+                    <div>
+                      <label style={{ fontSize: '11px', fontWeight: '600', color: '#5e6c84', display: 'block', marginBottom: '4px' }}>SPRINT</label>
+                      <select value={selectedSprint} onChange={(e) => setSelectedSprint(e.target.value)}
+                        style={{ padding: '6px 8px', border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '13px', backgroundColor: 'white', minWidth: '140px' }}>
+                        <option value="">All Sprints</option>
+                        {sprints.map(sprint => (<option key={sprint._id} value={sprint._id}>{sprint.name}</option>))}
+                      </select>
+                    </div>
+
+                    {/* Due Date Range */}
+                    <div>
+                      <label style={{ fontSize: '11px', fontWeight: '600', color: '#5e6c84', display: 'block', marginBottom: '4px' }}>DUE DATE FROM</label>
+                      <input type="date" value={dueDateFrom} onChange={(e) => setDueDateFrom(e.target.value)}
+                        style={{ padding: '6px 8px', border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '13px', backgroundColor: 'white' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '11px', fontWeight: '600', color: '#5e6c84', display: 'block', marginBottom: '4px' }}>DUE DATE TO</label>
+                      <input type="date" value={dueDateTo} onChange={(e) => setDueDateTo(e.target.value)}
+                        style={{ padding: '6px 8px', border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '13px', backgroundColor: 'white' }} />
+                    </div>
+
+                    {/* Clear All Button */}
+                    {(activeFilterCount > 0 || selectedSprint || selectedPhase) && (
+                      <button onClick={clearAllFilters}
+                        style={{ padding: '6px 12px', backgroundColor: 'white', border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '13px', cursor: 'pointer', color: '#de350b', fontWeight: '500' }}>
+                        Clear All
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -482,7 +667,7 @@ const Tasks = () => {
               <BoardView
                 tasks={filteredTasks}
                 taskStatuses={taskStatuses}
-                onEditTask={() => {}}
+                onEditTask={handleSelectTask}
                 onDeleteTask={handleDeleteTask}
                 onAddSubtask={() => {}}
                 onUpdateTaskStatus={handleUpdateTaskStatus}
@@ -492,7 +677,7 @@ const Tasks = () => {
             {currentView === 'gantt' && (
               <GanttView
                 tasks={filteredTasks}
-                onEditTask={() => {}}
+                onEditTask={handleSelectTask}
                 onDeleteTask={handleDeleteTask}
                 onAddSubtask={() => {}}
                 project={project}
@@ -502,11 +687,12 @@ const Tasks = () => {
               />
             )}
           </div>
-        </div>
+      </div>
 
-        {/* Right Sidebar */}
-        <TaskDetailsSidebar
-          selectedTask={selectedTask}
+      {/* Task Detail Modal */}
+      {selectedTask && (
+        <TaskDetailModal
+          task={selectedTask}
           project={project}
           users={users}
           taskStatuses={taskStatuses}
@@ -514,10 +700,351 @@ const Tasks = () => {
           phases={phases}
           onUpdateTask={handleUpdateTask}
           onClose={() => setSelectedTask(null)}
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
-      </div>
+      )}
+
+      {/* Auto-Schedule Modal */}
+      {showAutoScheduleModal && (
+        <div
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', zIndex: 1000
+          }}
+          onClick={() => setShowAutoScheduleModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'white', borderRadius: '8px', padding: '24px',
+              maxWidth: '500px', width: '90%', boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
+              ⚡ Auto-Schedule Tasks
+            </h3>
+            <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#5e6c84' }}>
+              Automatically schedule tasks based on priority and duration.
+            </p>
+
+            {/* Priority Info */}
+            <div style={{
+              padding: '12px', backgroundColor: '#f4f5f7', borderRadius: '4px',
+              marginBottom: '20px', fontSize: '13px', color: '#5e6c84'
+            }}>
+              <strong>Priority Order:</strong> 🔴 Urgent → 🟠 High → 🟡 Medium → 🟢 Low
+            </div>
+
+            {/* Scheduling Mode */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#172b4d', marginBottom: '8px' }}>
+                Scheduling Mode
+              </label>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <label style={{
+                  flex: 1, padding: '12px', border: schedulingMode === 'sequential' ? '2px solid #0052cc' : '1px solid #dfe1e6',
+                  borderRadius: '4px', cursor: 'pointer', backgroundColor: schedulingMode === 'sequential' ? '#deebff' : 'white'
+                }}>
+                  <input
+                    type="radio" name="mode" value="sequential"
+                    checked={schedulingMode === 'sequential'}
+                    onChange={() => setSchedulingMode('sequential')}
+                    style={{ marginRight: '8px' }}
+                  />
+                  <strong>Sequential</strong>
+                  <div style={{ fontSize: '12px', color: '#5e6c84', marginTop: '4px' }}>
+                    Tasks run one after another
+                  </div>
+                </label>
+                <label style={{
+                  flex: 1, padding: '12px', border: schedulingMode === 'parallel' ? '2px solid #0052cc' : '1px solid #dfe1e6',
+                  borderRadius: '4px', cursor: 'pointer', backgroundColor: schedulingMode === 'parallel' ? '#deebff' : 'white'
+                }}>
+                  <input
+                    type="radio" name="mode" value="parallel"
+                    checked={schedulingMode === 'parallel'}
+                    onChange={() => setSchedulingMode('parallel')}
+                    style={{ marginRight: '8px' }}
+                  />
+                  <strong>Parallel</strong>
+                  <div style={{ fontSize: '12px', color: '#5e6c84', marginTop: '4px' }}>
+                    Multiple tasks at once
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Parallel Count */}
+            {schedulingMode === 'parallel' && (
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#172b4d', marginBottom: '8px' }}>
+                  Max Parallel Tasks
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {[2, 3, 4, 5].map(num => (
+                    <button
+                      key={num}
+                      onClick={() => setMaxParallelTasks(num)}
+                      style={{
+                        padding: '8px 16px', border: maxParallelTasks === num ? '2px solid #0052cc' : '1px solid #dfe1e6',
+                        borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '600',
+                        backgroundColor: maxParallelTasks === num ? '#deebff' : 'white', color: '#172b4d'
+                      }}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Start Date Selection */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#172b4d', marginBottom: '8px' }}>
+                Start Scheduling From
+              </label>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <label style={{
+                  flex: 1, padding: '12px', border: scheduleStartFrom === 'project' ? '2px solid #0052cc' : '1px solid #dfe1e6',
+                  borderRadius: '4px', cursor: 'pointer', backgroundColor: scheduleStartFrom === 'project' ? '#deebff' : 'white'
+                }}>
+                  <input
+                    type="radio" name="startFrom" value="project"
+                    checked={scheduleStartFrom === 'project'}
+                    onChange={() => setScheduleStartFrom('project')}
+                    style={{ marginRight: '8px' }}
+                  />
+                  <strong>Project Start</strong>
+                  <div style={{ fontSize: '12px', color: '#5e6c84', marginTop: '4px' }}>
+                    {project?.startDate ? new Date(project.startDate).toLocaleDateString() : 'Not set'}
+                  </div>
+                </label>
+                <label style={{
+                  flex: 1, padding: '12px', border: scheduleStartFrom === 'today' ? '2px solid #0052cc' : '1px solid #dfe1e6',
+                  borderRadius: '4px', cursor: 'pointer', backgroundColor: scheduleStartFrom === 'today' ? '#deebff' : 'white'
+                }}>
+                  <input
+                    type="radio" name="startFrom" value="today"
+                    checked={scheduleStartFrom === 'today'}
+                    onChange={() => setScheduleStartFrom('today')}
+                    style={{ marginRight: '8px' }}
+                  />
+                  <strong>Today</strong>
+                  <div style={{ fontSize: '12px', color: '#5e6c84', marginTop: '4px' }}>
+                    {new Date().toLocaleDateString()}
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Warning about rescheduling */}
+            <div style={{
+              padding: '10px 14px', backgroundColor: '#fef3c7', borderRadius: '6px',
+              fontSize: '12px', color: '#92400e', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px'
+            }}>
+              <span>⚠️</span>
+              <span>This will reschedule all tasks with duration. Existing dates will be replaced.</span>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowAutoScheduleModal(false)}
+                style={{
+                  padding: '8px 16px', backgroundColor: 'white', border: '1px solid #dfe1e6',
+                  borderRadius: '4px', cursor: 'pointer', fontSize: '14px', color: '#172b4d'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAutoSchedule}
+                disabled={isAutoScheduling}
+                style={{
+                  padding: '8px 16px', backgroundColor: '#0052cc', border: 'none',
+                  borderRadius: '4px', cursor: isAutoScheduling ? 'not-allowed' : 'pointer',
+                  fontSize: '14px', color: 'white', fontWeight: '500',
+                  opacity: isAutoScheduling ? 0.7 : 1
+                }}
+              >
+                {isAutoScheduling ? 'Scheduling...' : 'Schedule Tasks'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Result Modal */}
+      {scheduleResult && (
+        <div
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', zIndex: 1001
+          }}
+          onClick={() => setScheduleResult(null)}
+        >
+          <div
+            style={{
+              backgroundColor: 'white', borderRadius: '16px', padding: '32px',
+              maxWidth: '450px', width: '90%', boxShadow: '0 20px 60px rgba(0, 0, 0, 0.25)',
+              textAlign: 'center', animation: 'fadeIn 0.3s ease'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {scheduleResult.success ? (
+              <>
+                {/* Success Icon */}
+                <div style={{
+                  width: '80px', height: '80px', borderRadius: '50%',
+                  backgroundColor: '#d1fae5', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', margin: '0 auto 20px', fontSize: '40px'
+                }}>
+                  ✅
+                </div>
+
+                <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: '#065f46' }}>
+                  Tasks Scheduled!
+                </h2>
+
+                <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#6b7280' }}>
+                  Tasks without dates have been scheduled based on priority and duration.
+                </p>
+
+                {/* Stats */}
+                <div style={{
+                  display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '20px'
+                }}>
+                  <div style={{
+                    padding: '14px 20px', backgroundColor: '#f0fdf4', borderRadius: '12px',
+                    border: '1px solid #bbf7d0', minWidth: '100px'
+                  }}>
+                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#16a34a' }}>
+                      {scheduleResult.count}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#15803d', fontWeight: '500' }}>
+                      SCHEDULED
+                    </div>
+                  </div>
+
+                  <div style={{
+                    padding: '14px 20px', backgroundColor: '#eff6ff', borderRadius: '12px',
+                    border: '1px solid #bfdbfe', minWidth: '100px'
+                  }}>
+                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#2563eb' }}>
+                      {scheduleResult.mode === 'parallel' ? `${scheduleResult.maxParallel}x` : '1x'}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#1d4ed8', fontWeight: '500' }}>
+                      {scheduleResult.mode === 'parallel' ? 'PARALLEL' : 'SEQUENTIAL'}
+                    </div>
+                  </div>
+
+                  {scheduleResult.noDuration > 0 && (
+                    <div style={{
+                      padding: '14px 20px', backgroundColor: '#fef3c7', borderRadius: '12px',
+                      border: '1px solid #fde68a', minWidth: '100px'
+                    }}>
+                      <div style={{ fontSize: '24px', fontWeight: '700', color: '#92400e' }}>
+                        {scheduleResult.noDuration}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#92400e', fontWeight: '500' }}>
+                        NO DURATION
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Started from info */}
+                <div style={{
+                  padding: '10px 14px', backgroundColor: '#f0fdf4', borderRadius: '6px',
+                  fontSize: '13px', color: '#065f46', marginBottom: '16px', textAlign: 'center'
+                }}>
+                  📅 Scheduled from: <strong>{scheduleResult.startedFrom === 'today' ? 'Today' : 'Project Start Date'}</strong>
+                </div>
+
+                {/* Info about no duration */}
+                {scheduleResult.noDuration > 0 && (
+                  <div style={{
+                    padding: '10px 14px', backgroundColor: '#fef3c7', borderRadius: '6px',
+                    fontSize: '12px', color: '#92400e', marginBottom: '16px', textAlign: 'left'
+                  }}>
+                    ⚠ <strong>{scheduleResult.noDuration}</strong> task(s) have no duration - add duration to schedule them
+                  </div>
+                )}
+
+                {/* Mode Description */}
+                <div style={{
+                  padding: '12px 16px', backgroundColor: '#f9fafb', borderRadius: '8px',
+                  fontSize: '13px', color: '#6b7280', marginBottom: '24px'
+                }}>
+                  {scheduleResult.mode === 'parallel'
+                    ? `Tasks scheduled up to ${scheduleResult.maxParallel} at a time, grouped by priority.`
+                    : 'Tasks scheduled one after another in priority order.'
+                  }
+                </div>
+
+                {/* View Gantt Button */}
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                  <button
+                    onClick={() => {
+                      setScheduleResult(null);
+                      setCurrentView('gantt');
+                    }}
+                    style={{
+                      padding: '12px 24px', backgroundColor: '#0052cc', border: 'none',
+                      borderRadius: '8px', cursor: 'pointer', fontSize: '14px',
+                      color: 'white', fontWeight: '600', display: 'flex',
+                      alignItems: 'center', gap: '8px'
+                    }}
+                  >
+                    📊 View in Gantt Chart
+                  </button>
+                  <button
+                    onClick={() => setScheduleResult(null)}
+                    style={{
+                      padding: '12px 24px', backgroundColor: 'white', border: '1px solid #d1d5db',
+                      borderRadius: '8px', cursor: 'pointer', fontSize: '14px',
+                      color: '#374151', fontWeight: '500'
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Error Icon */}
+                <div style={{
+                  width: '80px', height: '80px', borderRadius: '50%',
+                  backgroundColor: '#fee2e2', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', margin: '0 auto 20px', fontSize: '40px'
+                }}>
+                  ⚠️
+                </div>
+
+                <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: '#991b1b' }}>
+                  Scheduling Failed
+                </h2>
+
+                <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#6b7280' }}>
+                  {scheduleResult.error}
+                </p>
+
+                <button
+                  onClick={() => setScheduleResult(null)}
+                  style={{
+                    padding: '12px 32px', backgroundColor: '#dc2626', border: 'none',
+                    borderRadius: '8px', cursor: 'pointer', fontSize: '14px',
+                    color: 'white', fontWeight: '600'
+                  }}
+                >
+                  Close
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };
