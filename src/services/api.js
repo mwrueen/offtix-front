@@ -204,4 +204,19 @@ export const leaveAPI = {
     api.get(`/companies/${companyId}/leaves/statistics`, { params }),
 };
 
+export const chatAPI = {
+  // Get messages for a project
+  getMessages: (projectId, params = {}) =>
+    api.get(`/projects/${projectId}/chat/messages`, { params }),
+  // Get project members for mentions
+  getMembers: (projectId) =>
+    api.get(`/projects/${projectId}/chat/members`),
+  // Delete a message
+  deleteMessage: (projectId, messageId) =>
+    api.delete(`/projects/${projectId}/chat/messages/${messageId}`),
+  // Edit a message
+  editMessage: (projectId, messageId, content) =>
+    api.put(`/projects/${projectId}/chat/messages/${messageId}`, { content }),
+};
+
 export default api;
