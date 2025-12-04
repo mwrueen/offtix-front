@@ -178,6 +178,16 @@ const Layout = ({ children }) => {
     </svg>
   );
 
+  const WorkforceIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+      <circle cx="9" cy="7" r="4"></circle>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      <rect x="18" y="8" width="4" height="4" rx="1"></rect>
+    </svg>
+  );
+
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: DashboardIcon, category: 'main' },
     { path: '/projects', label: 'Projects', icon: ProjectsIcon, category: 'main' },
@@ -186,6 +196,9 @@ const Layout = ({ children }) => {
       { path: '/employees', label: 'Employees', icon: EmployeesIcon, category: 'company' },
       { path: '/leaves', label: 'Leaves', icon: LeavesIcon, category: 'company' },
       { path: '/holidays', label: 'Holidays', icon: HolidaysIcon, category: 'company' }
+    ] : []),
+    ...(canManageSettings && companyState.selectedCompany?.id !== 'personal' ? [
+      { path: '/workforce', label: 'Workforce', icon: WorkforceIcon, category: 'company' }
     ] : []),
     ...(state.user?.role === 'admin' || state.user?.role === 'superadmin' ? [
       { path: '/users', label: 'Users', icon: UsersIcon, category: 'admin' }
@@ -227,7 +240,8 @@ const Layout = ({ children }) => {
       '/employees': 'Employees',
       '/leaves': 'Leave Management',
       '/holidays': 'Holidays',
-      '/profile': 'My Profile'
+      '/profile': 'My Profile',
+      '/workforce': 'Workforce'
     };
 
     // Handle dynamic routes

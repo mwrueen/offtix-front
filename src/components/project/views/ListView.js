@@ -46,7 +46,17 @@ if (!document.head.querySelector('style[data-listview-animations]')) {
   document.head.appendChild(style);
 }
 
-const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskId, onSelectTask, onReorderTasks }) => {
+const formatCurrency = (amount) => {
+  if (amount === undefined || amount === null || amount === 0) return '-';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount);
+};
+
+const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskId, onSelectTask, onReorderTasks, taskCosts = {} }) => {
   const [expandedTasks, setExpandedTasks] = useState(new Set());
   const [activeTask, setActiveTask] = useState(null);
 
@@ -158,7 +168,7 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
         borderBottom: '2px solid #dfe1e6',
         backgroundColor: '#f4f5f7',
         display: 'grid',
-        gridTemplateColumns: '40px minmax(400px, 3fr) 140px 120px 160px 140px',
+        gridTemplateColumns: '40px minmax(350px, 3fr) 140px 120px 160px 100px 100px',
         gap: '12px',
         fontSize: '11px',
         fontWeight: '700',
@@ -188,6 +198,7 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
         <div>Priority</div>
         <div>Assignees</div>
         <div>Due Date</div>
+        <div>Cost</div>
       </div>
 
       {/* Task List */}
@@ -236,6 +247,7 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
                   isExpanded={expandedTasks.has(task._id)}
                   onToggleExpand={() => toggleExpand(task._id)}
                   countSubtasks={countSubtasks}
+                  taskCosts={taskCosts}
                 />
               ))}
             </div>
@@ -256,7 +268,7 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
 };
 
 // Sortable wrapper for TaskRow
-const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isExpanded, onToggleExpand, countSubtasks }) => {
+const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isExpanded, onToggleExpand, countSubtasks, taskCosts = {} }) => {
   const {
     attributes,
     listeners,
@@ -281,6 +293,7 @@ const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelect
   const hasChildren = task.children && task.children.length > 0;
   const subtaskCount = countSubtasks(task);
   const indent = level * 24;
+  const cost = taskCosts[task._id];
 
   return (
     <div ref={setNodeRef} style={style}>
@@ -299,6 +312,7 @@ const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelect
           isSelected={isSelected}
           onSelect={onSelect}
           isDragging={isDragging}
+          cost={cost}
         />
       </div>
 
@@ -321,6 +335,7 @@ const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelect
               isExpanded={isExpanded}
               onToggleExpand={onToggleExpand}
               countSubtasks={countSubtasks}
+              taskCosts={taskCosts}
             />
           ))}
         </div>
@@ -329,7 +344,7 @@ const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelect
   );
 };
 
-const TaskListRow = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging }) => {
+const TaskListRow = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging, cost }) => {
   return (
     <TaskListRowContent
       task={task}
@@ -345,11 +360,12 @@ const TaskListRow = ({ task, level, indent, hasChildren, subtaskCount, isExpande
       isSelected={isSelected}
       onSelect={onSelect}
       isDragging={isDragging}
+      cost={cost}
     />
   );
 };
 
-const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging }) => {
+const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging, cost }) => {
   const getPriorityColor = (priority) => {
     const colors = {
       urgent: '#de350b',
@@ -392,7 +408,7 @@ const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, is
         padding: '12px 16px',
         borderBottom: '1px solid #f4f5f7',
         display: 'grid',
-        gridTemplateColumns: '40px minmax(400px, 3fr) 140px 120px 160px 140px',
+        gridTemplateColumns: '40px minmax(350px, 3fr) 140px 120px 160px 100px 100px',
         gap: '12px',
         alignItems: 'center',
         backgroundColor: isSelected ? '#f0f6ff' : 'white',
@@ -540,6 +556,11 @@ const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, is
       {/* Due Date */}
       <div style={{ fontSize: '12px', color: '#5e6c84' }}>
         {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-'}
+      </div>
+
+      {/* Cost */}
+      <div style={{ fontSize: '12px', color: cost ? '#059669' : '#a8b1bd', fontWeight: cost ? '600' : '400' }}>
+        {formatCurrency(cost)}
       </div>
     </div>
   );

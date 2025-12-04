@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { projectAPI, taskAPI, taskStatusAPI, sprintAPI, phaseAPI, userAPI, companyAPI, leaveAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +9,7 @@ import InlineTaskCreator from './project/InlineTaskCreator';
 import ListView from './project/views/ListView';
 import BoardView from './project/views/BoardView';
 import GanttView from './project/views/GanttView';
+import ProjectSidebar, { SIDEBAR_EXPANDED_WIDTH } from './project/ProjectSidebar';
 import { autoScheduleAllTasks } from '../utils/ganttScheduler';
 
 const Tasks = () => {
@@ -17,12 +18,18 @@ const Tasks = () => {
   const { state: authState } = useAuth();
   const [project, setProject] = useState(null);
   const [company, setCompany] = useState(null);
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_EXPANDED_WIDTH);
+
+  const handleSidebarWidthChange = useCallback((width) => {
+    setSidebarWidth(width);
+  }, []);
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [taskStatuses, setTaskStatuses] = useState([]);
   const [sprints, setSprints] = useState([]);
   const [phases, setPhases] = useState([]);
   const [employeeLeaves, setEmployeeLeaves] = useState([]);
+  const [taskCosts, setTaskCosts] = useState({}); // Map of task._id -> cost
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
   const [selectedSprint, setSelectedSprint] = useState('');
@@ -67,6 +74,21 @@ const Tasks = () => {
       setTaskStatuses(statusesRes.data);
       setSprints(sprintsRes.data);
       setPhases(phasesRes.data);
+
+      // Fetch task costs
+      try {
+        const costsRes = await projectAPI.getCosts(id);
+        if (costsRes.data && costsRes.data.tasks) {
+          const costsMap = {};
+          costsRes.data.tasks.forEach(t => {
+            costsMap[t._id] = t.totalCost;
+          });
+          setTaskCosts(costsMap);
+        }
+      } catch (costError) {
+        console.error('Error fetching task costs:', costError);
+        setTaskCosts({});
+      }
 
       // Fetch company data if project has a company
       if (projectData.company) {
@@ -444,15 +466,20 @@ const Tasks = () => {
 
   return (
     <Layout>
-      <Breadcrumb
-        onNavigateToProjects={() => navigate('/projects')}
-        projectTitle={project.title}
-        currentPage="Tasks"
-        onNavigateToProject={() => navigate(`/projects/${id}`)}
-      />
+      {/* Collapsible Sidebar */}
+      <ProjectSidebar projectId={id} project={project} onWidthChange={handleSidebarWidthChange} />
 
-      {/* Main Container */}
-      <div style={{ height: 'calc(100vh - 200px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Main Content - adjusts for sidebar */}
+      <div style={{ marginRight: `${sidebarWidth}px`, transition: 'margin-right 0.3s ease' }}>
+        <Breadcrumb
+          onNavigateToProjects={() => navigate('/projects')}
+          projectTitle={project.title}
+          currentPage="Tasks"
+          onNavigateToProject={() => navigate(`/projects/${id}`)}
+        />
+
+        {/* Main Container */}
+        <div style={{ height: 'calc(100vh - 200px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {/* Tasks Header */}
           <div style={{
             backgroundColor: '#ffffff',
@@ -628,6 +655,7 @@ const Tasks = () => {
                   selectedTaskId={selectedTask?._id}
                   onSelectTask={handleSelectTask}
                   onReorderTasks={handleReorderTasks}
+                  taskCosts={taskCosts}
                 />
 
                 {/* Inline Task Creator */}
@@ -1045,6 +1073,7 @@ const Tasks = () => {
           </div>
         </div>
       )}
+      </div>
     </Layout>
   );
 };

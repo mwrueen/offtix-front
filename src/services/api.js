@@ -96,6 +96,9 @@ export const projectAPI = {
 
   // Status management
   updateStatus: (id, status, scheduledStartDate) => api.put(`/projects/${id}/status`, { status, scheduledStartDate }),
+
+  // Cost breakdown
+  getCosts: (id) => api.get(`/projects/${id}/costs`),
 };
 
 export const taskAPI = {
@@ -149,6 +152,8 @@ export const companyAPI = {
   updateSettings: (id, settings) => api.put(`/companies/${id}/settings`, { settings }),
   addHoliday: (id, holidayData) => api.post(`/companies/${id}/holidays`, holidayData),
   removeHoliday: (id, holidayId) => api.delete(`/companies/${id}/holidays/${holidayId}`),
+  // Workforce - employees with their tasks
+  getWorkforce: (id) => api.get(`/companies/${id}/workforce`),
 };
 
 export const employeeAPI = {

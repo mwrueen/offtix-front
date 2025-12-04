@@ -28,6 +28,7 @@ import EmployeeList from './components/EmployeeList';
 import EmployeeDetails from './components/EmployeeDetails';
 import HolidayCalendar from './components/HolidayCalendar';
 import LeaveManagement from './components/LeaveManagement';
+import Workforce from './components/company/Workforce';
 
 function App() {
   return (
@@ -130,6 +131,11 @@ function App() {
                 <Route path="/leaves" element={
                   <ProtectedRoute>
                     <LeaveManagement />
+                  </ProtectedRoute>
+                } />
+                <Route path="/workforce" element={
+                  <ProtectedRoute>
+                    <Workforce />
                   </ProtectedRoute>
                 } />
                 </Routes>
