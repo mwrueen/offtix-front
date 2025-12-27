@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { requirementAPI } from '../../services/api';
 
 const RequirementsTab = ({ projectId, requirements, setRequirements, users, isProjectOwner, onRefresh }) => {
@@ -9,6 +11,10 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterType, setFilterType] = useState('all');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState([]);
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -20,6 +26,23 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
     acceptanceCriteria: []
   });
 
+  // Quill editor modules configuration
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'color': [] }, { 'background': [] }],
+      ['link'],
+      ['clean']
+    ],
+  };
+
+  const quillFormats = [
+    'header', 'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet', 'color', 'background', 'link'
+  ];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -29,12 +52,30 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
         assignedTo: formData.assignedTo || undefined
       };
 
+      let requirementId;
       if (editingRequirement) {
         await requirementAPI.update(projectId, editingRequirement._id, data);
+        requirementId = editingRequirement._id;
       } else {
-        await requirementAPI.create(projectId, data);
+        const response = await requirementAPI.create(projectId, data);
+        requirementId = response.data._id;
       }
-      
+
+      // Upload pending files
+      if (pendingFiles.length > 0 && requirementId) {
+        setUploadingFiles(true);
+        for (const file of pendingFiles) {
+          const fileFormData = new FormData();
+          fileFormData.append('file', file);
+          try {
+            await requirementAPI.uploadAttachment(projectId, requirementId, fileFormData);
+          } catch (fileError) {
+            console.error('Error uploading file:', file.name, fileError);
+          }
+        }
+        setUploadingFiles(false);
+      }
+
       await onRefresh();
       resetForm();
     } catch (error) {
@@ -55,12 +96,30 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
     });
     setShowForm(false);
     setEditingRequirement(null);
+    setShowAdvanced(false);
+    setPendingFiles([]);
+  };
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    setPendingFiles(prev => [...prev, ...files]);
+    e.target.value = '';
+  };
+
+  const removePendingFile = (index) => {
+    setPendingFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
   const handleEdit = (requirement) => {
     setFormData({
       title: requirement.title,
-      description: requirement.description,
+      description: requirement.description || '',
       type: requirement.type,
       priority: requirement.priority,
       status: requirement.status,
@@ -70,6 +129,8 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
     });
     setEditingRequirement(requirement);
     setShowForm(true);
+    setShowAdvanced(true);
+    setPendingFiles([]);
   };
 
   const handleDelete = async (requirementId) => {
@@ -345,103 +406,247 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '40px' }}>
-              <div>
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Requirement Title <span style={{ color: '#cf1322' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    required
-                    placeholder="Enter a clear, descriptive title"
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      transition: 'all 0.2s ease',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
+            {/* Main Form - Title and Description */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '10px',
+                fontSize: '14px',
+                fontWeight: '700',
+                color: '#172b4d',
+                letterSpacing: '0.2px'
+              }}>
+                Requirement Title <span style={{ color: '#cf1322' }}>*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({...formData, title: e.target.value})}
+                required
+                placeholder="Enter a clear, descriptive title"
+                style={{
+                  boxSizing: 'border-box',
+                  width: '100%',
+                  padding: '14px 16px',
+                  border: '2px solid #e1e5e9',
+                  borderRadius: '10px',
+                  fontSize: '15px',
+                  transition: 'all 0.2s ease',
+                  outline: 'none',
+                  backgroundColor: '#fafbfc'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#0052cc';
+                  e.target.style.backgroundColor = '#ffffff';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e1e5e9';
+                  e.target.style.backgroundColor = '#fafbfc';
+                  e.target.style.boxShadow = 'none';
+                }}
+              />
+            </div>
 
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Description <span style={{ color: '#cf1322' }}>*</span>
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    required
-                    rows="5"
-                    placeholder="Provide detailed description of the requirement..."
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      resize: 'vertical',
-                      fontFamily: 'inherit',
-                      transition: 'all 0.2s ease',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc',
-                      lineHeight: '1.6'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '10px',
+                fontSize: '14px',
+                fontWeight: '700',
+                color: '#172b4d',
+                letterSpacing: '0.2px'
+              }}>
+                Description <span style={{ color: '#6b778c', fontWeight: '400' }}>(optional)</span>
+              </label>
+              <div style={{
+                border: '2px solid #e1e5e9',
+                borderRadius: '10px',
+                overflow: 'hidden',
+                backgroundColor: '#fafbfc'
+              }}>
+                <ReactQuill
+                  theme="snow"
+                  value={formData.description}
+                  onChange={(value) => setFormData({...formData, description: value})}
+                  modules={quillModules}
+                  formats={quillFormats}
+                  placeholder="Provide detailed description of the requirement..."
+                  style={{
+                    backgroundColor: '#ffffff',
+                  }}
+                />
+              </div>
+              <style>
+                {`
+                  .ql-container {
+                    min-height: 150px;
+                    font-size: 15px;
+                    font-family: inherit;
+                  }
+                  .ql-editor {
+                    min-height: 150px;
+                  }
+                  .ql-toolbar {
+                    border: none !important;
+                    border-bottom: 1px solid #e1e5e9 !important;
+                    background: #f8f9fa;
+                  }
+                  .ql-container {
+                    border: none !important;
+                  }
+                `}
+              </style>
+            </div>
+
+            {/* File Upload Section */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '10px',
+                fontSize: '14px',
+                fontWeight: '700',
+                color: '#172b4d',
+                letterSpacing: '0.2px'
+              }}>
+                Attachments <span style={{ color: '#6b778c', fontWeight: '400' }}>(optional)</span>
+              </label>
+
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                multiple
+                style={{ display: 'none' }}
+              />
+
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  border: '2px dashed #d9d9d9',
+                  borderRadius: '10px',
+                  padding: '24px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  backgroundColor: '#fafbfc',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#0052cc';
+                  e.currentTarget.style.backgroundColor = '#f0f7ff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#d9d9d9';
+                  e.currentTarget.style.backgroundColor = '#fafbfc';
+                }}
+              >
+                <div style={{ fontSize: '32px', marginBottom: '8px' }}>📎</div>
+                <div style={{ color: '#172b4d', fontWeight: '500', marginBottom: '4px' }}>
+                  Click to upload files
+                </div>
+                <div style={{ color: '#6b778c', fontSize: '13px' }}>
+                  or drag and drop files here (max 10MB each)
                 </div>
               </div>
 
-              <div>
-                <div style={{ marginBottom: '24px' }}>
+              {/* Pending Files List */}
+              {pendingFiles.length > 0 && (
+                <div style={{ marginTop: '12px' }}>
+                  {pendingFiles.map((file, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 12px',
+                        backgroundColor: '#f0f7ff',
+                        borderRadius: '8px',
+                        marginBottom: '8px',
+                        border: '1px solid #bfdbfe'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '18px' }}>📄</span>
+                        <div>
+                          <div style={{ fontSize: '14px', color: '#172b4d', fontWeight: '500' }}>
+                            {file.name}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#6b778c' }}>
+                            {formatFileSize(file.size)}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removePendingFile(index)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#cf1322',
+                          fontSize: '18px',
+                          padding: '4px'
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Advanced Options Toggle */}
+            <div style={{ marginBottom: '24px' }}>
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#0052cc',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  padding: '8px 0'
+                }}
+              >
+                <span style={{
+                  transform: showAdvanced ? 'rotate(90deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease',
+                  display: 'inline-block'
+                }}>
+                  ▶
+                </span>
+                {showAdvanced ? 'Hide Advanced Options' : 'Show Advanced Options'}
+              </button>
+            </div>
+
+            {/* Advanced Options Section */}
+            {showAdvanced && (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '20px',
+                padding: '24px',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '10px',
+                marginBottom: '24px',
+                border: '1px solid #e1e5e9'
+              }}>
+
+                {/* Type */}
+                <div>
                   <label style={{
                     display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
+                    marginBottom: '8px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#172b4d'
                   }}>
                     Type
                   </label>
@@ -451,22 +656,12 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      backgroundColor: '#fafbfc',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
+                      padding: '10px 12px',
+                      border: '1px solid #d9d9d9',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      backgroundColor: '#ffffff',
+                      cursor: 'pointer'
                     }}
                   >
                     <option value="functional">📦 Functional</option>
@@ -477,14 +672,14 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                   </select>
                 </div>
 
-                <div style={{ marginBottom: '24px' }}>
+                {/* Priority */}
+                <div>
                   <label style={{
                     display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
+                    marginBottom: '8px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#172b4d'
                   }}>
                     Priority
                   </label>
@@ -494,22 +689,12 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      backgroundColor: '#fafbfc',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
+                      padding: '10px 12px',
+                      border: '1px solid #d9d9d9',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      backgroundColor: '#ffffff',
+                      cursor: 'pointer'
                     }}
                   >
                     <option value="low">🟢 Low</option>
@@ -519,14 +704,14 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                   </select>
                 </div>
 
-                <div style={{ marginBottom: '24px' }}>
+                {/* Status */}
+                <div>
                   <label style={{
                     display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
+                    marginBottom: '8px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#172b4d'
                   }}>
                     Status
                   </label>
@@ -536,22 +721,12 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      backgroundColor: '#fafbfc',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
+                      padding: '10px 12px',
+                      border: '1px solid #d9d9d9',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      backgroundColor: '#ffffff',
+                      cursor: 'pointer'
                     }}
                   >
                     <option value="draft">📝 Draft</option>
@@ -562,14 +737,14 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                   </select>
                 </div>
 
-                <div style={{ marginBottom: '24px' }}>
+                {/* Assigned To */}
+                <div>
                   <label style={{
                     display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
+                    marginBottom: '8px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#172b4d'
                   }}>
                     Assigned To
                   </label>
@@ -579,22 +754,12 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      backgroundColor: '#fafbfc',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
+                      padding: '10px 12px',
+                      border: '1px solid #d9d9d9',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      backgroundColor: '#ffffff',
+                      cursor: 'pointer'
                     }}
                   >
                     <option value="">👤 Unassigned</option>
@@ -604,14 +769,14 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                   </select>
                 </div>
 
-                <div style={{ marginBottom: '24px' }}>
+                {/* Estimated Hours */}
+                <div>
                   <label style={{
                     display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
+                    marginBottom: '8px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#172b4d'
                   }}>
                     Estimated Hours
                   </label>
@@ -625,101 +790,101 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
+                      padding: '10px 12px',
+                      border: '1px solid #d9d9d9',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      backgroundColor: '#ffffff'
                     }}
                   />
                 </div>
               </div>
-            </div>
+            )}
 
             <div style={{
               display: 'flex',
               justifyContent: 'flex-end',
               gap: '16px',
-              marginTop: '40px',
-              paddingTop: '32px',
-              borderTop: '2px solid #f4f5f7'
+              marginTop: '32px',
+              paddingTop: '24px',
+              borderTop: '1px solid #e1e5e9'
             }}>
               <button
                 type="button"
                 onClick={resetForm}
                 style={{
-                  padding: '14px 32px',
+                  padding: '12px 24px',
                   backgroundColor: '#ffffff',
                   color: '#5e6c84',
-                  border: '2px solid #dfe1e6',
-                  borderRadius: '10px',
+                  border: '1px solid #d9d9d9',
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  transition: 'all 0.2s ease',
-                  letterSpacing: '0.3px'
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s ease'
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.backgroundColor = '#f4f5f7';
-                  e.target.style.borderColor = '#c1c7d0';
                 }}
                 onMouseLeave={(e) => {
                   e.target.style.backgroundColor = '#ffffff';
-                  e.target.style.borderColor = '#dfe1e6';
                 }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
+                disabled={uploadingFiles}
                 style={{
-                  padding: '14px 32px',
-                  backgroundColor: '#0052cc',
+                  padding: '12px 24px',
+                  backgroundColor: uploadingFiles ? '#91caff' : '#0052cc',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  boxShadow: '0 4px 12px rgba(0, 82, 204, 0.3)',
+                  borderRadius: '8px',
+                  cursor: uploadingFiles ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  boxShadow: '0 2px 8px rgba(0, 82, 204, 0.2)',
                   transition: 'all 0.2s ease',
-                  letterSpacing: '0.3px'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#0747a6';
-                  e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = '0 6px 16px rgba(0, 82, 204, 0.4)';
+                  if (!uploadingFiles) {
+                    e.target.style.backgroundColor = '#0747a6';
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#0052cc';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(0, 82, 204, 0.3)';
+                  if (!uploadingFiles) {
+                    e.target.style.backgroundColor = '#0052cc';
+                  }
                 }}
               >
-                {editingRequirement ? '✓ Update Requirement' : '+ Create Requirement'}
+                {uploadingFiles ? (
+                  <>
+                    <span style={{
+                      display: 'inline-block',
+                      animation: 'spin 1s linear infinite'
+                    }}>⏳</span>
+                    Uploading...
+                  </>
+                ) : (
+                  editingRequirement ? '✓ Update Requirement' : '+ Create Requirement'
+                )}
               </button>
             </div>
           </form>
         </div>
       )}
-      
-      <div style={{
-        display: 'grid',
-        gap: '16px'
-      }}>
-        {filteredRequirements.map((requirement) => (
+
+      {/* List - Only show when form is not visible */}
+      {!showForm && (
+        <div style={{
+          display: 'grid',
+          gap: '16px'
+        }}>
+          {filteredRequirements.map((requirement) => (
           <div
             key={requirement._id}
             style={{
@@ -979,7 +1144,8 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
             )}
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Details Modal */}
       {viewingRequirement && (

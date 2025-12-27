@@ -122,6 +122,13 @@ export const requirementAPI = {
   update: (projectId, requirementId, requirementData) => api.put(`/projects/${projectId}/requirements/${requirementId}`, requirementData),
   delete: (projectId, requirementId) => api.delete(`/projects/${projectId}/requirements/${requirementId}`),
   addComment: (projectId, requirementId, comment) => api.post(`/projects/${projectId}/requirements/${requirementId}/comments`, comment),
+  uploadAttachment: (projectId, requirementId, formData) => api.post(
+    `/projects/${projectId}/requirements/${requirementId}/attachments`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  ),
+  deleteAttachment: (projectId, requirementId, attachmentId) =>
+    api.delete(`/projects/${projectId}/requirements/${requirementId}/attachments/${attachmentId}`),
 };
 
 export const meetingNoteAPI = {

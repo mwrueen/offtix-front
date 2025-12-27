@@ -1,17 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { io } from 'socket.io-client';
 
 const SIDEBAR_COLLAPSED_WIDTH = 56;
 const SIDEBAR_EXPANDED_WIDTH = 200;
 const HEADER_HEIGHT = 81; // Height of the main header in Layout.js
 
+// Helper function to get cookie value
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+  return null;
+};
+
 const ProjectSidebar = ({ projectId, project, onWidthChange }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(true);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [showChatNotification, setShowChatNotification] = useState(false);
+  const [latestNotification, setLatestNotification] = useState(null);
+  const socketRef = useRef(null);
+  const notificationTimeoutRef = useRef(null);
 
   // Determine current page based on URL
   const isTasksPage = location.pathname.includes('/tasks');
+  const isChatPage = location.search.includes('tab=chat');
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z', path: 'overview' },
@@ -38,7 +53,63 @@ const ProjectSidebar = ({ projectId, project, onWidthChange }) => {
     }
   }, [currentWidth, onWidthChange]);
 
-  const handleTabClick = (tab) => {
+  // Socket connection for chat notifications
+  useEffect(() => {
+    const token = getCookie('authToken');
+    if (!token || !projectId) return;
+
+    const socket = io('http://localhost:5000', {
+      auth: { token },
+      transports: ['websocket', 'polling']
+    });
+
+    socket.on('connect', () => {
+      console.log('ProjectSidebar: Socket connected for notifications');
+    });
+
+    // Listen for chat notifications
+    socket.on('chat-notification', (notification) => {
+      // Only count notifications for this project
+      if (notification.projectId === projectId) {
+        setUnreadChatCount(prev => prev + 1);
+        setLatestNotification(notification);
+        setShowChatNotification(true);
+
+        // Hide notification popup after 5 seconds
+        if (notificationTimeoutRef.current) {
+          clearTimeout(notificationTimeoutRef.current);
+        }
+        notificationTimeoutRef.current = setTimeout(() => {
+          setShowChatNotification(false);
+        }, 5000);
+      }
+    });
+
+    socketRef.current = socket;
+
+    return () => {
+      if (notificationTimeoutRef.current) {
+        clearTimeout(notificationTimeoutRef.current);
+      }
+      socket.disconnect();
+    };
+  }, [projectId]);
+
+  // Clear unread count when navigating to chat
+  useEffect(() => {
+    if (isChatPage) {
+      setUnreadChatCount(0);
+      setShowChatNotification(false);
+    }
+  }, [isChatPage]);
+
+  const handleTabClick = useCallback((tab) => {
+    // Clear chat notifications when clicking on chat
+    if (tab.path === 'chat') {
+      setUnreadChatCount(0);
+      setShowChatNotification(false);
+    }
+
     if (tab.path === 'tasks') {
       navigate(`/projects/${projectId}/tasks`);
     } else if (tab.path === 'overview') {
@@ -46,7 +117,7 @@ const ProjectSidebar = ({ projectId, project, onWidthChange }) => {
     } else {
       navigate(`/projects/${projectId}?tab=${tab.path}`);
     }
-  };
+  }, [navigate, projectId]);
 
   const getCurrentTab = () => {
     if (isTasksPage) return 'tasks';
@@ -147,52 +218,186 @@ const ProjectSidebar = ({ projectId, project, onWidthChange }) => {
         )}
       </div>
 
+      {/* Chat Notification Popup */}
+      {showChatNotification && latestNotification && (
+        <div style={{
+          position: 'absolute',
+          top: '80px',
+          left: isExpanded ? '-260px' : '-210px',
+          width: '240px',
+          backgroundColor: '#ffffff',
+          borderRadius: '12px',
+          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+          border: '1px solid #e5e7eb',
+          padding: '12px',
+          zIndex: 1000,
+          animation: 'slideIn 0.3s ease'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+            <div style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              backgroundColor: '#3b82f6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: '600',
+              flexShrink: 0
+            }}>
+              {latestNotification.senderName?.charAt(0)?.toUpperCase() || '?'}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '12px', fontWeight: '600', color: '#1f2937', marginBottom: '2px' }}>
+                {latestNotification.senderName}
+              </div>
+              <div style={{ fontSize: '11px', color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {latestNotification.content}
+              </div>
+              <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>
+                New message in chat
+              </div>
+            </div>
+            <button
+              onClick={() => setShowChatNotification(false)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px',
+                color: '#9ca3af',
+                fontSize: '16px'
+              }}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Menu Items */}
       <div style={{ flex: 1, overflowY: 'auto', padding: isExpanded ? '8px' : '8px 4px' }}>
         {tabs.map((tab) => {
           const isActive = currentTab === tab.id;
+          const hasBadge = tab.id === 'chat' && unreadChatCount > 0;
+
           return (
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab)}
-              title={!isExpanded ? tab.label : undefined}
+              title={!isExpanded ? (hasBadge ? `${tab.label} (${unreadChatCount} new)` : tab.label) : undefined}
               style={{
                 width: '100%',
                 padding: isExpanded ? '10px 12px' : '10px',
                 marginBottom: '2px',
-                backgroundColor: isActive ? '#eff6ff' : 'transparent',
-                border: isActive ? '1px solid #bfdbfe' : '1px solid transparent',
+                backgroundColor: isActive ? '#eff6ff' : (hasBadge ? '#fef3c7' : 'transparent'),
+                border: isActive ? '1px solid #bfdbfe' : (hasBadge ? '1px solid #fcd34d' : '1px solid transparent'),
                 borderRadius: '8px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: isExpanded ? 'flex-start' : 'center',
                 gap: '10px',
-                color: isActive ? '#1e40af' : '#4b5563',
+                color: isActive ? '#1e40af' : (hasBadge ? '#92400e' : '#4b5563'),
                 fontSize: '13px',
-                fontWeight: isActive ? '600' : '500',
+                fontWeight: isActive || hasBadge ? '600' : '500',
                 transition: 'all 0.2s ease',
-                textAlign: 'left'
+                textAlign: 'left',
+                position: 'relative'
               }}
               onMouseEnter={(e) => {
-                if (!isActive) {
+                if (!isActive && !hasBadge) {
                   e.currentTarget.style.backgroundColor = '#f3f4f6';
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isActive) {
-                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.backgroundColor = hasBadge ? '#fef3c7' : 'transparent';
                 }
               }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                <path d={tab.icon}></path>
-              </svg>
-              {isExpanded && <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tab.label}</span>}
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={tab.icon}></path>
+                </svg>
+                {/* Badge for collapsed view */}
+                {hasBadge && !isExpanded && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-6px',
+                    right: '-6px',
+                    backgroundColor: '#ef4444',
+                    color: 'white',
+                    fontSize: '10px',
+                    fontWeight: '700',
+                    minWidth: '16px',
+                    height: '16px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0 4px',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+                  }}>
+                    {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                  </div>
+                )}
+              </div>
+              {isExpanded && (
+                <>
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>{tab.label}</span>
+                  {/* Badge for expanded view */}
+                  {hasBadge && (
+                    <div style={{
+                      backgroundColor: '#ef4444',
+                      color: 'white',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      minWidth: '20px',
+                      height: '20px',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 6px',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+                      animation: 'pulse 2s infinite'
+                    }}>
+                      {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                    </div>
+                  )}
+                </>
+              )}
             </button>
           );
         })}
       </div>
+
+      {/* Animation styles */}
+      <style>
+        {`
+          @keyframes slideIn {
+            from {
+              opacity: 0;
+              transform: translateX(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
+          }
+          @keyframes pulse {
+            0%, 100% {
+              transform: scale(1);
+            }
+            50% {
+              transform: scale(1.1);
+            }
+          }
+        `}
+      </style>
     </div>
   );
 };

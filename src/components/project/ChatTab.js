@@ -346,7 +346,9 @@ const ChatTab = ({ projectId, project }) => {
 
               {/* Messages for this date */}
               {dateMessages.map((message, index) => {
-                const isOwn = message.sender?._id === authState.user?._id;
+                // Check both 'id' and '_id' for compatibility
+                const currentUserId = authState.user?.id || authState.user?._id;
+                const isOwn = message.sender?._id === currentUserId;
                 const showAvatar = index === 0 ||
                   dateMessages[index - 1]?.sender?._id !== message.sender?._id;
 

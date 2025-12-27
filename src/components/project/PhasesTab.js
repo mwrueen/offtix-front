@@ -587,8 +587,9 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
         </div>
       )}
 
-      {/* Phases List */}
-      <div style={{ display: 'grid', gap: '16px' }}>
+      {/* Phases List - Only show when form is not visible */}
+      {!showForm && (
+        <div style={{ display: 'grid', gap: '16px' }}>
         {filteredPhases.length === 0 && phases.length > 0 ? (
           <div style={{
             textAlign: 'center',
@@ -865,7 +866,8 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
             );
           })
         )}
-      </div>
+        </div>
+      )}
 
       {/* Details Modal */}
       {viewingPhase && (

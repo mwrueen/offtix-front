@@ -657,8 +657,9 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
         </div>
       )}
 
-      {/* Meeting Notes List */}
-      <div style={{ display: 'grid', gap: '16px' }}>
+      {/* Meeting Notes List - Only show when form is not visible */}
+      {!showForm && (
+        <div style={{ display: 'grid', gap: '16px' }}>
         {filteredMeetingNotes.length === 0 && meetingNotes.length > 0 ? (
           <div style={{
             textAlign: 'center',
@@ -933,7 +934,8 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
             );
           })
         )}
-      </div>
+        </div>
+      )}
 
       {/* Details Modal */}
       {viewingMeeting && (

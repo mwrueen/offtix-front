@@ -6,6 +6,45 @@ import { useToast } from '../context/ToastContext';
 import { getCookie } from '../utils/cookies';
 import Layout from './Layout';
 
+// Permission categories for better organization
+const permissionCategories = [
+  {
+    title: 'Employee Management',
+    icon: '👥',
+    permissions: [
+      { key: 'addEmployee', label: 'Add Employee', description: 'Can add new employees to the company' },
+      { key: 'viewEmployeeList', label: 'View Employees', description: 'Can view the list of all employees' },
+      { key: 'editEmployee', label: 'Edit Employee', description: 'Can modify employee information' }
+    ]
+  },
+  {
+    title: 'Role Management',
+    icon: '🛡️',
+    permissions: [
+      { key: 'createDesignation', label: 'Create Role', description: 'Can create new roles/designations' },
+      { key: 'viewDesignations', label: 'View Roles', description: 'Can view all roles/designations' },
+      { key: 'editDesignation', label: 'Edit Role', description: 'Can modify role permissions' },
+      { key: 'deleteDesignation', label: 'Delete Role', description: 'Can delete roles/designations' }
+    ]
+  },
+  {
+    title: 'Project Management',
+    icon: '📋',
+    permissions: [
+      { key: 'createProject', label: 'Create Project', description: 'Can create new projects' },
+      { key: 'assignEmployeeToProject', label: 'Assign to Project', description: 'Can assign employees to projects' },
+      { key: 'removeEmployeeFromProject', label: 'Remove from Project', description: 'Can remove employees from projects' }
+    ]
+  },
+  {
+    title: 'Company Settings',
+    icon: '⚙️',
+    permissions: [
+      { key: 'manageCompanySettings', label: 'Manage Settings', description: 'Can modify company settings' }
+    ]
+  }
+];
+
 const ManageRoles = () => {
   const navigate = useNavigate();
   const { state } = useAuth();
@@ -16,6 +55,9 @@ const ManageRoles = () => {
   const [loading, setLoading] = useState(true);
   const [selectedRole, setSelectedRole] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [editingRole, setEditingRole] = useState(null);
+  const [editPermissions, setEditPermissions] = useState({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (selectedCompany && selectedCompany.id !== 'personal') {
@@ -45,10 +87,10 @@ const ManageRoles = () => {
     }
   };
 
-  const handleDeleteRole = async (designationName) => {
+  const handleDeleteRole = async (designationId) => {
     try {
       const token = getCookie('authToken');
-      const response = await fetch(`/api/companies/${selectedCompany.id}/designations/${designationName}`, {
+      const response = await fetch(`/api/companies/${selectedCompany.id}/designations/${designationId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -67,6 +109,53 @@ const ManageRoles = () => {
     } catch (error) {
       console.error('Error deleting role:', error);
       toast?.showToast?.('Failed to delete role. Please try again.', 'error');
+    }
+  };
+
+  const handleEditRole = (designation) => {
+    setEditingRole(designation);
+    setEditPermissions({ ...designation.permissions });
+  };
+
+  const handlePermissionToggle = (key) => {
+    setEditPermissions(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const handleSavePermissions = async () => {
+    if (!editingRole) return;
+
+    setSaving(true);
+    try {
+      const token = getCookie('authToken');
+      const response = await fetch(`/api/companies/${selectedCompany.id}/designation-permissions`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          designationId: editingRole._id,
+          permissions: editPermissions
+        })
+      });
+
+      if (response.ok) {
+        toast?.showToast?.('Permissions updated successfully', 'success');
+        fetchCompany();
+        setEditingRole(null);
+        setEditPermissions({});
+      } else {
+        const errorData = await response.json();
+        toast?.showToast?.(errorData.message || 'Failed to update permissions', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating permissions:', error);
+      toast?.showToast?.('Failed to update permissions. Please try again.', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -306,7 +395,33 @@ const ManageRoles = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setShowDeleteConfirm(designation.name);
+                        handleEditRole(designation);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '10px',
+                        background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        fontSize: '13px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'scale(1.02)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'scale(1)';
+                      }}
+                    >
+                      Edit Permissions
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDeleteConfirm(designation);
                       }}
                       style={{
                         flex: 1,
@@ -420,7 +535,7 @@ const ManageRoles = () => {
               Delete Role?
             </h3>
             <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#64748b', textAlign: 'center', lineHeight: '1.6' }}>
-              Are you sure you want to delete the role "<strong>{showDeleteConfirm}</strong>"? This action cannot be undone.
+              Are you sure you want to delete the role "<strong>{showDeleteConfirm?.name}</strong>"? This action cannot be undone.
             </p>
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
@@ -440,7 +555,7 @@ const ManageRoles = () => {
                 Cancel
               </button>
               <button
-                onClick={() => handleDeleteRole(showDeleteConfirm)}
+                onClick={() => handleDeleteRole(showDeleteConfirm._id)}
                 style={{
                   flex: 1,
                   padding: '12px',
@@ -455,6 +570,216 @@ const ManageRoles = () => {
                 }}
               >
                 Delete Role
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Permissions Modal */}
+      {editingRole && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          backdropFilter: 'blur(4px)',
+          padding: '20px'
+        }}
+        onClick={() => { setEditingRole(null); setEditPermissions({}); }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '20px',
+            maxWidth: '700px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            boxShadow: '0 25px 80px rgba(0, 0, 0, 0.3)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+          onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '24px 28px',
+              borderBottom: '1px solid #e2e8f0',
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+              color: 'white'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '700' }}>
+                    Edit Permissions
+                  </h2>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '14px', opacity: 0.9 }}>
+                    {editingRole.name}
+                  </p>
+                </div>
+                <button
+                  onClick={() => { setEditingRole(null); setEditPermissions({}); }}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{
+              padding: '24px 28px',
+              overflowY: 'auto',
+              flex: 1
+            }}>
+              {permissionCategories.map((category, catIndex) => (
+                <div key={catIndex} style={{ marginBottom: catIndex < permissionCategories.length - 1 ? '24px' : 0 }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    marginBottom: '16px',
+                    paddingBottom: '10px',
+                    borderBottom: '1px solid #f1f5f9'
+                  }}>
+                    <span style={{ fontSize: '20px' }}>{category.icon}</span>
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                      {category.title}
+                    </h3>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {category.permissions.map((perm) => (
+                      <div
+                        key={perm.key}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '14px 16px',
+                          background: editPermissions[perm.key] ? '#f0fdf4' : '#f8fafc',
+                          borderRadius: '10px',
+                          border: `1px solid ${editPermissions[perm.key] ? '#86efac' : '#e2e8f0'}`,
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: '600', fontSize: '14px', color: '#1e293b' }}>
+                            {perm.label}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                            {perm.description}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handlePermissionToggle(perm.key)}
+                          style={{
+                            width: '48px',
+                            height: '26px',
+                            borderRadius: '13px',
+                            border: 'none',
+                            background: editPermissions[perm.key] ? '#10b981' : '#cbd5e1',
+                            cursor: 'pointer',
+                            position: 'relative',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <div style={{
+                            width: '22px',
+                            height: '22px',
+                            borderRadius: '50%',
+                            background: 'white',
+                            position: 'absolute',
+                            top: '2px',
+                            left: editPermissions[perm.key] ? '24px' : '2px',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                          }}></div>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              padding: '20px 28px',
+              borderTop: '1px solid #e2e8f0',
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end',
+              background: '#f8fafc'
+            }}>
+              <button
+                onClick={() => { setEditingRole(null); setEditPermissions({}); }}
+                style={{
+                  padding: '12px 24px',
+                  background: 'white',
+                  color: '#64748b',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '14px'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSavePermissions}
+                disabled={saving}
+                style={{
+                  padding: '12px 28px',
+                  background: saving ? '#a78bfa' : 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {saving ? (
+                  <>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid rgba(255,255,255,0.3)',
+                      borderTopColor: 'white',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Save Permissions
+                  </>
+                )}
               </button>
             </div>
           </div>

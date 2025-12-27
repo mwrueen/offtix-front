@@ -188,12 +188,29 @@ const Layout = ({ children }) => {
     </svg>
   );
 
+  const OrganogramIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="2" width="6" height="4" rx="1"></rect>
+      <rect x="3" y="10" width="6" height="4" rx="1"></rect>
+      <rect x="15" y="10" width="6" height="4" rx="1"></rect>
+      <rect x="3" y="18" width="6" height="4" rx="1"></rect>
+      <rect x="15" y="18" width="6" height="4" rx="1"></rect>
+      <line x1="12" y1="6" x2="12" y2="10"></line>
+      <line x1="6" y1="10" x2="6" y2="10"></line>
+      <line x1="18" y1="10" x2="18" y2="10"></line>
+      <line x1="6" y1="14" x2="6" y2="18"></line>
+      <line x1="18" y1="14" x2="18" y2="18"></line>
+      <path d="M6 10h12"></path>
+    </svg>
+  );
+
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: DashboardIcon, category: 'main' },
     { path: '/projects', label: 'Projects', icon: ProjectsIcon, category: 'main' },
     { path: '/overview', label: 'Overview', icon: OverviewIcon, category: 'main' },
     ...(companyState.selectedCompany?.id !== 'personal' ? [
       { path: '/employees', label: 'Employees', icon: EmployeesIcon, category: 'company' },
+      { path: '/organogram', label: 'Org Chart', icon: OrganogramIcon, category: 'company' },
       { path: '/leaves', label: 'Leaves', icon: LeavesIcon, category: 'company' },
       { path: '/holidays', label: 'Holidays', icon: HolidaysIcon, category: 'company' }
     ] : []),

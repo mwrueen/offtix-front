@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { autoScheduleAllTasks } from '../../../utils/ganttScheduler';
 import AutoScheduleGuide from '../AutoScheduleGuide';
 
@@ -18,12 +18,27 @@ const GanttView = ({
   const [showGuide, setShowGuide] = useState(false);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [showScrollShadow, setShowScrollShadow] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const ganttContainerRef = useRef(null);
+  const exportMenuRef = useRef(null);
 
   // Scheduling options
   const [schedulingMode, setSchedulingMode] = useState('sequential'); // 'sequential' or 'parallel'
   const [maxParallelTasks, setMaxParallelTasks] = useState(3);
   const [scheduleStartFrom, setScheduleStartFrom] = useState('project'); // 'project' or 'today'
   const [scheduleResult, setScheduleResult] = useState(null);
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Add custom scrollbar styles
   useEffect(() => {
@@ -146,6 +161,252 @@ const GanttView = ({
       newExpanded.add(taskId);
     }
     setExpandedTasks(newExpanded);
+  };
+
+  // Export Gantt chart as PNG
+  const exportAsPNG = async () => {
+    if (!ganttContainerRef.current) return;
+
+    setIsExporting(true);
+    setShowExportMenu(false);
+
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const container = ganttContainerRef.current;
+
+      // Temporarily expand container for full capture
+      const originalStyle = {
+        maxHeight: container.style.maxHeight,
+        overflow: container.style.overflow
+      };
+      container.style.maxHeight = 'none';
+      container.style.overflow = 'visible';
+
+      const canvas = await html2canvas(container, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        windowWidth: container.scrollWidth,
+        windowHeight: container.scrollHeight
+      });
+
+      // Restore original styles
+      container.style.maxHeight = originalStyle.maxHeight;
+      container.style.overflow = originalStyle.overflow;
+
+      // Download the image
+      const link = document.createElement('a');
+      link.download = `${project?.title || 'gantt-chart'}-${new Date().toISOString().split('T')[0]}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (error) {
+      console.error('Error exporting PNG:', error);
+      alert('Failed to export. Please make sure html2canvas is installed.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Export as CSV
+  const exportAsCSV = () => {
+    setShowExportMenu(false);
+
+    const headers = ['Task Name', 'Status', 'Priority', 'Assignee', 'Start Date', 'End Date', 'Duration', 'Progress'];
+    const rows = [];
+
+    const flattenTasks = (taskList, level = 0) => {
+      taskList.forEach(task => {
+        const indent = '  '.repeat(level);
+        rows.push([
+          `${indent}${task.title}`,
+          task.status || 'To Do',
+          task.priority || 'Medium',
+          task.assignee?.name || 'Unassigned',
+          task.startDate ? new Date(task.startDate).toLocaleDateString() : '',
+          task.endDate ? new Date(task.endDate).toLocaleDateString() : '',
+          task.duration ? `${task.duration.value} ${task.duration.unit}` : '',
+          `${task.progress || 0}%`
+        ]);
+        if (task.children && task.children.length > 0) {
+          flattenTasks(task.children, level + 1);
+        }
+      });
+    };
+
+    flattenTasks(hierarchicalTasks);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${project?.title || 'gantt-chart'}-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
+  // Export as JSON
+  const exportAsJSON = () => {
+    setShowExportMenu(false);
+
+    const exportData = {
+      projectName: project?.title || 'Unknown Project',
+      exportDate: new Date().toISOString(),
+      tasks: tasks.map(task => ({
+        id: task._id,
+        title: task.title,
+        status: task.status,
+        priority: task.priority,
+        assignee: task.assignee?.name,
+        startDate: task.startDate,
+        endDate: task.endDate,
+        duration: task.duration,
+        progress: task.progress || 0,
+        parentId: task.parentId || null
+      }))
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${project?.title || 'gantt-chart'}-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+  };
+
+  // Export as Excel WBS (Work Breakdown Structure)
+  const exportAsExcelWBS = async () => {
+    setShowExportMenu(false);
+    setIsExporting(true);
+
+    try {
+      const XLSX = await import('xlsx');
+
+      // Build WBS data with hierarchical numbering
+      const wbsData = [];
+      let wbsCounter = { level0: 0 };
+
+      const buildWBSRows = (taskList, level = 0, parentWBS = '') => {
+        taskList.forEach((task, index) => {
+          // Generate WBS number
+          let wbsNumber;
+          if (level === 0) {
+            wbsCounter.level0++;
+            wbsNumber = `${wbsCounter.level0}`;
+          } else {
+            wbsNumber = `${parentWBS}.${index + 1}`;
+          }
+
+          // Calculate duration in days
+          let durationDays = '';
+          if (task.duration && task.duration.value) {
+            const value = parseFloat(task.duration.value);
+            const unit = task.duration.unit || 'hours';
+            const hoursPerDay = company?.settings?.timeTracking?.hoursPerDay || 8;
+
+            switch (unit) {
+              case 'minutes': durationDays = (value / 60 / hoursPerDay).toFixed(2); break;
+              case 'hours': durationDays = (value / hoursPerDay).toFixed(2); break;
+              case 'days': durationDays = value.toString(); break;
+              case 'weeks': durationDays = (value * 5).toString(); break;
+              default: durationDays = (value / hoursPerDay).toFixed(2);
+            }
+          }
+
+          wbsData.push({
+            'WBS': wbsNumber,
+            'Level': level,
+            'Task Name': task.title,
+            'Description': task.description || '',
+            'Status': task.status || 'To Do',
+            'Priority': task.priority || 'Medium',
+            'Assignee': task.assignee?.name || 'Unassigned',
+            'Start Date': task.startDate ? new Date(task.startDate).toLocaleDateString() : '',
+            'End Date': task.endDate ? new Date(task.endDate).toLocaleDateString() : '',
+            'Duration (Days)': durationDays,
+            'Progress (%)': task.progress || 0,
+            'Estimated Hours': task.duration ? `${task.duration.value} ${task.duration.unit}` : '',
+            'Dependencies': task.dependencies?.length ? task.dependencies.join(', ') : ''
+          });
+
+          // Process children
+          if (task.children && task.children.length > 0) {
+            buildWBSRows(task.children, level + 1, wbsNumber);
+          }
+        });
+      };
+
+      buildWBSRows(hierarchicalTasks);
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+
+      // Project Info Sheet
+      const projectInfo = [
+        ['Project Name', project?.title || 'Unknown Project'],
+        ['Export Date', new Date().toLocaleDateString()],
+        ['Total Tasks', tasks.length],
+        ['Project Start', project?.startDate ? new Date(project.startDate).toLocaleDateString() : 'Not Set'],
+        ['Project End', project?.endDate ? new Date(project.endDate).toLocaleDateString() : 'Not Set'],
+        [''],
+        ['Work Breakdown Structure (WBS) Export']
+      ];
+      const wsInfo = XLSX.utils.aoa_to_sheet(projectInfo);
+      XLSX.utils.book_append_sheet(wb, wsInfo, 'Project Info');
+
+      // WBS Tasks Sheet
+      const wsWBS = XLSX.utils.json_to_sheet(wbsData);
+
+      // Set column widths
+      wsWBS['!cols'] = [
+        { wch: 10 },  // WBS
+        { wch: 6 },   // Level
+        { wch: 40 },  // Task Name
+        { wch: 50 },  // Description
+        { wch: 12 },  // Status
+        { wch: 10 },  // Priority
+        { wch: 20 },  // Assignee
+        { wch: 12 },  // Start Date
+        { wch: 12 },  // End Date
+        { wch: 14 },  // Duration
+        { wch: 12 },  // Progress
+        { wch: 16 },  // Estimated Hours
+        { wch: 20 }   // Dependencies
+      ];
+
+      XLSX.utils.book_append_sheet(wb, wsWBS, 'WBS Tasks');
+
+      // Summary Sheet
+      const statusCounts = {};
+      const priorityCounts = {};
+      tasks.forEach(task => {
+        statusCounts[task.status || 'To Do'] = (statusCounts[task.status || 'To Do'] || 0) + 1;
+        priorityCounts[task.priority || 'Medium'] = (priorityCounts[task.priority || 'Medium'] || 0) + 1;
+      });
+
+      const summaryData = [
+        ['Task Summary'],
+        [''],
+        ['By Status'],
+        ...Object.entries(statusCounts).map(([status, count]) => [status, count]),
+        [''],
+        ['By Priority'],
+        ...Object.entries(priorityCounts).map(([priority, count]) => [priority, count])
+      ];
+      const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+      XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+      // Generate and download file
+      XLSX.writeFile(wb, `${project?.title || 'project'}-WBS-${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    } catch (error) {
+      console.error('Error exporting Excel WBS:', error);
+      alert('Failed to export Excel. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Convert task duration to days for display
@@ -431,47 +692,200 @@ const GanttView = ({
             How it works
           </button>
         </div>
-        <button
-          onClick={() => setShowAutoScheduleModal(true)}
-          disabled={tasks.length === 0}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: tasks.length === 0 ? '#dfe1e6' : '#0052cc',
-            color: 'white',
-            border: 'none',
-            borderRadius: '3px',
-            cursor: tasks.length === 0 ? 'not-allowed' : 'pointer',
-            fontSize: '14px',
-            fontWeight: '600',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            if (tasks.length > 0) {
-              e.currentTarget.style.backgroundColor = '#0065ff';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (tasks.length > 0) {
-              e.currentTarget.style.backgroundColor = '#0052cc';
-            }
-          }}
-        >
-          <span>⚡</span>
-          Auto-Schedule Tasks
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* Export Button with Dropdown */}
+          <div style={{ position: 'relative' }} ref={exportMenuRef}>
+            <button
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              disabled={tasks.length === 0 || isExporting}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: tasks.length === 0 ? '#dfe1e6' : '#36b37e',
+                color: 'white',
+                border: 'none',
+                borderRadius: '3px',
+                cursor: tasks.length === 0 || isExporting ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                if (tasks.length > 0 && !isExporting) {
+                  e.currentTarget.style.backgroundColor = '#2d9d6a';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (tasks.length > 0 && !isExporting) {
+                  e.currentTarget.style.backgroundColor = '#36b37e';
+                }
+              }}
+            >
+              {isExporting ? (
+                <>
+                  <span style={{ animation: 'spin 1s linear infinite' }}>⏳</span>
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <span>📥</span>
+                  Export
+                  <span style={{ fontSize: '10px' }}>▼</span>
+                </>
+              )}
+            </button>
+
+            {/* Export Dropdown Menu */}
+            {showExportMenu && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '4px',
+                backgroundColor: 'white',
+                borderRadius: '6px',
+                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+                border: '1px solid #dfe1e6',
+                minWidth: '180px',
+                zIndex: 100,
+                overflow: 'hidden'
+              }}>
+                <button
+                  onClick={exportAsPNG}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    backgroundColor: 'white',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    color: '#172b4d',
+                    transition: 'background-color 0.15s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f4f5f7'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                >
+                  <span>🖼️</span>
+                  Export as PNG
+                </button>
+                <button
+                  onClick={exportAsCSV}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    backgroundColor: 'white',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    color: '#172b4d',
+                    transition: 'background-color 0.15s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f4f5f7'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                >
+                  <span>📊</span>
+                  Export as CSV
+                </button>
+                <button
+                  onClick={exportAsJSON}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    backgroundColor: 'white',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    color: '#172b4d',
+                    transition: 'background-color 0.15s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f4f5f7'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                >
+                  <span>📋</span>
+                  Export as JSON
+                </button>
+                <div style={{ height: '1px', backgroundColor: '#e2e8f0', margin: '4px 0' }} />
+                <button
+                  onClick={exportAsExcelWBS}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    backgroundColor: 'white',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    color: '#172b4d',
+                    transition: 'background-color 0.15s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f4f5f7'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                >
+                  <span>📑</span>
+                  Export Excel (WBS)
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => setShowAutoScheduleModal(true)}
+            disabled={tasks.length === 0}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: tasks.length === 0 ? '#dfe1e6' : '#0052cc',
+              color: 'white',
+              border: 'none',
+              borderRadius: '3px',
+              cursor: tasks.length === 0 ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              if (tasks.length > 0) {
+                e.currentTarget.style.backgroundColor = '#0065ff';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (tasks.length > 0) {
+                e.currentTarget.style.backgroundColor = '#0052cc';
+              }
+            }}
+          >
+            <span>⚡</span>
+            Auto-Schedule Tasks
+          </button>
+        </div>
       </div>
 
       {/* Gantt Container with Single Horizontal Scroll */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        maxHeight: 'calc(100vh - 300px)',
-        overflow: 'hidden',
-        position: 'relative'
-      }}>
+      <div
+        ref={ganttContainerRef}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: 'calc(100vh - 300px)',
+          overflow: 'hidden',
+          position: 'relative'
+        }}
+      >
         {/* Scroll Shadow Indicator */}
         {showScrollShadow && (
           <div style={{

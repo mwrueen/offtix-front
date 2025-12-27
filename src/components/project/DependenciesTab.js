@@ -571,8 +571,10 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
         </div>
       )}
 
-      {/* Dependencies List */}
-      {filteredDependencies.length === 0 ? (
+      {/* Dependencies List - Only show when form is not visible */}
+      {!showForm && (
+        <>
+        {filteredDependencies.length === 0 ? (
         <div style={{
           backgroundColor: '#ffffff',
           border: '2px dashed #dfe1e6',
@@ -736,6 +738,8 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
             );
           })}
         </div>
+      )}
+        </>
       )}
 
       {/* View Modal */}

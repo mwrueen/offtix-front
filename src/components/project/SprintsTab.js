@@ -762,8 +762,9 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
         </div>
       )}
 
-      {/* Sprints List */}
-      <div style={{ display: 'grid', gap: '16px' }}>
+      {/* Sprints List - Only show when form is not visible */}
+      {!showForm && (
+        <div style={{ display: 'grid', gap: '16px' }}>
         {filteredSprints.length === 0 && sprints.length > 0 ? (
           <div style={{
             textAlign: 'center',
@@ -1070,7 +1071,8 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
             );
           })
         )}
-      </div>
+        </div>
+      )}
 
       {/* Details Modal */}
       {viewingSprint && (

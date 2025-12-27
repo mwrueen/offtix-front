@@ -19,6 +19,10 @@ const Company = () => {
   const [showCreateCompany, setShowCreateCompany] = useState(false);
   const [showCreateDesignation, setShowCreateDesignation] = useState(false);
   const [showDesignations, setShowDesignations] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editProfileData, setEditProfileData] = useState({});
+  const [savingProfile, setSavingProfile] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     if (selectedCompany) {
@@ -88,6 +92,56 @@ const Company = () => {
     company.owner === state.user.id ||
     String(company.owner?._id) === String(state.user.id)
   );
+
+  // Handle opening edit profile modal
+  const handleEditProfile = () => {
+    setEditProfileData({
+      name: company?.name || '',
+      description: company?.description || '',
+      industry: company?.industry || '',
+      website: company?.website || '',
+      email: company?.email || '',
+      phone: company?.phone || '',
+      address: company?.address || '',
+      city: company?.city || '',
+      state: company?.state || '',
+      country: company?.country || '',
+      zipCode: company?.zipCode || '',
+      foundedYear: company?.foundedYear || '',
+      companySize: company?.companySize || ''
+    });
+    setShowEditProfile(true);
+  };
+
+  // Handle saving profile
+  const handleSaveProfile = async () => {
+    setSavingProfile(true);
+    try {
+      const token = getCookie('authToken');
+      const response = await fetch(`/api/companies/${selectedCompany.id}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(editProfileData)
+      });
+
+      if (response.ok) {
+        toast?.showToast?.('Company profile updated successfully', 'success');
+        setShowEditProfile(false);
+        fetchCompany();
+      } else {
+        const data = await response.json();
+        toast?.showToast?.(data.message || 'Failed to update profile', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast?.showToast?.('Failed to update profile', 'error');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   // Debug logging
   console.log('=== COMPANY CREATOR DEBUG ===');
@@ -322,6 +376,30 @@ const Company = () => {
               }}
             >
               Manage Roles
+            </button>
+            <button
+              onClick={handleEditProfile}
+              style={{
+                padding: '12px 24px',
+                background: 'rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '14px',
+                backdropFilter: 'blur(10px)',
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+              }}
+            >
+              ✏️ Edit Info
             </button>
           </div>
         </div>
@@ -941,6 +1019,251 @@ const Company = () => {
             fetchCompany();
           }}
         />
+      )}
+
+      {/* Edit Company Profile Modal */}
+      {showEditProfile && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}
+        onClick={() => setShowEditProfile(false)}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '32px',
+            borderRadius: '16px',
+            width: '700px',
+            maxWidth: '95vw',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}
+          onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#1e293b' }}>
+                Edit Company Information
+              </h3>
+              <button
+                onClick={() => setShowEditProfile(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#64748b'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Basic Info */}
+            <div style={{ marginBottom: '24px' }}>
+              <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase' }}>
+                Basic Information
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Company Name</label>
+                  <input
+                    type="text"
+                    value={editProfileData.name || ''}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, name: e.target.value })}
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Industry</label>
+                  <input
+                    type="text"
+                    value={editProfileData.industry || ''}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, industry: e.target.value })}
+                    placeholder="e.g., Technology, Finance"
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Description</label>
+                  <textarea
+                    value={editProfileData.description || ''}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, description: e.target.value })}
+                    placeholder="Brief description of your company"
+                    rows={2}
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', resize: 'vertical' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Founded Year</label>
+                  <input
+                    type="number"
+                    value={editProfileData.foundedYear || ''}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, foundedYear: e.target.value ? parseInt(e.target.value) : '' })}
+                    placeholder="e.g., 2020"
+                    min="1800"
+                    max={new Date().getFullYear()}
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Company Size</label>
+                  <select
+                    value={editProfileData.companySize || ''}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, companySize: e.target.value })}
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
+                  >
+                    <option value="">Select size</option>
+                    <option value="1-10">1-10 employees</option>
+                    <option value="11-50">11-50 employees</option>
+                    <option value="51-200">51-200 employees</option>
+                    <option value="201-500">201-500 employees</option>
+                    <option value="501-1000">501-1000 employees</option>
+                    <option value="1000+">1000+ employees</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Info */}
+            <div style={{ marginBottom: '24px' }}>
+              <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase' }}>
+                Contact Information
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Email</label>
+                  <input
+                    type="email"
+                    value={editProfileData.email || ''}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, email: e.target.value })}
+                    placeholder="company@example.com"
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Phone</label>
+                  <input
+                    type="tel"
+                    value={editProfileData.phone || ''}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, phone: e.target.value })}
+                    placeholder="+1 (555) 123-4567"
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Website</label>
+                  <input
+                    type="url"
+                    value={editProfileData.website || ''}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, website: e.target.value })}
+                    placeholder="https://www.example.com"
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Location Info */}
+            <div style={{ marginBottom: '32px' }}>
+              <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase' }}>
+                Location
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Address</label>
+                  <input
+                    type="text"
+                    value={editProfileData.address || ''}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, address: e.target.value })}
+                    placeholder="123 Main Street, Suite 100"
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>City</label>
+                  <input
+                    type="text"
+                    value={editProfileData.city || ''}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, city: e.target.value })}
+                    placeholder="San Francisco"
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>State/Province</label>
+                  <input
+                    type="text"
+                    value={editProfileData.state || ''}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, state: e.target.value })}
+                    placeholder="California"
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Country</label>
+                  <input
+                    type="text"
+                    value={editProfileData.country || ''}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, country: e.target.value })}
+                    placeholder="United States"
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Zip Code</label>
+                  <input
+                    type="text"
+                    value={editProfileData.zipCode || ''}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, zipCode: e.target.value })}
+                    placeholder="94102"
+                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowEditProfile(false)}
+                style={{
+                  padding: '12px 24px',
+                  background: 'white',
+                  color: '#64748b',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '14px'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                disabled={savingProfile}
+                style={{
+                  padding: '12px 24px',
+                  background: savingProfile ? '#94a3b8' : 'linear-gradient(135deg, #667eea, #764ba2)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: savingProfile ? 'not-allowed' : 'pointer',
+                  fontWeight: '600',
+                  fontSize: '14px'
+                }}
+              >
+                {savingProfile ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </Layout>
   );

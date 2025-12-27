@@ -650,8 +650,10 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
         </div>
       )}
 
-      {/* Risks List */}
-      {filteredRisks.length === 0 ? (
+      {/* Risks List - Only show when form is not visible */}
+      {!showForm && (
+        <>
+        {filteredRisks.length === 0 ? (
         <div style={{
           backgroundColor: '#ffffff',
           border: '2px dashed #dfe1e6',
@@ -832,6 +834,8 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
             );
           })}
         </div>
+      )}
+        </>
       )}
 
       {/* View Modal */}

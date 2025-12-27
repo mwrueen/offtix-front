@@ -29,6 +29,7 @@ import EmployeeDetails from './components/EmployeeDetails';
 import HolidayCalendar from './components/HolidayCalendar';
 import LeaveManagement from './components/LeaveManagement';
 import Workforce from './components/company/Workforce';
+import Organogram from './components/Organogram';
 
 function App() {
   return (
@@ -136,6 +137,11 @@ function App() {
                 <Route path="/workforce" element={
                   <ProtectedRoute>
                     <Workforce />
+                  </ProtectedRoute>
+                } />
+                <Route path="/organogram" element={
+                  <ProtectedRoute>
+                    <Organogram />
                   </ProtectedRoute>
                 } />
                 </Routes>
