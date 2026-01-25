@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import TaskWorkflow from './TaskWorkflow';
+import { taskAPI } from '../../services/api';
 
 const TaskDetailModal = ({
   task,
@@ -204,6 +206,26 @@ const TaskDetailModal = ({
                 </select>
               </div>
             </div>
+
+            {/* Task Workflow */}
+            {task && project && (
+              <TaskWorkflow
+                task={task}
+                projectId={project._id || project.id}
+                onTaskUpdate={async (updatedTask) => {
+                  // Refresh task data
+                  try {
+                    const response = await taskAPI.getTaskWithWorkflow(project._id || project.id, task._id);
+                    if (onUpdateTask) {
+                      // Trigger refresh by calling update
+                      await onUpdateTask(task._id, {});
+                    }
+                  } catch (error) {
+                    console.error('Error refreshing task:', error);
+                  }
+                }}
+              />
+            )}
           </div>
 
           {/* Side Details */}

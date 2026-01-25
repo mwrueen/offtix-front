@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import TaskWorkflow from './TaskWorkflow';
+import { taskAPI } from '../../services/api';
 
 const TaskDetailsSidebar = ({
   selectedTask,
@@ -790,6 +792,21 @@ const TaskDetailsSidebar = ({
             />
           </div>
         </div>
+
+        {/* Task Workflow */}
+        {selectedTask && project && (
+          <TaskWorkflow
+            task={selectedTask}
+            projectId={project._id || project.id}
+            onTaskUpdate={(updatedTask) => {
+              // Refresh task data by calling parent update
+              if (onUpdateTask) {
+                // Trigger a refresh by updating with empty object
+                onUpdateTask(selectedTask._id, {});
+              }
+            }}
+          />
+        )}
       </div>
 
       {/* Save/Cancel Buttons - Fixed at bottom */}

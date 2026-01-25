@@ -6,6 +6,7 @@ import Layout from './Layout';
 import Breadcrumb from './project/Breadcrumb';
 import TaskDetailModal from './project/TaskDetailModal';
 import InlineTaskCreator from './project/InlineTaskCreator';
+import AssigneeModal from './project/AssigneeModal';
 import ListView from './project/views/ListView';
 import BoardView from './project/views/BoardView';
 import GanttView from './project/views/GanttView';
@@ -32,6 +33,7 @@ const Tasks = () => {
   const [taskCosts, setTaskCosts] = useState({}); // Map of task._id -> cost
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [assigneeModalTask, setAssigneeModalTask] = useState(null);
   const [selectedSprint, setSelectedSprint] = useState('');
   const [selectedPhase, setSelectedPhase] = useState('');
   const [currentView, setCurrentView] = useState('list');
@@ -236,8 +238,19 @@ const Tasks = () => {
     }
   };
 
-  const handleSelectTask = (task) => {
-    setSelectedTask(task);
+  const handleSelectTask = async (task) => {
+    // If task has workflow, fetch full workflow data
+    if (task.useRoleWorkflow) {
+      try {
+        const response = await taskAPI.getTaskWithWorkflow(id, task._id);
+        setSelectedTask(response.data);
+      } catch (error) {
+        console.error('Error fetching task workflow:', error);
+        setSelectedTask(task);
+      }
+    } else {
+      setSelectedTask(task);
+    }
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -649,7 +662,7 @@ const Tasks = () => {
               <div style={{ padding: '16px' }}>
                 <ListView
                   tasks={filteredTasks}
-                  onEditTask={() => {}}
+                  onEditTask={(task) => setAssigneeModalTask(task)}
                   onDeleteTask={handleDeleteTask}
                   onAddSubtask={() => {}}
                   selectedTaskId={selectedTask?._id}
@@ -728,6 +741,28 @@ const Tasks = () => {
           phases={phases}
           onUpdateTask={handleUpdateTask}
           onClose={() => setSelectedTask(null)}
+        />
+      )}
+
+      {/* Assignee Modal */}
+      {assigneeModalTask && (
+        <AssigneeModal
+          task={assigneeModalTask}
+          projectId={id}
+          users={users}
+          onClose={() => setAssigneeModalTask(null)}
+          onUpdate={async () => {
+            await fetchProjectData();
+            // Update the task in assigneeModalTask if it's still selected
+            if (selectedTask && selectedTask._id === assigneeModalTask._id) {
+              try {
+                const response = await taskAPI.getTaskWithWorkflow(id, assigneeModalTask._id);
+                setSelectedTask(response.data);
+              } catch (error) {
+                console.error('Error refreshing task:', error);
+              }
+            }
+          }}
         />
       )}
 

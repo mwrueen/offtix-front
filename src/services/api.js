@@ -107,6 +107,24 @@ export const taskAPI = {
   update: (projectId, taskId, taskData) => api.put(`/projects/${projectId}/tasks/${taskId}`, taskData),
   delete: (projectId, taskId) => api.delete(`/projects/${projectId}/tasks/${taskId}`),
   reorder: (projectId, taskOrders) => api.post(`/projects/${projectId}/tasks/reorder`, { taskOrders }),
+  // Workflow role operations
+  getTaskWithWorkflow: (projectId, taskId) => api.get(`/projects/${projectId}/tasks/${taskId}/workflow`),
+  startWorkflow: (projectId, taskId) => api.post(`/projects/${projectId}/tasks/${taskId}/workflow/start`),
+  completeRoleAndHandoff: (projectId, taskId, handoffData) =>
+    api.post(`/projects/${projectId}/tasks/${taskId}/workflow/complete-role`, handoffData),
+  skipRole: (projectId, taskId, reason) =>
+    api.post(`/projects/${projectId}/tasks/${taskId}/workflow/skip-role`, { reason }),
+  updateRoleAssignments: (projectId, taskId, roleAssignments, useRoleWorkflow) =>
+    api.put(`/projects/${projectId}/tasks/${taskId}/role-assignments`, { roleAssignments, useRoleWorkflow }),
+};
+
+export const taskRoleAPI = {
+  getAll: (projectId) => api.get(`/task-roles/project/${projectId}`),
+  create: (projectId, roleData) => api.post(`/task-roles/project/${projectId}`, roleData),
+  update: (projectId, roleId, roleData) => api.put(`/task-roles/project/${projectId}/${roleId}`, roleData),
+  delete: (projectId, roleId) => api.delete(`/task-roles/project/${projectId}/${roleId}`),
+  reorder: (projectId, roleOrders) => api.put(`/task-roles/project/${projectId}/reorder`, { roleOrders }),
+  initializeDefaults: (projectId) => api.post(`/task-roles/project/${projectId}/initialize`),
 };
 
 export const taskStatusAPI = {

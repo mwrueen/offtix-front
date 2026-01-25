@@ -551,7 +551,15 @@ const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, is
       </div>
 
       {/* Assignees */}
-      <AssigneeList assignees={task.assignees} />
+      <AssigneeList
+        assignees={task.assignees}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (onEdit) {
+            onEdit(task);
+          }
+        }}
+      />
 
       {/* Due Date */}
       <div style={{ fontSize: '12px', color: '#5e6c84' }}>
@@ -566,9 +574,30 @@ const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, is
   );
 };
 
-const AssigneeList = ({ assignees }) => {
+const AssigneeList = ({ assignees, onClick }) => {
   if (!assignees || assignees.length === 0) {
-    return <div style={{ fontSize: '12px', color: '#a8b1bd', fontStyle: 'italic' }}>Unassigned</div>;
+    return (
+      <div
+        onClick={onClick}
+        style={{
+          fontSize: '12px',
+          color: '#a8b1bd',
+          fontStyle: 'italic',
+          cursor: onClick ? 'pointer' : 'default',
+          padding: '4px 8px',
+          borderRadius: '4px',
+          transition: 'background-color 0.2s'
+        }}
+        onMouseEnter={(e) => {
+          if (onClick) e.currentTarget.style.backgroundColor = '#f4f5f7';
+        }}
+        onMouseLeave={(e) => {
+          if (onClick) e.currentTarget.style.backgroundColor = 'transparent';
+        }}
+      >
+        Unassigned
+      </div>
+    );
   }
 
   const getInitials = (name) => {
@@ -590,7 +619,25 @@ const AssigneeList = ({ assignees }) => {
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '-4px' }}>
+    <div
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '-4px',
+        cursor: onClick ? 'pointer' : 'default',
+        padding: '4px 8px',
+        borderRadius: '4px',
+        margin: '-4px -8px',
+        transition: 'background-color 0.2s'
+      }}
+      onMouseEnter={(e) => {
+        if (onClick) e.currentTarget.style.backgroundColor = '#f4f5f7';
+      }}
+      onMouseLeave={(e) => {
+        if (onClick) e.currentTarget.style.backgroundColor = 'transparent';
+      }}
+    >
       {assignees.slice(0, 3).map((assignee, index) => (
         <AssigneeAvatar
           key={assignee._id || index}

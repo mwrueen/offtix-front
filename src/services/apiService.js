@@ -83,14 +83,27 @@ class ApiService {
 
   // Tasks API with company filtering
   async getTasks(token, companyId = null, params = {}) {
+    // If projectId is provided, use the correct route format
+    if (params.projectId) {
+      const projectId = params.projectId;
+      const { projectId: _, ...otherParams } = params;
+      return this.apiCall('GET', `/projects/${projectId}/tasks`, null, token, companyId, otherParams);
+    }
+    // Fallback to old route if no projectId (for backward compatibility)
     return this.apiCall('GET', '/tasks', null, token, companyId, params);
   }
 
-  async createTask(taskData, token, companyId = null) {
+  async createTask(taskData, token, companyId = null, projectId = null) {
+    if (projectId) {
+      return this.apiCall('POST', `/projects/${projectId}/tasks`, taskData, token, companyId);
+    }
     return this.apiCall('POST', '/tasks', taskData, token, companyId);
   }
 
-  async updateTask(taskId, taskData, token, companyId = null) {
+  async updateTask(taskId, taskData, token, companyId = null, projectId = null) {
+    if (projectId) {
+      return this.apiCall('PUT', `/projects/${projectId}/tasks/${taskId}`, taskData, token, companyId);
+    }
     return this.apiCall('PUT', `/tasks/${taskId}`, taskData, token, companyId);
   }
 

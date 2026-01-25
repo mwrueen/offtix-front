@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import TaskStatusManager from './TaskStatusManager';
 import { useAuth } from '../../context/AuthContext';
 
-const TaskFormJira = ({ 
-  taskForm, 
-  setTaskForm, 
-  onSubmit, 
-  onCancel, 
-  taskStatuses, 
-  editingTask, 
+const TaskFormJira = ({
+  taskForm,
+  setTaskForm,
+  onSubmit,
+  onCancel,
+  taskStatuses,
+  editingTask,
   parentTask,
   projectId,
   onStatusesUpdate,
@@ -17,7 +17,8 @@ const TaskFormJira = ({
   isProjectOwner = false,
   users = [],
   sprints = [],
-  phases = []
+  phases = [],
+  workflowRoles = []
 }) => {
   const { state } = useAuth();
   const currentUser = state.user;
@@ -28,6 +29,11 @@ const TaskFormJira = ({
   const [storyPoints, setStoryPoints] = useState(taskForm.storyPoints || '');
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
   const [assigneeSearch, setAssigneeSearch] = useState('');
+
+  // Workflow Roles State
+  const [useRoleWorkflow, setUseRoleWorkflow] = useState(taskForm.useRoleWorkflow || false);
+  const [roleAssignments, setRoleAssignments] = useState(taskForm.roleAssignments || []);
+  const [expandedRoles, setExpandedRoles] = useState({});
   
   const assigneeDropdownRef = useRef(null);
   
@@ -116,14 +122,65 @@ const TaskFormJira = ({
     setAssigneeSearch('');
   };
   
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(assigneeSearch.toLowerCase())
   );
-  
+
   const selectedAssignees = (taskForm.assignees || [])
     .map(id => users.find(u => u._id === id))
     .filter(Boolean);
-  
+
+  // Initialize role assignments when workflow is enabled
+  const handleToggleRoleWorkflow = (enabled) => {
+    setUseRoleWorkflow(enabled);
+    if (enabled && roleAssignments.length === 0 && workflowRoles.length > 0) {
+      // Initialize with all available roles in order
+      const initialAssignments = workflowRoles
+        .sort((a, b) => a.order - b.order)
+        .map((role, index) => ({
+          role: role._id,
+          order: index + 1,
+          assignees: role.defaultAssignees || []
+        }));
+      setRoleAssignments(initialAssignments);
+      setTaskForm({...taskForm, useRoleWorkflow: enabled, roleAssignments: initialAssignments});
+    } else {
+      setTaskForm({...taskForm, useRoleWorkflow: enabled});
+    }
+  };
+
+  const handleToggleRoleAssignee = (roleId, userId) => {
+    const updatedAssignments = roleAssignments.map(ra => {
+      if (ra.role === roleId) {
+        const currentAssignees = ra.assignees || [];
+        const newAssignees = currentAssignees.includes(userId)
+          ? currentAssignees.filter(id => id !== userId)
+          : [...currentAssignees, userId];
+        return { ...ra, assignees: newAssignees };
+      }
+      return ra;
+    });
+    setRoleAssignments(updatedAssignments);
+    setTaskForm({...taskForm, roleAssignments: updatedAssignments});
+  };
+
+  const toggleRoleExpanded = (roleId) => {
+    setExpandedRoles(prev => ({ ...prev, [roleId]: !prev[roleId] }));
+  };
+
+  const getRoleById = (roleId) => workflowRoles.find(r => r._id === roleId);
+
+  const getRoleAssigneesDisplay = (roleId) => {
+    const assignment = roleAssignments.find(ra => ra.role === roleId);
+    if (!assignment || !assignment.assignees || assignment.assignees.length === 0) {
+      return 'No assignees';
+    }
+    return assignment.assignees.map(id => {
+      const user = users.find(u => u._id === id);
+      return user?.name || 'Unknown';
+    }).join(', ');
+  };
+
   return (
     <div style={{
       position: 'fixed',
@@ -843,12 +900,182 @@ const TaskFormJira = ({
                     </select>
                   </div>
 
+                  {/* Workflow Roles Section */}
+                  {workflowRoles.length > 0 && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '8px'
+                      }}>
+                        <label style={{
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: '#5e6c84',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          🔄 Workflow Roles
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={useRoleWorkflow}
+                            onChange={(e) => handleToggleRoleWorkflow(e.target.checked)}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          <span style={{ fontSize: '12px', color: '#5e6c84' }}>Enable</span>
+                        </label>
+                      </div>
+
+                      {useRoleWorkflow && (
+                        <div style={{
+                          border: '1px solid #dfe1e6',
+                          borderRadius: '4px',
+                          backgroundColor: '#fafbfc'
+                        }}>
+                          {workflowRoles
+                            .sort((a, b) => a.order - b.order)
+                            .map((role, index) => {
+                              const isExpanded = expandedRoles[role._id];
+                              const assignment = roleAssignments.find(ra => ra.role === role._id);
+                              const assignedCount = assignment?.assignees?.length || 0;
+
+                              return (
+                                <div key={role._id} style={{
+                                  borderBottom: index < workflowRoles.length - 1 ? '1px solid #dfe1e6' : 'none'
+                                }}>
+                                  {/* Role Header */}
+                                  <div
+                                    onClick={() => toggleRoleExpanded(role._id)}
+                                    style={{
+                                      padding: '10px 12px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '8px',
+                                      cursor: 'pointer',
+                                      backgroundColor: isExpanded ? '#f4f5f7' : 'transparent'
+                                    }}
+                                  >
+                                    <span style={{ fontSize: '14px' }}>{role.icon || '📋'}</span>
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{
+                                        fontSize: '13px',
+                                        fontWeight: '500',
+                                        color: '#172b4d',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                      }}>
+                                        <span style={{
+                                          width: '18px',
+                                          height: '18px',
+                                          borderRadius: '50%',
+                                          backgroundColor: role.color || '#5e6c84',
+                                          color: 'white',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          fontSize: '10px',
+                                          fontWeight: '600'
+                                        }}>
+                                          {index + 1}
+                                        </span>
+                                        {role.name}
+                                      </div>
+                                      <div style={{ fontSize: '11px', color: '#5e6c84', marginTop: '2px' }}>
+                                        {assignedCount} assignee{assignedCount !== 1 ? 's' : ''}
+                                      </div>
+                                    </div>
+                                    <span style={{
+                                      color: '#5e6c84',
+                                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                      transition: 'transform 0.2s'
+                                    }}>▼</span>
+                                  </div>
+
+                                  {/* Role Assignees */}
+                                  {isExpanded && (
+                                    <div style={{
+                                      padding: '8px 12px',
+                                      backgroundColor: '#fff',
+                                      borderTop: '1px solid #eee'
+                                    }}>
+                                      <div style={{ fontSize: '11px', color: '#5e6c84', marginBottom: '6px' }}>
+                                        Select assignees for this role:
+                                      </div>
+                                      <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                                        {users.map(user => {
+                                          const isSelected = assignment?.assignees?.includes(user._id);
+                                          return (
+                                            <div
+                                              key={user._id}
+                                              onClick={() => handleToggleRoleAssignee(role._id, user._id)}
+                                              style={{
+                                                padding: '6px 8px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                cursor: 'pointer',
+                                                borderRadius: '3px',
+                                                backgroundColor: isSelected ? '#deebff' : 'transparent'
+                                              }}
+                                              onMouseEnter={(e) => {
+                                                if (!isSelected) e.currentTarget.style.backgroundColor = '#f4f5f7';
+                                              }}
+                                              onMouseLeave={(e) => {
+                                                e.currentTarget.style.backgroundColor = isSelected ? '#deebff' : 'transparent';
+                                              }}
+                                            >
+                                              <div style={{
+                                                width: '20px',
+                                                height: '20px',
+                                                borderRadius: '50%',
+                                                backgroundColor: getUserColor(user._id),
+                                                color: 'white',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontSize: '9px',
+                                                fontWeight: '600'
+                                              }}>
+                                                {getUserInitials(user)}
+                                              </div>
+                                              <span style={{ fontSize: '12px', color: '#172b4d', flex: 1 }}>
+                                                {user.name}
+                                              </span>
+                                              {isSelected && (
+                                                <svg width="14" height="14" viewBox="0 0 16 16" fill="#0052cc">
+                                                  <path d="M6.5 11.5l-3-3 1-1 2 2 5-5 1 1z"/>
+                                                </svg>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                        </div>
+                      )}
+
+                      {useRoleWorkflow && (
+                        <p style={{ fontSize: '10px', color: '#5e6c84', marginTop: '6px', marginBottom: 0 }}>
+                          When workflow starts, assignees will be notified in sequence.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <div style={{ marginBottom: '16px' }}>
-                    <label style={{ 
-                      display: 'block', 
-                      marginBottom: '6px', 
-                      fontSize: '12px', 
-                      fontWeight: '600', 
+                    <label style={{
+                      display: 'block',
+                      marginBottom: '6px',
+                      fontSize: '12px',
+                      fontWeight: '600',
                       color: '#5e6c84'
                     }}>
                       Original Estimate (hours)
