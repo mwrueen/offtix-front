@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { employeeAPI } from '../services/api';
 import { useCompany } from '../context/CompanyContext';
+import { useAuth } from '../context/AuthContext';
 import Layout from './Layout';
 
 const EmployeeList = () => {
   const navigate = useNavigate();
   const { state } = useCompany();
+  const { state: authState } = useAuth();
   const selectedCompany = state.selectedCompany;
   const [employees, setEmployees] = useState([]);
   const [company, setCompany] = useState(null);
@@ -14,22 +16,83 @@ const EmployeeList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDesignation, setFilterDesignation] = useState('all');
+  const [canAddEmployee, setCanAddEmployee] = useState(false);
+
+  // Currency symbols mapping
+  const currencySymbols = {
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'JPY': '¥',
+    'AUD': 'A$',
+    'CAD': 'C$',
+    'CHF': 'CHF',
+    'CNY': '¥',
+    'INR': '₹',
+    'SGD': 'S$',
+    'HKD': 'HK$',
+    'NZD': 'NZ$',
+    'SEK': 'kr',
+    'NOK': 'kr',
+    'DKK': 'kr',
+    'MXN': 'MX$',
+    'BRL': 'R$',
+    'ZAR': 'R',
+    'AED': 'د.إ',
+    'SAR': '﷼'
+  };
+
+  const getCurrencySymbol = () => {
+    return currencySymbols[company?.currency] || '$';
+  };
 
   useEffect(() => {
+    // Wait for company context to load before checking
+    if (state.loading) {
+      return;
+    }
+
     if (selectedCompany && selectedCompany.id !== 'personal') {
       fetchEmployees();
-    } else {
+    } else if (!state.loading && (selectedCompany === null || selectedCompany?.id === 'personal')) {
       navigate('/overview');
     }
-  }, [selectedCompany, navigate]);
+  }, [selectedCompany, state.loading, navigate]);
 
   const fetchEmployees = async () => {
     try {
       setLoading(true);
       const response = await employeeAPI.getAll(selectedCompany.id);
       setEmployees(response.data.employees || []);
-      setCompany(response.data.company);
+      const companyData = response.data.company;
+      setCompany(companyData);
       setDesignations(response.data.designations || []);
+
+      // Check user permissions
+      const userId = authState.user?._id || authState.user?.id;
+      const ownerId = companyData.owner?._id || companyData.owner;
+      const isOwner = ownerId?.toString() === userId?.toString();
+      const isSuperAdmin = authState.user?.role === 'superadmin';
+
+      if (isOwner || isSuperAdmin) {
+        setCanAddEmployee(true);
+      } else {
+        const memberInfo = companyData.members?.find(m => {
+          const memberId = m.user?._id || m.user;
+          return memberId?.toString() === userId?.toString();
+        });
+
+        if (memberInfo) {
+          const designation = companyData.designations?.find(d => d.name === memberInfo.designation);
+          if (designation?.permissions?.addEmployee) {
+            setCanAddEmployee(true);
+          } else {
+            setCanAddEmployee(false);
+          }
+        } else {
+          setCanAddEmployee(false);
+        }
+      }
     } catch (error) {
       console.error('Error fetching employees:', error);
     } finally {
@@ -52,6 +115,17 @@ const EmployeeList = () => {
     return '#6b7280';
   };
 
+  // Show loading state while context is loading
+  if (state.loading) {
+    return (
+      <Layout>
+        <div style={{ textAlign: 'center', padding: '50px' }}>
+          <div style={{ fontSize: '18px', color: '#64748b' }}>Loading...</div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -70,24 +144,26 @@ const EmployeeList = () => {
               {company?.name} • {filteredEmployees.length} {filteredEmployees.length === 1 ? 'employee' : 'employees'}
             </p>
           </div>
-          <button
-            onClick={() => navigate('/add-employee')}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '500',
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            <span>➕</span> Add Employee
-          </button>
+          {canAddEmployee && (
+            <button
+              onClick={() => navigate('/add-employee')}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '500',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <span>➕</span> Add Employee
+            </button>
+          )}
         </div>
 
         {/* Filters */}
@@ -285,7 +361,7 @@ const EmployeeList = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Salary</span>
                       <span style={{ fontSize: '13px', color: '#10b981', fontWeight: '600' }}>
-                        ${employee.currentSalary.toLocaleString()}
+                        {getCurrencySymbol()}{employee.currentSalary.toLocaleString()}
                       </span>
                     </div>
                   )}

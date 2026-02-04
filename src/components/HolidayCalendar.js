@@ -16,8 +16,11 @@ const HolidayCalendar = () => {
   const [editingHoliday, setEditingHoliday] = useState(null);
   const [formData, setFormData] = useState({
     date: '',
+    startDate: '',
+    endDate: '',
     name: '',
-    description: ''
+    description: '',
+    isRange: false
   });
   const [loading, setLoading] = useState(true);
   const [companySettings, setCompanySettings] = useState({
@@ -26,6 +29,12 @@ const HolidayCalendar = () => {
   });
   const [savingSettings, setSavingSettings] = useState(false);
 
+  // Drag selection state
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartDate, setDragStartDate] = useState(null);
+  const [dragEndDate, setDragEndDate] = useState(null);
+  const [hoveredDate, setHoveredDate] = useState(null);
+
   useEffect(() => {
     if (selectedCompany && selectedCompany.id !== 'personal') {
       fetchHolidays();
@@ -33,10 +42,25 @@ const HolidayCalendar = () => {
     }
   }, [selectedCompany]);
 
+  // Add global mouse up handler for drag selection
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      if (isDragging) {
+        handleMouseUp();
+      }
+    };
+
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => {
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isDragging, dragStartDate, dragEndDate]);
+
   const fetchHolidays = async () => {
     try {
       setLoading(true);
       const response = await holidayAPI.getAll(selectedCompany.id);
+      console.log('Fetched holidays:', response.data.holidays);
       setHolidays(response.data.holidays || []);
     } catch (error) {
       console.error('Error fetching holidays:', error);
@@ -114,36 +138,145 @@ const HolidayCalendar = () => {
 
   const getHolidaysForDate = (date) => {
     return holidays.filter(holiday => {
-      const holidayDate = new Date(holiday.date);
-      return holidayDate.getDate() === date.getDate() &&
-             holidayDate.getMonth() === date.getMonth() &&
-             holidayDate.getFullYear() === date.getFullYear();
+      if (holiday.isRange) {
+        // For range holidays, check if date falls within the range
+        const start = new Date(holiday.startDate);
+        const end = new Date(holiday.endDate);
+        const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const startCheck = new Date(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+        const endCheck = new Date(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
+
+        console.log('Range holiday check:', {
+          holidayName: holiday.name,
+          checkDate: checkDate.toDateString(),
+          startCheck: startCheck.toDateString(),
+          endCheck: endCheck.toDateString(),
+          inRange: checkDate >= startCheck && checkDate <= endCheck
+        });
+
+        return checkDate >= startCheck && checkDate <= endCheck;
+      } else {
+        // For single-day holidays
+        if (!holiday.date) {
+          console.warn('Holiday missing date field:', holiday);
+          return false;
+        }
+        const holidayDate = new Date(holiday.date);
+        // Compare using UTC to avoid timezone issues
+        return holidayDate.getUTCDate() === date.getDate() &&
+               holidayDate.getUTCMonth() === date.getMonth() &&
+               holidayDate.getUTCFullYear() === date.getFullYear();
+      }
     });
   };
 
-  const handleDateClick = (day) => {
+  const handleMouseDown = (day) => {
     const clickedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     const dayHolidays = getHolidaysForDate(clickedDate);
-    
+
+    // If clicking on existing holiday, edit it
     if (dayHolidays.length > 0) {
-      // Edit existing holiday
-      setEditingHoliday(dayHolidays[0]);
-      setFormData({
-        date: dayHolidays[0].date.split('T')[0],
-        name: dayHolidays[0].name,
-        description: dayHolidays[0].description || ''
-      });
+      const holiday = dayHolidays[0];
+      setEditingHoliday(holiday);
+      if (holiday.isRange) {
+        setFormData({
+          date: '',
+          startDate: holiday.startDate.split('T')[0],
+          endDate: holiday.endDate.split('T')[0],
+          name: holiday.name,
+          description: holiday.description || '',
+          isRange: true
+        });
+      } else {
+        setFormData({
+          date: holiday.date.split('T')[0],
+          startDate: '',
+          endDate: '',
+          name: holiday.name,
+          description: holiday.description || '',
+          isRange: false
+        });
+      }
       setShowEditModal(true);
     } else {
-      // Add new holiday
-      setSelectedDate(clickedDate);
-      setFormData({
-        date: clickedDate.toISOString().split('T')[0],
-        name: '',
-        description: ''
-      });
+      // Start drag selection for new holiday
+      setIsDragging(true);
+      setDragStartDate(clickedDate);
+      setDragEndDate(clickedDate);
+    }
+  };
+
+  const handleMouseEnter = (day) => {
+    if (isDragging) {
+      const hoveredDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+      setDragEndDate(hoveredDate);
+    }
+    setHoveredDate(day);
+  };
+
+  const handleMouseUp = () => {
+    if (isDragging && dragStartDate && dragEndDate) {
+      // Determine start and end (in case user dragged backwards)
+      const start = dragStartDate < dragEndDate ? dragStartDate : dragEndDate;
+      const end = dragStartDate < dragEndDate ? dragEndDate : dragStartDate;
+
+      // Format dates as YYYY-MM-DD
+      const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      // Check if it's a single day or range
+      const isSameDay = start.getDate() === end.getDate() &&
+                        start.getMonth() === end.getMonth() &&
+                        start.getFullYear() === end.getFullYear();
+
+      if (isSameDay) {
+        // Single day holiday
+        setFormData({
+          date: formatDate(start),
+          startDate: '',
+          endDate: '',
+          name: '',
+          description: '',
+          isRange: false
+        });
+      } else {
+        // Date range holiday
+        setFormData({
+          date: '',
+          startDate: formatDate(start),
+          endDate: formatDate(end),
+          name: '',
+          description: '',
+          isRange: true
+        });
+      }
+
       setShowAddModal(true);
     }
+
+    // Reset drag state
+    setIsDragging(false);
+    setDragStartDate(null);
+    setDragEndDate(null);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredDate(null);
+  };
+
+  // Check if a day is in the drag selection range
+  const isInDragRange = (day) => {
+    if (!isDragging || !dragStartDate || !dragEndDate) return false;
+
+    const checkDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const start = dragStartDate < dragEndDate ? dragStartDate : dragEndDate;
+    const end = dragStartDate < dragEndDate ? dragEndDate : dragStartDate;
+
+    return checkDate >= start && checkDate <= end;
   };
 
   const handleAddHoliday = async (e) => {
@@ -151,7 +284,7 @@ const HolidayCalendar = () => {
     try {
       await holidayAPI.create(selectedCompany.id, formData);
       setShowAddModal(false);
-      setFormData({ date: '', name: '', description: '' });
+      setFormData({ date: '', startDate: '', endDate: '', name: '', description: '', isRange: false });
       fetchHolidays();
       toast.success('Holiday added successfully!');
     } catch (error) {
@@ -167,7 +300,7 @@ const HolidayCalendar = () => {
       await holidayAPI.update(selectedCompany.id, editingHoliday._id, formData);
       setShowEditModal(false);
       setEditingHoliday(null);
-      setFormData({ date: '', name: '', description: '' });
+      setFormData({ date: '', startDate: '', endDate: '', name: '', description: '', isRange: false });
       fetchHolidays();
       toast.success('Holiday updated successfully!');
     } catch (error) {
@@ -209,30 +342,25 @@ const HolidayCalendar = () => {
       const dayHolidays = getHolidaysForDate(date);
       const isToday = new Date().toDateString() === date.toDateString();
       const isWeekend = companySettings.weekends.includes(date.getDay());
+      const inDragRange = isInDragRange(day);
 
       days.push(
         <div
           key={day}
-          onClick={() => handleDateClick(day)}
+          onMouseDown={() => handleMouseDown(day)}
+          onMouseEnter={() => handleMouseEnter(day)}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
           style={{
             padding: '8px',
             minHeight: '80px',
-            border: '1px solid #e2e8f0',
+            border: inDragRange ? '2px solid #3b82f6' : '1px solid #e2e8f0',
             borderRadius: '8px',
             cursor: 'pointer',
-            background: isToday ? '#eff6ff' : isWeekend ? '#f8fafc' : 'white',
+            background: inDragRange ? '#dbeafe' : (isToday ? '#eff6ff' : isWeekend ? '#f8fafc' : 'white'),
             transition: 'all 0.2s',
-            position: 'relative'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = isToday ? '#dbeafe' : '#f1f5f9';
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = isToday ? '#eff6ff' : isWeekend ? '#f8fafc' : 'white';
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = 'none';
+            position: 'relative',
+            userSelect: 'none'
           }}
         >
           <div style={{
@@ -536,23 +664,76 @@ const HolidayCalendar = () => {
             </h3>
             <form onSubmit={handleAddHoliday}>
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
-                  Date
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.isRange}
+                    onChange={(e) => setFormData({ ...formData, isRange: e.target.checked })}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontWeight: '600', color: '#475569' }}>Date Range Holiday</span>
                 </label>
-                <input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '14px'
-                  }}
-                />
               </div>
+
+              {formData.isRange ? (
+                <>
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+              )}
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
                   Holiday Name
@@ -596,7 +777,7 @@ const HolidayCalendar = () => {
                   type="button"
                   onClick={() => {
                     setShowAddModal(false);
-                    setFormData({ date: '', name: '', description: '' });
+                    setFormData({ date: '', startDate: '', endDate: '', name: '', description: '', isRange: false });
                   }}
                   style={{
                     padding: '12px 24px',
@@ -659,23 +840,76 @@ const HolidayCalendar = () => {
             </h3>
             <form onSubmit={handleUpdateHoliday}>
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
-                  Date
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.isRange}
+                    onChange={(e) => setFormData({ ...formData, isRange: e.target.checked })}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontWeight: '600', color: '#475569' }}>Date Range Holiday</span>
                 </label>
-                <input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '14px'
-                  }}
-                />
               </div>
+
+              {formData.isRange ? (
+                <>
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '14px'
+                      }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+              )}
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
                   Holiday Name
@@ -735,7 +969,7 @@ const HolidayCalendar = () => {
                     onClick={() => {
                       setShowEditModal(false);
                       setEditingHoliday(null);
-                      setFormData({ date: '', name: '', description: '' });
+                      setFormData({ date: '', startDate: '', endDate: '', name: '', description: '', isRange: false });
                     }}
                     style={{
                       padding: '12px 24px',

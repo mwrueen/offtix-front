@@ -23,6 +23,33 @@ const AddEmployee = () => {
   const [loading, setLoading] = useState(false);
   const [loadingDesignations, setLoadingDesignations] = useState(true);
   const [errors, setErrors] = useState({});
+  const [companyCurrency, setCompanyCurrency] = useState('USD');
+  const [hasPermission, setHasPermission] = useState(false);
+  const [checkingPermission, setCheckingPermission] = useState(true);
+
+  // Currency symbols mapping
+  const currencySymbols = {
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'JPY': '¥',
+    'AUD': 'A$',
+    'CAD': 'C$',
+    'CHF': 'CHF',
+    'CNY': '¥',
+    'INR': '₹',
+    'SGD': 'S$',
+    'HKD': 'HK$',
+    'NZD': 'NZ$',
+    'SEK': 'kr',
+    'NOK': 'kr',
+    'DKK': 'kr',
+    'MXN': 'MX$',
+    'BRL': 'R$',
+    'ZAR': 'R',
+    'AED': 'د.إ',
+    'SAR': '﷼'
+  };
 
   useEffect(() => {
     if (selectedCompany && selectedCompany.id !== 'personal') {
@@ -43,12 +70,40 @@ const AddEmployee = () => {
       if (response.ok) {
         const company = await response.json();
         setDesignations(company.designations || []);
+        setCompanyCurrency(company.currency || 'USD');
+
+        // Check user permissions
+        const userId = state.user?._id || state.user?.id;
+        const ownerId = company.owner?._id || company.owner;
+        const isOwner = ownerId?.toString() === userId?.toString();
+        const isSuperAdmin = state.user?.role === 'superadmin';
+
+        if (isOwner || isSuperAdmin) {
+          setHasPermission(true);
+        } else {
+          const memberInfo = company.members?.find(m => {
+            const memberId = m.user?._id || m.user;
+            return memberId?.toString() === userId?.toString();
+          });
+
+          if (memberInfo) {
+            const designation = company.designations?.find(d => d.name === memberInfo.designation);
+            if (designation?.permissions?.addEmployee) {
+              setHasPermission(true);
+            } else {
+              setHasPermission(false);
+            }
+          } else {
+            setHasPermission(false);
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching designations:', error);
       toast?.showToast?.('Failed to load designations', 'error');
     } finally {
       setLoadingDesignations(false);
+      setCheckingPermission(false);
     }
   };
 
@@ -161,6 +216,50 @@ const AddEmployee = () => {
     );
   }
 
+  if (checkingPermission || loadingDesignations) {
+    return (
+      <Layout>
+        <div style={{ textAlign: 'center', padding: '50px' }}>
+          <div style={{ fontSize: '18px', color: '#64748b' }}>Loading...</div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!hasPermission) {
+    return (
+      <Layout>
+        <div style={{
+          background: 'white',
+          padding: '50px',
+          borderRadius: '12px',
+          textAlign: 'center',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔒</div>
+          <h2 style={{ color: '#1e293b', marginBottom: '16px' }}>Access Denied</h2>
+          <p style={{ color: '#64748b', marginBottom: '24px' }}>
+            You don't have permission to add employees
+          </p>
+          <button
+            onClick={() => navigate('/overview')}
+            style={{
+              padding: '12px 24px',
+              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '600'
+            }}
+          >
+            Go to Overview
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
@@ -245,16 +344,80 @@ const AddEmployee = () => {
             </div>
 
             <div style={{ marginBottom: '32px' }}>
-              <Input
-                label="Salary (Optional)"
-                type="number"
-                name="salary"
-                value={formData.salary}
-                onChange={handleChange}
-                placeholder="0"
-                error={errors.salary}
-                helperText="Enter the employee's salary (leave blank for 0)"
-              />
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#374151'
+              }}>
+                Salary (Optional)
+              </label>
+              <div style={{ position: 'relative' }}>
+                <span style={{
+                  position: 'absolute',
+                  left: '16px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#64748b',
+                  pointerEvents: 'none',
+                  zIndex: 1
+                }}>
+                  {currencySymbols[companyCurrency]}
+                </span>
+                <input
+                  type="number"
+                  name="salary"
+                  value={formData.salary}
+                  onChange={handleChange}
+                  placeholder="0"
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px 12px 40px',
+                    border: `1px solid ${errors.salary ? '#ef4444' : '#e2e8f0'}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                    transition: 'all 0.2s ease',
+                    outline: 'none',
+                    backgroundColor: '#ffffff',
+                    color: '#1e293b',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                  }}
+                  onFocus={(e) => {
+                    if (!errors.salary) {
+                      e.target.style.borderColor = '#667eea';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (!errors.salary) {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.boxShadow = 'none';
+                    }
+                  }}
+                />
+              </div>
+              {errors.salary && (
+                <div style={{
+                  marginTop: '6px',
+                  fontSize: '13px',
+                  color: '#ef4444'
+                }}>
+                  {errors.salary}
+                </div>
+              )}
+              {!errors.salary && (
+                <div style={{
+                  marginTop: '6px',
+                  fontSize: '13px',
+                  color: '#64748b'
+                }}>
+                  Enter the employee's salary (leave blank for 0)
+                </div>
+              )}
             </div>
 
             {/* Info Box */}

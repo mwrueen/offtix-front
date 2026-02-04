@@ -173,6 +173,7 @@ export const phaseAPI = {
 export const companyAPI = {
   // Company management
   getById: (id) => api.get(`/companies/${id}`),
+  updateProfile: (id, profileData) => api.put(`/companies/${id}/profile`, profileData),
   // Settings management
   updateSettings: (id, settings) => api.put(`/companies/${id}/settings`, { settings }),
   addHoliday: (id, holidayData) => api.post(`/companies/${id}/holidays`, holidayData),

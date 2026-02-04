@@ -19,9 +19,6 @@ const Company = () => {
   const [showCreateCompany, setShowCreateCompany] = useState(false);
   const [showCreateDesignation, setShowCreateDesignation] = useState(false);
   const [showDesignations, setShowDesignations] = useState(false);
-  const [showEditProfile, setShowEditProfile] = useState(false);
-  const [editProfileData, setEditProfileData] = useState({});
-  const [savingProfile, setSavingProfile] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -93,55 +90,87 @@ const Company = () => {
     String(company.owner?._id) === String(state.user.id)
   );
 
-  // Handle opening edit profile modal
-  const handleEditProfile = () => {
-    setEditProfileData({
-      name: company?.name || '',
-      description: company?.description || '',
-      industry: company?.industry || '',
-      website: company?.website || '',
-      email: company?.email || '',
-      phone: company?.phone || '',
-      address: company?.address || '',
-      city: company?.city || '',
-      state: company?.state || '',
-      country: company?.country || '',
-      zipCode: company?.zipCode || '',
-      foundedYear: company?.foundedYear || '',
-      companySize: company?.companySize || ''
-    });
-    setShowEditProfile(true);
-  };
-
-  // Handle saving profile
-  const handleSaveProfile = async () => {
-    setSavingProfile(true);
-    try {
-      const token = getCookie('authToken');
-      const response = await fetch(`/api/companies/${selectedCompany.id}/profile`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(editProfileData)
-      });
-
-      if (response.ok) {
-        toast?.showToast?.('Company profile updated successfully', 'success');
-        setShowEditProfile(false);
-        fetchCompany();
-      } else {
-        const data = await response.json();
-        toast?.showToast?.(data.message || 'Failed to update profile', 'error');
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast?.showToast?.('Failed to update profile', 'error');
-    } finally {
-      setSavingProfile(false);
+  // Get user permissions
+  const getUserPermissions = () => {
+    if (!company || !state.user) {
+      return {
+        addEmployee: false,
+        viewEmployeeList: false,
+        editEmployee: false,
+        createDesignation: false,
+        viewDesignations: false,
+        editDesignation: false,
+        deleteDesignation: false,
+        createProject: false,
+        assignEmployeeToProject: false,
+        removeEmployeeFromProject: false,
+        manageCompanySettings: false
+      };
     }
+
+    // Superadmin and owner have all permissions
+    if (state.user.role === 'superadmin' || isCompanyCreator) {
+      return {
+        addEmployee: true,
+        viewEmployeeList: true,
+        editEmployee: true,
+        createDesignation: true,
+        viewDesignations: true,
+        editDesignation: true,
+        deleteDesignation: true,
+        createProject: true,
+        assignEmployeeToProject: true,
+        removeEmployeeFromProject: true,
+        manageCompanySettings: true
+      };
+    }
+
+    // Find user's member info
+    const userId = state.user._id || state.user.id;
+    const memberInfo = company.members?.find(m => {
+      const memberId = m.user?._id || m.user;
+      return memberId?.toString() === userId?.toString();
+    });
+
+    if (!memberInfo) {
+      return {
+        addEmployee: false,
+        viewEmployeeList: true, // Default: can view employee list
+        editEmployee: false,
+        createDesignation: false,
+        viewDesignations: true, // Default: can view designations
+        editDesignation: false,
+        deleteDesignation: false,
+        createProject: false,
+        assignEmployeeToProject: false,
+        removeEmployeeFromProject: false,
+        manageCompanySettings: false
+      };
+    }
+
+    // Find designation and get permissions
+    const designation = company.designations?.find(d => d.name === memberInfo.designation);
+    if (designation && designation.permissions) {
+      return designation.permissions;
+    }
+
+    // Default permissions if designation not found
+    return {
+      addEmployee: false,
+      viewEmployeeList: true,
+      editEmployee: false,
+      createDesignation: false,
+      viewDesignations: true,
+      editDesignation: false,
+      deleteDesignation: false,
+      createProject: false,
+      assignEmployeeToProject: false,
+      removeEmployeeFromProject: false,
+      manageCompanySettings: false
+    };
   };
+
+  const userPermissions = getUserPermissions();
 
   // Debug logging
   console.log('=== COMPANY CREATOR DEBUG ===');
@@ -151,6 +180,7 @@ const Company = () => {
   console.log('Current user:', state.user);
   console.log('Current user ID:', state.user?.id);
   console.log('Is company creator:', isCompanyCreator);
+  console.log('User permissions:', userPermissions);
   console.log('Auth state:', state);
   console.log('============================');
 
@@ -298,109 +328,119 @@ const Company = () => {
                   Founded {company.foundedYear}
                 </span>
               )}
+
+
             </div>
           </div>
 
           {/* Action Buttons */}
           <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
-            <button
-              onClick={() => navigate('/add-employee')}
-              style={{
-                padding: '12px 24px',
-                background: 'rgba(255, 255, 255, 0.95)',
-                color: '#667eea',
-                border: 'none',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '14px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                transition: 'all 0.2s',
-                whiteSpace: 'nowrap'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-              }}
-            >
-              + Add Employee
-            </button>
-            <button
-              onClick={() => navigate('/create-role')}
-              style={{
-                padding: '12px 24px',
-                background: 'rgba(255, 255, 255, 0.2)',
-                color: 'white',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '14px',
-                backdropFilter: 'blur(10px)',
-                transition: 'all 0.2s',
-                whiteSpace: 'nowrap'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(255, 255, 255, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(255, 255, 255, 0.2)';
-              }}
-            >
-              + Create Role
-            </button>
-            <button
-              onClick={() => navigate('/manage-roles')}
-              style={{
-                padding: '12px 24px',
-                background: 'rgba(255, 255, 255, 0.2)',
-                color: 'white',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '14px',
-                backdropFilter: 'blur(10px)',
-                transition: 'all 0.2s',
-                whiteSpace: 'nowrap'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(255, 255, 255, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(255, 255, 255, 0.2)';
-              }}
-            >
-              Manage Roles
-            </button>
-            <button
-              onClick={handleEditProfile}
-              style={{
-                padding: '12px 24px',
-                background: 'rgba(255, 255, 255, 0.2)',
-                color: 'white',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '14px',
-                backdropFilter: 'blur(10px)',
-                transition: 'all 0.2s',
-                whiteSpace: 'nowrap'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(255, 255, 255, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(255, 255, 255, 0.2)';
-              }}
-            >
-              ✏️ Edit Info
-            </button>
+            {userPermissions.addEmployee && (
+              <button
+                onClick={() => navigate('/add-employee')}
+                style={{
+                  padding: '12px 24px',
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  color: '#667eea',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                }}
+              >
+                + Add Employee
+              </button>
+            )}
+            {userPermissions.createDesignation && (
+              <button
+                onClick={() => navigate('/create-role')}
+                style={{
+                  padding: '12px 24px',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  color: 'white',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  backdropFilter: 'blur(10px)',
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+                }}
+              >
+                + Create Role
+              </button>
+            )}
+            {userPermissions.viewDesignations && (
+              <button
+                onClick={() => navigate('/manage-roles')}
+                style={{
+                  padding: '12px 24px',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  color: 'white',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  backdropFilter: 'blur(10px)',
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+                }}
+              >
+                Manage Roles
+              </button>
+            )}
+            {userPermissions.manageCompanySettings && (
+              <button
+                onClick={() => navigate('/edit-company-info')}
+                style={{
+                  padding: '12px 24px',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  color: 'white',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  backdropFilter: 'blur(10px)',
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+                }}
+              >
+                ✏️ Edit Info
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1019,251 +1059,6 @@ const Company = () => {
             fetchCompany();
           }}
         />
-      )}
-
-      {/* Edit Company Profile Modal */}
-      {showEditProfile && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}
-        onClick={() => setShowEditProfile(false)}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '32px',
-            borderRadius: '16px',
-            width: '700px',
-            maxWidth: '95vw',
-            maxHeight: '90vh',
-            overflow: 'auto'
-          }}
-          onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#1e293b' }}>
-                Edit Company Information
-              </h3>
-              <button
-                onClick={() => setShowEditProfile(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '24px',
-                  cursor: 'pointer',
-                  color: '#64748b'
-                }}
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Basic Info */}
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase' }}>
-                Basic Information
-              </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Company Name</label>
-                  <input
-                    type="text"
-                    value={editProfileData.name || ''}
-                    onChange={(e) => setEditProfileData({ ...editProfileData, name: e.target.value })}
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Industry</label>
-                  <input
-                    type="text"
-                    value={editProfileData.industry || ''}
-                    onChange={(e) => setEditProfileData({ ...editProfileData, industry: e.target.value })}
-                    placeholder="e.g., Technology, Finance"
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Description</label>
-                  <textarea
-                    value={editProfileData.description || ''}
-                    onChange={(e) => setEditProfileData({ ...editProfileData, description: e.target.value })}
-                    placeholder="Brief description of your company"
-                    rows={2}
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', resize: 'vertical' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Founded Year</label>
-                  <input
-                    type="number"
-                    value={editProfileData.foundedYear || ''}
-                    onChange={(e) => setEditProfileData({ ...editProfileData, foundedYear: e.target.value ? parseInt(e.target.value) : '' })}
-                    placeholder="e.g., 2020"
-                    min="1800"
-                    max={new Date().getFullYear()}
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Company Size</label>
-                  <select
-                    value={editProfileData.companySize || ''}
-                    onChange={(e) => setEditProfileData({ ...editProfileData, companySize: e.target.value })}
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
-                  >
-                    <option value="">Select size</option>
-                    <option value="1-10">1-10 employees</option>
-                    <option value="11-50">11-50 employees</option>
-                    <option value="51-200">51-200 employees</option>
-                    <option value="201-500">201-500 employees</option>
-                    <option value="501-1000">501-1000 employees</option>
-                    <option value="1000+">1000+ employees</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Contact Info */}
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase' }}>
-                Contact Information
-              </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Email</label>
-                  <input
-                    type="email"
-                    value={editProfileData.email || ''}
-                    onChange={(e) => setEditProfileData({ ...editProfileData, email: e.target.value })}
-                    placeholder="company@example.com"
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Phone</label>
-                  <input
-                    type="tel"
-                    value={editProfileData.phone || ''}
-                    onChange={(e) => setEditProfileData({ ...editProfileData, phone: e.target.value })}
-                    placeholder="+1 (555) 123-4567"
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Website</label>
-                  <input
-                    type="url"
-                    value={editProfileData.website || ''}
-                    onChange={(e) => setEditProfileData({ ...editProfileData, website: e.target.value })}
-                    placeholder="https://www.example.com"
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Location Info */}
-            <div style={{ marginBottom: '32px' }}>
-              <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase' }}>
-                Location
-              </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Address</label>
-                  <input
-                    type="text"
-                    value={editProfileData.address || ''}
-                    onChange={(e) => setEditProfileData({ ...editProfileData, address: e.target.value })}
-                    placeholder="123 Main Street, Suite 100"
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>City</label>
-                  <input
-                    type="text"
-                    value={editProfileData.city || ''}
-                    onChange={(e) => setEditProfileData({ ...editProfileData, city: e.target.value })}
-                    placeholder="San Francisco"
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>State/Province</label>
-                  <input
-                    type="text"
-                    value={editProfileData.state || ''}
-                    onChange={(e) => setEditProfileData({ ...editProfileData, state: e.target.value })}
-                    placeholder="California"
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Country</label>
-                  <input
-                    type="text"
-                    value={editProfileData.country || ''}
-                    onChange={(e) => setEditProfileData({ ...editProfileData, country: e.target.value })}
-                    placeholder="United States"
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', fontSize: '14px', color: '#374151' }}>Zip Code</label>
-                  <input
-                    type="text"
-                    value={editProfileData.zipCode || ''}
-                    onChange={(e) => setEditProfileData({ ...editProfileData, zipCode: e.target.value })}
-                    placeholder="94102"
-                    style={{ width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px' }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setShowEditProfile(false)}
-                style={{
-                  padding: '12px 24px',
-                  background: 'white',
-                  color: '#64748b',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  fontSize: '14px'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveProfile}
-                disabled={savingProfile}
-                style={{
-                  padding: '12px 24px',
-                  background: savingProfile ? '#94a3b8' : 'linear-gradient(135deg, #667eea, #764ba2)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '10px',
-                  cursor: savingProfile ? 'not-allowed' : 'pointer',
-                  fontWeight: '600',
-                  fontSize: '14px'
-                }}
-              >
-                {savingProfile ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </Layout>
   );
@@ -2044,7 +1839,31 @@ const CompanySettingsSection = ({ company, onRefresh }) => {
     weekends: [0, 6],
     holidays: []
   });
+  const [currency, setCurrency] = useState('USD');
   const [saving, setSaving] = useState(false);
+
+  const currencies = [
+    { code: 'USD', symbol: '$', name: 'US Dollar' },
+    { code: 'EUR', symbol: '€', name: 'Euro' },
+    { code: 'GBP', symbol: '£', name: 'British Pound' },
+    { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+    { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+    { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+    { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
+    { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
+    { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+    { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
+    { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },
+    { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' },
+    { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
+    { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone' },
+    { code: 'DKK', symbol: 'kr', name: 'Danish Krone' },
+    { code: 'MXN', symbol: 'MX$', name: 'Mexican Peso' },
+    { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
+    { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+    { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
+    { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal' }
+  ];
 
   useEffect(() => {
     if (company?.settings) {
@@ -2061,6 +1880,9 @@ const CompanySettingsSection = ({ company, onRefresh }) => {
         holidays: company.settings.holidays || []
       });
     }
+    if (company?.currency) {
+      setCurrency(company.currency);
+    }
   }, [company]);
 
   const handleTimeTrackingChange = (field, value) => {
@@ -2076,7 +1898,12 @@ const CompanySettingsSection = ({ company, onRefresh }) => {
   const handleSaveSettings = async () => {
     setSaving(true);
     try {
+      // Save settings
       await companyAPI.updateSettings(company._id, settings);
+
+      // Save currency (via profile update)
+      await companyAPI.updateProfile(company._id, { currency });
+
       showToast('Settings saved successfully', 'success');
       if (onRefresh) onRefresh();
     } catch (error) {
@@ -2111,6 +1938,56 @@ const CompanySettingsSection = ({ company, onRefresh }) => {
         </svg>
         Company Settings
       </h3>
+
+      {/* Currency Settings */}
+      <div style={{
+        padding: '20px',
+        background: '#f8fafc',
+        borderRadius: '8px',
+        border: '1px solid #e2e8f0',
+        marginBottom: '20px'
+      }}>
+        <h4 style={{
+          margin: '0 0 16px 0',
+          fontSize: '16px',
+          fontWeight: '600',
+          color: '#1e293b',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          💰 Currency
+        </h4>
+
+        <div>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
+            DEFAULT CURRENCY
+          </label>
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            style={{
+              width: '100%',
+              maxWidth: '400px',
+              padding: '10px 14px',
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+              fontSize: '14px',
+              backgroundColor: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            {currencies.map((curr) => (
+              <option key={curr.code} value={curr.code}>
+                {curr.symbol} {curr.code} - {curr.name}
+              </option>
+            ))}
+          </select>
+          <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#64748b' }}>
+            Used for displaying project and task budgets throughout the system
+          </p>
+        </div>
+      </div>
 
       {/* Time Tracking Settings */}
       <div style={{

@@ -30,6 +30,7 @@ import HolidayCalendar from './components/HolidayCalendar';
 import LeaveManagement from './components/LeaveManagement';
 import Workforce from './components/company/Workforce';
 import Organogram from './components/Organogram';
+import EditCompanyInfo from './components/EditCompanyInfo';
 
 function App() {
   return (
@@ -67,6 +68,11 @@ function App() {
                 <Route path="/overview" element={
                   <ProtectedRoute>
                     <Company />
+                  </ProtectedRoute>
+                } />
+                <Route path="/edit-company-info" element={
+                  <ProtectedRoute>
+                    <EditCompanyInfo />
                   </ProtectedRoute>
                 } />
                 <Route path="/users" element={

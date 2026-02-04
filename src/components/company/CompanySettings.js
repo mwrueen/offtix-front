@@ -17,6 +17,8 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
     holidays: []
   });
 
+  const [currency, setCurrency] = useState('USD');
+
   const [holidayForm, setHolidayForm] = useState({
     date: '',
     name: '',
@@ -25,6 +27,29 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
 
   const [showHolidayForm, setShowHolidayForm] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const currencies = [
+    { code: 'USD', symbol: '$', name: 'US Dollar' },
+    { code: 'EUR', symbol: '€', name: 'Euro' },
+    { code: 'GBP', symbol: '£', name: 'British Pound' },
+    { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+    { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+    { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+    { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
+    { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
+    { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+    { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
+    { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },
+    { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' },
+    { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
+    { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone' },
+    { code: 'DKK', symbol: 'kr', name: 'Danish Krone' },
+    { code: 'MXN', symbol: 'MX$', name: 'Mexican Peso' },
+    { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
+    { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+    { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
+    { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal' }
+  ];
 
   useEffect(() => {
     if (company?.settings) {
@@ -40,6 +65,9 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
         weekends: company.settings.weekends || [0, 6],
         holidays: company.settings.holidays || []
       });
+    }
+    if (company?.currency) {
+      setCurrency(company.currency);
     }
   }, [company]);
 
@@ -82,7 +110,12 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
   const handleSaveSettings = async () => {
     setSaving(true);
     try {
+      // Save settings
       await companyAPI.updateSettings(company._id, settings);
+
+      // Save currency (via profile update)
+      await companyAPI.updateProfile(company._id, { currency });
+
       await onRefresh();
       toast.success('Company settings saved successfully!');
     } catch (error) {
@@ -133,6 +166,49 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
         <p style={{ margin: 0, fontSize: '14px', color: '#5e6c84' }}>
           Configure company-wide settings that apply to all projects
         </p>
+      </div>
+
+      {/* Currency Settings */}
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        padding: '24px',
+        marginBottom: '24px',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+      }}>
+        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
+          💰 Currency
+        </h3>
+
+        <div>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
+            DEFAULT CURRENCY
+          </label>
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            disabled={!isOwner}
+            style={{
+              width: '100%',
+              maxWidth: '400px',
+              padding: '8px',
+              border: '1px solid #dfe1e6',
+              borderRadius: '3px',
+              fontSize: '14px',
+              backgroundColor: isOwner ? 'white' : '#f4f5f7',
+              cursor: isOwner ? 'pointer' : 'not-allowed'
+            }}
+          >
+            {currencies.map((curr) => (
+              <option key={curr.code} value={curr.code}>
+                {curr.symbol} {curr.code} - {curr.name}
+              </option>
+            ))}
+          </select>
+          <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#5e6c84' }}>
+            Used for displaying project and task budgets throughout the system
+          </p>
+        </div>
       </div>
 
       {/* Time Tracking Settings */}

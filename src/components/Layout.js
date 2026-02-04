@@ -4,6 +4,7 @@ import { useCompany } from '../context/CompanyContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getCookie } from '../utils/cookies';
 import { companyAPI } from '../services/api';
+import SidebarHeader from './SidebarHeader';
 
 const Layout = ({ children }) => {
   const { state, dispatch } = useAuth();
@@ -15,6 +16,20 @@ const Layout = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [companyData, setCompanyData] = useState(null);
   const [canManageSettings, setCanManageSettings] = useState(false);
+  const [canViewDesignations, setCanViewDesignations] = useState(false);
+  const [canViewEmployees, setCanViewEmployees] = useState(false);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isCompanyDropdownOpen && !event.target.closest('.workspace-modal') && !event.target.closest('.sidebar-header')) {
+        setIsCompanyDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isCompanyDropdownOpen]);
 
   // Fetch unread notifications count
   useEffect(() => {
@@ -48,6 +63,8 @@ const Layout = ({ children }) => {
     const fetchCompanyPermissions = async () => {
       if (!companyState.selectedCompany || companyState.selectedCompany.id === 'personal') {
         setCanManageSettings(false);
+        setCanViewDesignations(false);
+        setCanViewEmployees(false);
         setCompanyData(null);
         return;
       }
@@ -71,9 +88,15 @@ const Layout = ({ children }) => {
           companyName: company.name
         });
 
-        let hasPermission = false;
+        // Get user's designation and permissions
+        let userPermissions = null;
         if (isOwner || isSuperAdmin) {
-          hasPermission = true;
+          // Owner and superadmin have all permissions
+          userPermissions = {
+            manageCompanySettings: true,
+            viewDesignations: true,
+            viewEmployeeList: true
+          };
         } else {
           const memberInfo = company.members?.find(m => {
             const memberId = m.user?._id || m.user;
@@ -81,17 +104,30 @@ const Layout = ({ children }) => {
           });
           if (memberInfo) {
             const designation = company.designations?.find(d => d.name === memberInfo.designation);
-            if (designation?.permissions?.manageCompanySettings) {
-              hasPermission = true;
+            if (designation?.permissions) {
+              userPermissions = designation.permissions;
             }
           }
         }
 
-        console.log('Has permission to manage settings:', hasPermission);
-        setCanManageSettings(hasPermission);
+        // Set permission states
+        if (userPermissions) {
+          setCanManageSettings(userPermissions.manageCompanySettings || false);
+          setCanViewDesignations(userPermissions.viewDesignations || false);
+          setCanViewEmployees(userPermissions.viewEmployeeList || false);
+        } else {
+          // Default permissions for non-members
+          setCanManageSettings(false);
+          setCanViewDesignations(true); // Default: can view designations
+          setCanViewEmployees(true); // Default: can view employees
+        }
+
+        console.log('User permissions:', userPermissions);
       } catch (error) {
         console.error('Error fetching company permissions:', error);
         setCanManageSettings(false);
+        setCanViewDesignations(false);
+        setCanViewEmployees(false);
         setCompanyData(null);
       }
     };
@@ -204,13 +240,28 @@ const Layout = ({ children }) => {
     </svg>
   );
 
+  const ManageRolesIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+      <path d="M2 17l10 5 10-5"></path>
+      <path d="M2 12l10 5 10-5"></path>
+    </svg>
+  );
+
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: DashboardIcon, category: 'main' },
     { path: '/projects', label: 'Projects', icon: ProjectsIcon, category: 'main' },
-    { path: '/overview', label: 'Overview', icon: OverviewIcon, category: 'main' },
     ...(companyState.selectedCompany?.id !== 'personal' ? [
+      { path: '/overview', label: 'Overview', icon: OverviewIcon, category: 'main' }
+    ] : []),
+    ...(companyState.selectedCompany?.id !== 'personal' && canViewEmployees ? [
       { path: '/employees', label: 'Employees', icon: EmployeesIcon, category: 'company' },
-      { path: '/organogram', label: 'Org Chart', icon: OrganogramIcon, category: 'company' },
+      { path: '/organogram', label: 'Org Chart', icon: OrganogramIcon, category: 'company' }
+    ] : []),
+    ...(companyState.selectedCompany?.id !== 'personal' && canViewDesignations ? [
+      { path: '/manage-roles', label: 'Manage Roles', icon: ManageRolesIcon, category: 'company' }
+    ] : []),
+    ...(companyState.selectedCompany?.id !== 'personal' ? [
       { path: '/leaves', label: 'Leaves', icon: LeavesIcon, category: 'company' },
       { path: '/holidays', label: 'Holidays', icon: HolidaysIcon, category: 'company' }
     ] : []),
@@ -294,480 +345,264 @@ const Layout = ({ children }) => {
         zIndex: 1000
       }}>
         {/* Logo & Toggle */}
-        <div style={{
-          padding: sidebarCollapsed ? '20px 12px' : '24px 20px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          display: 'flex',
-          alignItems: sidebarCollapsed ? 'center' : 'flex-start',
-          justifyContent: 'space-between',
-          background: 'rgba(255, 255, 255, 0.02)',
-          position: 'relative'
-        }}>
-          {sidebarCollapsed ? (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '100%'
+        <SidebarHeader
+          sidebarCollapsed={sidebarCollapsed}
+          setSidebarCollapsed={setSidebarCollapsed}
+          selectedCompany={companyState.selectedCompany}
+          companyData={companyData}
+          onClick={() => setIsCompanyDropdownOpen(!isCompanyDropdownOpen)}
+          isDropdownOpen={isCompanyDropdownOpen}
+        />
+
+        {/* Workspace Switcher Modal */}
+        {isCompanyDropdownOpen && (
+          <div
+            className="workspace-modal"
+            style={{
+              position: 'absolute',
+              top: sidebarCollapsed ? '80px' : '120px',
+              left: sidebarCollapsed ? '80px' : '20px',
+              right: sidebarCollapsed ? 'auto' : '20px',
+              width: sidebarCollapsed ? '320px' : 'auto',
+              background: 'linear-gradient(to bottom, #1e293b, #1a2332)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              borderRadius: '12px',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+              zIndex: 1001,
+              maxHeight: '400px',
+              overflowY: 'auto',
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
+              animation: 'slideDown 0.2s ease-out'
             }}>
+            {/* Header */}
+            {companyState.companies.length > 0 && (
               <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '6px',
-                background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '16px',
+                padding: '14px 16px 10px',
+                fontSize: '10px',
                 fontWeight: '700',
-                color: 'white',
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)'
+                color: '#64748b',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
               }}>
-                T
+                YOUR WORKSPACES
               </div>
+            )}
+
+            {/* Company List */}
+            <div style={{ padding: '6px' }}>
+              {companyState.companies.map((company) => (
+                <div
+                  key={company.id}
+                  onClick={() => handleCompanySelect(company)}
+                  style={{
+                    padding: '12px 14px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    color: '#f1f5f9',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '14px',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    marginBottom: '4px',
+                    background: companyState.selectedCompany?.id === company.id
+                      ? 'rgba(59, 130, 246, 0.18)'
+                      : 'transparent',
+                    border: companyState.selectedCompany?.id === company.id
+                      ? '1px solid rgba(59, 130, 246, 0.3)'
+                      : '1px solid transparent'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = companyState.selectedCompany?.id === company.id
+                      ? 'rgba(59, 130, 246, 0.25)'
+                      : 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.transform = 'translateX(3px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = companyState.selectedCompany?.id === company.id
+                      ? 'rgba(59, 130, 246, 0.18)'
+                      : 'transparent';
+                    e.currentTarget.style.transform = 'translateX(0)';
+                  }}
+                >
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    boxShadow: '0 2px 6px rgba(59, 130, 246, 0.3)',
+                    overflow: 'hidden'
+                  }}>
+                    {company.logo ? (
+                      <img
+                        src={company.logo}
+                        alt={company.name}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: '700',
+                        color: 'white'
+                      }}>
+                        {company.name?.charAt(0)?.toUpperCase() || 'C'}
+                      </div>
+                    )}
+                  </div>
+                  <span style={{
+                    flex: 1,
+                    fontWeight: '600',
+                    letterSpacing: '-0.2px'
+                  }}>
+                    {company.name}
+                  </span>
+                  {companyState.selectedCompany?.id === company.id && (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  )}
+                </div>
+              ))}
             </div>
-          ) : (
-            <div style={{ flex: 1, marginRight: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+
+            {/* Separator */}
+            <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '6px 14px' }} />
+
+            {/* Personal Option */}
+            <div style={{ padding: '6px' }}>
+              <div
+                onClick={() => handleCompanySelect('Personal')}
+                style={{
+                  padding: '12px 14px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  color: '#f1f5f9',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  background: companyState.selectedCompany?.id === 'personal'
+                    ? 'rgba(139, 92, 246, 0.18)'
+                    : 'transparent',
+                  border: companyState.selectedCompany?.id === 'personal'
+                    ? '1px solid rgba(139, 92, 246, 0.3)'
+                    : '1px solid transparent'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = companyState.selectedCompany?.id === 'personal'
+                    ? 'rgba(139, 92, 246, 0.25)'
+                    : 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.transform = 'translateX(3px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = companyState.selectedCompany?.id === 'personal'
+                    ? 'rgba(139, 92, 246, 0.18)'
+                    : 'transparent';
+                  e.currentTarget.style.transform = 'translateX(0)';
+                }}
+              >
                 <div style={{
-                  width: '36px',
-                  height: '36px',
+                  width: '32px',
+                  height: '32px',
                   borderRadius: '8px',
-                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                  background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '18px',
-                  fontWeight: '700',
-                  color: 'white',
-                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)'
+                  flexShrink: 0,
+                  boxShadow: '0 2px 6px rgba(139, 92, 246, 0.3)'
                 }}>
-                  T
-                </div>
-                <div>
-                  <h2 style={{
-                    margin: 0,
-                    color: '#ffffff',
-                    fontSize: '20px',
-                    fontWeight: '700',
-                    letterSpacing: '-0.3px'
-                  }}>Tabredon</h2>
-                  <p style={{
-                    margin: 0,
-                    fontSize: '11px',
-                    color: '#94a3b8',
-                    fontWeight: '500'
-                  }}>Project Management</p>
-                </div>
-              </div>
-
-              {/* Company Selector Dropdown */}
-              <div className="company-dropdown" style={{ position: 'relative' }}>
-                <div style={{
-                  fontSize: '10px',
-                  fontWeight: '600',
-                  color: '#64748b',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.8px',
-                  marginBottom: '8px',
-                  paddingLeft: '2px'
-                }}>
-                  Workspace
-                </div>
-                <button
-                  onClick={() => setIsCompanyDropdownOpen(!isCompanyDropdownOpen)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    background: isCompanyDropdownOpen
-                      ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.1))'
-                      : 'rgba(255, 255, 255, 0.06)',
-                    border: `1px solid ${isCompanyDropdownOpen ? 'rgba(59, 130, 246, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
-                    borderRadius: '10px',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    color: '#f1f5f9',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                    boxShadow: isCompanyDropdownOpen
-                      ? '0 4px 12px rgba(59, 130, 246, 0.15)'
-                      : '0 2px 4px rgba(0, 0, 0, 0.1)'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isCompanyDropdownOpen) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.09)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                      e.currentTarget.style.transform = 'translateY(-1px)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isCompanyDropdownOpen) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                    }
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      background: companyState.selectedCompany?.id === 'personal'
-                        ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)'
-                        : 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
-                    }}>
-                      {companyState.selectedCompany?.id === 'personal' ? (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                          <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                      ) : (
-                        <CompanyIcon size={16} />
-                      )}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                      <div style={{
-                        fontSize: '13px',
-                        fontWeight: '600',
-                        color: '#ffffff',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        marginBottom: '2px'
-                      }}>
-                        {companyState.selectedCompany?.name || 'Select Workspace'}
-                      </div>
-                      <div style={{
-                        fontSize: '11px',
-                        color: '#94a3b8',
-                        fontWeight: '500'
-                      }}>
-                        {companyState.selectedCompany?.id === 'personal'
-                          ? 'Personal workspace'
-                          : companyState.companies.length > 0
-                            ? `${companyState.companies.length} workspace${companyState.companies.length !== 1 ? 's' : ''}`
-                            : 'No workspace'}
-                      </div>
-                    </div>
-                  </div>
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{
-                      transform: isCompanyDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                      opacity: 0.7,
-                      flexShrink: 0
-                    }}
-                  >
-                    <polyline points="6 9 12 15 18 9"></polyline>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
                   </svg>
-                </button>
-
-                {/* Dropdown Menu */}
-                {isCompanyDropdownOpen && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    marginTop: '10px',
-                    background: 'linear-gradient(to bottom, #1e293b, #1a2332)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: '12px',
-                    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)',
-                    zIndex: 1001,
-                    maxHeight: '400px',
-                    overflowY: 'auto',
-                    scrollbarWidth: 'thin',
-                    scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
-                    animation: 'slideDown 0.2s ease-out'
-                  }}>
-                    {/* Header */}
-                    {companyState.companies.length > 0 && (
-                      <div style={{
-                        padding: '12px 14px 8px',
-                        fontSize: '10px',
-                        fontWeight: '600',
-                        color: '#64748b',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.8px',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.06)'
-                      }}>
-                        Your Workspaces
-                      </div>
-                    )}
-
-                    {/* Company List */}
-                    <div style={{ padding: '6px' }}>
-                      {companyState.companies.map((company) => (
-                        <div
-                          key={company.id}
-                          onClick={() => handleCompanySelect(company)}
-                          style={{
-                            padding: '10px 12px',
-                            cursor: 'pointer',
-                            fontSize: '13px',
-                            color: '#f1f5f9',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            marginBottom: '2px',
-                            background: companyState.selectedCompany?.id === company.id
-                              ? 'rgba(59, 130, 246, 0.15)'
-                              : 'transparent'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = companyState.selectedCompany?.id === company.id
-                              ? 'rgba(59, 130, 246, 0.2)'
-                              : 'rgba(255, 255, 255, 0.08)';
-                            e.currentTarget.style.transform = 'translateX(2px)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = companyState.selectedCompany?.id === company.id
-                              ? 'rgba(59, 130, 246, 0.15)'
-                              : 'transparent';
-                            e.currentTarget.style.transform = 'translateX(0)';
-                          }}
-                        >
-                          <div style={{
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '6px',
-                            background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                            boxShadow: '0 2px 6px rgba(59, 130, 246, 0.3)'
-                          }}>
-                            <CompanyIcon size={14} />
-                          </div>
-                          <span style={{ flex: 1, fontWeight: '500' }}>{company.name}</span>
-                          {companyState.selectedCompany?.id === company.id && (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Separator */}
-                    <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '6px 14px' }} />
-
-                    {/* Personal Option */}
-                    <div style={{ padding: '6px' }}>
-                      <div
-                        onClick={() => handleCompanySelect('Personal')}
-                        style={{
-                          padding: '10px 12px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          color: '#f1f5f9',
-                          borderRadius: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                          background: companyState.selectedCompany?.id === 'personal'
-                            ? 'rgba(139, 92, 246, 0.15)'
-                            : 'transparent'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = companyState.selectedCompany?.id === 'personal'
-                            ? 'rgba(139, 92, 246, 0.2)'
-                            : 'rgba(255, 255, 255, 0.08)';
-                          e.currentTarget.style.transform = 'translateX(2px)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = companyState.selectedCompany?.id === 'personal'
-                            ? 'rgba(139, 92, 246, 0.15)'
-                            : 'transparent';
-                          e.currentTarget.style.transform = 'translateX(0)';
-                        }}
-                      >
-                        <div style={{
-                          width: '28px',
-                          height: '28px',
-                          borderRadius: '6px',
-                          background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          boxShadow: '0 2px 6px rgba(139, 92, 246, 0.3)'
-                        }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                          </svg>
-                        </div>
-                        <span style={{ flex: 1, fontWeight: '500' }}>Personal</span>
-                        {companyState.selectedCompany?.id === 'personal' && (
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Separator */}
-                    <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '6px 14px' }} />
-
-                    {/* Create Company Option */}
-                    <div style={{ padding: '8px' }}>
-                      <div
-                        onClick={() => handleCompanySelect('Create Company')}
-                        style={{
-                          padding: '12px 14px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: '600',
-                          borderRadius: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '10px',
-                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                          background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                          color: 'white',
-                          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)';
-                          e.currentTarget.style.transform = 'translateY(-1px)';
-                          e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
-                        }}
-                      >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="12" y1="5" x2="12" y2="19"></line>
-                          <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        <span>Create New Workspace</span>
-                      </div>
-                    </div>
-                  </div>
+                </div>
+                <span style={{
+                  flex: 1,
+                  fontWeight: '600',
+                  letterSpacing: '-0.2px'
+                }}>
+                  Personal
+                </span>
+                {companyState.selectedCompany?.id === 'personal' && (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
                 )}
-
-                {/* Add CSS animation */}
-                <style>{`
-                  @keyframes slideDown {
-                    from {
-                      opacity: 0;
-                      transform: translateY(-10px);
-                    }
-                    to {
-                      opacity: 1;
-                      transform: translateY(0);
-                    }
-                  }
-                `}</style>
               </div>
             </div>
-          )}
-          
-          {!sidebarCollapsed && (
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#94a3b8',
-                padding: '8px',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '16px',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '32px',
-                height: '32px',
-                flexShrink: 0
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(255, 255, 255, 0.1)';
-                e.target.style.color = '#f1f5f9';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(255, 255, 255, 0.05)';
-                e.target.style.color = '#94a3b8';
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12"></line>
-                <polyline points="12 19 5 12 12 5"></polyline>
-              </svg>
-            </button>
-          )}
-          
-          {/* Collapsed Toggle Button */}
-          {sidebarCollapsed && (
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              style={{
-                position: 'absolute',
-                top: '50%',
-                right: '-16px',
-                transform: 'translateY(-50%)',
-                background: '#1e293b',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#94a3b8',
-                padding: '6px',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                fontSize: '14px',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '32px',
-                height: '32px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                zIndex: 1000
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(59, 130, 246, 0.1)';
-                e.target.style.color = '#3b82f6';
-                e.target.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = '#1e293b';
-                e.target.style.color = '#94a3b8';
-                e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(180deg)' }}>
-                <line x1="19" y1="12" x2="5" y2="12"></line>
-                <polyline points="12 19 5 12 12 5"></polyline>
-              </svg>
-            </button>
-          )}
-        </div>
+
+            {/* Separator */}
+            <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '6px 14px' }} />
+
+            {/* Create Company Option */}
+            <div style={{ padding: '6px' }}>
+              <div
+                onClick={() => handleCompanySelect('Create Company')}
+                style={{
+                  padding: '14px 16px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                  color: 'white',
+                  boxShadow: '0 4px 14px rgba(59, 130, 246, 0.35)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  letterSpacing: '-0.2px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.45)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(59, 130, 246, 0.35)';
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Create New Workspace</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add CSS animation */}
+        <style>{`
+          @keyframes slideDown {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}</style>
+
+ 
 
         {/* Navigation */}
         <nav style={{

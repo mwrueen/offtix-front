@@ -58,6 +58,8 @@ const ManageRoles = () => {
   const [editingRole, setEditingRole] = useState(null);
   const [editPermissions, setEditPermissions] = useState({});
   const [saving, setSaving] = useState(false);
+  const [hasPermission, setHasPermission] = useState(false);
+  const [userPermissions, setUserPermissions] = useState(null);
 
   useEffect(() => {
     if (selectedCompany && selectedCompany.id !== 'personal') {
@@ -78,6 +80,39 @@ const ManageRoles = () => {
       if (response.ok) {
         const data = await response.json();
         setCompany(data);
+
+        // Check user permissions
+        const userId = state.user?._id || state.user?.id;
+        const ownerId = data.owner?._id || data.owner;
+        const isOwner = ownerId?.toString() === userId?.toString();
+        const isSuperAdmin = state.user?.role === 'superadmin';
+
+        if (isOwner || isSuperAdmin) {
+          setHasPermission(true);
+          setUserPermissions({
+            viewDesignations: true,
+            createDesignation: true,
+            editDesignation: true,
+            deleteDesignation: true
+          });
+        } else {
+          const memberInfo = data.members?.find(m => {
+            const memberId = m.user?._id || m.user;
+            return memberId?.toString() === userId?.toString();
+          });
+
+          if (memberInfo) {
+            const designation = data.designations?.find(d => d.name === memberInfo.designation);
+            if (designation?.permissions) {
+              setUserPermissions(designation.permissions);
+              setHasPermission(designation.permissions.viewDesignations || false);
+            } else {
+              setHasPermission(false);
+            }
+          } else {
+            setHasPermission(false);
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching company:', error);
@@ -207,6 +242,40 @@ const ManageRoles = () => {
     );
   }
 
+  if (!hasPermission) {
+    return (
+      <Layout>
+        <div style={{
+          background: 'white',
+          padding: '50px',
+          borderRadius: '12px',
+          textAlign: 'center',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔒</div>
+          <h2 style={{ color: '#1e293b', marginBottom: '16px' }}>Access Denied</h2>
+          <p style={{ color: '#64748b', marginBottom: '24px' }}>
+            You don't have permission to view or manage roles
+          </p>
+          <button
+            onClick={() => navigate('/overview')}
+            style={{
+              padding: '12px 24px',
+              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '600'
+            }}
+          >
+            Go to Overview
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -248,38 +317,40 @@ const ManageRoles = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => navigate('/create-role')}
-              style={{
-                padding: '12px 24px',
-                background: 'rgba(255, 255, 255, 0.95)',
-                color: '#8b5cf6',
-                border: 'none',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '14px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              Create New Role
-            </button>
+            {userPermissions?.createDesignation && (
+              <button
+                onClick={() => navigate('/create-role')}
+                style={{
+                  padding: '12px 24px',
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  color: '#8b5cf6',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Create New Role
+              </button>
+            )}
           </div>
         </div>
 
@@ -385,66 +456,72 @@ const ManageRoles = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div style={{
-                    display: 'flex',
-                    gap: '8px',
-                    marginTop: '20px',
-                    paddingTop: '16px',
-                    borderTop: '1px solid #e2e8f0'
-                  }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditRole(designation);
-                      }}
-                      style={{
-                        flex: 1,
-                        padding: '10px',
-                        background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        fontSize: '13px',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.transform = 'scale(1.02)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.transform = 'scale(1)';
-                      }}
-                    >
-                      Edit Permissions
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowDeleteConfirm(designation);
-                      }}
-                      style={{
-                        flex: 1,
-                        padding: '10px',
-                        background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        fontSize: '13px',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.transform = 'scale(1.02)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.transform = 'scale(1)';
-                      }}
-                    >
-                      Delete Role
-                    </button>
-                  </div>
+                  {(userPermissions?.editDesignation || userPermissions?.deleteDesignation) && (
+                    <div style={{
+                      display: 'flex',
+                      gap: '8px',
+                      marginTop: '20px',
+                      paddingTop: '16px',
+                      borderTop: '1px solid #e2e8f0'
+                    }}>
+                      {userPermissions?.editDesignation && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditRole(designation);
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: '10px',
+                            background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            fontSize: '13px',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.transform = 'scale(1.02)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.transform = 'scale(1)';
+                          }}
+                        >
+                          Edit Permissions
+                        </button>
+                      )}
+                      {userPermissions?.deleteDesignation && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDeleteConfirm(designation);
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: '10px',
+                            background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            fontSize: '13px',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.transform = 'scale(1.02)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.transform = 'scale(1)';
+                          }}
+                        >
+                          Delete Role
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

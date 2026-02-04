@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCompanyFilter } from '../hooks/useCompanyFilter';
@@ -33,6 +33,65 @@ const CreateRole = () => {
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [hasPermission, setHasPermission] = useState(false);
+  const [checkingPermission, setCheckingPermission] = useState(true);
+
+  // Check permissions on mount
+  useEffect(() => {
+    const checkPermissions = async () => {
+      if (!selectedCompany || selectedCompany.id === 'personal') {
+        setCheckingPermission(false);
+        return;
+      }
+
+      try {
+        const token = getCookie('authToken');
+        const response = await fetch(`/api/companies/${selectedCompany.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const company = await response.json();
+
+          // Check user permissions
+          const userId = state.user?._id || state.user?.id;
+          const ownerId = company.owner?._id || company.owner;
+          const isOwner = ownerId?.toString() === userId?.toString();
+          const isSuperAdmin = state.user?.role === 'superadmin';
+
+          if (isOwner || isSuperAdmin) {
+            setHasPermission(true);
+          } else {
+            const memberInfo = company.members?.find(m => {
+              const memberId = m.user?._id || m.user;
+              return memberId?.toString() === userId?.toString();
+            });
+
+            if (memberInfo) {
+              const designation = company.designations?.find(d => d.name === memberInfo.designation);
+              if (designation?.permissions?.createDesignation) {
+                setHasPermission(true);
+              } else {
+                setHasPermission(false);
+              }
+            } else {
+              setHasPermission(false);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error checking permissions:', error);
+        setHasPermission(false);
+      } finally {
+        setCheckingPermission(false);
+      }
+    };
+
+    checkPermissions();
+  }, [selectedCompany, state.user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -167,6 +226,50 @@ const CreateRole = () => {
           <h2 style={{ color: '#1e293b', marginBottom: '16px' }}>No Company Selected</h2>
           <p style={{ color: '#64748b', marginBottom: '24px' }}>
             Please select a company to create roles
+          </p>
+          <button
+            onClick={() => navigate('/overview')}
+            style={{
+              padding: '12px 24px',
+              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '600'
+            }}
+          >
+            Go to Overview
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (checkingPermission) {
+    return (
+      <Layout>
+        <div style={{ textAlign: 'center', padding: '50px' }}>
+          <div style={{ fontSize: '18px', color: '#64748b' }}>Checking permissions...</div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!hasPermission) {
+    return (
+      <Layout>
+        <div style={{
+          background: 'white',
+          padding: '50px',
+          borderRadius: '12px',
+          textAlign: 'center',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔒</div>
+          <h2 style={{ color: '#1e293b', marginBottom: '16px' }}>Access Denied</h2>
+          <p style={{ color: '#64748b', marginBottom: '24px' }}>
+            You don't have permission to create roles
           </p>
           <button
             onClick={() => navigate('/overview')}

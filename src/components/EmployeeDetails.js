@@ -25,6 +25,34 @@ const EmployeeDetails = () => {
   const [newDesignation, setNewDesignation] = useState('');
   const [selectedManager, setSelectedManager] = useState('');
 
+  // Currency symbols mapping
+  const currencySymbols = {
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'JPY': '¥',
+    'AUD': 'A$',
+    'CAD': 'C$',
+    'CHF': 'CHF',
+    'CNY': '¥',
+    'INR': '₹',
+    'SGD': 'S$',
+    'HKD': 'HK$',
+    'NZD': 'NZ$',
+    'SEK': 'kr',
+    'NOK': 'kr',
+    'DKK': 'kr',
+    'MXN': 'MX$',
+    'BRL': 'R$',
+    'ZAR': 'R',
+    'AED': 'د.إ',
+    'SAR': '﷼'
+  };
+
+  const getCurrencySymbol = () => {
+    return currencySymbols[company?.currency] || '$';
+  };
+
   useEffect(() => {
     if (selectedCompany && selectedCompany.id !== 'personal') {
       fetchEmployeeDetails();
@@ -408,7 +436,7 @@ const EmployeeDetails = () => {
                 }}>
                   <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Current Salary</div>
                   <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>
-                    ${employee.currentSalary?.toLocaleString() || '0'}
+                    {getCurrencySymbol()}{employee.currentSalary?.toLocaleString() || '0'}
                   </div>
                 </div>
 
@@ -430,7 +458,7 @@ const EmployeeDetails = () => {
                         }}>
                           <div>
                             <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                              ${history.amount.toLocaleString()}
+                              {getCurrencySymbol()}{history.amount.toLocaleString()}
                             </div>
                             <div style={{ fontSize: '12px', color: '#64748b' }}>
                               {history.reason || 'Salary update'}

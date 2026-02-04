@@ -11,6 +11,30 @@ const Notifications = () => {
   const [loading, setLoading] = useState(true);
   const [processingInvitation, setProcessingInvitation] = useState(null);
 
+  // Currency symbols mapping
+  const currencySymbols = {
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'JPY': '¥',
+    'AUD': 'A$',
+    'CAD': 'C$',
+    'CHF': 'CHF',
+    'CNY': '¥',
+    'INR': '₹',
+    'SGD': 'S$',
+    'HKD': 'HK$',
+    'NZD': 'NZ$',
+    'SEK': 'kr',
+    'NOK': 'kr',
+    'DKK': 'kr',
+    'MXN': 'MX$',
+    'BRL': 'R$',
+    'ZAR': 'R',
+    'AED': 'د.إ',
+    'SAR': '﷼'
+  };
+
   useEffect(() => {
     fetchInvitations();
     fetchNotifications();
@@ -223,7 +247,7 @@ const Notifications = () => {
                               <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                             </svg>
                             <span style={{ fontSize: '14px', color: '#64748b' }}>
-                              Salary: <strong style={{ color: '#10b981' }}>${invitation.salary.toLocaleString()}</strong>
+                              Salary: <strong style={{ color: '#10b981' }}>{currencySymbols[invitation.company?.currency || 'USD']}{invitation.salary.toLocaleString()}</strong>
                             </span>
                           </div>
                         )}

@@ -6,7 +6,7 @@ const CompanyContext = createContext();
 const initialState = {
   companies: [],
   selectedCompany: null,
-  loading: false,
+  loading: true, // Start with loading true to prevent premature redirects
   error: null
 };
 
@@ -33,8 +33,11 @@ export const CompanyProvider = ({ children }) => {
 
   // Fetch user's companies
   const fetchUserCompanies = async () => {
-    if (!authState.token) return;
-    
+    if (!authState.token) {
+      dispatch({ type: 'SET_LOADING', payload: false });
+      return;
+    }
+
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const response = await fetch('/api/companies/user-companies', {
@@ -47,7 +50,7 @@ export const CompanyProvider = ({ children }) => {
       if (response.ok) {
         const companies = await response.json();
         dispatch({ type: 'SET_COMPANIES', payload: companies });
-        
+
         // Set default company (first one or Personal)
         if (companies.length > 0) {
           // Check if there's a saved company in localStorage that matches
@@ -58,6 +61,7 @@ export const CompanyProvider = ({ children }) => {
               const matchingCompany = companies.find(c => c.id === parsedCompany.id);
               if (matchingCompany) {
                 dispatch({ type: 'SET_SELECTED_COMPANY', payload: matchingCompany });
+                dispatch({ type: 'SET_LOADING', payload: false });
                 return;
               }
             } catch (error) {
@@ -69,6 +73,7 @@ export const CompanyProvider = ({ children }) => {
         } else {
           dispatch({ type: 'SET_SELECTED_COMPANY', payload: { id: 'personal', name: 'Personal' } });
         }
+        dispatch({ type: 'SET_LOADING', payload: false });
       } else {
         throw new Error('Failed to fetch companies');
       }
@@ -77,6 +82,7 @@ export const CompanyProvider = ({ children }) => {
       dispatch({ type: 'SET_ERROR', payload: error.message });
       // Default to Personal if error
       dispatch({ type: 'SET_SELECTED_COMPANY', payload: { id: 'personal', name: 'Personal' } });
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
 
@@ -136,7 +142,11 @@ export const CompanyProvider = ({ children }) => {
         console.error('Error parsing saved company:', error);
       }
     }
-  }, []);
+    // If no auth token yet, set loading to false
+    if (!authState.token) {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, [authState.token]);
 
   // Fetch companies when user logs in
   useEffect(() => {
