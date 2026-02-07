@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 const InlineTaskCreator = ({ onCreateTask, onCancel, defaultDurationUnit = 'hours' }) => {
   const [title, setTitle] = useState('');
@@ -6,6 +6,7 @@ const InlineTaskCreator = ({ onCreateTask, onCancel, defaultDurationUnit = 'hour
   const [duration, setDuration] = useState('');
   const [durationUnit, setDurationUnit] = useState(defaultDurationUnit);
   const [showDescription, setShowDescription] = useState(false);
+  const titleInputRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,6 +33,13 @@ const InlineTaskCreator = ({ onCreateTask, onCancel, defaultDurationUnit = 'hour
     setDuration('');
     setDurationUnit(defaultDurationUnit);
     setShowDescription(false);
+
+    // Focus the input for the next task
+    setTimeout(() => {
+      if (titleInputRef.current) {
+        titleInputRef.current.focus();
+      }
+    }, 0);
   };
 
   const handleCancel = () => {
@@ -55,6 +63,7 @@ const InlineTaskCreator = ({ onCreateTask, onCancel, defaultDurationUnit = 'hour
         {/* Title Input */}
         <input
           type="text"
+          ref={titleInputRef}
           placeholder="What needs to be done?"
           value={title}
           onChange={(e) => setTitle(e.target.value)}

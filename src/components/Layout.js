@@ -269,7 +269,8 @@ const Layout = ({ children }) => {
       { path: '/workforce', label: 'Workforce', icon: WorkforceIcon, category: 'company' }
     ] : []),
     ...(state.user?.role === 'admin' || state.user?.role === 'superadmin' ? [
-      { path: '/users', label: 'Users', icon: UsersIcon, category: 'admin' }
+      { path: '/users', label: 'Users', icon: UsersIcon, category: 'admin' },
+      { path: '/companies', label: 'Companies', icon: CompanyIcon, category: 'admin' }
     ] : []),
     ...(canManageSettings && companyState.selectedCompany?.id !== 'personal' ? [
       { path: '/company-settings', label: 'Settings', icon: SettingsIcon, category: 'company' }
@@ -602,7 +603,7 @@ const Layout = ({ children }) => {
           }
         `}</style>
 
- 
+
 
         {/* Navigation */}
         <nav style={{
@@ -629,7 +630,7 @@ const Layout = ({ children }) => {
 
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path ||
-                           (item.path === '/employees' && location.pathname.startsWith('/employees/'));
+              (item.path === '/employees' && location.pathname.startsWith('/employees/'));
             const IconComponent = item.icon;
 
             return (

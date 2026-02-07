@@ -18,13 +18,23 @@ const Dashboard = () => {
     totalTasks: 0,
     pendingTasks: 0
   });
+  const [adminStats, setAdminStats] = useState({
+    totalCompanies: 0,
+    totalUsers: 0,
+    activeUsers: 0,
+    adminUsers: 0
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (selectedCompany) {
       fetchDashboardData();
     }
-  }, [selectedCompany]);
+    // Fetch admin stats if user is superadmin
+    if (state.user?.role === 'superadmin') {
+      fetchAdminStats();
+    }
+  }, [selectedCompany, state.user?.role]);
 
   const fetchDashboardData = async () => {
     if (!state.token) return;
@@ -74,6 +84,27 @@ const Dashboard = () => {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAdminStats = async () => {
+    if (!state.token) return;
+
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/stats', {
+        headers: {
+          'Authorization': `Bearer ${state.token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAdminStats(data);
+      } else {
+        console.error('Failed to fetch admin stats:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
     }
   };
 
@@ -182,19 +213,32 @@ const Dashboard = () => {
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           marginBottom: '30px'
         }}>
-          <h3 style={{ margin: '0 0 20px 0', color: '#1e293b' }}>User Management</h3>
+          <h3 style={{ margin: '0 0 20px 0', color: '#1e293b' }}>
+            {state.user?.role === 'superadmin' ? 'System Overview' : 'User Management'}
+          </h3>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
             gap: '15px'
           }}>
+            {state.user?.role === 'superadmin' && (
+              <div style={{
+                padding: '15px',
+                backgroundColor: '#f8fafc',
+                borderRadius: '8px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#f59e0b' }}>{adminStats.totalCompanies}</div>
+                <div style={{ fontSize: '12px', color: '#64748b' }}>Total Companies</div>
+              </div>
+            )}
             <div style={{
               padding: '15px',
               backgroundColor: '#f8fafc',
               borderRadius: '8px',
               textAlign: 'center'
             }}>
-              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#3b82f6' }}>12</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#3b82f6' }}>{adminStats.totalUsers}</div>
               <div style={{ fontSize: '12px', color: '#64748b' }}>Total Users</div>
             </div>
             <div style={{
@@ -203,7 +247,7 @@ const Dashboard = () => {
               borderRadius: '8px',
               textAlign: 'center'
             }}>
-              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#10b981' }}>8</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#10b981' }}>{adminStats.activeUsers}</div>
               <div style={{ fontSize: '12px', color: '#64748b' }}>Active Users</div>
             </div>
             <div style={{
@@ -212,7 +256,7 @@ const Dashboard = () => {
               borderRadius: '8px',
               textAlign: 'center'
             }}>
-              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#8b5cf6' }}>3</div>
+              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#8b5cf6' }}>{adminStats.adminUsers}</div>
               <div style={{ fontSize: '12px', color: '#64748b' }}>Admins</div>
             </div>
           </div>

@@ -106,7 +106,7 @@ const UserDetails = () => {
         <div style={{ textAlign: 'center', padding: '50px' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>❌</div>
           <h2>User Not Found</h2>
-          <button 
+          <button
             onClick={() => navigate('/users')}
             style={{
               padding: '12px 24px',
@@ -139,7 +139,7 @@ const UserDetails = () => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button
-              onClick={() => navigate('/users')}
+              onClick={() => navigate(-1)}
               style={{
                 padding: '8px 12px',
                 backgroundColor: '#f1f5f9',
@@ -209,51 +209,51 @@ const UserDetails = () => {
               }} />
             )}
             <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{
-              width: '120px',
-              height: '120px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '48px',
-              margin: '0 auto 20px',
-              backgroundImage: profile.profilePicture ? `url(${profile.profilePicture})` : 'none',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              border: '4px solid rgba(255,255,255,0.3)'
-            }}>
-              {!profile.profilePicture && (user.name.charAt(0).toUpperCase() || '👤')}
-            </div>
-            <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: 'bold' }}>{user.name}</h1>
-            <p style={{ margin: '0 0 16px 0', fontSize: '16px', opacity: 0.9 }}>{user.email}</p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-              <span style={{
-                backgroundColor: user.role === 'superadmin' ? '#ef4444' : 
-                               user.role === 'admin' ? '#06b6d4' : '#10b981',
-                color: 'white',
-                padding: '6px 16px',
-                borderRadius: '20px',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                textTransform: 'uppercase'
+              <div style={{
+                width: '120px',
+                height: '120px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '48px',
+                margin: '0 auto 20px',
+                backgroundImage: profile.profilePicture ? `url(${profile.profilePicture})` : 'none',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                border: '4px solid rgba(255,255,255,0.3)'
               }}>
-                {user.role}
-              </span>
-              {profile.title && (
+                {!profile.profilePicture && (user.name.charAt(0).toUpperCase() || '👤')}
+              </div>
+              <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: 'bold' }}>{user.name}</h1>
+              <p style={{ margin: '0 0 16px 0', fontSize: '16px', opacity: 0.9 }}>{user.email}</p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
                 <span style={{
-                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  backgroundColor: user.role === 'superadmin' ? '#ef4444' :
+                    user.role === 'admin' ? '#06b6d4' : '#10b981',
                   color: 'white',
                   padding: '6px 16px',
                   borderRadius: '20px',
                   fontSize: '14px',
-                  fontWeight: '500'
+                  fontWeight: 'bold',
+                  textTransform: 'uppercase'
                 }}>
-                  {profile.title}
+                  {user.role}
                 </span>
-              )}
-            </div>
+                {profile.title && (
+                  <span style={{
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    padding: '6px 16px',
+                    borderRadius: '20px',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}>
+                    {profile.title}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -280,10 +280,10 @@ const UserDetails = () => {
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Member Since</label>
                   <p style={{ margin: 0, fontSize: '14px', color: '#1e293b' }}>
-                    {new Date(user.createdAt).toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
+                    {new Date(user.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
                     })}
                   </p>
                 </div>
@@ -491,20 +491,20 @@ const UserDetails = () => {
             )}
 
             {/* Empty State */}
-            {!profile.summary && (!profile.skills || profile.skills.length === 0) && 
-             (!profile.experience || profile.experience.length === 0) && 
-             (!profile.education || profile.education.length === 0) && 
-             (!profile.projects || profile.projects.length === 0) && (
-              <div style={{
-                textAlign: 'center',
-                padding: '60px 20px',
-                color: '#64748b'
-              }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px' }}>📝</div>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#374151' }}>Profile Not Complete</h3>
-                <p style={{ margin: 0, fontSize: '14px' }}>This user hasn't filled out their profile information yet.</p>
-              </div>
-            )}
+            {!profile.summary && (!profile.skills || profile.skills.length === 0) &&
+              (!profile.experience || profile.experience.length === 0) &&
+              (!profile.education || profile.education.length === 0) &&
+              (!profile.projects || profile.projects.length === 0) && (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '60px 20px',
+                  color: '#64748b'
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📝</div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#374151' }}>Profile Not Complete</h3>
+                  <p style={{ margin: 0, fontSize: '14px' }}>This user hasn't filled out their profile information yet.</p>
+                </div>
+              )}
           </div>
         </div>
       </div>

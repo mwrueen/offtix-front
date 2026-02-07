@@ -31,6 +31,8 @@ import LeaveManagement from './components/LeaveManagement';
 import Workforce from './components/company/Workforce';
 import Organogram from './components/Organogram';
 import EditCompanyInfo from './components/EditCompanyInfo';
+import CompanyList from './components/CompanyList';
+import CompanyDetails from './components/CompanyDetails';
 
 function App() {
   return (
@@ -40,116 +42,126 @@ function App() {
           <CompanyProvider>
             <ProjectProvider>
               <Router>
-              <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/signin" element={<SignIn />} />
-                <Route path="/signup" element={<SignUp />} />
-                <Route path="/auth/callback" element={<AuthCallback />} />
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/projects" element={
-                  <ProtectedRoute>
-                    <Projects />
-                  </ProtectedRoute>
-                } />
-                <Route path="/projects/:id" element={
-                  <ProtectedRoute>
-                    <ProjectDetails />
-                  </ProtectedRoute>
-                } />
-                <Route path="/projects/:id/tasks" element={
-                  <ProtectedRoute>
-                    <Tasks />
-                  </ProtectedRoute>
-                } />
-                <Route path="/overview" element={
-                  <ProtectedRoute>
-                    <Company />
-                  </ProtectedRoute>
-                } />
-                <Route path="/edit-company-info" element={
-                  <ProtectedRoute>
-                    <EditCompanyInfo />
-                  </ProtectedRoute>
-                } />
-                <Route path="/users" element={
-                  <ProtectedRoute>
-                    <UserList />
-                  </ProtectedRoute>
-                } />
-                <Route path="/users/:id" element={
-                  <ProtectedRoute>
-                    <UserDetails />
-                  </ProtectedRoute>
-                } />
-                <Route path="/profile" element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                } />
-                <Route path="/create-company" element={
-                  <ProtectedRoute>
-                    <CreateCompany />
-                  </ProtectedRoute>
-                } />
-                <Route path="/add-employee" element={
-                  <ProtectedRoute>
-                    <AddEmployee />
-                  </ProtectedRoute>
-                } />
-                <Route path="/create-role" element={
-                  <ProtectedRoute>
-                    <CreateRole />
-                  </ProtectedRoute>
-                } />
-                <Route path="/manage-roles" element={
-                  <ProtectedRoute>
-                    <ManageRoles />
-                  </ProtectedRoute>
-                } />
-                <Route path="/notifications" element={
-                  <ProtectedRoute>
-                    <Notifications />
-                  </ProtectedRoute>
-                } />
-                <Route path="/company-settings" element={
-                  <ProtectedRoute>
-                    <CompanySettingsPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/employees" element={
-                  <ProtectedRoute>
-                    <EmployeeList />
-                  </ProtectedRoute>
-                } />
-                <Route path="/employees/:id" element={
-                  <ProtectedRoute>
-                    <EmployeeDetails />
-                  </ProtectedRoute>
-                } />
-                <Route path="/holidays" element={
-                  <ProtectedRoute>
-                    <HolidayCalendar />
-                  </ProtectedRoute>
-                } />
-                <Route path="/leaves" element={
-                  <ProtectedRoute>
-                    <LeaveManagement />
-                  </ProtectedRoute>
-                } />
-                <Route path="/workforce" element={
-                  <ProtectedRoute>
-                    <Workforce />
-                  </ProtectedRoute>
-                } />
-                <Route path="/organogram" element={
-                  <ProtectedRoute>
-                    <Organogram />
-                  </ProtectedRoute>
-                } />
+                <Routes>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/signin" element={<SignIn />} />
+                  <Route path="/signup" element={<SignUp />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/projects" element={
+                    <ProtectedRoute>
+                      <Projects />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/projects/:id" element={
+                    <ProtectedRoute>
+                      <ProjectDetails />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/projects/:id/tasks" element={
+                    <ProtectedRoute>
+                      <Tasks />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/overview" element={
+                    <ProtectedRoute>
+                      <Company />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/edit-company-info" element={
+                    <ProtectedRoute>
+                      <EditCompanyInfo />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/users" element={
+                    <ProtectedRoute>
+                      <UserList />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/users/:id" element={
+                    <ProtectedRoute>
+                      <UserDetails />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/profile" element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/create-company" element={
+                    <ProtectedRoute>
+                      <CreateCompany />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/add-employee" element={
+                    <ProtectedRoute>
+                      <AddEmployee />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/create-role" element={
+                    <ProtectedRoute>
+                      <CreateRole />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/manage-roles" element={
+                    <ProtectedRoute>
+                      <ManageRoles />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/notifications" element={
+                    <ProtectedRoute>
+                      <Notifications />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/company-settings" element={
+                    <ProtectedRoute>
+                      <CompanySettingsPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/employees" element={
+                    <ProtectedRoute>
+                      <EmployeeList />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/employees/:id" element={
+                    <ProtectedRoute>
+                      <EmployeeDetails />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/holidays" element={
+                    <ProtectedRoute>
+                      <HolidayCalendar />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/leaves" element={
+                    <ProtectedRoute>
+                      <LeaveManagement />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/workforce" element={
+                    <ProtectedRoute>
+                      <Workforce />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/organogram" element={
+                    <ProtectedRoute>
+                      <Organogram />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/companies" element={
+                    <ProtectedRoute>
+                      <CompanyList />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/companies/:id" element={
+                    <ProtectedRoute>
+                      <CompanyDetails />
+                    </ProtectedRoute>
+                  } />
                 </Routes>
               </Router>
             </ProjectProvider>
