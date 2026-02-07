@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { projectAPI } from '../../services/api';
+import React, { useState, useEffect } from 'react';
+import { projectAPI, companyAPI } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
@@ -8,11 +8,46 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
   const [selectedRole, setSelectedRole] = useState('');
   const [memberToRemove, setMemberToRemove] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [companyRoles, setCompanyRoles] = useState([]);
+  const [companyMembers, setCompanyMembers] = useState([]);
+  const [filterUsersByRole, setFilterUsersByRole] = useState(true);
 
-  // Predefined roles with option for custom input
-  const predefinedRoles = [
+  // Fetch company roles (designations)
+  useEffect(() => {
+    const fetchCompanyData = async () => {
+      if (!project?.company) return;
+
+      try {
+        const companyId = typeof project.company === 'object' ? project.company._id : project.company;
+        const response = await companyAPI.getById(companyId);
+
+        if (response.data) {
+          if (response.data.designations) {
+            // Sort roles by level (assuming lower level = higher hierarchy, or just alphabetical)
+            const roles = response.data.designations
+              .sort((a, b) => a.level - b.level)
+              .map(d => d.name);
+
+            setCompanyRoles(roles);
+          }
+          if (response.data.members) {
+            setCompanyMembers(response.data.members);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching company data:', error);
+      }
+    };
+
+    if (showAddMember) {
+      fetchCompanyData();
+    }
+  }, [project, showAddMember]);
+
+  // Use company roles if available, otherwise fallback to predefined
+  const rolesList = companyRoles.length > 0 ? companyRoles : [
     'System Architect',
-    'UI/UX Designer', 
+    'UI/UX Designer',
     'Backend Developer',
     'Frontend Developer',
     'Full Stack Developer',
@@ -25,44 +60,50 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
 
   // Get available users (not already in the project)
   const availableUsers = users.filter(user => {
-    const isAlreadyMember = project.members?.some(member => 
+    const isAlreadyMember = project.members?.some(member =>
       (member.user?._id === user._id) || (member._id === user._id) || (member === user._id)
     );
     const isOwner = project.owner?._id === user._id || project.owner === user._id;
     return !isAlreadyMember && !isOwner;
   });
 
+  // Filter available users based on selected role
+  const filteredUsers = React.useMemo(() => {
+    if (!selectedRole || !filterUsersByRole || companyMembers.length === 0) {
+      return availableUsers;
+    }
+
+    return availableUsers.filter(user => {
+      const memberInfo = companyMembers.find(m =>
+        (m.user?._id === user._id) || (m.user === user._id)
+      );
+      // If user has the selected designation in the company
+      return memberInfo?.designation === selectedRole;
+    });
+  }, [availableUsers, selectedRole, filterUsersByRole, companyMembers]);
+
+
   // Enhanced debug logging
   console.log('TeamTab Debug Info:', {
     isProjectOwner,
     totalUsers: users.length,
     availableUsers: availableUsers.length,
-    projectOwner: project.owner,
-    projectMembers: project.members,
-    allUsers: users.map(u => ({ 
-      id: u._id, 
-      name: u.name, 
-      email: u.email,
-      company: u.company 
-    })),
-    availableUsersList: availableUsers.map(u => ({ 
-      id: u._id, 
-      name: u.name, 
-      email: u.email,
-      company: u.company 
-    })),
-    companyContext: 'Check company filter in ProjectDetails'
+    filteredUsers: filteredUsers.length,
+    selectedRole,
+    filterUsersByRole,
+    companyMembersCount: companyMembers.length
   });
 
   const handleAddMember = async () => {
     if (!selectedUser || !selectedRole.trim()) return;
-    
+
     setLoading(true);
     try {
       await projectAPI.addTeamMember(projectId, selectedUser, selectedRole.trim());
-      
+
       setSelectedUser('');
-      setSelectedRole('');
+      // Keep selectedRole for easier multiple addition if desired, or clear it
+      // setSelectedRole(''); 
       setShowAddMember(false);
       await onRefresh();
     } catch (error) {
@@ -76,12 +117,12 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
 
   const handleRemoveMember = async () => {
     if (!memberToRemove) return;
-    
+
     setLoading(true);
     try {
       const memberToRemoveId = memberToRemove.user?._id || memberToRemove._id;
       await projectAPI.removeTeamMember(projectId, memberToRemoveId);
-      
+
       setMemberToRemove(null);
       await onRefresh();
     } catch (error) {
@@ -96,30 +137,30 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
   return (
     <div>
       {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: '24px' 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '24px'
       }}>
         <div>
-          <h2 style={{ 
-            margin: '0 0 8px 0', 
-            fontSize: '20px', 
-            fontWeight: '600', 
-            color: '#172b4d' 
+          <h2 style={{
+            margin: '0 0 8px 0',
+            fontSize: '20px',
+            fontWeight: '600',
+            color: '#172b4d'
           }}>
             Team Members
           </h2>
-          <p style={{ 
-            margin: 0, 
-            color: '#5e6c84', 
-            fontSize: '14px' 
+          <p style={{
+            margin: 0,
+            color: '#5e6c84',
+            fontSize: '14px'
           }}>
             Manage project team members and their access
           </p>
         </div>
-        
+
         {isProjectOwner && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
             {availableUsers.length > 0 ? (
@@ -145,9 +186,9 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
                 Add Member
               </button>
             ) : (
-              <div style={{ 
-                fontSize: '12px', 
-                color: '#5e6c84', 
+              <div style={{
+                fontSize: '12px',
+                color: '#5e6c84',
                 textAlign: 'right',
                 fontStyle: 'italic'
               }}>
@@ -156,8 +197,8 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
                 (All users are already members or owner)
               </div>
             )}
-            <div style={{ 
-              fontSize: '11px', 
+            <div style={{
+              fontSize: '11px',
               color: '#8993a4',
               textAlign: 'right'
             }}>
@@ -165,11 +206,11 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
             </div>
           </div>
         )}
-        
+
         {!isProjectOwner && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-            <div style={{ 
-              fontSize: '12px', 
+            <div style={{
+              fontSize: '12px',
               color: '#5e6c84',
               fontStyle: 'italic'
             }}>
@@ -199,8 +240,8 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
                 Add Member (Override)
               </button>
             )}
-            <div style={{ 
-              fontSize: '11px', 
+            <div style={{
+              fontSize: '11px',
               color: '#8993a4',
               textAlign: 'right'
             }}>
@@ -219,29 +260,33 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
           padding: '20px',
           marginBottom: '24px'
         }}>
-          <h3 style={{ 
-            margin: '0 0 16px 0', 
-            fontSize: '16px', 
-            fontWeight: '600', 
-            color: '#172b4d' 
+          <h3 style={{
+            margin: '0 0 16px 0',
+            fontSize: '16px',
+            fontWeight: '600',
+            color: '#172b4d'
           }}>
             Add Team Member
           </h3>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '16px' }}>
+            {/* Role Selection (First) */}
             <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '6px', 
-                fontSize: '12px', 
-                fontWeight: '600', 
-                color: '#5e6c84' 
+              <label style={{
+                display: 'block',
+                marginBottom: '6px',
+                fontSize: '12px',
+                fontWeight: '600',
+                color: '#5e6c84'
               }}>
-                SELECT USER
+                ROLE
               </label>
               <select
-                value={selectedUser}
-                onChange={(e) => setSelectedUser(e.target.value)}
+                value={selectedRole}
+                onChange={(e) => {
+                  setSelectedRole(e.target.value);
+                  setSelectedUser(''); // Reset user when role changes if filtering is on
+                }}
                 style={{
                   width: '100%',
                   padding: '8px 12px',
@@ -251,50 +296,85 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
                   backgroundColor: 'white'
                 }}
               >
-                <option value="">Choose a user...</option>
-                {availableUsers.map(user => (
-                  <option key={user._id} value={user._id}>
-                    {user.name} ({user.email})
-                  </option>
+                <option value="">Select a role...</option>
+                {rolesList.map(role => (
+                  <option key={role} value={role}>{role}</option>
                 ))}
               </select>
+              {/* Or Allow Custom Role Input if needed, but select is better for filtering */}
             </div>
-            
+
+            {/* User Selection (Second) */}
             <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '6px', 
-                fontSize: '12px', 
-                fontWeight: '600', 
-                color: '#5e6c84' 
-              }}>
-                ROLE
-              </label>
-              <input
-                type="text"
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value)}
-                placeholder="Enter role (e.g., Frontend Developer)"
-                list="role-suggestions"
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <label style={{
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: '#5e6c84'
+                }}>
+                  SELECT USER
+                </label>
+                {selectedRole && (
+                  <label style={{
+                    fontSize: '12px',
+                    color: '#0052cc',
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={!filterUsersByRole}
+                      onChange={(e) => setFilterUsersByRole(!e.target.checked)}
+                      style={{ marginRight: '4px' }}
+                    />
+                    Show all users
+                  </label>
+                )}
+              </div>
+
+              <select
+                value={selectedUser}
+                onChange={(e) => setSelectedUser(e.target.value)}
+                disabled={!selectedRole && filterUsersByRole}
                 style={{
                   width: '100%',
                   padding: '8px 12px',
                   border: '1px solid #dfe1e6',
                   borderRadius: '3px',
                   fontSize: '14px',
-                  backgroundColor: 'white'
+                  backgroundColor: (!selectedRole && filterUsersByRole) ? '#f4f5f7' : 'white',
+                  cursor: (!selectedRole && filterUsersByRole) ? 'not-allowed' : 'pointer'
                 }}
-              />
-              <datalist id="role-suggestions">
-                {predefinedRoles.map(role => (
-                  <option key={role} value={role} />
-                ))}
-              </datalist>
+              >
+                <option value="">
+                  {(!selectedRole && filterUsersByRole)
+                    ? 'Select a role first...'
+                    : `Choose a user... (${filteredUsers.length} available)`}
+                </option>
+                {filteredUsers.map(user => {
+                  // Find user's designation to display
+                  const memberInfo = companyMembers.find(m =>
+                    (m.user?._id === user._id) || (m.user === user._id)
+                  );
+                  const designation = memberInfo?.designation;
+
+                  return (
+                    <option key={user._id} value={user._id}>
+                      {user.name} {designation ? `(${designation})` : `(${user.email})`}
+                    </option>
+                  );
+                })}
+              </select>
+              {selectedRole && filteredUsers.length === 0 && filterUsersByRole && (
+                <div style={{ marginTop: '4px', fontSize: '11px', color: '#DE350B' }}>
+                  No users found with this role. Check "Show all users" to pick someone else.
+                </div>
+              )}
             </div>
           </div>
-          
+
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-            
+
             <button
               onClick={handleAddMember}
               disabled={!selectedUser || !selectedRole.trim() || loading}
@@ -311,7 +391,7 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
             >
               {loading ? 'Adding...' : 'Add Member'}
             </button>
-            
+
             <button
               onClick={() => {
                 setShowAddMember(false);
@@ -344,15 +424,15 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
         padding: '20px',
         marginBottom: '16px'
       }}>
-        <h3 style={{ 
-          margin: '0 0 16px 0', 
-          fontSize: '16px', 
-          fontWeight: '600', 
-          color: '#172b4d' 
+        <h3 style={{
+          margin: '0 0 16px 0',
+          fontSize: '16px',
+          fontWeight: '600',
+          color: '#172b4d'
         }}>
           Project Owner
         </h3>
-        
+
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -404,15 +484,15 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
         borderRadius: '3px',
         padding: '20px'
       }}>
-        <h3 style={{ 
-          margin: '0 0 16px 0', 
-          fontSize: '16px', 
-          fontWeight: '600', 
-          color: '#172b4d' 
+        <h3 style={{
+          margin: '0 0 16px 0',
+          fontSize: '16px',
+          fontWeight: '600',
+          color: '#172b4d'
         }}>
           Team Members ({project.members?.length || 0})
         </h3>
-        
+
         {project.members && project.members.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {project.members.map((member, index) => {
@@ -420,7 +500,7 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
               const memberUser = member.user || member;
               const memberRole = member.role || 'Team Member';
               const memberId = member._id || member.user?._id || index;
-              
+
               return (
                 <div key={memberId} style={{
                   display: 'flex',
@@ -490,9 +570,9 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
             })}
           </div>
         ) : (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '32px', 
+          <div style={{
+            textAlign: 'center',
+            padding: '32px',
             color: '#5e6c84',
             fontSize: '14px'
           }}>

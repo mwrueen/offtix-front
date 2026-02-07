@@ -120,7 +120,10 @@ const Tasks = () => {
 
       // Add owner
       if (projectData.owner) {
-        projectTeamMembers.push(projectData.owner);
+        projectTeamMembers.push({
+          ...projectData.owner,
+          projectRole: 'Owner'
+        });
       }
 
       // Add all members
@@ -130,7 +133,10 @@ const Tasks = () => {
             // Avoid duplicates (in case owner is also in members array)
             const exists = projectTeamMembers.find(u => u._id === member.user._id);
             if (!exists) {
-              projectTeamMembers.push(member.user);
+              projectTeamMembers.push({
+                ...member.user,
+                projectRole: member.role || 'Member'
+              });
             }
           }
         });

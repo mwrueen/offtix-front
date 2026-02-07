@@ -492,20 +492,32 @@ const GanttView = ({
 
   // Check if a date is a holiday
   const isHoliday = (date) => {
+    if (!date || isNaN(new Date(date).getTime())) return false;
+    const dateObj = new Date(date);
+
     const holidays = company?.settings?.holidays || project?.settings?.holidays || [];
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = dateObj.toISOString().split('T')[0];
     return holidays.some(holiday => {
-      const holidayDate = new Date(holiday.date).toISOString().split('T')[0];
+      if (!holiday.date) return false;
+      const hDate = new Date(holiday.date);
+      if (isNaN(hDate.getTime())) return false;
+      const holidayDate = hDate.toISOString().split('T')[0];
       return holidayDate === dateStr;
     });
   };
 
   // Get holiday name for a date
   const getHolidayName = (date) => {
+    if (!date || isNaN(new Date(date).getTime())) return '';
+    const dateObj = new Date(date);
+
     const holidays = company?.settings?.holidays || project?.settings?.holidays || [];
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = dateObj.toISOString().split('T')[0];
     const holiday = holidays.find(h => {
-      const holidayDate = new Date(h.date).toISOString().split('T')[0];
+      if (!h.date) return false;
+      const hDate = new Date(h.date);
+      if (isNaN(hDate.getTime())) return false;
+      const holidayDate = hDate.toISOString().split('T')[0];
       return holidayDate === dateStr;
     });
     return holiday?.name || '';
@@ -1406,8 +1418,8 @@ const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, o
       backgroundColor: level > 0 ? '#fafbfc' : 'white',
       transition: 'background-color 0.15s ease'
     }}
-    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = level > 0 ? '#f4f5f7' : '#fafbfc'}
-    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = level > 0 ? '#fafbfc' : 'white'}
+      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = level > 0 ? '#f4f5f7' : '#fafbfc'}
+      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = level > 0 ? '#fafbfc' : 'white'}
     >
       <div style={{
         width: '350px',
@@ -1672,8 +1684,8 @@ const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, o
                 position: 'absolute',
                 left: Math.max(0, position.left),
                 width: task.status.name.toLowerCase() === 'done' ? position.width :
-                       task.status.name.toLowerCase().includes('progress') ? position.width * 0.5 :
-                       position.width * 0.1,
+                  task.status.name.toLowerCase().includes('progress') ? position.width * 0.5 :
+                    position.width * 0.1,
                 height: level > 0 ? '20px' : '28px',
                 top: level > 0 ? '16px' : '12px',
                 backgroundColor: 'rgba(255,255,255,0.2)',

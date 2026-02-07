@@ -527,6 +527,7 @@ const TaskCard = ({ task, onEdit, onDelete, onAddSubtask, isDragging }) => {
 
 const AssigneeAvatar = ({ assignee }) => {
   const [showTooltip, setShowTooltip] = useState(false);
+  const profilePicture = assignee.profile?.profilePicture;
 
   const getInitials = (name) => {
     if (!name) return '?';
@@ -552,23 +553,41 @@ const AssigneeAvatar = ({ assignee }) => {
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
-      <div style={{
-        width: '28px',
-        height: '28px',
-        borderRadius: '50%',
-        backgroundColor: getAvatarColor(assignee.name),
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '11px',
-        fontWeight: '600',
-        border: '2px solid white',
-        cursor: 'pointer',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-      }}>
-        {getInitials(assignee.name)}
-      </div>
+      {profilePicture ? (
+        <img
+          src={profilePicture}
+          alt={assignee.name}
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '50%',
+            objectFit: 'cover',
+            border: '2px solid white',
+            cursor: 'pointer',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+            backgroundColor: 'white',
+            display: 'block'
+          }}
+        />
+      ) : (
+        <div style={{
+          width: '28px',
+          height: '28px',
+          borderRadius: '50%',
+          backgroundColor: getAvatarColor(assignee.name),
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontSize: '11px',
+          fontWeight: '600',
+          border: '2px solid white',
+          cursor: 'pointer',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+        }}>
+          {getInitials(assignee.name)}
+        </div>
+      )}
 
       {showTooltip && (
         <div style={{

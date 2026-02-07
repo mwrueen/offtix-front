@@ -71,17 +71,17 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-  
+
   // Build task hierarchy
   const buildTaskHierarchy = (tasks) => {
     const taskMap = new Map();
     const rootTasks = [];
-    
+
     // First pass: create map of all tasks
     tasks.forEach(task => {
       taskMap.set(task._id, { ...task, children: [] });
     });
-    
+
     // Second pass: build hierarchy
     tasks.forEach(task => {
       if (task.parent) {
@@ -96,12 +96,12 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
         rootTasks.push(taskMap.get(task._id));
       }
     });
-    
+
     return rootTasks;
   };
-  
+
   const hierarchicalTasks = buildTaskHierarchy(tasks);
-  
+
   const toggleExpand = (taskId) => {
     const newExpanded = new Set(expandedTasks);
     if (newExpanded.has(taskId)) {
@@ -111,7 +111,7 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
     }
     setExpandedTasks(newExpanded);
   };
-  
+
   const countSubtasks = (task) => {
     if (!task.children || task.children.length === 0) return 0;
     return task.children.length + task.children.reduce((sum, child) => sum + countSubtasks(child), 0);
@@ -162,98 +162,98 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
         boxShadow: '0 1px 2px rgba(9, 30, 66, 0.08)',
         overflow: 'hidden'
       }}>
-      {/* Header */}
-      <div style={{
-        padding: '12px 16px',
-        borderBottom: '2px solid #dfe1e6',
-        backgroundColor: '#f4f5f7',
-        display: 'grid',
-        gridTemplateColumns: '40px minmax(350px, 3fr) 140px 120px 160px 100px 100px',
-        gap: '12px',
-        fontSize: '11px',
-        fontWeight: '700',
-        color: '#5e6c84',
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px',
-        alignItems: 'center'
-      }}>
-        <div></div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          Issue
-          {tasks.length > 0 && (
-            <span style={{
-              backgroundColor: '#0052cc',
-              color: 'white',
-              padding: '2px 8px',
-              borderRadius: '12px',
-              fontSize: '10px',
-              fontWeight: '700',
-              textTransform: 'none'
-            }}>
-              {tasks.length}
-            </span>
-          )}
+        {/* Header */}
+        <div style={{
+          padding: '12px 16px',
+          borderBottom: '2px solid #dfe1e6',
+          backgroundColor: '#f4f5f7',
+          display: 'grid',
+          gridTemplateColumns: '40px minmax(350px, 3fr) 140px 120px 160px 100px 100px',
+          gap: '12px',
+          fontSize: '11px',
+          fontWeight: '700',
+          color: '#5e6c84',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px',
+          alignItems: 'center'
+        }}>
+          <div></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            Issue
+            {tasks.length > 0 && (
+              <span style={{
+                backgroundColor: '#0052cc',
+                color: 'white',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                fontSize: '10px',
+                fontWeight: '700',
+                textTransform: 'none'
+              }}>
+                {tasks.length}
+              </span>
+            )}
+          </div>
+          <div>Status</div>
+          <div>Priority</div>
+          <div>Assignees</div>
+          <div>Due Date</div>
+          <div>Cost</div>
         </div>
-        <div>Status</div>
-        <div>Priority</div>
-        <div>Assignees</div>
-        <div>Due Date</div>
-        <div>Cost</div>
-      </div>
 
-      {/* Task List */}
-      <SortableContext
-        items={tasks.map(t => t._id)}
-        strategy={verticalListSortingStrategy}
-      >
-        <div>
-          {tasks.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '80px 24px',
-              color: '#5e6c84',
-              backgroundColor: '#fafbfc'
-            }}>
+        {/* Task List */}
+        <SortableContext
+          items={tasks.map(t => t._id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div>
+            {tasks.length === 0 ? (
               <div style={{
-                fontSize: '64px',
-                marginBottom: '20px',
-                opacity: 0.5
-              }}>📋</div>
-              <h4 style={{
-                margin: '0 0 12px 0',
-                fontSize: '18px',
-                color: '#172b4d',
-                fontWeight: '600'
-              }}>No issues yet</h4>
-              <p style={{
-                margin: 0,
-                fontSize: '14px',
+                textAlign: 'center',
+                padding: '80px 24px',
                 color: '#5e6c84',
-                lineHeight: '1.6'
-              }}>Create an issue to get started with your project tracking.</p>
-            </div>
-          ) : (
-            <div>
-              {hierarchicalTasks.map(task => (
-                <SortableTaskRow
-                  key={task._id}
-                  task={task}
-                  level={0}
-                  onEdit={onEditTask}
-                  onDelete={onDeleteTask}
-                  onAddSubtask={onAddSubtask}
-                  isSelected={selectedTaskId === task._id}
-                  onSelect={() => onSelectTask(task)}
-                  isExpanded={expandedTasks.has(task._id)}
-                  onToggleExpand={() => toggleExpand(task._id)}
-                  countSubtasks={countSubtasks}
-                  taskCosts={taskCosts}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </SortableContext>
+                backgroundColor: '#fafbfc'
+              }}>
+                <div style={{
+                  fontSize: '64px',
+                  marginBottom: '20px',
+                  opacity: 0.5
+                }}>📋</div>
+                <h4 style={{
+                  margin: '0 0 12px 0',
+                  fontSize: '18px',
+                  color: '#172b4d',
+                  fontWeight: '600'
+                }}>No issues yet</h4>
+                <p style={{
+                  margin: 0,
+                  fontSize: '14px',
+                  color: '#5e6c84',
+                  lineHeight: '1.6'
+                }}>Create an issue to get started with your project tracking.</p>
+              </div>
+            ) : (
+              <div>
+                {hierarchicalTasks.map(task => (
+                  <SortableTaskRow
+                    key={task._id}
+                    task={task}
+                    level={0}
+                    onEdit={onEditTask}
+                    onDelete={onDeleteTask}
+                    onAddSubtask={onAddSubtask}
+                    isSelected={selectedTaskId === task._id}
+                    onSelect={() => onSelectTask(task)}
+                    isExpanded={expandedTasks.has(task._id)}
+                    onToggleExpand={() => toggleExpand(task._id)}
+                    countSubtasks={countSubtasks}
+                    taskCosts={taskCosts}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </SortableContext>
       </div>
 
       <DragOverlay>
@@ -449,7 +449,7 @@ const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, is
               transition: 'transform 0.2s'
             }}
           >
-            <span style={{ 
+            <span style={{
               transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
               transition: 'transform 0.2s',
               display: 'inline-block'
@@ -475,9 +475,9 @@ const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, is
 
       {/* Title + Subtask Count */}
       <div style={{ minWidth: 0 }}>
-        <div style={{ 
-          fontWeight: '500', 
-          color: '#172b4d', 
+        <div style={{
+          fontWeight: '500',
+          color: '#172b4d',
           fontSize: '14px',
           marginBottom: '4px',
           overflow: 'hidden',
@@ -502,9 +502,9 @@ const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, is
           )}
         </div>
         {task.description && (
-          <div style={{ 
-            fontSize: '12px', 
-            color: '#5e6c84', 
+          <div style={{
+            fontSize: '12px',
+            color: '#5e6c84',
             lineHeight: '1.4',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -672,6 +672,7 @@ const AssigneeList = ({ assignees, onClick }) => {
 
 const AssigneeAvatar = ({ assignee, getInitials, getAvatarColor, style }) => {
   const [showTooltip, setShowTooltip] = useState(false);
+  const profilePicture = assignee.profile?.profilePicture;
 
   return (
     <div
@@ -679,27 +680,48 @@ const AssigneeAvatar = ({ assignee, getInitials, getAvatarColor, style }) => {
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
-      <div style={{
-        width: '24px',
-        height: '24px',
-        borderRadius: '50%',
-        backgroundColor: getAvatarColor(assignee.name),
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '10px',
-        fontWeight: '600',
-        border: '2px solid white',
-        cursor: 'pointer',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-        transition: 'transform 0.15s ease-in-out'
-      }}
-      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-      >
-        {getInitials(assignee.name)}
-      </div>
+      {profilePicture ? (
+        <img
+          src={profilePicture}
+          alt={assignee.name}
+          style={{
+            width: '24px',
+            height: '24px',
+            borderRadius: '50%',
+            objectFit: 'cover',
+            border: '2px solid white',
+            cursor: 'pointer',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+            transition: 'transform 0.15s ease-in-out',
+            backgroundColor: 'white',
+            display: 'block'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        />
+      ) : (
+        <div style={{
+          width: '24px',
+          height: '24px',
+          borderRadius: '50%',
+          backgroundColor: getAvatarColor(assignee.name),
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontSize: '10px',
+          fontWeight: '600',
+          border: '2px solid white',
+          cursor: 'pointer',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+          transition: 'transform 0.15s ease-in-out'
+        }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          {getInitials(assignee.name)}
+        </div>
+      )}
 
       {showTooltip && (
         <div style={{
