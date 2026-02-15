@@ -24,11 +24,17 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      import('../utils/cookies').then(({ clearAuthCookies }) => {
-        clearAuthCookies();
-        window.location.href = '/signin';
-      });
+      // Only redirect if it's not a signin/signup request (those should show errors)
+      const isAuthRequest = error.config?.url?.includes('/auth/signin') || 
+                           error.config?.url?.includes('/auth/signup');
+      
+      if (!isAuthRequest) {
+        // Token expired or invalid for authenticated requests
+        import('../utils/cookies').then(({ clearAuthCookies }) => {
+          clearAuthCookies();
+          window.location.href = '/signin';
+        });
+      }
     }
     return Promise.reject(error);
   }
@@ -248,6 +254,32 @@ export const chatAPI = {
   // Edit a message
   editMessage: (projectId, messageId, content) =>
     api.put(`/projects/${projectId}/chat/messages/${messageId}`, { content }),
+};
+
+export const myTasksAPI = {
+  // Get all tasks assigned to logged-in user
+  getAll: () => api.get('/my-tasks'),
+  // Get single task details
+  getById: (taskId) => api.get(`/my-tasks/${taskId}`),
+  // Set/update user's duration
+  setDuration: (taskId, durationMinutes) =>
+    api.post(`/my-tasks/${taskId}/duration`, { duration_minutes: durationMinutes }),
+  // Start task step
+  start: (taskId) => api.post(`/my-tasks/${taskId}/start`),
+  // Complete task step
+  complete: (taskId, note, files) => {
+    const formData = new FormData();
+    formData.append('note', note);
+    if (files && files.length > 0) {
+      files.forEach(file => formData.append('files', file));
+    }
+    return api.post(`/my-tasks/${taskId}/complete`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  // Send back for fix
+  sendBack: (taskId, note, message) =>
+    api.post(`/my-tasks/${taskId}/send-back`, { note, message }),
 };
 
 export default api;

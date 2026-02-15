@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { projectAPI, companyAPI } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
-const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
+const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, onRefresh }) => {
   const [showAddMember, setShowAddMember] = useState(false);
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
@@ -11,6 +11,8 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
   const [companyRoles, setCompanyRoles] = useState([]);
   const [companyMembers, setCompanyMembers] = useState([]);
   const [filterUsersByRole, setFilterUsersByRole] = useState(true);
+
+  const canManageTeam = isProjectOwner || isProjectManager;
 
   // Fetch company roles (designations)
   useEffect(() => {
@@ -45,18 +47,22 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
   }, [project, showAddMember]);
 
   // Use company roles if available, otherwise fallback to predefined
-  const rolesList = companyRoles.length > 0 ? companyRoles : [
-    'System Architect',
-    'UI/UX Designer',
-    'Backend Developer',
-    'Frontend Developer',
-    'Full Stack Developer',
-    'QA Engineer',
-    'DevOps Engineer',
-    'Product Manager',
-    'Business Analyst',
-    'Data Analyst'
-  ];
+  // Always ensure 'Project Manager' is available if not present
+  const rolesList = companyRoles.length > 0 ?
+    (companyRoles.includes('Project Manager') ? companyRoles : ['Project Manager', ...companyRoles])
+    : [
+      'Project Manager',
+      'System Architect',
+      'UI/UX Designer',
+      'Backend Developer',
+      'Frontend Developer',
+      'Full Stack Developer',
+      'QA Engineer',
+      'DevOps Engineer',
+      'Product Manager',
+      'Business Analyst',
+      'Data Analyst'
+    ];
 
   // Get available users (not already in the project)
   const availableUsers = users.filter(user => {
@@ -134,6 +140,42 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
     }
   };
 
+  const renderAvatar = (user, size, bgColor) => {
+    if (user?.profile?.profilePicture) {
+      return (
+        <img
+          src={user.profile.profilePicture}
+          alt={user.name || 'User'}
+          style={{
+            width: `${size}px`,
+            height: `${size}px`,
+            borderRadius: '50%',
+            objectFit: 'cover',
+            border: '2px solid white',
+            flexShrink: 0
+          }}
+        />
+      );
+    }
+    return (
+      <div style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        borderRadius: '50%',
+        backgroundColor: bgColor,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontSize: size > 30 ? '16px' : '12px',
+        fontWeight: '600',
+        flexShrink: 0
+      }}>
+        {user?.name?.charAt(0).toUpperCase() || 'U'}
+      </div>
+    );
+  };
+
   return (
     <div>
       {/* Header */}
@@ -161,7 +203,7 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
           </p>
         </div>
 
-        {isProjectOwner && (
+        {canManageTeam && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
             {availableUsers.length > 0 ? (
               <button
@@ -207,39 +249,15 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
           </div>
         )}
 
-        {!isProjectOwner && (
+        {!canManageTeam && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
             <div style={{
               fontSize: '12px',
               color: '#5e6c84',
               fontStyle: 'italic'
             }}>
-              Only project owners can manage team members
+              Only project owners and managers can manage team members
             </div>
-            {/* Temporary override for testing */}
-            {availableUsers.length > 0 && (
-              <button
-                onClick={() => setShowAddMember(true)}
-                disabled={loading}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: '#ff8b00',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '3px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  opacity: loading ? 0.6 : 1
-                }}
-              >
-                <span>⚠️</span>
-                Add Member (Override)
-              </button>
-            )}
             <div style={{
               fontSize: '11px',
               color: '#8993a4',
@@ -442,20 +460,7 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
           borderRadius: '3px',
           border: '1px solid #36b37e'
         }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            backgroundColor: '#36b37e',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '16px',
-            fontWeight: '600'
-          }}>
-            {project.owner?.name?.charAt(0).toUpperCase()}
-          </div>
+          {renderAvatar(project.owner, 40, '#36b37e')}
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '14px', fontWeight: '600', color: '#172b4d' }}>
               {project.owner?.name}
@@ -511,20 +516,7 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
                   borderRadius: '3px',
                   border: '1px solid #dfe1e6'
                 }}>
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    backgroundColor: '#0052cc',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    fontSize: '16px',
-                    fontWeight: '600'
-                  }}>
-                    {memberUser?.name?.charAt(0).toUpperCase() || 'U'}
-                  </div>
+                  {renderAvatar(memberUser, 40, '#0052cc')}
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '14px', fontWeight: '500', color: '#172b4d' }}>
                       {memberUser?.name || 'Unknown User'}
@@ -546,7 +538,7 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, onRefresh }) => {
                   }}>
                     {memberRole.toUpperCase()}
                   </div>
-                  {isProjectOwner && (
+                  {canManageTeam && (
                     <button
                       onClick={() => setMemberToRemove(member)}
                       disabled={loading}

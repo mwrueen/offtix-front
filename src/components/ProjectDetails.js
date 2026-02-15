@@ -58,7 +58,7 @@ const ProjectDetails = () => {
 
       // First get the project to determine its company
       const projectRes = await projectAPI.getById(id);
-      
+
       console.log('ProjectDetails Debug - Project Info:', {
         projectId: projectRes.data._id,
         projectTitle: projectRes.data.title,
@@ -68,7 +68,7 @@ const ProjectDetails = () => {
 
       // Determine which company ID to use for filtering users
       let usersRes;
-      
+
       if (projectRes.data.company) {
         // Project has a company - get employees from that specific company
         const projectCompanyId = projectRes.data.company._id || projectRes.data.company;
@@ -83,7 +83,7 @@ const ProjectDetails = () => {
         console.log('No company context - getting all users');
         usersRes = await userAPI.getAll(null);
       }
-      
+
       console.log('ProjectDetails Debug - Users Response:', {
         totalUsers: usersRes.data.length,
         users: usersRes.data.map(u => ({ id: u._id, name: u.name, email: u.email }))
@@ -91,7 +91,7 @@ const ProjectDetails = () => {
 
       setProject(projectRes.data);
       setUsers(usersRes.data);
-      
+
       // Fetch additional data based on active tab
       await fetchTabData('overview');
     } catch (error) {
@@ -180,11 +180,17 @@ const ProjectDetails = () => {
 
   // More robust project owner check
   const isProjectOwner = authState.user && project && (
-    project.owner === authState.user.id || 
+    project.owner === authState.user.id ||
     project.owner?._id === authState.user.id ||
     project.owner === authState.user._id ||
     project.owner?._id === authState.user._id
   );
+
+  const isProjectManager = authState.user && project && project.members && project.members.some(member => {
+    const memberUserId = member.user?._id || member.user;
+    const userId = authState.user.id || authState.user._id;
+    return (memberUserId === userId) && member.role === 'Project Manager';
+  });
 
   if (loading) return <Layout><div>Loading...</div></Layout>;
 
@@ -267,19 +273,20 @@ const ProjectDetails = () => {
           padding: '24px'
         }}>
           {activeTab === 'overview' && (
-            <ProjectOverview 
-              project={project} 
+            <ProjectOverview
+              project={project}
               users={users}
               isProjectOwner={isProjectOwner}
             />
           )}
-          
+
           {activeTab === 'team' && (
             <TeamTab
               projectId={id}
               project={project}
               users={users}
               isProjectOwner={isProjectOwner}
+              isProjectManager={isProjectManager}
               onRefresh={fetchProjectData}
             />
           )}
@@ -306,7 +313,7 @@ const ProjectDetails = () => {
           )}
 
           {activeTab === 'requirements' && (
-            <RequirementsTab 
+            <RequirementsTab
               projectId={id}
               requirements={requirements}
               setRequirements={setRequirements}
@@ -315,9 +322,9 @@ const ProjectDetails = () => {
               onRefresh={() => fetchTabData('requirements')}
             />
           )}
-          
+
           {activeTab === 'meetings' && (
-            <MeetingNotesTab 
+            <MeetingNotesTab
               projectId={id}
               meetingNotes={meetingNotes}
               setMeetingNotes={setMeetingNotes}
@@ -326,9 +333,9 @@ const ProjectDetails = () => {
               onRefresh={() => fetchTabData('meetings')}
             />
           )}
-          
+
           {activeTab === 'phases' && (
-            <PhasesTab 
+            <PhasesTab
               projectId={id}
               phases={phases}
               setPhases={setPhases}
@@ -337,7 +344,7 @@ const ProjectDetails = () => {
               onRefresh={() => fetchTabData('phases')}
             />
           )}
-          
+
           {activeTab === 'sprints' && (
             <SprintsTab
               projectId={id}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { projectAPI, taskAPI, taskStatusAPI, sprintAPI, phaseAPI, userAPI, companyAPI, leaveAPI } from '../services/api';
+import { projectAPI, taskAPI, taskStatusAPI, sprintAPI, phaseAPI, userAPI, companyAPI, leaveAPI, taskRoleAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Layout from './Layout';
 import Breadcrumb from './project/Breadcrumb';
@@ -29,6 +29,7 @@ const Tasks = () => {
   const [taskStatuses, setTaskStatuses] = useState([]);
   const [sprints, setSprints] = useState([]);
   const [phases, setPhases] = useState([]);
+  const [taskRoles, setTaskRoles] = useState([]);
   const [employeeLeaves, setEmployeeLeaves] = useState([]);
   const [taskCosts, setTaskCosts] = useState({}); // Map of task._id -> cost
   const [loading, setLoading] = useState(true);
@@ -44,6 +45,8 @@ const Tasks = () => {
   const [selectedAssignee, setSelectedAssignee] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedTaskRole, setSelectedTaskRole] = useState(''); // Filter by task workflow role
+  const [selectedProjectRole, setSelectedProjectRole] = useState(''); // Filter by project member role
   const [dueDateFrom, setDueDateFrom] = useState('');
   const [dueDateTo, setDueDateTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -62,12 +65,13 @@ const Tasks = () => {
 
   const fetchProjectData = async () => {
     try {
-      const [projectRes, tasksRes, statusesRes, sprintsRes, phasesRes] = await Promise.all([
+      const [projectRes, tasksRes, statusesRes, sprintsRes, phasesRes, rolesRes] = await Promise.all([
         projectAPI.getById(id),
         taskAPI.getAll(id),
         taskStatusAPI.getAll(id),
         sprintAPI.getAll(id),
-        phaseAPI.getAll(id)
+        phaseAPI.getAll(id),
+        taskRoleAPI.getAll(id).catch(err => ({ data: [] })) // Handle if roles API not available
       ]);
 
       const projectData = projectRes.data;
@@ -76,6 +80,7 @@ const Tasks = () => {
       setTaskStatuses(statusesRes.data);
       setSprints(sprintsRes.data);
       setPhases(phasesRes.data);
+      setTaskRoles(rolesRes.data || []);
 
       // Fetch task costs
       try {
@@ -396,10 +401,34 @@ const Tasks = () => {
     if (selectedSprint && task.sprint?._id !== selectedSprint) return false;
     // Phase filter
     if (selectedPhase && task.phase?._id !== selectedPhase) return false;
-    // Assignee filter
+    // Task Workflow Role filter (NEW)
+    if (selectedTaskRole) {
+      const hasRole = task.roleAssignments?.some(ra =>
+        (ra.role?._id === selectedTaskRole) || (ra.role === selectedTaskRole)
+      );
+      if (!hasRole) return false;
+    }
+    // Project Role Filter (NEW)
+    if (selectedProjectRole) {
+      // Find all users who have this project role
+      const usersWithRole = users.filter(u => u.projectRole === selectedProjectRole);
+      const userIdsWithRole = usersWithRole.map(u => u._id);
+
+      // Check if any assignee has this role (direct or via workflow)
+      const hasDirectAssignee = task.assignees?.some(a => userIdsWithRole.includes(a._id || a));
+      const hasRoleAssignee = task.roleAssignments?.some(ra =>
+        ra.assignees?.some(a => userIdsWithRole.includes(a._id || a))
+      );
+
+      if (!hasDirectAssignee && !hasRoleAssignee) return false;
+    }
+    // Assignee filter (Updated to check both direct assignees and role assignees)
     if (selectedAssignee) {
-      const hasAssignee = task.assignees?.some(a => a._id === selectedAssignee);
-      if (!hasAssignee) return false;
+      const isDirectAssignee = task.assignees?.some(a => (a._id || a) === selectedAssignee);
+      const isRoleAssignee = task.roleAssignments?.some(ra =>
+        ra.assignees?.some(a => (a._id || a) === selectedAssignee)
+      );
+      if (!isDirectAssignee && !isRoleAssignee) return false;
     }
     // Priority filter
     if (selectedPriority && task.priority !== selectedPriority) return false;
@@ -416,13 +445,15 @@ const Tasks = () => {
   });
 
   // Count active filters
-  const activeFilterCount = [selectedAssignee, selectedPriority, selectedStatus, dueDateFrom, dueDateTo].filter(Boolean).length;
+  const activeFilterCount = [selectedAssignee, selectedPriority, selectedStatus, selectedTaskRole, selectedProjectRole, dueDateFrom, dueDateTo].filter(Boolean).length;
 
   // Clear all filters
   const clearAllFilters = () => {
     setSelectedAssignee('');
     setSelectedPriority('');
     setSelectedStatus('');
+    setSelectedTaskRole('');
+    setSelectedProjectRole('');
     setDueDateFrom('');
     setDueDateTo('');
     setSelectedSprint('');
@@ -578,6 +609,24 @@ const Tasks = () => {
                   <option value="">All Assignees</option>
                   {users.map(user => (<option key={user._id} value={user._id}>{user.name}</option>))}
                 </select>
+
+                {/* Project Role Filter */}
+                <select value={selectedProjectRole} onChange={(e) => setSelectedProjectRole(e.target.value)}
+                  style={{ padding: '6px 8px', border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '13px', backgroundColor: selectedProjectRole ? '#e6f0ff' : 'white', minWidth: '130px' }}>
+                  <option value="">All Project Roles</option>
+                  {[...new Set(users.map(u => u.projectRole).filter(Boolean))].map(role => (
+                    <option key={role} value={role}>{role}</option>
+                  ))}
+                </select>
+
+                {/* Workflow Role Filter */}
+                {taskRoles.length > 0 && (
+                  <select value={selectedTaskRole} onChange={(e) => setSelectedTaskRole(e.target.value)}
+                    style={{ padding: '6px 8px', border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '13px', backgroundColor: selectedTaskRole ? '#e6f0ff' : 'white', minWidth: '130px' }}>
+                    <option value="">All Workflow Roles</option>
+                    {taskRoles.map(role => (<option key={role._id} value={role._id}>{role.name}</option>))}
+                  </select>
+                )}
 
                 <select value={selectedPriority} onChange={(e) => setSelectedPriority(e.target.value)}
                   style={{ padding: '6px 8px', border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '13px', backgroundColor: selectedPriority ? '#e6f0ff' : 'white', minWidth: '110px' }}>

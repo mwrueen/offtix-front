@@ -248,9 +248,20 @@ const Layout = ({ children }) => {
     </svg>
   );
 
+  const MyTasksIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+      <rect x="9" y="3" width="6" height="4" rx="1"></rect>
+      <path d="M9 12l2 2 4-4"></path>
+    </svg>
+  );
+
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: DashboardIcon, category: 'main' },
     { path: '/projects', label: 'Projects', icon: ProjectsIcon, category: 'main' },
+    ...(state.user?.role !== 'superadmin' ? [
+      { path: '/my-tasks', label: 'My Tasks', icon: MyTasksIcon, category: 'main' }
+    ] : []),
     ...(companyState.selectedCompany?.id !== 'personal' ? [
       { path: '/overview', label: 'Overview', icon: OverviewIcon, category: 'main' }
     ] : []),

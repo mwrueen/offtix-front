@@ -33,6 +33,8 @@ import Organogram from './components/Organogram';
 import EditCompanyInfo from './components/EditCompanyInfo';
 import CompanyList from './components/CompanyList';
 import CompanyDetails from './components/CompanyDetails';
+import MyTasksList from './components/MyTasksList';
+import MyTaskDetails from './components/MyTaskDetails';
 
 function App() {
   return (
@@ -160,6 +162,16 @@ function App() {
                   <Route path="/companies/:id" element={
                     <ProtectedRoute>
                       <CompanyDetails />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/my-tasks" element={
+                    <ProtectedRoute>
+                      <MyTasksList />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/my-tasks/:id" element={
+                    <ProtectedRoute>
+                      <MyTaskDetails />
                     </ProtectedRoute>
                   } />
                 </Routes>
