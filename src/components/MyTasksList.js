@@ -8,6 +8,7 @@ const MyTasksList = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState({});
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -29,15 +30,66 @@ const MyTasksList = () => {
     }
   };
 
+  const handleStart = async (taskId, workflowType) => {
+    setActionLoading(prev => ({ ...prev, [taskId]: 'starting' }));
+    try {
+      if (workflowType === 'sequential') {
+        await myTasksAPI.startSequential(taskId);
+      } else {
+        await myTasksAPI.start(taskId);
+      }
+      toast?.showToast?.('Task started successfully', 'success');
+      fetchTasks();
+    } catch (err) {
+      toast?.showToast?.(err.response?.data?.error || 'Failed to start task', 'error');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [taskId]: null }));
+    }
+  };
+
+  const handlePause = async (taskId) => {
+    setActionLoading(prev => ({ ...prev, [taskId]: 'pausing' }));
+    try {
+      await myTasksAPI.pauseSequential(taskId);
+      toast?.showToast?.('Task paused', 'success');
+      fetchTasks();
+    } catch (err) {
+      toast?.showToast?.(err.response?.data?.error || 'Failed to pause task', 'error');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [taskId]: null }));
+    }
+  };
+
+  const handleComplete = async (taskId, workflowType) => {
+    setActionLoading(prev => ({ ...prev, [taskId]: 'completing' }));
+    try {
+      if (workflowType === 'sequential') {
+        await myTasksAPI.completeSequential(taskId);
+      } else {
+        // For role-based workflow, navigate to details page for completion
+        navigate(`/my-tasks/${taskId}`);
+        return;
+      }
+      toast?.showToast?.('Task completed successfully', 'success');
+      fetchTasks();
+    } catch (err) {
+      toast?.showToast?.(err.response?.data?.error || 'Failed to complete task', 'error');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [taskId]: null }));
+    }
+  };
+
   const getStatusColor = (status) => {
     const statusMap = {
       pending: '#94a3b8',
-      active: '#3b82f6',
+      active: '#10b981',
       in_progress: '#3b82f6',
+      paused: '#f59e0b',
       completed: '#10b981',
       skipped: '#f59e0b',
       needs_changes: '#ef4444',
-      blocked: '#64748b'
+      blocked: '#64748b',
+      assigned: '#6b7280'
     };
     return statusMap[status] || '#94a3b8';
   };
@@ -47,12 +99,146 @@ const MyTasksList = () => {
       pending: 'Pending',
       active: 'Active',
       in_progress: 'In Progress',
+      paused: 'Paused',
       completed: 'Completed',
       skipped: 'Skipped',
       needs_changes: 'Needs Changes',
-      blocked: 'Blocked'
+      blocked: 'Blocked',
+      assigned: 'Assigned'
     };
     return labelMap[status] || status;
+  };
+
+  const canShowActions = (task) => {
+    if (task.workflowType === 'sequential') {
+      return task.userAssignee && task.userAssignee.isCurrent;
+    } else if (task.workflowType === 'role') {
+      return task.userStep && task.userStep.isCurrent;
+    }
+    return false;
+  };
+
+  const getTaskStatus = (task) => {
+    if (task.workflowType === 'sequential') {
+      return task.userAssignee?.status || 'pending';
+    } else if (task.workflowType === 'role') {
+      return task.userStep?.status || 'pending';
+    }
+    return task.userStep?.status || 'assigned';
+  };
+
+  const renderActionButtons = (task) => {
+    if (!canShowActions(task)) {
+      return null;
+    }
+
+    const taskStatus = getTaskStatus(task);
+    const isLoading = actionLoading[task._id];
+
+    if (taskStatus === 'pending' || taskStatus === 'active') {
+      return (
+        <button
+          onClick={() => handleStart(task._id, task.workflowType)}
+          disabled={isLoading}
+          style={{
+            padding: '8px 20px',
+            backgroundColor: '#10b981',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            opacity: isLoading ? 0.6 : 1,
+            transition: 'all 0.2s',
+            minWidth: '100px'
+          }}
+          onMouseEnter={(e) => !isLoading && (e.target.style.backgroundColor = '#059669')}
+          onMouseLeave={(e) => !isLoading && (e.target.style.backgroundColor = '#10b981')}
+        >
+          {isLoading === 'starting' ? 'Starting...' : '▶️ Start'}
+        </button>
+      );
+    }
+
+    if (taskStatus === 'in_progress') {
+      return (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {task.workflowType === 'sequential' && (
+            <button
+              onClick={() => handlePause(task._id)}
+              disabled={isLoading}
+              style={{
+                padding: '8px 20px',
+                backgroundColor: '#f59e0b',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                opacity: isLoading ? 0.6 : 1,
+                transition: 'all 0.2s',
+                minWidth: '100px'
+              }}
+              onMouseEnter={(e) => !isLoading && (e.target.style.backgroundColor = '#d97706')}
+              onMouseLeave={(e) => !isLoading && (e.target.style.backgroundColor = '#f59e0b')}
+            >
+              {isLoading === 'pausing' ? 'Pausing...' : '⏸️ Pause'}
+            </button>
+          )}
+          <button
+            onClick={() => handleComplete(task._id, task.workflowType)}
+            disabled={isLoading}
+            style={{
+              padding: '8px 20px',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              opacity: isLoading ? 0.6 : 1,
+              transition: 'all 0.2s',
+              minWidth: '100px'
+            }}
+            onMouseEnter={(e) => !isLoading && (e.target.style.backgroundColor = '#2563eb')}
+            onMouseLeave={(e) => !isLoading && (e.target.style.backgroundColor = '#3b82f6')}
+          >
+            {isLoading === 'completing' ? 'Completing...' : '✅ Complete'}
+          </button>
+        </div>
+      );
+    }
+
+    if (taskStatus === 'paused') {
+      return (
+        <button
+          onClick={() => handleStart(task._id, task.workflowType)}
+          disabled={isLoading}
+          style={{
+            padding: '8px 20px',
+            backgroundColor: '#10b981',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            opacity: isLoading ? 0.6 : 1,
+            transition: 'all 0.2s',
+            minWidth: '100px'
+          }}
+          onMouseEnter={(e) => !isLoading && (e.target.style.backgroundColor = '#059669')}
+          onMouseLeave={(e) => !isLoading && (e.target.style.backgroundColor = '#10b981')}
+        >
+          {isLoading === 'starting' ? 'Resuming...' : '▶️ Resume'}
+        </button>
+      );
+    }
+
+    return null;
   };
 
   if (loading) {
@@ -78,58 +264,41 @@ const MyTasksList = () => {
       {/* Header */}
       <div style={{
         background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-        borderRadius: '16px',
-        padding: '32px',
-        marginBottom: '32px',
-        boxShadow: '0 10px 40px rgba(59, 130, 246, 0.2)',
-        position: 'relative',
-        overflow: 'hidden'
+        borderRadius: '12px',
+        padding: '24px 32px',
+        marginBottom: '24px',
+        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)'
       }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '300px',
-          height: '300px',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
-          borderRadius: '50%',
-          transform: 'translate(30%, -30%)'
-        }}></div>
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <h1 style={{
-            fontSize: '32px',
-            fontWeight: '700',
-            color: 'white',
-            margin: '0 0 8px 0'
-          }}>
-            My Tasks
-          </h1>
-          <p style={{
-            fontSize: '16px',
-            color: 'rgba(255, 255, 255, 0.9)',
-            margin: 0
-          }}>
-            Tasks assigned to you in workflow
-          </p>
-        </div>
+        <h1 style={{
+          fontSize: '28px',
+          fontWeight: '700',
+          color: 'white',
+          margin: '0 0 4px 0'
+        }}>
+          My Tasks
+        </h1>
+        <p style={{
+          fontSize: '14px',
+          color: 'rgba(255, 255, 255, 0.9)',
+          margin: 0
+        }}>
+          {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'} assigned to you
+        </p>
       </div>
 
       {/* Tasks List */}
       {tasks.length === 0 ? (
         <div style={{
           backgroundColor: 'white',
-          borderRadius: '16px',
+          borderRadius: '12px',
           padding: '60px 32px',
           textAlign: 'center',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-          border: '2px solid #f1f5f9'
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+          border: '1px solid #e5e7eb'
         }}>
-          <div style={{
-            fontSize: '48px',
-            marginBottom: '16px'
-          }}>📋</div>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
           <h3 style={{
-            fontSize: '20px',
+            fontSize: '18px',
             fontWeight: '600',
             color: '#1e293b',
             margin: '0 0 8px 0'
@@ -146,163 +315,119 @@ const MyTasksList = () => {
         </div>
       ) : (
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
-          gap: '24px'
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+          border: '1px solid #e5e7eb',
+          overflow: 'hidden'
         }}>
-          {tasks.map((task) => (
+          {tasks.map((task, index) => (
             <div
               key={task._id}
-              onClick={() => navigate(`/my-tasks/${task._id}`)}
               style={{
-                backgroundColor: 'white',
-                borderRadius: '16px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-                border: '2px solid #f1f5f9',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                overflow: 'hidden',
-                position: 'relative',
-                height: 'fit-content'
+                padding: '20px 24px',
+                borderBottom: index < tasks.length - 1 ? '1px solid #e5e7eb' : 'none',
+                transition: 'background-color 0.2s',
+                cursor: 'pointer'
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.12)';
-                e.currentTarget.style.borderColor = '#cbd5e1';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
-                e.currentTarget.style.borderColor = '#f1f5f9';
-              }}
+              onClick={() => navigate(`/my-tasks/${task._id}`)}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
             >
-              {/* Card Header */}
               <div style={{
-                padding: '24px 24px 20px 24px',
-                borderBottom: '1px solid #f1f5f9'
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '20px'
               }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  marginBottom: '12px'
-                }}>
+                {/* Left: Task Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <h3 style={{
-                    fontSize: '18px',
+                    fontSize: '16px',
                     fontWeight: '600',
                     color: '#1e293b',
-                    margin: 0,
-                    flex: 1,
-                    lineHeight: '1.4'
+                    margin: '0 0 8px 0',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
                   }}>
                     {task.title}
                   </h3>
-                </div>
-                {task.description && (
-                  <p style={{
-                    fontSize: '14px',
-                    color: '#64748b',
-                    margin: '0 0 12px 0',
-                    lineHeight: '1.5',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden'
-                  }}>
-                    {task.description}
-                  </p>
-                )}
-                {task.project && (
-                  <div style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '4px 12px',
-                    backgroundColor: '#f1f5f9',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    color: '#475569',
-                    fontWeight: '500'
-                  }}>
-                    📁 {task.project.title}
-                  </div>
-                )}
-              </div>
-
-              {/* Card Body */}
-              <div style={{ padding: '20px 24px' }}>
-                {/* Step Info */}
-                <div style={{ marginBottom: '16px' }}>
-                  <div style={{
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    color: '#64748b',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    marginBottom: '8px'
-                  }}>
-                    Your Step
-                  </div>
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    marginBottom: '8px'
+                    gap: '12px',
+                    flexWrap: 'wrap'
                   }}>
-                    <div style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '6px 12px',
-                      backgroundColor: task.userStep.role?.color ? `${task.userStep.role.color}15` : '#f1f5f9',
-                      borderRadius: '8px',
-                      fontSize: '13px',
-                      color: task.userStep.role?.color || '#475569',
-                      fontWeight: '500'
-                    }}>
-                      {task.userStep.role?.icon || '👤'} {task.userStep.role?.name || 'Unknown Role'}
-                    </div>
-                    <div style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      padding: '4px 10px',
-                      backgroundColor: getStatusColor(task.userStep.status) + '15',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      color: getStatusColor(task.userStep.status),
-                      fontWeight: '600'
-                    }}>
-                      {getStatusLabel(task.userStep.status)}
-                    </div>
+                    {task.project && (
+                      <span style={{
+                        fontSize: '13px',
+                        color: '#64748b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        📁 {task.project.title}
+                      </span>
+                    )}
+                    {task.priority && (
+                      <span style={{
+                        fontSize: '12px',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        backgroundColor: task.priority === 'urgent' ? '#fee2e2' : 
+                                       task.priority === 'high' ? '#fef3c7' :
+                                       task.priority === 'medium' ? '#dbeafe' : '#f0fdf4',
+                        color: task.priority === 'urgent' ? '#dc2626' :
+                               task.priority === 'high' ? '#d97706' :
+                               task.priority === 'medium' ? '#2563eb' : '#16a34a',
+                        fontWeight: '600',
+                        textTransform: 'uppercase'
+                      }}>
+                        {task.priority}
+                      </span>
+                    )}
                   </div>
-                  {task.canStart && (
-                    <div style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '4px 10px',
-                      backgroundColor: '#10b98115',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      color: '#10b981',
-                      fontWeight: '500'
-                    }}>
-                      ✓ Ready to start
-                    </div>
-                  )}
                 </div>
 
-                {/* Step Position Indicator */}
+                {/* Middle: Status */}
                 <div style={{
-                  fontSize: '12px',
-                  color: '#94a3b8',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '12px'
                 }}>
-                  {task.userStep.isPrevious && '← Previous'}
-                  {task.userStep.isCurrent && '● Current'}
-                  {task.userStep.isNext && 'Next →'}
+                  {task.status && (
+                    <span style={{
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      backgroundColor: task.status.color ? `${task.status.color}20` : '#f1f5f9',
+                      color: task.status.color || '#64748b',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {task.status.name}
+                    </span>
+                  )}
+                  <span style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    backgroundColor: `${getStatusColor(getTaskStatus(task))}20`,
+                    color: getStatusColor(getTaskStatus(task)),
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {getStatusLabel(getTaskStatus(task))}
+                  </span>
+                </div>
+
+                {/* Right: Action Buttons */}
+                <div 
+                  style={{ minWidth: '120px', display: 'flex', justifyContent: 'flex-end' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {renderActionButtons(task)}
                 </div>
               </div>
             </div>
@@ -314,4 +439,3 @@ const MyTasksList = () => {
 };
 
 export default MyTasksList;
-

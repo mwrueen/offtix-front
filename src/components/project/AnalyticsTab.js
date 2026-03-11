@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { projectAPI } from '../../services/api';
+import { useCompany } from '../../context/CompanyContext';
 
 const AnalyticsTab = ({ projectId }) => {
+  const { state: companyState } = useCompany();
+  const companyCurrency = companyState?.selectedCompany?.currency || 'USD';
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -81,7 +84,7 @@ const AnalyticsTab = ({ projectId }) => {
           <h2 style={{ margin: '0 0 24px 0', color: '#ffffff', fontSize: '24px', fontWeight: '600' }}>
             Project Health
           </h2>
-          
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
             <div style={{
               backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -169,7 +172,7 @@ const AnalyticsTab = ({ projectId }) => {
         <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
           Timeline Progress
         </h3>
-        
+
         <div style={{ marginBottom: '16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
             <span style={{ fontSize: '14px', color: '#64748b' }}>Timeline Completion</span>
@@ -187,7 +190,7 @@ const AnalyticsTab = ({ projectId }) => {
             <div style={{
               width: `${Math.min(100, analytics.timeline.progress)}%`,
               height: '100%',
-              background: analytics.timeline.isOverdue 
+              background: analytics.timeline.isOverdue
                 ? 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
                 : 'linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%)',
               transition: 'width 0.3s ease'
@@ -236,7 +239,7 @@ const AnalyticsTab = ({ projectId }) => {
         <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
           Budget Tracking
         </h3>
-        
+
         <div style={{ marginBottom: '16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
             <span style={{ fontSize: '14px', color: '#64748b' }}>Budget Utilization</span>
@@ -257,8 +260,8 @@ const AnalyticsTab = ({ projectId }) => {
               background: analytics.budget.isOverBudget
                 ? 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
                 : analytics.budget.utilization > 80
-                ? 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)'
-                : 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
+                  ? 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)'
+                  : 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
               transition: 'width 0.3s ease'
             }}></div>
           </div>
@@ -268,19 +271,19 @@ const AnalyticsTab = ({ projectId }) => {
           <div>
             <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Budget</div>
             <div style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
-              {analytics.budget.currency} {analytics.budget.budgetAmount.toLocaleString()}
+              {companyCurrency} {analytics.budget.budgetAmount.toLocaleString()}
             </div>
           </div>
           <div>
             <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Actual Cost</div>
             <div style={{ fontSize: '18px', fontWeight: '600', color: analytics.budget.isOverBudget ? '#ef4444' : '#1e293b' }}>
-              {analytics.budget.currency} {analytics.budget.actualCost.toLocaleString()}
+              {companyCurrency} {analytics.budget.actualCost.toLocaleString()}
             </div>
           </div>
           <div>
             <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Remaining</div>
             <div style={{ fontSize: '18px', fontWeight: '600', color: analytics.budget.remaining < 0 ? '#ef4444' : '#10b981' }}>
-              {analytics.budget.currency} {analytics.budget.remaining.toLocaleString()}
+              {companyCurrency} {analytics.budget.remaining.toLocaleString()}
             </div>
           </div>
         </div>

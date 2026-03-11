@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { projectAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { useCompany } from '../../context/CompanyContext';
 
 const ProjectOverview = ({ project, users, isProjectOwner }) => {
   const { showToast } = useToast();
+  const { state: companyState } = useCompany();
+  const companyCurrency = companyState?.selectedCompany?.currency || 'USD';
+
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [showRiskModal, setShowRiskModal] = useState(false);
   const [showDependencyModal, setShowDependencyModal] = useState(false);
@@ -290,7 +294,7 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
             </svg>
             Budget Tracking
           </h3>
-          
+
           <div style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
               <span style={{ fontSize: '14px', color: '#64748b' }}>Budget Utilization</span>
@@ -311,8 +315,8 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
                 background: budgetUtilization > 100
                   ? 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
                   : budgetUtilization > 80
-                  ? 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)'
-                  : 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
+                    ? 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)'
+                    : 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
                 transition: 'width 0.3s ease'
               }}></div>
             </div>
@@ -322,19 +326,19 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
             <div>
               <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Total Budget</div>
               <div style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b' }}>
-                {budget.currency} {budget.amount.toLocaleString()}
+                {companyCurrency} {budget.amount.toLocaleString()}
               </div>
             </div>
             <div>
               <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Actual Cost</div>
               <div style={{ fontSize: '20px', fontWeight: '700', color: budgetUtilization > 100 ? '#ef4444' : '#1e293b' }}>
-                {actualCost.currency} {actualCost.amount.toLocaleString()}
+                {companyCurrency} {actualCost.amount.toLocaleString()}
               </div>
             </div>
             <div>
               <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Remaining</div>
               <div style={{ fontSize: '20px', fontWeight: '700', color: (budget.amount - actualCost.amount) < 0 ? '#ef4444' : '#10b981' }}>
-                {budget.currency} {(budget.amount - actualCost.amount).toLocaleString()}
+                {companyCurrency} {(budget.amount - actualCost.amount).toLocaleString()}
               </div>
             </div>
           </div>
@@ -381,7 +385,7 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
             Add Milestone
           </button>
         </div>
-        
+
         {milestones.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px' }}>
@@ -478,7 +482,7 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
           </svg>
           Risks ({risks.length})
         </h3>
-        
+
         {risks.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px' }}>
@@ -559,7 +563,7 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
           </svg>
           Dependencies ({dependencies.length})
         </h3>
-        
+
         {dependencies.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px' }}>

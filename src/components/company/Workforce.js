@@ -4,17 +4,17 @@ import { companyAPI } from '../../services/api';
 import { useCompany } from '../../context/CompanyContext';
 import Layout from '../Layout';
 
-const formatCurrency = (amount) => {
+const formatCurrency = (amount, currencyCode = 'USD') => {
   if (amount === undefined || amount === null) return '-';
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: currencyCode,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(amount);
 };
 
-const SummaryCard = ({ icon, label, value, color, isCurrency = false }) => (
+const SummaryCard = ({ icon, label, value, color, isCurrency = false, currencyCode = 'USD' }) => (
   <div style={{
     backgroundColor: '#fff',
     borderRadius: '12px',
@@ -35,7 +35,7 @@ const SummaryCard = ({ icon, label, value, color, isCurrency = false }) => (
       }}>{icon}</div>
       <div>
         <div style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b' }}>
-          {isCurrency ? formatCurrency(value) : value}
+          {isCurrency ? formatCurrency(value, currencyCode) : value}
         </div>
         <div style={{ fontSize: '13px', color: '#64748b' }}>{label}</div>
       </div>
@@ -43,7 +43,7 @@ const SummaryCard = ({ icon, label, value, color, isCurrency = false }) => (
   </div>
 );
 
-const EmployeeCard = ({ item, isExpanded, onToggle, formatDate, getDaysRemaining, navigate }) => {
+const EmployeeCard = ({ item, isExpanded, onToggle, formatDate, getDaysRemaining, navigate, currencyCode }) => {
   const { employee, tasks, costs } = item;
 
   return (
@@ -97,7 +97,7 @@ const EmployeeCard = ({ item, isExpanded, onToggle, formatDate, getDaysRemaining
               {employee.designation} • {employee.email}
               {employee.hourlyRate > 0 && (
                 <span style={{ marginLeft: '8px', color: '#059669' }}>
-                  • {formatCurrency(employee.hourlyRate)}/hr
+                  • {formatCurrency(employee.hourlyRate, currencyCode)}/hr
                 </span>
               )}
             </div>
@@ -109,7 +109,7 @@ const EmployeeCard = ({ item, isExpanded, onToggle, formatDate, getDaysRemaining
           {costs && costs.totalTaskCost > 0 && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '16px', fontWeight: '600', color: '#0f766e' }}>
-                {formatCurrency(costs.totalTaskCost)}
+                {formatCurrency(costs.totalTaskCost, currencyCode)}
               </div>
               <div style={{ fontSize: '11px', color: '#64748b' }}>Task Cost</div>
             </div>
@@ -147,15 +147,15 @@ const EmployeeCard = ({ item, isExpanded, onToggle, formatDate, getDaysRemaining
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {/* Overdue Tasks */}
               {tasks.overdue.length > 0 && (
-                <TaskSection title="⚠️ Overdue Tasks" tasks={tasks.overdue} formatDate={formatDate} getDaysRemaining={getDaysRemaining} isOverdue navigate={navigate} />
+                <TaskSection title="⚠️ Overdue Tasks" tasks={tasks.overdue} formatDate={formatDate} getDaysRemaining={getDaysRemaining} isOverdue navigate={navigate} currencyCode={currencyCode} />
               )}
               {/* Active Tasks */}
               {tasks.active.length > 0 && (
-                <TaskSection title="📋 Active Tasks" tasks={tasks.active} formatDate={formatDate} getDaysRemaining={getDaysRemaining} navigate={navigate} />
+                <TaskSection title="📋 Active Tasks" tasks={tasks.active} formatDate={formatDate} getDaysRemaining={getDaysRemaining} navigate={navigate} currencyCode={currencyCode} />
               )}
               {/* Completed Tasks (show only last 3) */}
               {tasks.completed.length > 0 && (
-                <TaskSection title="✅ Recently Completed" tasks={tasks.completed.slice(0, 3)} formatDate={formatDate} getDaysRemaining={getDaysRemaining} isCompleted navigate={navigate} />
+                <TaskSection title="✅ Recently Completed" tasks={tasks.completed.slice(0, 3)} formatDate={formatDate} getDaysRemaining={getDaysRemaining} isCompleted navigate={navigate} currencyCode={currencyCode} />
               )}
             </div>
           )}
@@ -165,7 +165,7 @@ const EmployeeCard = ({ item, isExpanded, onToggle, formatDate, getDaysRemaining
   );
 };
 
-const TaskSection = ({ title, tasks, formatDate, getDaysRemaining, isOverdue, isCompleted, navigate }) => (
+const TaskSection = ({ title, tasks, formatDate, getDaysRemaining, isOverdue, isCompleted, navigate, currencyCode }) => (
   <div style={{ marginBottom: '16px' }}>
     <div style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', marginBottom: '8px' }}>{title}</div>
     {tasks.map(task => {
@@ -199,7 +199,7 @@ const TaskSection = ({ title, tasks, formatDate, getDaysRemaining, isOverdue, is
                     borderRadius: '10px',
                     fontWeight: '600'
                   }}>
-                    {formatCurrency(task.cost)}
+                    {formatCurrency(task.cost, currencyCode)}
                   </span>
                 )}
               </div>
@@ -239,7 +239,7 @@ const TaskSection = ({ title, tasks, formatDate, getDaysRemaining, isOverdue, is
 );
 
 // Running Tasks Table Component
-const RunningTasksTable = ({ workforceData, formatDate, getDaysRemaining, navigate }) => {
+const RunningTasksTable = ({ workforceData, formatDate, getDaysRemaining, navigate, currencyCode }) => {
   // Collect all running (active + overdue) tasks across all employees
   const runningTasks = [];
 
@@ -383,7 +383,7 @@ const RunningTasksTable = ({ workforceData, formatDate, getDaysRemaining, naviga
 
             {/* Cost */}
             <div style={{ textAlign: 'right', fontWeight: '600', color: task.cost > 0 ? '#059669' : '#9ca3af' }}>
-              {formatCurrency(task.cost)}
+              {formatCurrency(task.cost, currencyCode)}
             </div>
           </div>
         );
@@ -404,7 +404,7 @@ const RunningTasksTable = ({ workforceData, formatDate, getDaysRemaining, naviga
         <div></div>
         <div></div>
         <div style={{ textAlign: 'right', color: '#059669' }}>
-          {formatCurrency(runningTasks.reduce((sum, t) => sum + (t.cost || 0), 0))}
+          {formatCurrency(runningTasks.reduce((sum, t) => sum + (t.cost || 0), 0), currencyCode)}
         </div>
       </div>
     </div>
@@ -414,6 +414,7 @@ const RunningTasksTable = ({ workforceData, formatDate, getDaysRemaining, naviga
 const Workforce = () => {
   const navigate = useNavigate();
   const { state: companyState } = useCompany();
+  const companyCurrency = companyState?.selectedCompany?.currency || 'USD';
   const [workforceData, setWorkforceData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -523,9 +524,9 @@ const Workforce = () => {
         {/* Cost Summary Cards */}
         {workforceData?.costs && workforceData.costs.total > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-            <SummaryCard icon="💰" label="Total Task Cost" value={workforceData.costs.total || 0} color="#0f766e" isCurrency />
-            <SummaryCard icon="⏳" label="Pending Cost" value={workforceData.costs.active || 0} color="#f59e0b" isCurrency />
-            <SummaryCard icon="✅" label="Completed Cost" value={workforceData.costs.completed || 0} color="#22c55e" isCurrency />
+            <SummaryCard icon="💰" label="Total Task Cost" value={workforceData.costs.total || 0} color="#0f766e" isCurrency currencyCode={companyCurrency} />
+            <SummaryCard icon="⏳" label="Pending Cost" value={workforceData.costs.active || 0} color="#f59e0b" isCurrency currencyCode={companyCurrency} />
+            <SummaryCard icon="✅" label="Completed Cost" value={workforceData.costs.completed || 0} color="#22c55e" isCurrency currencyCode={companyCurrency} />
           </div>
         )}
 
@@ -602,6 +603,7 @@ const Workforce = () => {
             formatDate={formatDate}
             getDaysRemaining={getDaysRemaining}
             navigate={navigate}
+            currencyCode={companyCurrency}
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -614,6 +616,7 @@ const Workforce = () => {
                 formatDate={formatDate}
                 getDaysRemaining={getDaysRemaining}
                 navigate={navigate}
+                currencyCode={companyCurrency}
               />
             ))}
           </div>

@@ -25,9 +25,9 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Only redirect if it's not a signin/signup request (those should show errors)
-      const isAuthRequest = error.config?.url?.includes('/auth/signin') || 
-                           error.config?.url?.includes('/auth/signup');
-      
+      const isAuthRequest = error.config?.url?.includes('/auth/signin') ||
+        error.config?.url?.includes('/auth/signup');
+
       if (!isAuthRequest) {
         // Token expired or invalid for authenticated requests
         import('../utils/cookies').then(({ clearAuthCookies }) => {
@@ -280,6 +280,34 @@ export const myTasksAPI = {
   // Send back for fix
   sendBack: (taskId, note, message) =>
     api.post(`/my-tasks/${taskId}/send-back`, { note, message }),
+
+  // Sequential workflow operations
+  startSequential: (taskId) => api.post(`/my-tasks/${taskId}/sequential/start`),
+  pauseSequential: (taskId) => api.post(`/my-tasks/${taskId}/sequential/pause`),
+  completeSequential: (taskId, note, message, link, files) => {
+    const formData = new FormData();
+    if (note) formData.append('note', note);
+    if (message) formData.append('message', message);
+    if (link) formData.append('link', link);
+    if (files && files.length > 0) {
+      files.forEach(file => formData.append('files', file));
+    }
+    return api.post(`/my-tasks/${taskId}/sequential/complete`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  sendBackSequential: (taskId, note, message, link, files) => {
+    const formData = new FormData();
+    if (note) formData.append('note', note);
+    if (message) formData.append('message', message);
+    if (link) formData.append('link', link);
+    if (files && files.length > 0) {
+      files.forEach(file => formData.append('files', file));
+    }
+    return api.post(`/my-tasks/${taskId}/sequential/send-back`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
 };
 
 export default api;

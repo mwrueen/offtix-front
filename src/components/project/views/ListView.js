@@ -16,6 +16,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useCompany } from '../../../context/CompanyContext';
 
 // Add CSS animations
 const style = document.createElement('style');
@@ -46,17 +47,20 @@ if (!document.head.querySelector('style[data-listview-animations]')) {
   document.head.appendChild(style);
 }
 
-const formatCurrency = (amount) => {
+const formatCurrency = (amount, currencyCode = 'USD') => {
   if (amount === undefined || amount === null || amount === 0) return '-';
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: currencyCode,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(amount);
 };
 
 const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskId, onSelectTask, onReorderTasks, taskCosts = {} }) => {
+  const { state: companyState } = useCompany();
+  const companyCurrency = companyState?.selectedCompany?.currency || 'USD';
+
   const [expandedTasks, setExpandedTasks] = useState(new Set());
   const [activeTask, setActiveTask] = useState(null);
 
@@ -248,6 +252,7 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
                     onToggleExpand={() => toggleExpand(task._id)}
                     countSubtasks={countSubtasks}
                     taskCosts={taskCosts}
+                    companyCurrency={companyCurrency}
                   />
                 ))}
               </div>
@@ -268,7 +273,7 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
 };
 
 // Sortable wrapper for TaskRow
-const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isExpanded, onToggleExpand, countSubtasks, taskCosts = {} }) => {
+const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isExpanded, onToggleExpand, countSubtasks, taskCosts = {}, companyCurrency }) => {
   const {
     attributes,
     listeners,
@@ -313,6 +318,7 @@ const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelect
           onSelect={onSelect}
           isDragging={isDragging}
           cost={cost}
+          companyCurrency={companyCurrency}
         />
       </div>
 
@@ -336,6 +342,7 @@ const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelect
               onToggleExpand={onToggleExpand}
               countSubtasks={countSubtasks}
               taskCosts={taskCosts}
+              companyCurrency={companyCurrency}
             />
           ))}
         </div>
@@ -344,7 +351,7 @@ const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelect
   );
 };
 
-const TaskListRow = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging, cost }) => {
+const TaskListRow = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging, cost, companyCurrency }) => {
   return (
     <TaskListRowContent
       task={task}
@@ -361,11 +368,12 @@ const TaskListRow = ({ task, level, indent, hasChildren, subtaskCount, isExpande
       onSelect={onSelect}
       isDragging={isDragging}
       cost={cost}
+      companyCurrency={companyCurrency}
     />
   );
 };
 
-const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging, cost }) => {
+const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging, cost, companyCurrency }) => {
   const getPriorityColor = (priority) => {
     const colors = {
       urgent: '#de350b',
@@ -568,7 +576,7 @@ const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, is
 
       {/* Cost */}
       <div style={{ fontSize: '12px', color: cost ? '#059669' : '#a8b1bd', fontWeight: cost ? '600' : '400' }}>
-        {formatCurrency(cost)}
+        {formatCurrency(cost, companyCurrency)}
       </div>
     </div>
   );

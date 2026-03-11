@@ -1,6 +1,9 @@
 import React from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
+  const { state: authState } = useAuth();
+  const currentUserId = authState?.user?._id;
   const getStatusColor = (status) => {
     if (!status || !status.color) {
       return { bg: '#f4f5f7', text: '#5e6c84', border: '#dfe1e6' };
@@ -26,26 +29,46 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
   const priority = getPriorityIcon(task.priority);
   const indent = level * 24;
 
+  // Determine if current user is the active assignee in sequential workflow
+  const isCurrentActiveAssignee = () => {
+    if (!currentUserId || !task.useSequentialWorkflow || !task.sequentialAssignees) {
+      return false;
+    }
+    
+    const currentAssignee = task.sequentialAssignees[task.currentAssigneeIndex];
+    if (!currentAssignee) return false;
+    
+    const assigneeUserId = currentAssignee.user._id || currentAssignee.user;
+    return assigneeUserId.toString() === currentUserId.toString();
+  };
+
+  const isActive = isCurrentActiveAssignee();
+
   return (
     <div>
       <div
         style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #dfe1e6',
+          backgroundColor: isActive ? '#eff6ff' : '#ffffff',
+          border: isActive ? '2px solid #3b82f6' : '1px solid #dfe1e6',
           borderRadius: '3px',
           marginBottom: '2px',
           marginLeft: `${indent}px`,
           transition: 'box-shadow 0.15s ease-in-out, border-color 0.15s ease-in-out',
           cursor: 'pointer',
-          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif'
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
+          boxShadow: isActive ? '0 2px 8px rgba(59, 130, 246, 0.2)' : 'none'
         }}
         onMouseEnter={(e) => {
-          e.target.style.borderColor = '#b3d4ff';
-          e.target.style.boxShadow = '0 1px 3px rgba(9, 30, 66, 0.25)';
+          if (!isActive) {
+            e.target.style.borderColor = '#b3d4ff';
+            e.target.style.boxShadow = '0 1px 3px rgba(9, 30, 66, 0.25)';
+          }
         }}
         onMouseLeave={(e) => {
-          e.target.style.borderColor = '#dfe1e6';
-          e.target.style.boxShadow = 'none';
+          if (!isActive) {
+            e.target.style.borderColor = '#dfe1e6';
+            e.target.style.boxShadow = 'none';
+          }
         }}
       >
         <div style={{ padding: '12px 16px' }}>
@@ -82,6 +105,21 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
                 }} onClick={() => onEdit(task)}>
                   {task.title}
                 </h4>
+                
+                {isActive && (
+                  <span style={{
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.3px'
+                  }}>
+                    Your Turn
+                  </span>
+                )}
                 
                 {task.priority && (
                   <span 
@@ -146,6 +184,31 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <span>👤</span>
                     <span>{task.assignees.map(a => a.name).join(', ')}</span>
+                  </div>
+                )}
+                
+                {task.useSequentialWorkflow && task.sequentialAssignees && task.sequentialAssignees.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span>🔄</span>
+                    <span>
+                      {task.sequentialAssignees.map((sa, idx) => {
+                        const user = sa.user;
+                        const userName = user.name || user.email || 'Unknown';
+                        const isCurrent = idx === task.currentAssigneeIndex;
+                        return (
+                          <span 
+                            key={idx}
+                            style={{
+                              fontWeight: isCurrent ? '700' : '400',
+                              color: isCurrent ? '#3b82f6' : '#5e6c84',
+                              textDecoration: sa.status === 'completed' ? 'line-through' : 'none'
+                            }}
+                          >
+                            {userName}{idx < task.sequentialAssignees.length - 1 ? ' → ' : ''}
+                          </span>
+                        );
+                      })}
+                    </span>
                   </div>
                 )}
                 

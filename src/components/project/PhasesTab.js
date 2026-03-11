@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { phaseAPI } from '../../services/api';
+import { useCompany } from '../../context/CompanyContext';
 
 const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefresh }) => {
+  const { state: companyState } = useCompany();
+  const companyCurrency = companyState?.selectedCompany?.currency || 'USD';
+
   const [showForm, setShowForm] = useState(false);
   const [editingPhase, setEditingPhase] = useState(null);
   const [viewingPhase, setViewingPhase] = useState(null);
@@ -30,7 +34,7 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
       } else {
         await phaseAPI.create(projectId, data);
       }
-      
+
       await onRefresh();
       resetForm();
     } catch (error) {
@@ -96,7 +100,7 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
   // Filter phases
   const filteredPhases = phases.filter(phase => {
     const matchesSearch = phase.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (phase.description && phase.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      (phase.description && phase.description.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = filterStatus === 'all' || phase.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -282,7 +286,7 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                     placeholder="e.g., Discovery, Development, Testing"
                     style={{
@@ -322,7 +326,7 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
                   </label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows="4"
                     placeholder="Describe the phase objectives and deliverables"
                     style={{
@@ -367,7 +371,7 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
                   </label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
@@ -410,7 +414,7 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
                   <input
                     type="date"
                     value={formData.startDate}
-                    onChange={(e) => setFormData({...formData, startDate: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     required
                     style={{
                       boxSizing: 'border-box',
@@ -450,7 +454,7 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
                   <input
                     type="date"
                     value={formData.endDate}
-                    onChange={(e) => setFormData({...formData, endDate: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                     required
                     style={{
                       boxSizing: 'border-box',
@@ -490,7 +494,7 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
                   <input
                     type="number"
                     value={formData.budget}
-                    onChange={(e) => setFormData({...formData, budget: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
                     placeholder="10000"
                     min="0"
                     step="100"
@@ -590,282 +594,282 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
       {/* Phases List - Only show when form is not visible */}
       {!showForm && (
         <div style={{ display: 'grid', gap: '16px' }}>
-        {filteredPhases.length === 0 && phases.length > 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '64px 24px',
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #e1e5e9'
-          }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-              No Phases Found
-            </h3>
-            <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
-              Try adjusting your search or filter criteria.
-            </p>
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setFilterStatus('all');
-              }}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#f4f5f7',
-                color: '#5e6c84',
-                border: '1px solid #dfe1e6',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600'
-              }}
-            >
-              Clear Filters
-            </button>
-          </div>
-        ) : phases.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '64px 24px',
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #e1e5e9'
-          }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>📁</div>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-              No Phases Yet
-            </h3>
-            <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
-              Create phases to organize your project timeline and track progress.
-            </p>
-            {isProjectOwner && (
+          {filteredPhases.length === 0 && phases.length > 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '64px 24px',
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              border: '1px solid #e1e5e9'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
+                No Phases Found
+              </h3>
+              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
+                Try adjusting your search or filter criteria.
+              </p>
               <button
-                onClick={() => setShowForm(true)}
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterStatus('all');
+                }}
                 style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#0052cc',
-                  color: 'white',
-                  border: 'none',
+                  padding: '10px 20px',
+                  backgroundColor: '#f4f5f7',
+                  color: '#5e6c84',
+                  border: '1px solid #dfe1e6',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '14px',
-                  fontWeight: '600',
-                  boxShadow: '0 2px 4px rgba(0, 82, 204, 0.2)'
+                  fontWeight: '600'
                 }}
               >
-                Create First Phase
+                Clear Filters
               </button>
-            )}
-          </div>
-        ) : (
-          filteredPhases.map(phase => {
-            const statusColor = getStatusColor(phase.status);
-            const progress = calculateProgress(phase);
+            </div>
+          ) : phases.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '64px 24px',
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              border: '1px solid #e1e5e9'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>📁</div>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
+                No Phases Yet
+              </h3>
+              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
+                Create phases to organize your project timeline and track progress.
+              </p>
+              {isProjectOwner && (
+                <button
+                  onClick={() => setShowForm(true)}
+                  style={{
+                    padding: '12px 24px',
+                    backgroundColor: '#0052cc',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    boxShadow: '0 2px 4px rgba(0, 82, 204, 0.2)'
+                  }}
+                >
+                  Create First Phase
+                </button>
+              )}
+            </div>
+          ) : (
+            filteredPhases.map(phase => {
+              const statusColor = getStatusColor(phase.status);
+              const progress = calculateProgress(phase);
 
-            return (
-              <div
-                key={phase._id}
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e1e5e9',
-                  borderRadius: '12px',
-                  padding: '24px',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.08)';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{
-                      margin: '0 0 8px 0',
-                      fontSize: '18px',
-                      fontWeight: '700',
-                      color: '#172b4d',
-                      lineHeight: '1.3'
-                    }}>
-                      {phase.name}
-                    </h3>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
-                      <span style={{
-                        ...statusColor,
-                        padding: '4px 12px',
-                        borderRadius: '16px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        textTransform: 'capitalize',
-                        border: `1px solid ${statusColor.border}`
+              return (
+                <div
+                  key={phase._id}
+                  style={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e1e5e9',
+                    borderRadius: '12px',
+                    padding: '24px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.08)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{
+                        margin: '0 0 8px 0',
+                        fontSize: '18px',
+                        fontWeight: '700',
+                        color: '#172b4d',
+                        lineHeight: '1.3'
                       }}>
-                        {phase.status}
-                      </span>
-                      <span style={{
-                        padding: '4px 12px',
-                        borderRadius: '16px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        backgroundColor: progress === 100 ? '#f6ffed' : '#f4f5f7',
-                        color: progress === 100 ? '#389e0d' : '#5e6c84',
-                        border: `1px solid ${progress === 100 ? '#b7eb8f' : '#dfe1e6'}`
-                      }}>
-                        {progress}% Complete
-                      </span>
-                      {phase.milestones && phase.milestones.length > 0 && (
+                        {phase.name}
+                      </h3>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
                         <span style={{
+                          ...statusColor,
                           padding: '4px 12px',
-                          backgroundColor: '#e6f7ff',
-                          color: '#0052cc',
                           borderRadius: '16px',
                           fontSize: '12px',
-                          fontWeight: '600'
+                          fontWeight: '600',
+                          textTransform: 'capitalize',
+                          border: `1px solid ${statusColor.border}`
                         }}>
-                          🎯 {phase.milestones.length} milestone{phase.milestones.length !== 1 ? 's' : ''}
+                          {phase.status}
                         </span>
+                        <span style={{
+                          padding: '4px 12px',
+                          borderRadius: '16px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          backgroundColor: progress === 100 ? '#f6ffed' : '#f4f5f7',
+                          color: progress === 100 ? '#389e0d' : '#5e6c84',
+                          border: `1px solid ${progress === 100 ? '#b7eb8f' : '#dfe1e6'}`
+                        }}>
+                          {progress}% Complete
+                        </span>
+                        {phase.milestones && phase.milestones.length > 0 && (
+                          <span style={{
+                            padding: '4px 12px',
+                            backgroundColor: '#e6f7ff',
+                            color: '#0052cc',
+                            borderRadius: '16px',
+                            fontSize: '12px',
+                            fontWeight: '600'
+                          }}>
+                            🎯 {phase.milestones.length} milestone{phase.milestones.length !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
+                      <button
+                        onClick={() => setViewingPhase(phase)}
+                        style={{
+                          padding: '8px 12px',
+                          backgroundColor: '#e6f7ff',
+                          color: '#0052cc',
+                          border: '1px solid #91d5ff',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#0052cc';
+                          e.target.style.color = 'white';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#e6f7ff';
+                          e.target.style.color = '#0052cc';
+                        }}
+                      >
+                        View
+                      </button>
+                      {isProjectOwner && (
+                        <>
+                          <button
+                            onClick={() => handleEdit(phase)}
+                            style={{
+                              padding: '8px 12px',
+                              backgroundColor: '#f4f5f7',
+                              color: '#5e6c84',
+                              border: '1px solid #dfe1e6',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#e1e5e9';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = '#f4f5f7';
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(phase._id)}
+                            style={{
+                              padding: '8px 12px',
+                              backgroundColor: '#fff1f0',
+                              color: '#cf1322',
+                              border: '1px solid #ffa39e',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#cf1322';
+                              e.target.style.color = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = '#fff1f0';
+                              e.target.style.color = '#cf1322';
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
-                    <button
-                      onClick={() => setViewingPhase(phase)}
-                      style={{
-                        padding: '8px 12px',
-                        backgroundColor: '#e6f7ff',
-                        color: '#0052cc',
-                        border: '1px solid #91d5ff',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#0052cc';
-                        e.target.style.color = 'white';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#e6f7ff';
-                        e.target.style.color = '#0052cc';
-                      }}
-                    >
-                      View
-                    </button>
-                    {isProjectOwner && (
-                      <>
-                        <button
-                          onClick={() => handleEdit(phase)}
-                          style={{
-                            padding: '8px 12px',
-                        backgroundColor: '#f4f5f7',
-                        color: '#5e6c84',
-                        border: '1px solid #dfe1e6',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#e1e5e9';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#f4f5f7';
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(phase._id)}
-                      style={{
-                        padding: '8px 12px',
-                        backgroundColor: '#fff1f0',
-                        color: '#cf1322',
-                        border: '1px solid #ffa39e',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#cf1322';
-                        e.target.style.color = 'white';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#fff1f0';
-                        e.target.style.color = '#cf1322';
-                      }}
-                    >
-                      Delete
-                    </button>
-                      </>
-                    )}
-                  </div>
-                </div>
 
-                {phase.description && (
-                  <p style={{
-                    margin: '0 0 16px 0',
-                    color: '#5e6c84',
-                    fontSize: '14px',
-                    lineHeight: '1.6'
-                  }}>
-                    {phase.description}
-                  </p>
-                )}
+                  {phase.description && (
+                    <p style={{
+                      margin: '0 0 16px 0',
+                      color: '#5e6c84',
+                      fontSize: '14px',
+                      lineHeight: '1.6'
+                    }}>
+                      {phase.description}
+                    </p>
+                  )}
 
-                {/* Progress Bar */}
-                <div style={{ marginBottom: '16px' }}>
-                  <div style={{
-                    width: '100%',
-                    height: '10px',
-                    backgroundColor: '#f4f5f7',
-                    borderRadius: '5px',
-                    overflow: 'hidden',
-                    border: '1px solid #e1e5e9'
-                  }}>
+                  {/* Progress Bar */}
+                  <div style={{ marginBottom: '16px' }}>
                     <div style={{
-                      width: `${progress}%`,
-                      height: '100%',
-                      backgroundColor: progress === 100 ? '#52c41a' : '#0052cc',
-                      transition: 'width 0.3s ease',
-                      boxShadow: progress > 0 ? 'inset 0 1px 2px rgba(0, 0, 0, 0.1)' : 'none'
-                    }} />
+                      width: '100%',
+                      height: '10px',
+                      backgroundColor: '#f4f5f7',
+                      borderRadius: '5px',
+                      overflow: 'hidden',
+                      border: '1px solid #e1e5e9'
+                    }}>
+                      <div style={{
+                        width: `${progress}%`,
+                        height: '100%',
+                        backgroundColor: progress === 100 ? '#52c41a' : '#0052cc',
+                        transition: 'width 0.3s ease',
+                        boxShadow: progress > 0 ? 'inset 0 1px 2px rgba(0, 0, 0, 0.1)' : 'none'
+                      }} />
+                    </div>
                   </div>
-                </div>
 
-                <div style={{ display: 'flex', gap: '12px', fontSize: '12px', flexWrap: 'wrap' }}>
-                  <span style={{
-                    padding: '6px 12px',
-                    backgroundColor: '#f4f5f7',
-                    color: '#5e6c84',
-                    borderRadius: '16px',
-                    fontWeight: '600'
-                  }}>
-                    📅 {new Date(phase.startDate).toLocaleDateString()} - {new Date(phase.endDate).toLocaleDateString()}
-                  </span>
-                  {phase.budget && (
+                  <div style={{ display: 'flex', gap: '12px', fontSize: '12px', flexWrap: 'wrap' }}>
                     <span style={{
                       padding: '6px 12px',
-                      backgroundColor: '#fff4e6',
-                      color: '#d46b08',
+                      backgroundColor: '#f4f5f7',
+                      color: '#5e6c84',
                       borderRadius: '16px',
                       fontWeight: '600'
                     }}>
-                      💰 ${phase.budget.toLocaleString()}
+                      📅 {new Date(phase.startDate).toLocaleDateString()} - {new Date(phase.endDate).toLocaleDateString()}
                     </span>
-                  )}
+                    {phase.budget && (
+                      <span style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#fff4e6',
+                        color: '#d46b08',
+                        borderRadius: '16px',
+                        fontWeight: '600'
+                      }}>
+                        💰 {phase.budget.toLocaleString()} {companyCurrency}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })
-        )}
+              );
+            })
+          )}
         </div>
       )}
 
@@ -884,7 +888,7 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
           zIndex: 1000,
           padding: '24px'
         }}
-        onClick={() => setViewingPhase(null)}
+          onClick={() => setViewingPhase(null)}
         >
           <div style={{
             backgroundColor: '#ffffff',
@@ -895,7 +899,7 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
             overflow: 'auto',
             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
           }}
-          onClick={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div style={{
               padding: '32px',
@@ -989,7 +993,7 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
                     Budget
                   </h3>
                   <p style={{ margin: 0, fontSize: '24px', color: '#172b4d', fontWeight: '700' }}>
-                    ${viewingPhase.budget.toLocaleString()} <span style={{ fontSize: '16px', fontWeight: '400', color: '#5e6c84' }}>USD</span>
+                    {viewingPhase.budget.toLocaleString()} <span style={{ fontSize: '16px', fontWeight: '400', color: '#5e6c84' }}>{companyCurrency}</span>
                   </p>
                 </div>
               )}

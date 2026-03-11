@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { projectAPI } from '../../services/api';
+import { useCompany } from '../../context/CompanyContext';
 
 const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }) => {
+  const { state: companyState } = useCompany();
+  const companyCurrency = companyState?.selectedCompany?.currency || 'USD';
+
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [scheduledStartDate, setScheduledStartDate] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
@@ -311,7 +315,7 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
               BUDGET
             </div>
             <div style={{ fontSize: '15px', fontWeight: '600', color: '#ffffff' }}>
-              {project.budget?.amount ? `${project.budget.currency} ${project.budget.amount.toLocaleString()}` : 'Not set'}
+              {project.budget?.amount ? `${companyCurrency} ${project.budget.amount.toLocaleString()}` : 'Not set'}
             </div>
           </div>
         </div>
