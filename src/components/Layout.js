@@ -5,58 +5,125 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { getCookie } from '../utils/cookies';
 import { companyAPI } from '../services/api';
 import SidebarHeader from './SidebarHeader';
+import { useSocket } from '../context/SocketContext';
 
 const Layout = ({ children }) => {
   const { state, dispatch } = useAuth();
   const { state: companyState, selectCompany } = useCompany();
+  const { unreadCount, clearUnreadCount, fetchUnreadCount } = useSocket();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
+  const [recentNotifications, setRecentNotifications] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(false);
   const [companyData, setCompanyData] = useState(null);
   const [canManageSettings, setCanManageSettings] = useState(false);
   const [canViewDesignations, setCanViewDesignations] = useState(false);
   const [canViewEmployees, setCanViewEmployees] = useState(false);
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isCompanyDropdownOpen && !event.target.closest('.workspace-modal') && !event.target.closest('.sidebar-header')) {
         setIsCompanyDropdownOpen(false);
       }
+      if (isNotifDropdownOpen && !event.target.closest('.notif-dropdown-container')) {
+        setIsNotifDropdownOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isCompanyDropdownOpen]);
+  }, [isCompanyDropdownOpen, isNotifDropdownOpen]);
 
-  // Fetch unread notifications count
-  useEffect(() => {
-    const fetchUnreadCount = async () => {
-      try {
-        const token = getCookie('authToken');
-        const response = await fetch('/api/invitations/my-invitations', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setUnreadCount(data.length);
-        }
-      } catch (error) {
-        console.error('Error fetching unread count:', error);
+  // Fetch recent notifications for dropdown
+  const fetchRecentNotifications = async () => {
+    setNotifLoading(true);
+    try {
+      const token = getCookie('authToken');
+      const [notifRes, invRes] = await Promise.all([
+        fetch('/api/notifications', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/invitations/my-invitations', { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      let combined = [];
+      if (notifRes.ok) {
+        const data = await notifRes.json();
+        combined = (data.notifications || []).slice(0, 8);
       }
-    };
+      if (invRes.ok) {
+        const invData = await invRes.json();
+        const invNotifs = (Array.isArray(invData) ? invData : []).map(inv => ({
+          _id: `inv_${inv._id}`,
+          type: 'invitation',
+          title: `Invitation: ${inv.company?.name}`,
+          message: `Invited as ${inv.designation} by ${inv.invitedBy?.name}`,
+          isRead: false,
+          createdAt: inv.createdAt,
+          _invitationId: inv._id
+        }));
+        combined = [...invNotifs, ...combined].slice(0, 8);
+      }
+      setRecentNotifications(combined);
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+    } finally {
+      setNotifLoading(false);
+    }
+  };
 
+  const toggleNotifDropdown = () => {
+    const next = !isNotifDropdownOpen;
+    setIsNotifDropdownOpen(next);
+    if (next) fetchRecentNotifications();
+  };
+
+  const markNotifAsRead = async (id) => {
+    try {
+      const token = getCookie('authToken');
+      await fetch(`/api/notifications/${id}/read`, { method: 'PUT', headers: { Authorization: `Bearer ${token}` } });
+      setRecentNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+      fetchUnreadCount();
+    } catch { }
+  };
+
+  const notifTypeConfig = {
+    task_ready: { icon: '✅', color: '#10b981' },
+    task_send_back: { icon: '↩️', color: '#f59e0b' },
+    task_role_handoff: { icon: '🔄', color: '#3b82f6' },
+    task_role_assignment: { icon: '🎯', color: '#8b5cf6' },
+    task_role_completed: { icon: '🏁', color: '#10b981' },
+    project_assignment: { icon: '📁', color: '#06b6d4' },
+    salary_update: { icon: '💰', color: '#22c55e' },
+    invitation: { icon: '✉️', color: '#3b82f6' },
+    general: { icon: '🔔', color: '#64748b' },
+  };
+
+  const getNotifConfig = (type) => notifTypeConfig[type] || notifTypeConfig.general;
+
+  const timeAgo = (dateStr) => {
+    if (!dateStr) return '';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
+  };
+
+  // Sync notification count when visiting /notifications
+  useEffect(() => {
+    if (location.pathname === '/notifications') {
+      clearUnreadCount();
+    }
+  }, [location.pathname, clearUnreadCount]);
+
+  // Re-fetch count on mount so it is accurate after page refresh
+  useEffect(() => {
     fetchUnreadCount();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  }, [fetchUnreadCount]);
 
   // Fetch company data and check permissions
   useEffect(() => {
@@ -924,58 +991,232 @@ const Layout = ({ children }) => {
               alignItems: 'center',
               gap: '16px'
             }}>
-              {/* Notification Bell */}
+              {/* Notification Bell + Dropdown */}
               <div
-                onClick={() => navigate('/notifications')}
-                style={{
-                  position: 'relative',
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '12px',
-                  background: 'white',
-                  border: '1px solid #e2e8f0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                  e.currentTarget.style.borderColor = '#cbd5e1';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)';
-                  e.currentTarget.style.borderColor = '#e2e8f0';
-                }}
+                className="notif-dropdown-container"
+                style={{ position: 'relative' }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
-                {unreadCount > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '-4px',
-                    right: '-4px',
-                    minWidth: '20px',
-                    height: '20px',
-                    borderRadius: '10px',
-                    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                    color: 'white',
-                    fontSize: '11px',
-                    fontWeight: '700',
+                {/* Bell Button */}
+                <div
+                  onClick={toggleNotifDropdown}
+                  style={{
+                    position: 'relative',
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '12px',
+                    background: isNotifDropdownOpen ? '#eff6ff' : 'white',
+                    border: `1px solid ${isNotifDropdownOpen ? '#93c5fd' : '#e2e8f0'}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '0 6px',
-                    boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)',
-                    border: '2px solid white'
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)';
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isNotifDropdownOpen ? '#3b82f6' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
+                  {unreadCount > 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-4px',
+                      right: '-4px',
+                      minWidth: '20px',
+                      height: '20px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                      color: 'white',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 6px',
+                      boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)',
+                      border: '2px solid white'
+                    }}>
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </div>
+                  )}
+                </div>
+
+                {/* Dropdown Panel */}
+                {isNotifDropdownOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 12px)',
+                    right: 0,
+                    width: '380px',
+                    maxHeight: '520px',
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.08)',
+                    border: '1px solid #e2e8f0',
+                    zIndex: 999,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    animation: 'notifSlideDown 0.2s ease-out'
                   }}>
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                    <style>{`
+                      @keyframes notifSlideDown {
+                        from { opacity: 0; transform: translateY(-8px); }
+                        to   { opacity: 1; transform: translateY(0); }
+                      }
+                    `}</style>
+
+                    {/* Dropdown Header */}
+                    <div style={{
+                      padding: '16px 20px',
+                      borderBottom: '1px solid #f1f5f9',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>Notifications</div>
+                        {unreadCount > 0 && (
+                          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                            {unreadCount} unread
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => { setIsNotifDropdownOpen(false); navigate('/notifications'); }}
+                        style={{
+                          background: 'none', border: 'none', color: '#3b82f6',
+                          cursor: 'pointer', fontSize: '13px', fontWeight: '600',
+                          padding: '6px 12px', borderRadius: '8px', transition: 'background 0.2s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                      >
+                        View All →
+                      </button>
+                    </div>
+
+                    {/* Notification List */}
+                    <div style={{ overflowY: 'auto', flex: 1 }}>
+                      {notifLoading ? (
+                        <div style={{ padding: '32px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>⏳</div>
+                          <div style={{ fontSize: '13px', color: '#64748b' }}>Loading...</div>
+                        </div>
+                      ) : recentNotifications.length === 0 ? (
+                        <div style={{ padding: '40px 24px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '40px', marginBottom: '12px' }}>🎉</div>
+                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '4px' }}>All caught up!</div>
+                          <div style={{ fontSize: '13px', color: '#64748b' }}>No notifications right now.</div>
+                        </div>
+                      ) : (
+                        recentNotifications.map((notif) => {
+                          const cfg = getNotifConfig(notif.type);
+                          const isTask = notif.relatedModel === 'Task' || notif.type?.startsWith('task_');
+                          return (
+                            <div
+                              key={notif._id}
+                              onClick={() => {
+                                if (!notif.isRead && !notif._id.startsWith('inv_')) markNotifAsRead(notif._id);
+                                setIsNotifDropdownOpen(false);
+                                if (isTask) {
+                                  const taskId = notif.metadata?.taskId || notif.relatedId;
+                                  if (taskId) navigate(`/my-tasks/${taskId}`);
+                                  else navigate('/notifications');
+                                } else {
+                                  navigate('/notifications');
+                                }
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: '12px',
+                                padding: '14px 20px',
+                                borderBottom: '1px solid #f8fafc',
+                                cursor: 'pointer',
+                                background: notif.isRead ? 'white' : `${cfg.color}08`,
+                                transition: 'background 0.15s',
+                                position: 'relative'
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                              onMouseLeave={e => e.currentTarget.style.background = notif.isRead ? 'white' : `${cfg.color}08`}
+                            >
+                              {/* unread dot */}
+                              {!notif.isRead && (
+                                <div style={{
+                                  position: 'absolute', top: '16px', right: '16px',
+                                  width: '7px', height: '7px', borderRadius: '50%',
+                                  background: cfg.color
+                                }} />
+                              )}
+                              {/* icon */}
+                              <div style={{
+                                width: '38px', height: '38px', borderRadius: '10px',
+                                background: `${cfg.color}15`,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '18px', flexShrink: 0
+                              }}>
+                                {cfg.icon}
+                              </div>
+                              {/* text */}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{
+                                  fontSize: '13px',
+                                  fontWeight: notif.isRead ? '500' : '700',
+                                  color: '#0f172a',
+                                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                  marginBottom: '3px'
+                                }}>
+                                  {notif.title}
+                                </div>
+                                <div style={{
+                                  fontSize: '12px', color: '#64748b', lineHeight: '1.4',
+                                  overflow: 'hidden', display: '-webkit-box',
+                                  WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'
+                                }}>
+                                  {notif.message}
+                                </div>
+                                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+                                  {timeAgo(notif.createdAt)}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    <div style={{
+                      padding: '12px 20px',
+                      borderTop: '1px solid #f1f5f9',
+                      textAlign: 'center'
+                    }}>
+                      <button
+                        onClick={() => { setIsNotifDropdownOpen(false); navigate('/notifications'); }}
+                        style={{
+                          width: '100%', padding: '10px',
+                          background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                          color: 'white', border: 'none', borderRadius: '10px',
+                          fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+                          transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(59,130,246,0.3)'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)'}
+                      >
+                        View All Notifications
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

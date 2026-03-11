@@ -3,12 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { myTasksAPI } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import Layout from './Layout';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const MyTasksList = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState({});
+  const [actionModal, setActionModal] = useState(null); // 'complete' or 'sendBack'
+  const [activeTask, setActiveTask] = useState(null);
+  const [formData, setFormData] = useState({ note: '', message: '', link: '' });
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -60,22 +66,53 @@ const MyTasksList = () => {
     }
   };
 
-  const handleComplete = async (taskId, workflowType) => {
-    setActionLoading(prev => ({ ...prev, [taskId]: 'completing' }));
+  const handleCompleteClick = (e, task) => {
+    e.stopPropagation();
+    if (task.workflowType === 'sequential') {
+      setActiveTask(task);
+      setActionModal('complete');
+    } else {
+      navigate(`/my-tasks/${task._id}`);
+    }
+  };
+
+  const handleSendBackClick = (e, task) => {
+    e.stopPropagation();
+    if (task.workflowType === 'sequential') {
+      setActiveTask(task);
+      setActionModal('sendBack');
+    } else {
+      navigate(`/my-tasks/${task._id}`);
+    }
+  };
+
+  const handleModalSubmit = async () => {
+    if (!activeTask) return;
+    const taskId = activeTask._id;
+    setActionLoading(prev => ({ ...prev, [taskId]: actionModal === 'complete' ? 'completing' : 'sendingBack' }));
     try {
-      if (workflowType === 'sequential') {
-        await myTasksAPI.completeSequential(taskId);
+      if (actionModal === 'complete') {
+        await myTasksAPI.completeSequential(taskId, formData.note, formData.message, formData.link, selectedFiles);
+        toast?.showToast?.('Task completed successfully', 'success');
       } else {
-        // For role-based workflow, navigate to details page for completion
-        navigate(`/my-tasks/${taskId}`);
-        return;
+        await myTasksAPI.sendBackSequential(taskId, formData.note, formData.message, formData.link, selectedFiles);
+        toast?.showToast?.('Task sent back successfully', 'success');
       }
-      toast?.showToast?.('Task completed successfully', 'success');
+      setActionModal(null);
+      setActiveTask(null);
+      setFormData({ note: '', message: '', link: '' });
+      setSelectedFiles([]);
       fetchTasks();
     } catch (err) {
-      toast?.showToast?.(err.response?.data?.error || 'Failed to complete task', 'error');
+      toast?.showToast?.(err.response?.data?.error || 'Failed to process action', 'error');
     } finally {
       setActionLoading(prev => ({ ...prev, [taskId]: null }));
+    }
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files) {
+      setSelectedFiles(Array.from(e.target.files));
     }
   };
 
@@ -138,7 +175,7 @@ const MyTasksList = () => {
     if (taskStatus === 'pending' || taskStatus === 'active') {
       return (
         <button
-          onClick={() => handleStart(task._id, task.workflowType)}
+          onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }}
           disabled={isLoading}
           style={{
             padding: '8px 20px',
@@ -166,7 +203,7 @@ const MyTasksList = () => {
         <div style={{ display: 'flex', gap: '8px' }}>
           {task.workflowType === 'sequential' && (
             <button
-              onClick={() => handlePause(task._id)}
+              onClick={(e) => { e.stopPropagation(); handlePause(task._id); }}
               disabled={isLoading}
               style={{
                 padding: '8px 20px',
@@ -188,7 +225,7 @@ const MyTasksList = () => {
             </button>
           )}
           <button
-            onClick={() => handleComplete(task._id, task.workflowType)}
+            onClick={(e) => handleCompleteClick(e, task)}
             disabled={isLoading}
             style={{
               padding: '8px 20px',
@@ -208,6 +245,29 @@ const MyTasksList = () => {
           >
             {isLoading === 'completing' ? 'Completing...' : '✅ Complete'}
           </button>
+          {task.workflowType === 'sequential' && (
+            <button
+              onClick={(e) => handleSendBackClick(e, task)}
+              disabled={isLoading}
+              style={{
+                padding: '8px 20px',
+                backgroundColor: '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                opacity: isLoading ? 0.6 : 1,
+                transition: 'all 0.2s',
+                minWidth: '100px'
+              }}
+              onMouseEnter={(e) => !isLoading && (e.target.style.backgroundColor = '#dc2626')}
+              onMouseLeave={(e) => !isLoading && (e.target.style.backgroundColor = '#ef4444')}
+            >
+              {isLoading === 'sendingBack' ? 'Sending Back...' : '↩️ Send Back'}
+            </button>
+          )}
         </div>
       );
     }
@@ -215,7 +275,7 @@ const MyTasksList = () => {
     if (taskStatus === 'paused') {
       return (
         <button
-          onClick={() => handleStart(task._id, task.workflowType)}
+          onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }}
           disabled={isLoading}
           style={{
             padding: '8px 20px',
@@ -375,12 +435,12 @@ const MyTasksList = () => {
                         fontSize: '12px',
                         padding: '2px 8px',
                         borderRadius: '4px',
-                        backgroundColor: task.priority === 'urgent' ? '#fee2e2' : 
-                                       task.priority === 'high' ? '#fef3c7' :
-                                       task.priority === 'medium' ? '#dbeafe' : '#f0fdf4',
+                        backgroundColor: task.priority === 'urgent' ? '#fee2e2' :
+                          task.priority === 'high' ? '#fef3c7' :
+                            task.priority === 'medium' ? '#dbeafe' : '#f0fdf4',
                         color: task.priority === 'urgent' ? '#dc2626' :
-                               task.priority === 'high' ? '#d97706' :
-                               task.priority === 'medium' ? '#2563eb' : '#16a34a',
+                          task.priority === 'high' ? '#d97706' :
+                            task.priority === 'medium' ? '#2563eb' : '#16a34a',
                         fontWeight: '600',
                         textTransform: 'uppercase'
                       }}>
@@ -423,7 +483,7 @@ const MyTasksList = () => {
                 </div>
 
                 {/* Right: Action Buttons */}
-                <div 
+                <div
                   style={{ minWidth: '120px', display: 'flex', justifyContent: 'flex-end' }}
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -432,6 +492,251 @@ const MyTasksList = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {actionModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            width: '100%',
+            maxWidth: '650px',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid #e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: '#f8fafc'
+            }}>
+              <h2 style={{
+                margin: 0,
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#0f172a'
+              }}>
+                {actionModal === 'complete' ? 'Complete Task' : 'Send Back to Previous'}
+              </h2>
+              <button
+                onClick={() => {
+                  setActionModal(null);
+                  setActiveTask(null);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '20px',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '6px',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '24px', overflowY: 'auto' }}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  color: '#334155'
+                }}>
+                  Note <span style={{ color: '#94a3b8', fontWeight: 'normal', fontSize: '13px' }}>(Editor)</span>
+                </label>
+                <div style={{ borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: 'white' }}>
+                  <ReactQuill
+                    value={formData.note}
+                    onChange={(value) => setFormData({ ...formData, note: value })}
+                    style={{ height: '150px', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px' }}
+                    theme="snow"
+                  />
+                </div>
+                {/* Spacer for ReactQuill's absolute positioning / height footprint */}
+                <div style={{ height: '45px' }}></div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  color: '#334155'
+                }}>
+                  Message
+                </label>
+                <textarea
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    minHeight: '100px',
+                    fontSize: '14px',
+                    color: '#0f172a',
+                    resize: 'vertical',
+                    boxSizing: 'border-box',
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    transition: 'border-color 0.2s'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                  onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                  placeholder="Enter a professional message..."
+                />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  color: '#334155'
+                }}>
+                  Link
+                </label>
+                <input
+                  type="text"
+                  value={formData.link}
+                  onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '14px',
+                    color: '#0f172a',
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                    transition: 'border-color 0.2s'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                  onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                  placeholder="https://..."
+                />
+              </div>
+
+              <div style={{ marginBottom: '8px' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  color: '#334155'
+                }}>
+                  Attachments
+                </label>
+                <div style={{
+                  border: '1px dashed #cbd5e1',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  backgroundColor: '#f8fafc',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}>
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileChange}
+                    style={{
+                      width: '100%',
+                      fontSize: '14px',
+                      color: '#64748b',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              padding: '20px 24px',
+              borderTop: '1px solid #e2e8f0',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '12px',
+              backgroundColor: '#f8fafc'
+            }}>
+              <button
+                onClick={() => {
+                  setActionModal(null);
+                  setActiveTask(null);
+                }}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: 'white',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  color: '#475569',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = '#475569'; }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleModalSubmit}
+                disabled={activeTask && actionLoading[activeTask._id]}
+                style={{
+                  padding: '10px 24px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: actionModal === 'complete' ? '#10b981' : '#ef4444',
+                  color: 'white',
+                  cursor: (activeTask && actionLoading[activeTask._id]) ? 'not-allowed' : 'pointer',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  transition: 'background-color 0.2s',
+                  opacity: (activeTask && actionLoading[activeTask._id]) ? 0.7 : 1,
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                }}
+                onMouseEnter={(e) => { if (!(activeTask && actionLoading[activeTask._id])) e.currentTarget.style.backgroundColor = actionModal === 'complete' ? '#059669' : '#dc2626'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = actionModal === 'complete' ? '#10b981' : '#ef4444'; }}
+              >
+                {(activeTask && actionLoading[activeTask._id]) ? 'Processing...' : (actionModal === 'complete' ? '✓ Complete Task' : 'Send Back')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </Layout>

@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCompany } from '../context/CompanyContext';
 import { useCompanyFilter } from '../hooks/useCompanyFilter';
 import { useNavigate } from 'react-router-dom';
-import { projectAPI, taskAPI } from '../services/api';
+import { projectAPI, taskAPI, myTasksAPI, holidayAPI } from '../services/api';
 import apiService from '../services/apiService';
 import Layout from './Layout';
 
@@ -24,6 +24,11 @@ const Dashboard = () => {
     activeUsers: 0,
     adminUsers: 0
   });
+  const [myTasks, setMyTasks] = useState({
+    completed: [],
+    upcoming: []
+  });
+  const [upcomingHolidays, setUpcomingHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -80,6 +85,43 @@ const Dashboard = () => {
         totalTasks,
         pendingTasks
       });
+
+      // Fetch My Tasks
+      try {
+        const tasksResponse = await myTasksAPI.getAll();
+        const allMyTasks = tasksResponse.data || [];
+
+        const completed = allMyTasks.filter(task => {
+          const taskStatus = task.workflowType === 'sequential'
+            ? task.userAssignee?.status
+            : task.workflowType === 'role' ? task.userStep?.status : task.userStep?.status;
+          return taskStatus === 'completed' || task.status?.name?.toLowerCase().includes('done') || task.status?.name?.toLowerCase().includes('complete');
+        });
+
+        const upcoming = allMyTasks.filter(task => {
+          const taskStatus = task.workflowType === 'sequential'
+            ? task.userAssignee?.status
+            : task.workflowType === 'role' ? task.userStep?.status : task.userStep?.status;
+          return taskStatus !== 'completed' && !task.status?.name?.toLowerCase().includes('done') && !task.status?.name?.toLowerCase().includes('complete');
+        });
+
+        setMyTasks({
+          completed: completed.slice(0, 2),
+          upcoming: upcoming.slice(0, 3)
+        });
+      } catch (err) {
+        console.error('Error fetching my tasks:', err);
+      }
+
+      // Fetch Upcoming Holidays
+      try {
+        if (companyFilter.companyId && companyFilter.companyId !== 'personal') {
+          const holidaysResponse = await holidayAPI.getUpcoming(companyFilter.companyId, 3);
+          setUpcomingHolidays(holidaysResponse.data?.holidays || holidaysResponse.data || []);
+        }
+      } catch (err) {
+        console.error('Error fetching upcoming holidays:', err);
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -266,7 +308,7 @@ const Dashboard = () => {
       {/* Main Content Grid */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '2fr 1fr',
+        gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1.5fr) minmax(0, 1fr)',
         gap: '30px'
       }}>
         {/* Recent Projects */}
@@ -368,38 +410,127 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Quick Actions / User Management */}
+        {/* My Tasks Summary */}
         <div style={{
           backgroundColor: 'white',
           padding: '25px',
           borderRadius: '12px',
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
         }}>
-          <h3 style={{ margin: '0 0 20px 0', color: '#1e293b' }}>
-            {(state.user?.role === 'admin' || state.user?.role === 'superadmin') ? 'Admin Actions' : 'Quick Actions'}
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ margin: 0, color: '#1e293b' }}>My Tasks</h3>
             <button
-              onClick={() => navigate('/projects')}
+              onClick={() => navigate('/my-tasks')}
               style={{
-                padding: '12px 16px',
+                padding: '8px 16px',
                 backgroundColor: '#3b82f6',
                 color: 'white',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 cursor: 'pointer',
-                textAlign: 'left',
+                fontSize: '14px',
                 fontWeight: '500'
               }}
             >
-              📁 Create New Project
+              View All
             </button>
-            {(state.user?.role === 'admin' || state.user?.role === 'superadmin') && (
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            {loading ? (
+              Array(4).fill(0).map((_, index) => (
+                <div key={index} style={{
+                  padding: '15px',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ width: '120px', height: '16px', backgroundColor: '#f1f5f9', borderRadius: '4px', marginBottom: '8px' }}></div>
+                  <div style={{ width: '80px', height: '12px', backgroundColor: '#f1f5f9', borderRadius: '4px' }}></div>
+                </div>
+              ))
+            ) : (myTasks.upcoming.length > 0 || myTasks.completed.length > 0) ? (
+              <>
+                {myTasks.upcoming.length > 0 && (
+                  <div style={{ marginBottom: myTasks.completed.length > 0 ? '10px' : '0' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Running & Upcoming</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {myTasks.upcoming.map(task => (
+                        <div key={task._id} style={{
+                          padding: '12px',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          backgroundColor: '#f8fafc'
+                        }} onClick={() => navigate(`/my-tasks/${task._id}`)}>
+                          <div style={{ fontWeight: '500', color: '#1e293b', marginBottom: '4px', fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {task.title}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                            <span>{task.project?.title || 'No Project'}</span>
+                            <span style={{
+                              color: task.priority === 'urgent' ? '#dc2626' : task.priority === 'high' ? '#d97706' : '#2563eb',
+                              fontWeight: '600',
+                              textTransform: 'uppercase',
+                              fontSize: '10px'
+                            }}>{task.priority || 'NORMAL'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {myTasks.completed.length > 0 && (
+                  <div>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Completed</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {myTasks.completed.map(task => (
+                        <div key={task._id} style={{
+                          padding: '12px',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          backgroundColor: '#f0fdf4'
+                        }} onClick={() => navigate(`/my-tasks/${task._id}`)}>
+                          <div style={{ fontWeight: '500', color: '#1e293b', marginBottom: '4px', fontSize: '14px', textDecoration: 'line-through', opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {task.title}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#64748b', opacity: 0.8 }}>
+                            ✅ Completed
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                <div style={{ fontSize: '32px', marginBottom: '12px' }}>✅</div>
+                <p style={{ margin: 0, fontSize: '14px' }}>All caught up!<br />No tasks on your plate.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Quick Actions & Holidays */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+          {/* Quick Actions / User Management */}
+          <div style={{
+            backgroundColor: 'white',
+            padding: '25px',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+          }}>
+            <h3 style={{ margin: '0 0 20px 0', color: '#1e293b' }}>
+              {(state.user?.role === 'admin' || state.user?.role === 'superadmin') ? 'Admin Actions' : 'Quick Actions'}
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <button
-                onClick={() => navigate('/users')}
+                onClick={() => navigate('/projects')}
                 style={{
                   padding: '12px 16px',
-                  backgroundColor: '#8b5cf6',
+                  backgroundColor: '#3b82f6',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
@@ -408,21 +539,121 @@ const Dashboard = () => {
                   fontWeight: '500'
                 }}
               >
-                👥 Manage Users
+                📁 Create New Project
               </button>
-            )}
-            <button style={{
-              padding: '12px 16px',
-              backgroundColor: '#10b981',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontWeight: '500'
-            }}>
-              ✅ Add Task
-            </button>
+              {(state.user?.role === 'admin' || state.user?.role === 'superadmin') && (
+                <button
+                  onClick={() => navigate('/users')}
+                  style={{
+                    padding: '12px 16px',
+                    backgroundColor: '#8b5cf6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    fontWeight: '500'
+                  }}
+                >
+                  👥 Manage Users
+                </button>
+              )}
+              <button style={{
+                padding: '12px 16px',
+                backgroundColor: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontWeight: '500'
+              }}>
+                ✅ Add Task
+              </button>
+            </div>
+          </div>
+
+          {/* Upcoming Holidays */}
+          <div style={{
+            backgroundColor: 'white',
+            padding: '25px',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, color: '#1e293b' }}>Upcoming Holidays</h3>
+              <button
+                onClick={() => navigate('/holidays')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#3b82f6',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  padding: 0
+                }}
+              >
+                View Calendar
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              {loading ? (
+                Array(2).fill(0).map((_, index) => (
+                  <div key={index} style={{
+                    padding: '15px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px'
+                  }}>
+                    <div style={{ width: '100px', height: '16px', backgroundColor: '#f1f5f9', borderRadius: '4px', marginBottom: '8px' }}></div>
+                    <div style={{ width: '60px', height: '12px', backgroundColor: '#f1f5f9', borderRadius: '4px' }}></div>
+                  </div>
+                ))
+              ) : upcomingHolidays.length > 0 ? (
+                upcomingHolidays.map((holiday, index) => {
+                  const isRange = holiday.isRange;
+                  const startDate = isRange ? new Date(holiday.startDate) : new Date(holiday.date);
+                  const endDate = isRange ? new Date(holiday.endDate) : null;
+
+                  const formatOptions = { month: 'short', day: 'numeric' };
+                  const dateStr = isRange
+                    ? `${startDate.toLocaleDateString(undefined, formatOptions)} - ${endDate.toLocaleDateString(undefined, formatOptions)}`
+                    : startDate.toLocaleDateString(undefined, formatOptions);
+
+                  return (
+                    <div key={holiday._id || index} style={{
+                      padding: '12px',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      backgroundColor: '#fffbeb',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}>
+                      <div style={{
+                        fontSize: '24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '40px',
+                        height: '40px',
+                        backgroundColor: '#fef3c7',
+                        borderRadius: '8px'
+                      }}>🎉</div>
+                      <div>
+                        <div style={{ fontWeight: '600', color: '#1e293b', fontSize: '14px', marginBottom: '4px' }}>{holiday.name}</div>
+                        <div style={{ fontSize: '12px', color: '#d97706', fontWeight: '500' }}>{dateStr}</div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
+                  <p style={{ margin: 0, fontSize: '14px' }}>No upcoming holidays</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
