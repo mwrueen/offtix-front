@@ -122,6 +122,7 @@ export const taskAPI = {
     api.post(`/projects/${projectId}/tasks/${taskId}/workflow/skip-role`, { reason }),
   updateRoleAssignments: (projectId, taskId, roleAssignments, useRoleWorkflow) =>
     api.put(`/projects/${projectId}/tasks/${taskId}/role-assignments`, { roleAssignments, useRoleWorkflow }),
+  bulkSchedule: (projectId, schedules) => api.post(`/projects/${projectId}/tasks/bulk-schedule`, { schedules }),
 };
 
 export const taskRoleAPI = {

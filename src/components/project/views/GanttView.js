@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { autoScheduleAllTasks } from '../../../utils/ganttScheduler';
+import { taskAPI } from '../../../services/api';
 import AutoScheduleGuide from '../AutoScheduleGuide';
 
 const GanttView = ({
@@ -11,7 +12,8 @@ const GanttView = ({
   company,
   onUpdateTask,
   employeeLeaves = [],
-  teamActivity = []
+  teamActivity = [],
+  onRefresh
 }) => {
   const [expandedTasks, setExpandedTasks] = useState(new Set());
   const [isAutoScheduling, setIsAutoScheduling] = useState(false);
@@ -587,15 +589,13 @@ const GanttView = ({
         }
       );
 
-      // Update each task with calculated dates
-      for (const scheduledTask of scheduledTasks) {
-        await onUpdateTask(scheduledTask.taskId, {
-          startDate: scheduledTask.startDate,
-          dueDate: scheduledTask.dueDate
-        });
-      }
+      // Update all tasks in a single API call
+      await taskAPI.bulkSchedule(project._id, scheduledTasks);
 
       setShowAutoScheduleModal(false);
+      if (onRefresh) {
+        await onRefresh();
+      }
       setScheduleResult({
         success: true,
         count: scheduledTasks.length,

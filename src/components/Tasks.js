@@ -245,7 +245,7 @@ const Tasks = () => {
     }
   };
 
-  const handleUpdateTask = async (taskId, updates) => {
+  const handleUpdateTask = async (taskId, updates, skipFetch = false) => {
     setError(null);
     try {
       const response = await taskAPI.update(id, taskId, updates);
@@ -257,7 +257,9 @@ const Tasks = () => {
       }
 
       // Refresh the task list
-      await fetchProjectData();
+      if (!skipFetch) {
+        await fetchProjectData();
+      }
     } catch (error) {
       console.error('Error updating task:', error);
       if (error.response?.data?.message) {
@@ -388,15 +390,12 @@ const Tasks = () => {
         }
       );
 
-      // Update each task with calculated dates
-      for (const scheduledTask of scheduledTasks) {
-        await handleUpdateTask(scheduledTask.taskId, {
-          startDate: scheduledTask.startDate,
-          dueDate: scheduledTask.dueDate
-        });
-      }
+      // Update all tasks in a single API call
+      await taskAPI.bulkSchedule(id, scheduledTasks);
 
+      // Close modal and refresh ONCE at the end
       setShowAutoScheduleModal(false);
+      await fetchProjectData();
       setScheduleResult({
         success: true,
         count: scheduledTasks.length,
@@ -802,6 +801,7 @@ const Tasks = () => {
                 onUpdateTask={handleUpdateTask}
                 employeeLeaves={employeeLeaves}
                 teamActivity={teamActivity}
+                onRefresh={fetchProjectData}
               />
             )}
           </div>
