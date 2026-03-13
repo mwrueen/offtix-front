@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { employeeAPI } from '../services/api';
 import { useCompany } from '../context/CompanyContext';
 import { useAuth } from '../context/AuthContext';
+import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import Layout from './Layout';
 
 const EmployeeList = () => {
   const navigate = useNavigate();
   const { state } = useCompany();
   const { state: authState } = useAuth();
+  const { hasPermission } = usePermissions();
   const selectedCompany = state.selectedCompany;
   const [employees, setEmployees] = useState([]);
   const [company, setCompany] = useState(null);
@@ -16,7 +18,10 @@ const EmployeeList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDesignation, setFilterDesignation] = useState('all');
-  const [canAddEmployee, setCanAddEmployee] = useState(false);
+
+  // Permission derived from context
+  const canAddEmployee = hasPermission(PERMISSIONS.ADD_EMPLOYEE);
+
 
   // Currency symbols mapping
   const currencySymbols = {
@@ -67,32 +72,6 @@ const EmployeeList = () => {
       const companyData = response.data.company;
       setCompany(companyData);
       setDesignations(response.data.designations || []);
-
-      // Check user permissions
-      const userId = authState.user?._id || authState.user?.id;
-      const ownerId = companyData.owner?._id || companyData.owner;
-      const isOwner = ownerId?.toString() === userId?.toString();
-      const isSuperAdmin = authState.user?.role === 'superadmin';
-
-      if (isOwner || isSuperAdmin) {
-        setCanAddEmployee(true);
-      } else {
-        const memberInfo = companyData.members?.find(m => {
-          const memberId = m.user?._id || m.user;
-          return memberId?.toString() === userId?.toString();
-        });
-
-        if (memberInfo) {
-          const designation = companyData.designations?.find(d => d.name === memberInfo.designation);
-          if (designation?.permissions?.addEmployee) {
-            setCanAddEmployee(true);
-          } else {
-            setCanAddEmployee(false);
-          }
-        } else {
-          setCanAddEmployee(false);
-        }
-      }
     } catch (error) {
       console.error('Error fetching employees:', error);
     } finally {
@@ -102,7 +81,7 @@ const EmployeeList = () => {
 
   const filteredEmployees = employees.filter(emp => {
     const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         emp.email.toLowerCase().includes(searchTerm.toLowerCase());
+      emp.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDesignation = filterDesignation === 'all' || emp.designation === filterDesignation;
     return matchesSearch && matchesDesignation;
   });
@@ -350,9 +329,9 @@ const EmployeeList = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Joined</span>
                     <span style={{ fontSize: '13px', color: '#1e293b' }}>
-                      {new Date(employee.joinedAt).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        year: 'numeric' 
+                      {new Date(employee.joinedAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        year: 'numeric'
                       })}
                     </span>
                   </div>
@@ -380,8 +359,8 @@ const EmployeeList = () => {
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>👥</div>
             <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#374151' }}>No employees found</h3>
             <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
-              {searchTerm || filterDesignation !== 'all' 
-                ? 'Try adjusting your filters' 
+              {searchTerm || filterDesignation !== 'all'
+                ? 'Try adjusting your filters'
                 : 'Start by adding your first employee'}
             </p>
           </div>

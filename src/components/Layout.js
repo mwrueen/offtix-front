@@ -6,11 +6,13 @@ import { getCookie } from '../utils/cookies';
 import { companyAPI } from '../services/api';
 import SidebarHeader from './SidebarHeader';
 import { useSocket } from '../context/SocketContext';
+import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 
 const Layout = ({ children }) => {
   const { state, dispatch } = useAuth();
   const { state: companyState, selectCompany } = useCompany();
   const { unreadCount, clearUnreadCount, fetchUnreadCount } = useSocket();
+  const { hasPermission, companyData, isOwner, isSuperAdmin } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -18,10 +20,11 @@ const Layout = ({ children }) => {
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
   const [recentNotifications, setRecentNotifications] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
-  const [companyData, setCompanyData] = useState(null);
-  const [canManageSettings, setCanManageSettings] = useState(false);
-  const [canViewDesignations, setCanViewDesignations] = useState(false);
-  const [canViewEmployees, setCanViewEmployees] = useState(false);
+
+  // Derive sidebar permission flags from unified context
+  const canManageSettings = hasPermission(PERMISSIONS.MANAGE_COMPANY_SETTINGS);
+  const canViewDesignations = hasPermission(PERMISSIONS.VIEW_DESIGNATIONS);
+  const canViewEmployees = hasPermission(PERMISSIONS.VIEW_EMPLOYEE_LIST);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -125,82 +128,6 @@ const Layout = ({ children }) => {
     fetchUnreadCount();
   }, [fetchUnreadCount]);
 
-  // Fetch company data and check permissions
-  useEffect(() => {
-    const fetchCompanyPermissions = async () => {
-      if (!companyState.selectedCompany || companyState.selectedCompany.id === 'personal') {
-        setCanManageSettings(false);
-        setCanViewDesignations(false);
-        setCanViewEmployees(false);
-        setCompanyData(null);
-        return;
-      }
-
-      try {
-        const response = await companyAPI.getById(companyState.selectedCompany.id);
-        const company = response.data;
-        setCompanyData(company);
-
-        // Check if user has permission to manage company settings
-        const userId = state.user?._id;
-        const ownerId = company.owner?._id || company.owner;
-        const isOwner = ownerId?.toString() === userId?.toString();
-        const isSuperAdmin = state.user?.role === 'superadmin';
-
-        console.log('Permission check:', {
-          userId,
-          ownerId,
-          isOwner,
-          isSuperAdmin,
-          companyName: company.name
-        });
-
-        // Get user's designation and permissions
-        let userPermissions = null;
-        if (isOwner || isSuperAdmin) {
-          // Owner and superadmin have all permissions
-          userPermissions = {
-            manageCompanySettings: true,
-            viewDesignations: true,
-            viewEmployeeList: true
-          };
-        } else {
-          const memberInfo = company.members?.find(m => {
-            const memberId = m.user?._id || m.user;
-            return memberId?.toString() === userId?.toString();
-          });
-          if (memberInfo) {
-            const designation = company.designations?.find(d => d.name === memberInfo.designation);
-            if (designation?.permissions) {
-              userPermissions = designation.permissions;
-            }
-          }
-        }
-
-        // Set permission states
-        if (userPermissions) {
-          setCanManageSettings(userPermissions.manageCompanySettings || false);
-          setCanViewDesignations(userPermissions.viewDesignations || false);
-          setCanViewEmployees(userPermissions.viewEmployeeList || false);
-        } else {
-          // Default permissions for non-members
-          setCanManageSettings(false);
-          setCanViewDesignations(true); // Default: can view designations
-          setCanViewEmployees(true); // Default: can view employees
-        }
-
-        console.log('User permissions:', userPermissions);
-      } catch (error) {
-        console.error('Error fetching company permissions:', error);
-        setCanManageSettings(false);
-        setCanViewDesignations(false);
-        setCanViewEmployees(false);
-        setCompanyData(null);
-      }
-    };
-
-    fetchCompanyPermissions();
-  }, [companyState.selectedCompany, state.user]);
 
   const handleLogout = () => {
     dispatch({ type: 'LOGOUT' });

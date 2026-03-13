@@ -1,10 +1,26 @@
 import React, { useState } from 'react';
 import ProjectForm from './ProjectForm';
 import DeleteConfirmModal from './common/DeleteConfirmModal';
+import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
+import { useAuth } from '../context/AuthContext';
 
 const ProjectList = ({ projects, onUpdate, onDelete }) => {
+  const { hasPermission, isSuperAdmin } = usePermissions();
+  const { state: authState } = useAuth();
   const [editingProject, setEditingProject] = useState(null);
   const [projectToDelete, setProjectToDelete] = useState(null);
+
+  const canEditProject = (project) => {
+    if (isSuperAdmin) return true;
+    if (project.owner === authState.user.id || project.owner?._id === authState.user.id) return true;
+    return hasPermission(PERMISSIONS.EDIT_PROJECT);
+  };
+
+  const canDeleteProject = (project) => {
+    if (isSuperAdmin) return true;
+    if (project.owner === authState.user.id || project.owner?._id === authState.user.id) return true;
+    return hasPermission(PERMISSIONS.DELETE_PROJECT);
+  };
 
   const handleEdit = (project) => {
     setEditingProject(project);
@@ -267,77 +283,81 @@ const ProjectList = ({ projects, onUpdate, onDelete }) => {
                   </svg>
                   View Details
                 </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEdit(project);
-                  }}
-                  style={{
-                    padding: '12px 14px',
-                    backgroundColor: '#f8fafc',
-                    color: '#475569',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '10px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#e0f2fe';
-                    e.target.style.borderColor = '#0ea5e9';
-                    e.target.style.color = '#0c4a6e';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#f8fafc';
-                    e.target.style.borderColor = '#e2e8f0';
-                    e.target.style.color = '#475569';
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                  </svg>
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteClick(project);
-                  }}
-                  style={{
-                    padding: '12px 14px',
-                    backgroundColor: '#fef2f2',
-                    color: '#dc2626',
-                    border: '2px solid #fecaca',
-                    borderRadius: '10px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#fee2e2';
-                    e.target.style.borderColor = '#f87171';
-                    e.target.style.color = '#b91c1c';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#fef2f2';
-                    e.target.style.borderColor = '#fecaca';
-                    e.target.style.color = '#dc2626';
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                  </svg>
-                </button>
+                {canEditProject(project) && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(project);
+                    }}
+                    style={{
+                      padding: '12px 14px',
+                      backgroundColor: '#f8fafc',
+                      color: '#475569',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#e0f2fe';
+                      e.target.style.borderColor = '#0ea5e9';
+                      e.target.style.color = '#0c4a6e';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#f8fafc';
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.color = '#475569';
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </button>
+                )}
+                {canDeleteProject(project) && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(project);
+                    }}
+                    style={{
+                      padding: '12px 14px',
+                      backgroundColor: '#fef2f2',
+                      color: '#dc2626',
+                      border: '2px solid #fecaca',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#fee2e2';
+                      e.target.style.borderColor = '#f87171';
+                      e.target.style.color = '#b91c1c';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#fef2f2';
+                      e.target.style.borderColor = '#fecaca';
+                      e.target.style.color = '#dc2626';
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                  </button>
+                )}
               </div>
             </div>
           );

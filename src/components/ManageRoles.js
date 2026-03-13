@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCompanyFilter } from '../hooks/useCompanyFilter';
 import { useToast } from '../context/ToastContext';
 import { getCookie } from '../utils/cookies';
+import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import Layout from './Layout';
 
 // Permission categories for better organization
@@ -50,6 +51,7 @@ const ManageRoles = () => {
   const { state } = useAuth();
   const { selectedCompany } = useCompanyFilter();
   const toast = useToast();
+  const { hasPermission, PERMISSIONS: PERMS } = usePermissions();
 
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,8 +60,7 @@ const ManageRoles = () => {
   const [editingRole, setEditingRole] = useState(null);
   const [editPermissions, setEditPermissions] = useState({});
   const [saving, setSaving] = useState(false);
-  const [hasPermission, setHasPermission] = useState(false);
-  const [userPermissions, setUserPermissions] = useState(null);
+
 
   useEffect(() => {
     if (selectedCompany && selectedCompany.id !== 'personal') {
@@ -80,39 +81,6 @@ const ManageRoles = () => {
       if (response.ok) {
         const data = await response.json();
         setCompany(data);
-
-        // Check user permissions
-        const userId = state.user?._id || state.user?.id;
-        const ownerId = data.owner?._id || data.owner;
-        const isOwner = ownerId?.toString() === userId?.toString();
-        const isSuperAdmin = state.user?.role === 'superadmin';
-
-        if (isOwner || isSuperAdmin) {
-          setHasPermission(true);
-          setUserPermissions({
-            viewDesignations: true,
-            createDesignation: true,
-            editDesignation: true,
-            deleteDesignation: true
-          });
-        } else {
-          const memberInfo = data.members?.find(m => {
-            const memberId = m.user?._id || m.user;
-            return memberId?.toString() === userId?.toString();
-          });
-
-          if (memberInfo) {
-            const designation = data.designations?.find(d => d.name === memberInfo.designation);
-            if (designation?.permissions) {
-              setUserPermissions(designation.permissions);
-              setHasPermission(designation.permissions.viewDesignations || false);
-            } else {
-              setHasPermission(false);
-            }
-          } else {
-            setHasPermission(false);
-          }
-        }
       }
     } catch (error) {
       console.error('Error fetching company:', error);
@@ -242,7 +210,7 @@ const ManageRoles = () => {
     );
   }
 
-  if (!hasPermission) {
+  if (!hasPermission(PERMISSIONS.VIEW_DESIGNATIONS)) {
     return (
       <Layout>
         <div style={{
@@ -317,7 +285,7 @@ const ManageRoles = () => {
               </div>
             </div>
 
-            {userPermissions?.createDesignation && (
+            {hasPermission(PERMISSIONS.CREATE_DESIGNATION) && (
               <button
                 onClick={() => navigate('/create-role')}
                 style={{
@@ -456,7 +424,7 @@ const ManageRoles = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  {(userPermissions?.editDesignation || userPermissions?.deleteDesignation) && (
+                  {(hasPermission(PERMISSIONS.EDIT_DESIGNATION) || hasPermission(PERMISSIONS.DELETE_DESIGNATION)) && (
                     <div style={{
                       display: 'flex',
                       gap: '8px',
@@ -464,7 +432,7 @@ const ManageRoles = () => {
                       paddingTop: '16px',
                       borderTop: '1px solid #e2e8f0'
                     }}>
-                      {userPermissions?.editDesignation && (
+                      {hasPermission(PERMISSIONS.EDIT_DESIGNATION) && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -492,7 +460,7 @@ const ManageRoles = () => {
                           Edit Permissions
                         </button>
                       )}
-                      {userPermissions?.deleteDesignation && (
+                      {hasPermission(PERMISSIONS.DELETE_DESIGNATION) && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -582,7 +550,7 @@ const ManageRoles = () => {
           zIndex: 1000,
           backdropFilter: 'blur(4px)'
         }}
-        onClick={() => setShowDeleteConfirm(null)}>
+          onClick={() => setShowDeleteConfirm(null)}>
           <div style={{
             background: 'white',
             padding: '32px',
@@ -591,7 +559,7 @@ const ManageRoles = () => {
             width: '90%',
             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
           }}
-          onClick={(e) => e.stopPropagation()}>
+            onClick={(e) => e.stopPropagation()}>
             <div style={{
               width: '56px',
               height: '56px',
@@ -669,7 +637,7 @@ const ManageRoles = () => {
           backdropFilter: 'blur(4px)',
           padding: '20px'
         }}
-        onClick={() => { setEditingRole(null); setEditPermissions({}); }}>
+          onClick={() => { setEditingRole(null); setEditPermissions({}); }}>
           <div style={{
             background: 'white',
             borderRadius: '20px',
@@ -681,7 +649,7 @@ const ManageRoles = () => {
             display: 'flex',
             flexDirection: 'column'
           }}
-          onClick={(e) => e.stopPropagation()}>
+            onClick={(e) => e.stopPropagation()}>
             {/* Modal Header */}
             <div style={{
               padding: '24px 28px',

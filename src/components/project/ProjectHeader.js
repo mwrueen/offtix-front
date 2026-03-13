@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { projectAPI } from '../../services/api';
 import { useCompany } from '../../context/CompanyContext';
+import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 
 const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }) => {
   const { state: companyState } = useCompany();
+  const { hasPermission, isSuperAdmin } = usePermissions();
   const companyCurrency = companyState?.selectedCompany?.currency || 'USD';
+
+  const canEditStatus = isProjectOwner || isSuperAdmin || hasPermission(PERMISSIONS.EDIT_PROJECT);
 
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [scheduledStartDate, setScheduledStartDate] = useState('');
@@ -27,7 +31,7 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
   };
 
   const handleStatusChange = async (newStatus) => {
-    if (!isProjectOwner) return;
+    if (!canEditStatus) return;
 
     setIsUpdating(true);
     try {
@@ -93,7 +97,7 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
             </p>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
               <button
-                onClick={() => isProjectOwner && setShowStatusModal(true)}
+                onClick={() => canEditStatus && setShowStatusModal(true)}
                 style={{
                   padding: '8px 16px',
                   borderRadius: '10px',
@@ -106,22 +110,22 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  cursor: isProjectOwner ? 'pointer' : 'default',
+                  cursor: canEditStatus ? 'pointer' : 'default',
                   transition: 'all 0.2s ease'
                 }}
                 onMouseEnter={(e) => {
-                  if (isProjectOwner) {
+                  if (canEditStatus) {
                     e.currentTarget.style.transform = 'scale(1.05)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'scale(1)';
                 }}
-                title={isProjectOwner ? 'Click to change status' : ''}
+                title={canEditStatus ? 'Click to change status' : ''}
               >
                 <span>{statusConfig.icon}</span>
                 {statusConfig.label || project.status.replace('_', ' ')}
-                {isProjectOwner && <span style={{ marginLeft: '4px', fontSize: '10px' }}>▼</span>}
+                {canEditStatus && <span style={{ marginLeft: '4px', fontSize: '10px' }}>▼</span>}
               </button>
               <span style={{
                 padding: '8px 16px',

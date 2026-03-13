@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useProjects } from '../hooks/useProjects';
 import { useAuth } from '../context/AuthContext';
 import { useCompanyFilter } from '../hooks/useCompanyFilter';
+import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import ProjectForm from './ProjectForm';
 import ProjectList from './ProjectList';
 import Layout from './Layout';
@@ -10,23 +11,16 @@ const Projects = () => {
   const { projects, loading, error, fetchProjects, createProject, updateProject, deleteProject } = useProjects();
   const { state } = useAuth();
   const { selectedCompany } = useCompanyFilter();
+  const { hasPermission, isSuperAdmin } = usePermissions();
   const [showForm, setShowForm] = useState(false);
-  
-  // Check if user can create projects
+
+  // Check if user can create projects using unified permissions
   const canCreateProjects = () => {
-    // Superadmin can always create projects
-    if (state.user?.role === 'superadmin') return true;
-    
-    // In personal mode, any user can create personal projects
+    if (isSuperAdmin) return true;
     if (selectedCompany?.id === 'personal') return true;
-    
-    // In company mode, check company permissions from backend
-    if (selectedCompany && selectedCompany.id !== 'personal') {
-      // Use the canCreateProjects permission from the backend
-      return selectedCompany.canCreateProjects || false;
-    }
-    
-    return false;
+
+    // Check company-level role permission
+    return hasPermission(PERMISSIONS.CREATE_PROJECT);
   };
 
   useEffect(() => {

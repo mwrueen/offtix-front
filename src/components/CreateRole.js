@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCompanyFilter } from '../hooks/useCompanyFilter';
 import { useToast } from '../context/ToastContext';
 import { getCookie } from '../utils/cookies';
+import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import Layout from './Layout';
 import Input from './common/Input';
 
@@ -12,6 +13,7 @@ const CreateRole = () => {
   const { state } = useAuth();
   const { selectedCompany } = useCompanyFilter();
   const toast = useToast();
+  const { hasPermission, loading: permLoading } = usePermissions();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -33,65 +35,9 @@ const CreateRole = () => {
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [hasPermission, setHasPermission] = useState(false);
-  const [checkingPermission, setCheckingPermission] = useState(true);
 
-  // Check permissions on mount
-  useEffect(() => {
-    const checkPermissions = async () => {
-      if (!selectedCompany || selectedCompany.id === 'personal') {
-        setCheckingPermission(false);
-        return;
-      }
 
-      try {
-        const token = getCookie('authToken');
-        const response = await fetch(`/api/companies/${selectedCompany.id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const company = await response.json();
-
-          // Check user permissions
-          const userId = state.user?._id || state.user?.id;
-          const ownerId = company.owner?._id || company.owner;
-          const isOwner = ownerId?.toString() === userId?.toString();
-          const isSuperAdmin = state.user?.role === 'superadmin';
-
-          if (isOwner || isSuperAdmin) {
-            setHasPermission(true);
-          } else {
-            const memberInfo = company.members?.find(m => {
-              const memberId = m.user?._id || m.user;
-              return memberId?.toString() === userId?.toString();
-            });
-
-            if (memberInfo) {
-              const designation = company.designations?.find(d => d.name === memberInfo.designation);
-              if (designation?.permissions?.createDesignation) {
-                setHasPermission(true);
-              } else {
-                setHasPermission(false);
-              }
-            } else {
-              setHasPermission(false);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error checking permissions:', error);
-        setHasPermission(false);
-      } finally {
-        setCheckingPermission(false);
-      }
-    };
-
-    checkPermissions();
-  }, [selectedCompany, state.user]);
+  // No need for local permission check — handled by PermissionsContext
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -246,7 +192,7 @@ const CreateRole = () => {
     );
   }
 
-  if (checkingPermission) {
+  if (permLoading) {
     return (
       <Layout>
         <div style={{ textAlign: 'center', padding: '50px' }}>
@@ -256,7 +202,7 @@ const CreateRole = () => {
     );
   }
 
-  if (!hasPermission) {
+  if (!hasPermission(PERMISSIONS.CREATE_DESIGNATION)) {
     return (
       <Layout>
         <div style={{
@@ -345,7 +291,7 @@ const CreateRole = () => {
               <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '700', color: '#1e293b' }}>
                 Basic Information
               </h3>
-              
+
               <div style={{ marginBottom: '20px' }}>
                 <Input
                   label="Role Name"

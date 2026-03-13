@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { projectAPI, companyAPI } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
+import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 
 const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, onRefresh }) => {
+  const { hasPermission } = usePermissions();
   const [showAddMember, setShowAddMember] = useState(false);
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
@@ -12,7 +14,10 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
   const [companyMembers, setCompanyMembers] = useState([]);
   const [filterUsersByRole, setFilterUsersByRole] = useState(true);
 
-  const canManageTeam = isProjectOwner || isProjectManager;
+  // Permission logic: Project Owner/Manager can ALWAYS manage their team.
+  // Other users need the specific company-level permission.
+  const canAddMembers = isProjectOwner || isProjectManager || hasPermission(PERMISSIONS.ASSIGN_EMPLOYEE_TO_PROJECT);
+  const canRemoveMembers = isProjectOwner || isProjectManager || hasPermission(PERMISSIONS.REMOVE_EMPLOYEE_FROM_PROJECT);
 
   // Fetch company roles (designations)
   useEffect(() => {
@@ -203,7 +208,7 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
           </p>
         </div>
 
-        {canManageTeam && (
+        {canAddMembers && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
             {availableUsers.length > 0 ? (
               <button
@@ -249,7 +254,7 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
           </div>
         )}
 
-        {!canManageTeam && (
+        {!canAddMembers && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
             <div style={{
               fontSize: '12px',
@@ -538,7 +543,7 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
                   }}>
                     {memberRole.toUpperCase()}
                   </div>
-                  {canManageTeam && (
+                  {canRemoveMembers && (
                     <button
                       onClick={() => setMemberToRemove(member)}
                       disabled={loading}

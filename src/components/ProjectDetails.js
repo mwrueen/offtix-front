@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { projectAPI, requirementAPI, meetingNoteAPI, sprintAPI, phaseAPI, userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useCompanyFilter } from '../hooks/useCompanyFilter';
+import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import Layout from './Layout';
 import Breadcrumb from './project/Breadcrumb';
 import ProjectHeader from './project/ProjectHeader';
@@ -26,6 +27,7 @@ const ProjectDetails = () => {
   const location = useLocation();
   const { state: authState } = useAuth();
   const companyFilter = useCompanyFilter();
+  const { hasPermission, isSuperAdmin } = usePermissions();
   const [project, setProject] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -192,6 +194,9 @@ const ProjectDetails = () => {
     return (memberUserId === userId) && member.role === 'Project Manager';
   });
 
+  const canEditProject = isProjectOwner || isSuperAdmin || hasPermission(PERMISSIONS.EDIT_PROJECT);
+  const canViewAnalytics = isProjectOwner || isSuperAdmin || hasPermission(PERMISSIONS.VIEW_PROJECT_ANALYTICS);
+
   if (loading) return <Layout><div>Loading...</div></Layout>;
 
   if (error) {
@@ -276,7 +281,7 @@ const ProjectDetails = () => {
             <ProjectOverview
               project={project}
               users={users}
-              isProjectOwner={isProjectOwner}
+              isProjectOwner={canEditProject}
             />
           )}
 
@@ -298,7 +303,7 @@ const ProjectDetails = () => {
             />
           )}
 
-          {activeTab === 'analytics' && (
+          {activeTab === 'analytics' && canViewAnalytics && (
             <AnalyticsTab
               projectId={id}
             />
@@ -307,7 +312,7 @@ const ProjectDetails = () => {
           {activeTab === 'files' && (
             <FilesTab
               project={project}
-              isProjectOwner={isProjectOwner}
+              isProjectOwner={canEditProject}
               onRefresh={fetchProjectData}
             />
           )}
@@ -318,7 +323,7 @@ const ProjectDetails = () => {
               requirements={requirements}
               setRequirements={setRequirements}
               users={users}
-              isProjectOwner={isProjectOwner}
+              isProjectOwner={canEditProject}
               onRefresh={() => fetchTabData('requirements')}
             />
           )}
@@ -329,7 +334,7 @@ const ProjectDetails = () => {
               meetingNotes={meetingNotes}
               setMeetingNotes={setMeetingNotes}
               users={users}
-              isProjectOwner={isProjectOwner}
+              isProjectOwner={canEditProject}
               onRefresh={() => fetchTabData('meetings')}
             />
           )}
@@ -340,7 +345,7 @@ const ProjectDetails = () => {
               phases={phases}
               setPhases={setPhases}
               users={users}
-              isProjectOwner={isProjectOwner}
+              isProjectOwner={canEditProject}
               onRefresh={() => fetchTabData('phases')}
             />
           )}
@@ -352,7 +357,7 @@ const ProjectDetails = () => {
               setSprints={setSprints}
               phases={phases}
               users={users}
-              isProjectOwner={isProjectOwner}
+              isProjectOwner={canEditProject}
               onRefresh={() => fetchTabData('sprints')}
             />
           )}
@@ -361,7 +366,7 @@ const ProjectDetails = () => {
             <RisksTab
               projectId={id}
               project={project}
-              isProjectOwner={isProjectOwner}
+              isProjectOwner={canEditProject}
               onRefresh={fetchProjectData}
             />
           )}
@@ -370,7 +375,7 @@ const ProjectDetails = () => {
             <DependenciesTab
               projectId={id}
               project={project}
-              isProjectOwner={isProjectOwner}
+              isProjectOwner={canEditProject}
               onRefresh={fetchProjectData}
             />
           )}
