@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { projectAPI, taskAPI, taskStatusAPI, sprintAPI, phaseAPI, userAPI, companyAPI, leaveAPI, taskRoleAPI } from '../services/api';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Layout from './Layout';
 import Breadcrumb from './project/Breadcrumb';
@@ -25,6 +26,7 @@ const Tasks = () => {
     setSidebarWidth(width);
   }, []);
   const [tasks, setTasks] = useState([]);
+  const [teamActivity, setTeamActivity] = useState([]);
   const [users, setUsers] = useState([]);
   const [taskStatuses, setTaskStatuses] = useState([]);
   const [sprints, setSprints] = useState([]);
@@ -61,22 +63,40 @@ const Tasks = () => {
 
   useEffect(() => {
     fetchProjectData();
+
+    // Set up polling for team activity to keep "active" indicators fresh
+    const intervalId = setInterval(() => {
+      fetchTeamActivity();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(intervalId);
   }, [id]);
+
+  const fetchTeamActivity = async () => {
+    try {
+      const activityRes = await api.get('/team-activity', { params: { projectId: id } });
+      setTeamActivity(activityRes.data || []);
+    } catch (err) {
+      console.error('Error fetching team activity poll:', err);
+    }
+  };
 
   const fetchProjectData = async () => {
     try {
-      const [projectRes, tasksRes, statusesRes, sprintsRes, phasesRes, rolesRes] = await Promise.all([
+      const [projectRes, tasksRes, statusesRes, sprintsRes, phasesRes, rolesRes, activityRes] = await Promise.all([
         projectAPI.getById(id),
         taskAPI.getAll(id),
         taskStatusAPI.getAll(id),
         sprintAPI.getAll(id),
         phaseAPI.getAll(id),
-        taskRoleAPI.getAll(id).catch(err => ({ data: [] })) // Handle if roles API not available
+        taskRoleAPI.getAll(id).catch(err => ({ data: [] })), // Handle if roles API not available
+        api.get('/team-activity', { params: { projectId: id } }).catch(err => ({ data: [] }))
       ]);
 
       const projectData = projectRes.data;
       setProject(projectData);
       setTasks(tasksRes.data);
+      setTeamActivity(activityRes.data || []);
       setTaskStatuses(statusesRes.data);
       setSprints(sprintsRes.data);
       setPhases(phasesRes.data);
@@ -723,6 +743,7 @@ const Tasks = () => {
                   onSelectTask={handleSelectTask}
                   onReorderTasks={handleReorderTasks}
                   taskCosts={taskCosts}
+                  teamActivity={teamActivity}
                 />
 
                 {/* Inline Task Creator */}
@@ -766,6 +787,7 @@ const Tasks = () => {
                 onDeleteTask={handleDeleteTask}
                 onAddSubtask={() => { }}
                 onUpdateTaskStatus={handleUpdateTaskStatus}
+                teamActivity={teamActivity}
               />
             )}
 
@@ -779,6 +801,7 @@ const Tasks = () => {
                 company={company}
                 onUpdateTask={handleUpdateTask}
                 employeeLeaves={employeeLeaves}
+                teamActivity={teamActivity}
               />
             )}
           </div>

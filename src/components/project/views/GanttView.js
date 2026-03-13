@@ -10,7 +10,8 @@ const GanttView = ({
   project,
   company,
   onUpdateTask,
-  employeeLeaves = []
+  employeeLeaves = [],
+  teamActivity = []
 }) => {
   const [expandedTasks, setExpandedTasks] = useState(new Set());
   const [isAutoScheduling, setIsAutoScheduling] = useState(false);
@@ -635,6 +636,7 @@ const GanttView = ({
           isHoliday={isHoliday}
           startDate={startDate}
           todayPosition={todayPosition}
+          teamActivity={teamActivity}
         />
         {task.children && task.children.length > 0 && expandedTasks.has(task._id) && (
           renderTaskRows(task.children, level + 1)
@@ -1375,7 +1377,7 @@ const GanttView = ({
   );
 };
 
-const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, onDelete, onAddSubtask, isExpanded, onToggleExpand, hasChildren, isHoliday, startDate, todayPosition }) => {
+const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, onDelete, onAddSubtask, isExpanded, onToggleExpand, hasChildren, isHoliday, startDate, todayPosition, teamActivity }) => {
   const position = getTaskPosition(task);
   const indent = level * 20;
 
@@ -1516,12 +1518,35 @@ const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, o
               </>
             )}
             {/* Assignee */}
-            {task.assignees && task.assignees.length > 0 && (
-              <>
-                <span>•</span>
-                <span>👤 {task.assignees[0].name}</span>
-              </>
-            )}
+            {task.assignees && task.assignees.length > 0 && (() => {
+              const activeMember = teamActivity && teamActivity.find(m =>
+                m.currentTask?._id === task._id &&
+                task.assignees.some(a => (a._id || a) === (m.user?._id || m.user))
+              );
+              return (
+                <>
+                  <span>•</span>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    color: activeMember ? '#10b981' : 'inherit',
+                    fontWeight: activeMember ? '600' : 'inherit'
+                  }}>
+                    <span>👤 {task.assignees[0].name}</span>
+                    {activeMember && (
+                      <span style={{
+                        width: '8px',
+                        height: '8px',
+                        backgroundColor: '#10b981',
+                        borderRadius: '50%',
+                        display: 'inline-block'
+                      }} />
+                    )}
+                  </span>
+                </>
+              );
+            })()}
             {/* Priority */}
             {task.priority && (
               <>

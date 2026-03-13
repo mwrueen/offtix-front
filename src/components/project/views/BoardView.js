@@ -16,7 +16,20 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const BoardView = ({ tasks, taskStatuses, onEditTask, onDeleteTask, onAddSubtask, onUpdateTaskStatus }) => {
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0px rgba(16, 185, 129, 0.4); }
+    70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0px rgba(16, 185, 129, 0); }
+  }
+`;
+if (!document.head.querySelector('style[data-boardview-animations]')) {
+  style.setAttribute('data-boardview-animations', 'true');
+  document.head.appendChild(style);
+}
+
+const BoardView = ({ tasks, taskStatuses, onEditTask, onDeleteTask, onAddSubtask, onUpdateTaskStatus, teamActivity = [] }) => {
   const [activeTask, setActiveTask] = useState(null);
 
   const sensors = useSensors(
@@ -141,6 +154,7 @@ const BoardView = ({ tasks, taskStatuses, onEditTask, onDeleteTask, onAddSubtask
             onEditTask={onEditTask}
             onDeleteTask={onDeleteTask}
             onAddSubtask={onAddSubtask}
+            teamActivity={teamActivity}
           />
 
           {/* Status Columns */}
@@ -154,6 +168,7 @@ const BoardView = ({ tasks, taskStatuses, onEditTask, onDeleteTask, onAddSubtask
               onEditTask={onEditTask}
               onDeleteTask={onDeleteTask}
               onAddSubtask={onAddSubtask}
+              teamActivity={teamActivity}
             />
           ))}
         </div>
@@ -170,7 +185,7 @@ const BoardView = ({ tasks, taskStatuses, onEditTask, onDeleteTask, onAddSubtask
   );
 };
 
-const StatusColumn = ({ id, title, tasks, color, onEditTask, onDeleteTask, onAddSubtask }) => {
+const StatusColumn = ({ id, title, tasks, color, onEditTask, onDeleteTask, onAddSubtask, teamActivity }) => {
   const { setNodeRef, isOver } = useSortable({
     id: id,
     data: {
@@ -249,6 +264,7 @@ const StatusColumn = ({ id, title, tasks, color, onEditTask, onDeleteTask, onAdd
                 onEdit={onEditTask}
                 onDelete={onDeleteTask}
                 onAddSubtask={onAddSubtask}
+                teamActivity={teamActivity}
               />
             ))
           )}
@@ -258,7 +274,7 @@ const StatusColumn = ({ id, title, tasks, color, onEditTask, onDeleteTask, onAdd
   );
 };
 
-const SortableTaskCard = ({ task, onEdit, onDelete, onAddSubtask }) => {
+const SortableTaskCard = ({ task, onEdit, onDelete, onAddSubtask, teamActivity }) => {
   const {
     attributes,
     listeners,
@@ -288,12 +304,13 @@ const SortableTaskCard = ({ task, onEdit, onDelete, onAddSubtask }) => {
         onDelete={onDelete}
         onAddSubtask={onAddSubtask}
         isDragging={isDragging}
+        teamActivity={teamActivity}
       />
     </div>
   );
 };
 
-const TaskCard = ({ task, onEdit, onDelete, onAddSubtask, isDragging }) => {
+const TaskCard = ({ task, onEdit, onDelete, onAddSubtask, isDragging, teamActivity }) => {
   const getPriorityColor = (priority) => {
     const colors = {
       urgent: '#de350b',
@@ -494,11 +511,17 @@ const TaskCard = ({ task, onEdit, onDelete, onAddSubtask, isDragging }) => {
             alignItems: 'center',
             gap: '-4px'
           }}>
-            {task.assignees.slice(0, 3).map((assignee, index) => (
-              <div key={assignee._id || index} style={{ marginLeft: index > 0 ? '-6px' : '0' }}>
-                <AssigneeAvatar assignee={assignee} />
-              </div>
-            ))}
+            {task.assignees.slice(0, 3).map((assignee, index) => {
+              const isActive = teamActivity && teamActivity.some(m =>
+                m.currentTask?._id === task._id &&
+                (m.user?._id === (assignee._id || assignee) || m.user === (assignee._id || assignee))
+              );
+              return (
+                <div key={assignee._id || index} style={{ marginLeft: index > 0 ? '-6px' : '0' }}>
+                  <AssigneeAvatar assignee={assignee} isActive={isActive} />
+                </div>
+              );
+            })}
             {task.assignees.length > 3 && (
               <div style={{
                 width: '24px',
@@ -525,7 +548,7 @@ const TaskCard = ({ task, onEdit, onDelete, onAddSubtask, isDragging }) => {
   );
 };
 
-const AssigneeAvatar = ({ assignee }) => {
+const AssigneeAvatar = ({ assignee, isActive }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const profilePicture = assignee.profile?.profilePicture;
 
@@ -587,6 +610,22 @@ const AssigneeAvatar = ({ assignee }) => {
         }}>
           {getInitials(assignee.name)}
         </div>
+      )}
+
+      {isActive && (
+        <div style={{
+          position: 'absolute',
+          bottom: '-2px',
+          right: '-2px',
+          width: '10px',
+          height: '10px',
+          backgroundColor: '#10b981',
+          borderRadius: '50%',
+          border: '2px solid white',
+          boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
+          zIndex: 2,
+          animation: 'pulse 1.5s infinite'
+        }} />
       )}
 
       {showTooltip && (

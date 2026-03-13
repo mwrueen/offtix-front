@@ -21,6 +21,11 @@ import { useCompany } from '../../../context/CompanyContext';
 // Add CSS animations
 const style = document.createElement('style');
 style.textContent = `
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0px rgba(16, 185, 129, 0.4); }
+    70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0px rgba(16, 185, 129, 0); }
+  }
   @keyframes fadeIn {
     from {
       opacity: 0;
@@ -57,7 +62,7 @@ const formatCurrency = (amount, currencyCode = 'USD') => {
   }).format(amount);
 };
 
-const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskId, onSelectTask, onReorderTasks, taskCosts = {} }) => {
+const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskId, onSelectTask, onReorderTasks, taskCosts = {}, teamActivity = [] }) => {
   const { state: companyState } = useCompany();
   const companyCurrency = companyState?.selectedCompany?.currency || 'USD';
 
@@ -253,6 +258,7 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
                     countSubtasks={countSubtasks}
                     taskCosts={taskCosts}
                     companyCurrency={companyCurrency}
+                    teamActivity={teamActivity}
                   />
                 ))}
               </div>
@@ -273,7 +279,7 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
 };
 
 // Sortable wrapper for TaskRow
-const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isExpanded, onToggleExpand, countSubtasks, taskCosts = {}, companyCurrency }) => {
+const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isExpanded, onToggleExpand, countSubtasks, taskCosts = {}, companyCurrency, teamActivity }) => {
   const {
     attributes,
     listeners,
@@ -319,6 +325,7 @@ const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelect
           isDragging={isDragging}
           cost={cost}
           companyCurrency={companyCurrency}
+          teamActivity={teamActivity}
         />
       </div>
 
@@ -343,6 +350,7 @@ const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelect
               countSubtasks={countSubtasks}
               taskCosts={taskCosts}
               companyCurrency={companyCurrency}
+              teamActivity={teamActivity}
             />
           ))}
         </div>
@@ -351,7 +359,7 @@ const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelect
   );
 };
 
-const TaskListRow = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging, cost, companyCurrency }) => {
+const TaskListRow = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging, cost, companyCurrency, teamActivity }) => {
   return (
     <TaskListRowContent
       task={task}
@@ -369,11 +377,12 @@ const TaskListRow = ({ task, level, indent, hasChildren, subtaskCount, isExpande
       isDragging={isDragging}
       cost={cost}
       companyCurrency={companyCurrency}
+      teamActivity={teamActivity}
     />
   );
 };
 
-const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging, cost, companyCurrency }) => {
+const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging, cost, companyCurrency, teamActivity }) => {
   const getPriorityColor = (priority) => {
     const colors = {
       urgent: '#de350b',
@@ -561,6 +570,8 @@ const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, is
       {/* Assignees */}
       <AssigneeList
         assignees={task.assignees}
+        teamActivity={teamActivity}
+        taskId={task._id}
         onClick={(e) => {
           e.stopPropagation();
           if (onEdit) {
@@ -582,7 +593,7 @@ const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, is
   );
 };
 
-const AssigneeList = ({ assignees, onClick }) => {
+const AssigneeList = ({ assignees, teamActivity = [], taskId, onClick }) => {
   if (!assignees || assignees.length === 0) {
     return (
       <div
@@ -646,15 +657,22 @@ const AssigneeList = ({ assignees, onClick }) => {
         if (onClick) e.currentTarget.style.backgroundColor = 'transparent';
       }}
     >
-      {assignees.slice(0, 3).map((assignee, index) => (
-        <AssigneeAvatar
-          key={assignee._id || index}
-          assignee={assignee}
-          getInitials={getInitials}
-          getAvatarColor={getAvatarColor}
-          style={{ marginLeft: index > 0 ? '-6px' : '0' }}
-        />
-      ))}
+      {assignees.slice(0, 3).map((assignee, index) => {
+        const isActive = teamActivity.some(m =>
+          m.currentTask?._id === taskId &&
+          (m.user?._id === (assignee._id || assignee) || m.user === (assignee._id || assignee))
+        );
+        return (
+          <AssigneeAvatar
+            key={assignee._id || index}
+            assignee={assignee}
+            getInitials={getInitials}
+            getAvatarColor={getAvatarColor}
+            style={{ marginLeft: index > 0 ? '-6px' : '0' }}
+            isActive={isActive}
+          />
+        );
+      })}
       {assignees.length > 3 && (
         <div style={{
           width: '24px',
@@ -678,7 +696,7 @@ const AssigneeList = ({ assignees, onClick }) => {
   );
 };
 
-const AssigneeAvatar = ({ assignee, getInitials, getAvatarColor, style }) => {
+const AssigneeAvatar = ({ assignee, getInitials, getAvatarColor, style, isActive }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const profilePicture = assignee.profile?.profilePicture;
 
@@ -729,6 +747,22 @@ const AssigneeAvatar = ({ assignee, getInitials, getAvatarColor, style }) => {
         >
           {getInitials(assignee.name)}
         </div>
+      )}
+
+      {isActive && (
+        <div style={{
+          position: 'absolute',
+          bottom: '-2px',
+          right: '-2px',
+          width: '10px',
+          height: '10px',
+          backgroundColor: '#10b981',
+          borderRadius: '50%',
+          border: '2px solid white',
+          boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
+          zIndex: 2,
+          animation: 'pulse 1.5s infinite'
+        }} />
       )}
 
       {showTooltip && (
