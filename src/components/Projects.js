@@ -6,6 +6,7 @@ import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import ProjectForm from './ProjectForm';
 import ProjectList from './ProjectList';
 import Layout from './Layout';
+import PageHeader from './PageHeader';
 
 const Projects = () => {
   const { projects, loading, error, fetchProjects, createProject, updateProject, deleteProject } = useProjects();
@@ -61,83 +62,20 @@ const Projects = () => {
 
   return (
     <Layout>
-      {/* Professional Header with Gradient */}
-      <div style={{
-        background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-        borderRadius: '16px',
-        padding: '32px',
-        marginBottom: '32px',
-        boxShadow: '0 10px 40px rgba(59, 130, 246, 0.2)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* Background Pattern */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '300px',
-          height: '300px',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
-          borderRadius: '50%',
-          transform: 'translate(30%, -30%)'
-        }}></div>
-
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          position: 'relative',
-          zIndex: 1
-        }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              {/* SVG Folder Icon */}
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-              </svg>
-              <h2 style={{ margin: 0, color: 'white', fontSize: '28px', fontWeight: '700' }}>
-                My Projects
-              </h2>
-            </div>
-            <p style={{ margin: 0, color: 'rgba(255, 255, 255, 0.9)', fontSize: '15px' }}>
-              Manage and track your project progress
-            </p>
-
-            {/* Stats */}
-            <div style={{ display: 'flex', gap: '24px', marginTop: '20px' }}>
-              <div style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(10px)',
-                padding: '12px 20px',
-                borderRadius: '10px',
-                border: '1px solid rgba(255, 255, 255, 0.2)'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: 'white' }}>
-                  {projects.length}
-                </div>
-                <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '2px' }}>
-                  Total Projects
-                </div>
-              </div>
-              <div style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(10px)',
-                padding: '12px 20px',
-                borderRadius: '10px',
-                border: '1px solid rgba(255, 255, 255, 0.2)'
-              }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: 'white' }}>
-                  {projects.filter(p => p.status === 'active').length}
-                </div>
-                <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '2px' }}>
-                  Active
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {canCreateProjects() && (
+      <PageHeader
+        title="My Projects"
+        subtitle="Manage and track your project progress"
+        icon={
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+        }
+        stats={[
+          { label: 'Total Projects', value: projects.length },
+          { label: 'Active', value: projects.filter(p => p.status === 'active').length }
+        ]}
+        actions={
+          canCreateProjects() && (
             <button
               onClick={() => setShowForm(!showForm)}
               style={{
@@ -153,45 +91,15 @@ const Projects = () => {
                 alignItems: 'center',
                 gap: '10px',
                 transition: 'all 0.2s',
-                boxShadow: showForm ? 'none' : '0 4px 12px rgba(0, 0, 0, 0.15)',
+                boxShadow: showForm ? 'none' : '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                 backdropFilter: showForm ? 'blur(10px)' : 'none'
               }}
-              onMouseEnter={(e) => {
-                if (!showForm) {
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!showForm) {
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-                }
-              }}
             >
-              {showForm ? (
-                <>
-                  {/* SVG X Icon */}
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                  Cancel
-                </>
-              ) : (
-                <>
-                  {/* SVG Plus Icon */}
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                  New Project
-                </>
-              )}
+              {showForm ? 'Cancel' : 'New Project'}
             </button>
-          )}
-        </div>
-      </div>
+          )
+        }
+      />
 
       {showForm && (
         <div style={{ marginBottom: '32px' }}>

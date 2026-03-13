@@ -3,6 +3,7 @@ import { useCompany } from '../context/CompanyContext';
 import { useToast } from '../context/ToastContext';
 import { holidayAPI, companyAPI } from '../services/api';
 import Layout from './Layout';
+import PageHeader from './PageHeader';
 
 const HolidayCalendar = () => {
   const { state } = useCompany();
@@ -42,7 +43,6 @@ const HolidayCalendar = () => {
     }
   }, [selectedCompany]);
 
-  // Add global mouse up handler for drag selection
   useEffect(() => {
     const handleGlobalMouseUp = () => {
       if (isDragging) {
@@ -60,7 +60,6 @@ const HolidayCalendar = () => {
     try {
       setLoading(true);
       const response = await holidayAPI.getAll(selectedCompany.id);
-      console.log('Fetched holidays:', response.data.holidays);
       setHolidays(response.data.holidays || []);
     } catch (error) {
       console.error('Error fetching holidays:', error);
@@ -139,33 +138,18 @@ const HolidayCalendar = () => {
   const getHolidaysForDate = (date) => {
     return holidays.filter(holiday => {
       if (holiday.isRange) {
-        // For range holidays, check if date falls within the range
         const start = new Date(holiday.startDate);
         const end = new Date(holiday.endDate);
         const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
         const startCheck = new Date(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
         const endCheck = new Date(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
-
-        console.log('Range holiday check:', {
-          holidayName: holiday.name,
-          checkDate: checkDate.toDateString(),
-          startCheck: startCheck.toDateString(),
-          endCheck: endCheck.toDateString(),
-          inRange: checkDate >= startCheck && checkDate <= endCheck
-        });
-
         return checkDate >= startCheck && checkDate <= endCheck;
       } else {
-        // For single-day holidays
-        if (!holiday.date) {
-          console.warn('Holiday missing date field:', holiday);
-          return false;
-        }
+        if (!holiday.date) return false;
         const holidayDate = new Date(holiday.date);
-        // Compare using UTC to avoid timezone issues
         return holidayDate.getUTCDate() === date.getDate() &&
-               holidayDate.getUTCMonth() === date.getMonth() &&
-               holidayDate.getUTCFullYear() === date.getFullYear();
+          holidayDate.getUTCMonth() === date.getMonth() &&
+          holidayDate.getUTCFullYear() === date.getFullYear();
       }
     });
   };
@@ -174,7 +158,6 @@ const HolidayCalendar = () => {
     const clickedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     const dayHolidays = getHolidaysForDate(clickedDate);
 
-    // If clicking on existing holiday, edit it
     if (dayHolidays.length > 0) {
       const holiday = dayHolidays[0];
       setEditingHoliday(holiday);
@@ -199,7 +182,6 @@ const HolidayCalendar = () => {
       }
       setShowEditModal(true);
     } else {
-      // Start drag selection for new holiday
       setIsDragging(true);
       setDragStartDate(clickedDate);
       setDragEndDate(clickedDate);
@@ -216,27 +198,23 @@ const HolidayCalendar = () => {
 
   const handleMouseUp = () => {
     if (isDragging && dragStartDate && dragEndDate) {
-      // Determine start and end (in case user dragged backwards)
       const start = dragStartDate < dragEndDate ? dragStartDate : dragEndDate;
       const end = dragStartDate < dragEndDate ? dragEndDate : dragStartDate;
 
-      // Format dates as YYYY-MM-DD
-      const formatDate = (date) => {
+      const formatYMD = (date) => {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
       };
 
-      // Check if it's a single day or range
       const isSameDay = start.getDate() === end.getDate() &&
-                        start.getMonth() === end.getMonth() &&
-                        start.getFullYear() === end.getFullYear();
+        start.getMonth() === end.getMonth() &&
+        start.getFullYear() === end.getFullYear();
 
       if (isSameDay) {
-        // Single day holiday
         setFormData({
-          date: formatDate(start),
+          date: formatYMD(start),
           startDate: '',
           endDate: '',
           name: '',
@@ -244,21 +222,17 @@ const HolidayCalendar = () => {
           isRange: false
         });
       } else {
-        // Date range holiday
         setFormData({
           date: '',
-          startDate: formatDate(start),
-          endDate: formatDate(end),
+          startDate: formatYMD(start),
+          endDate: formatYMD(end),
           name: '',
           description: '',
           isRange: true
         });
       }
-
       setShowAddModal(true);
     }
-
-    // Reset drag state
     setIsDragging(false);
     setDragStartDate(null);
     setDragEndDate(null);
@@ -268,14 +242,11 @@ const HolidayCalendar = () => {
     setHoveredDate(null);
   };
 
-  // Check if a day is in the drag selection range
   const isInDragRange = (day) => {
     if (!isDragging || !dragStartDate || !dragEndDate) return false;
-
     const checkDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     const start = dragStartDate < dragEndDate ? dragStartDate : dragEndDate;
     const end = dragStartDate < dragEndDate ? dragEndDate : dragStartDate;
-
     return checkDate >= start && checkDate <= end;
   };
 
@@ -289,8 +260,7 @@ const HolidayCalendar = () => {
       toast.success('Holiday added successfully!');
     } catch (error) {
       console.error('Error adding holiday:', error);
-      const errorMessage = error.response?.data?.error || 'Failed to add holiday';
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.error || 'Failed to add holiday');
     }
   };
 
@@ -305,8 +275,7 @@ const HolidayCalendar = () => {
       toast.success('Holiday updated successfully!');
     } catch (error) {
       console.error('Error updating holiday:', error);
-      const errorMessage = error.response?.data?.error || 'Failed to update holiday';
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.error || 'Failed to update holiday');
     }
   };
 
@@ -320,8 +289,7 @@ const HolidayCalendar = () => {
         toast.success('Holiday deleted successfully!');
       } catch (error) {
         console.error('Error deleting holiday:', error);
-        const errorMessage = error.response?.data?.error || 'Failed to delete holiday';
-        toast.error(errorMessage);
+        toast.error(error.response?.data?.error || 'Failed to delete holiday');
       }
     }
   };
@@ -331,12 +299,10 @@ const HolidayCalendar = () => {
     const days = [];
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-    // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(<div key={`empty-${i}`} style={{ padding: '8px' }}></div>);
     }
 
-    // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       const dayHolidays = getHolidaysForDate(date);
@@ -358,34 +324,17 @@ const HolidayCalendar = () => {
             borderRadius: '8px',
             cursor: 'pointer',
             background: inDragRange ? '#dbeafe' : (isToday ? '#eff6ff' : isWeekend ? '#f8fafc' : 'white'),
-            transition: 'all 0.2s',
             position: 'relative',
             userSelect: 'none'
           }}
         >
-          <div style={{
-            fontSize: '14px',
-            fontWeight: isToday ? '700' : '600',
-            color: isToday ? '#3b82f6' : '#1e293b',
-            marginBottom: '4px'
-          }}>
+          <div style={{ fontSize: '14px', fontWeight: isToday ? '700' : '600', color: isToday ? '#3b82f6' : '#1e293b' }}>
             {day}
           </div>
           {dayHolidays.map((holiday, idx) => (
             <div
               key={idx}
-              style={{
-                fontSize: '11px',
-                padding: '4px 6px',
-                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                color: 'white',
-                borderRadius: '4px',
-                marginTop: '4px',
-                fontWeight: '600',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
+              style={{ fontSize: '11px', padding: '4px 6px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', borderRadius: '4px', marginTop: '4px', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
               title={holiday.name}
             >
               🎉 {holiday.name}
@@ -397,42 +346,14 @@ const HolidayCalendar = () => {
 
     return (
       <div>
-        {/* Week day headers */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: '8px',
-          marginBottom: '8px'
-        }}>
-          {weekDays.map((day, index) => {
-            const isWeekendDay = companySettings.weekends.includes(index);
-            return (
-              <div
-                key={day}
-                style={{
-                  padding: '12px 8px',
-                  textAlign: 'center',
-                  fontWeight: '700',
-                  fontSize: '13px',
-                  color: isWeekendDay ? '#dc2626' : '#64748b',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  background: isWeekendDay ? '#fee2e2' : 'transparent',
-                  borderRadius: '6px'
-                }}
-              >
-                {day}
-              </div>
-            );
-          })}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', marginBottom: '8px' }}>
+          {weekDays.map((day, index) => (
+            <div key={day} style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '700', fontSize: '13px', color: companySettings.weekends.includes(index) ? '#dc2626' : '#64748b' }}>
+              {day}
+            </div>
+          ))}
         </div>
-
-        {/* Calendar grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: '8px'
-        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
           {days}
         </div>
       </div>
@@ -443,10 +364,7 @@ const HolidayCalendar = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + delta, 1));
   };
 
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   if (loading) {
     return (
@@ -461,554 +379,94 @@ const HolidayCalendar = () => {
   return (
     <Layout>
       <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '24px'
-      }}>
-        <h2 style={{
-          margin: 0,
-          fontSize: '28px',
-          fontWeight: '700',
-          color: '#1e293b'
-        }}>
-          Holiday Calendar
-        </h2>
-      </div>
+        <PageHeader
+          title="Holiday Calendar"
+          subtitle="Plan your holidays and manage company non-working days"
+          gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+          icon={
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          }
+        />
 
-      {/* Weekend & Working Days Management */}
-      <div style={{
-        background: 'white',
-        borderRadius: '12px',
-        padding: '24px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-        marginBottom: '24px'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '700', color: '#1e293b' }}>
-          🏖️ Weekend & Working Days Configuration
-        </h3>
-
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '12px' }}>
-            Weekends
+        <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', marginBottom: '24px' }}>
+          <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '700' }}>🏖️ Weekend & Working Days Configuration</h3>
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
+                <div key={index} onClick={() => handleWeekendToggle(index)} style={{ padding: '12px 8px', border: `2px solid ${companySettings.weekends.includes(index) ? '#ef4444' : '#e2e8f0'}`, borderRadius: '8px', textAlign: 'center', cursor: 'pointer', background: companySettings.weekends.includes(index) ? '#fee2e2' : 'white', fontSize: '13px', fontWeight: '600', color: companySettings.weekends.includes(index) ? '#dc2626' : '#64748b' }}>
+                  {day}
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
-            {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, index) => (
-              <div
-                key={index}
-                onClick={() => handleWeekendToggle(index)}
-                style={{
-                  padding: '12px 8px',
-                  border: `2px solid ${companySettings.weekends.includes(index) ? '#ef4444' : '#e2e8f0'}`,
-                  borderRadius: '8px',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  background: companySettings.weekends.includes(index) ? '#fee2e2' : 'white',
-                  transition: 'all 0.2s',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  color: companySettings.weekends.includes(index) ? '#dc2626' : '#64748b'
-                }}
-              >
-                {day.substring(0, 3)}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '12px' }}>
-            Working Days
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
-            {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, index) => (
-              <div
-                key={index}
-                onClick={() => handleWorkingDayToggle(index)}
-                style={{
-                  padding: '12px 8px',
-                  border: `2px solid ${companySettings.workingDays.includes(index) ? '#3b82f6' : '#e2e8f0'}`,
-                  borderRadius: '8px',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  background: companySettings.workingDays.includes(index) ? '#dbeafe' : 'white',
-                  transition: 'all 0.2s',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  color: companySettings.workingDays.includes(index) ? '#2563eb' : '#64748b'
-                }}
-              >
-                {day.substring(0, 3)}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <button
-          onClick={saveWeekendSettings}
-          disabled={savingSettings}
-          style={{
-            padding: '10px 20px',
-            background: savingSettings ? '#94a3b8' : 'linear-gradient(135deg, #3b82f6, #2563eb)',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: savingSettings ? 'not-allowed' : 'pointer',
-            fontSize: '14px',
-            fontWeight: '600',
-            color: 'white',
-            boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)'
-          }}
-        >
-          {savingSettings ? 'Saving...' : 'Save Weekend Settings'}
-        </button>
-      </div>
-
-      {/* Calendar Navigation */}
-      <div style={{
-        background: 'white',
-        borderRadius: '12px',
-        padding: '24px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '24px'
-        }}>
-          <button
-            onClick={() => changeMonth(-1)}
-            style={{
-              padding: '10px 20px',
-              background: '#f1f5f9',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#475569',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#e2e8f0';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = '#f1f5f9';
-            }}
-          >
-            ← Previous
-          </button>
-
-          <h3 style={{
-            margin: 0,
-            fontSize: '24px',
-            fontWeight: '700',
-            color: '#1e293b'
-          }}>
-            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-          </h3>
-
-          <button
-            onClick={() => changeMonth(1)}
-            style={{
-              padding: '10px 20px',
-              background: '#f1f5f9',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#475569',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#e2e8f0';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = '#f1f5f9';
-            }}
-          >
-            Next →
+          <button onClick={saveWeekendSettings} disabled={savingSettings} style={{ padding: '10px 20px', background: savingSettings ? '#94a3b8' : 'linear-gradient(135deg, #3b82f6, #2563eb)', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white' }}>
+            {savingSettings ? 'Saving...' : 'Save Settings'}
           </button>
         </div>
 
-        {renderCalendar()}
-      </div>
-
-      {/* Add Holiday Modal */}
-      {showAddModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            padding: '32px',
-            width: '90%',
-            maxWidth: '500px',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
-          }}>
-            <h3 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '700', color: '#1e293b' }}>
-              Add Holiday
-            </h3>
-            <form onSubmit={handleAddHoliday}>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={formData.isRange}
-                    onChange={(e) => setFormData({ ...formData, isRange: e.target.checked })}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                  />
-                  <span style={{ fontWeight: '600', color: '#475569' }}>Date Range Holiday</span>
-                </label>
-              </div>
-
-              {formData.isRange ? (
-                <>
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
-                      Start Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.startDate}
-                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        fontSize: '14px'
-                      }}
-                    />
-                  </div>
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
-                      End Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.endDate}
-                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        fontSize: '14px'
-                      }}
-                    />
-                  </div>
-                </>
-              ) : (
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
-                    Date
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      fontSize: '14px'
-                    }}
-                  />
-                </div>
-              )}
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
-                  Holiday Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  placeholder="e.g., New Year's Day"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
-                  Description (Optional)
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Add a description..."
-                  rows="3"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    resize: 'vertical'
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddModal(false);
-                    setFormData({ date: '', startDate: '', endDate: '', name: '', description: '', isRange: false });
-                  }}
-                  style={{
-                    padding: '12px 24px',
-                    background: '#f1f5f9',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#475569'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  style={{
-                    padding: '12px 24px',
-                    background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: 'white'
-                  }}
-                >
-                  Add Holiday
-                </button>
-              </div>
-            </form>
+        <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <button onClick={() => changeMonth(-1)} style={{ padding: '10px 20px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>← Previous</button>
+            <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '700' }}>{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
+            <button onClick={() => changeMonth(1)} style={{ padding: '10px 20px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Next →</button>
           </div>
+          {renderCalendar()}
         </div>
-      )}
 
-      {/* Edit Holiday Modal */}
-      {showEditModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            padding: '32px',
-            width: '90%',
-            maxWidth: '500px',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
-          }}>
-            <h3 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '700', color: '#1e293b' }}>
-              Edit Holiday
-            </h3>
-            <form onSubmit={handleUpdateHoliday}>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={formData.isRange}
-                    onChange={(e) => setFormData({ ...formData, isRange: e.target.checked })}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                  />
-                  <span style={{ fontWeight: '600', color: '#475569' }}>Date Range Holiday</span>
-                </label>
-              </div>
-
-              {formData.isRange ? (
-                <>
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
-                      Start Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.startDate}
-                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        fontSize: '14px'
-                      }}
-                    />
-                  </div>
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
-                      End Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.endDate}
-                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        fontSize: '14px'
-                      }}
-                    />
-                  </div>
-                </>
-              ) : (
+        {showAddModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+            <div style={{ background: 'white', borderRadius: '12px', padding: '32px', width: '90%', maxWidth: '500px' }}>
+              <h3 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '700' }}>Add Holiday</h3>
+              <form onSubmit={handleAddHoliday}>
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
-                    Date
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={formData.isRange} onChange={(e) => setFormData({ ...formData, isRange: e.target.checked })} />
+                    <span>Range Holiday</span>
                   </label>
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      fontSize: '14px'
-                    }}
-                  />
                 </div>
-              )}
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
-                  Holiday Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
-                  Description (Optional)
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows="3"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    resize: 'vertical'
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'space-between' }}>
-                <button
-                  type="button"
-                  onClick={handleDeleteHoliday}
-                  style={{
-                    padding: '12px 24px',
-                    background: '#fee2e2',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#dc2626'
-                  }}
-                >
-                  Delete
-                </button>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowEditModal(false);
-                      setEditingHoliday(null);
-                      setFormData({ date: '', startDate: '', endDate: '', name: '', description: '', isRange: false });
-                    }}
-                    style={{
-                      padding: '12px 24px',
-                      background: '#f1f5f9',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#475569'
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    style={{
-                      padding: '12px 24px',
-                      background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: 'white'
-                    }}
-                  >
-                    Update
-                  </button>
+                {formData.isRange ? (
+                  <>
+                    <input type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} required style={{ width: '100%', padding: '12px', marginBottom: '16px' }} />
+                    <input type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} required style={{ width: '100%', padding: '12px', marginBottom: '16px' }} />
+                  </>
+                ) : (
+                  <input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} required style={{ width: '100%', padding: '12px', marginBottom: '16px' }} />
+                )}
+                <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required placeholder="Holiday Name" style={{ width: '100%', padding: '12px', marginBottom: '16px' }} />
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <button type="button" onClick={() => setShowAddModal(false)} style={{ padding: '12px 24px' }}>Cancel</button>
+                  <button type="submit" style={{ padding: '12px 24px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px' }}>Add</button>
                 </div>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {showEditModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+            <div style={{ background: 'white', borderRadius: '12px', padding: '32px', width: '90%', maxWidth: '500px' }}>
+              <h3 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '700' }}>Edit Holiday</h3>
+              <form onSubmit={handleUpdateHoliday}>
+                <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required style={{ width: '100%', padding: '12px', marginBottom: '16px' }} />
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'space-between' }}>
+                  <button type="button" onClick={handleDeleteHoliday} style={{ color: '#ef4444' }}>Delete</button>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button type="button" onClick={() => setShowEditModal(false)}>Cancel</button>
+                    <button type="submit" style={{ padding: '12px 24px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px' }}>Update</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );
 };
 
 export default HolidayCalendar;
-

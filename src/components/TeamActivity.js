@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import Layout from './Layout';
+import PageHeader from './PageHeader';
 import api from '../services/api';
 import { useCompanyFilter } from '../hooks/useCompanyFilter';
 
@@ -187,51 +188,24 @@ const TeamActivity = () => {
   return (
     <Layout>
       <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
-        {/* Header Section */}
-        <div style={{
-          background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-          borderRadius: '24px',
-          padding: '40px',
-          marginBottom: '32px',
-          color: 'white',
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
-        }}>
-          {/* Decorative Circles */}
-          <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '150px', height: '150px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }}></div>
-          <div style={{ position: 'absolute', bottom: '-40px', left: '10%', width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.05)' }}></div>
-
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <h1 style={{ fontSize: '32px', fontWeight: '800', margin: '0 0 8px 0', letterSpacing: '-0.025em' }}>
-              Team Vitality
-            </h1>
-            <p style={{ fontSize: '16px', color: 'rgba(255, 255, 255, 0.8)', margin: 0, maxWidth: '500px' }}>
-              Real-time synchronization of your creative force. Monitor progress and maintain momentum.
-            </p>
-          </div>
-
-          {/* Stats Bar */}
-          <div style={{
-            display: 'flex',
-            gap: '24px',
-            marginTop: '32px',
-            flexWrap: 'wrap'
-          }}>
-            <div style={{ background: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(10px)', padding: '12px 20px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-              <div style={{ fontSize: '24px', fontWeight: '700' }}>{workingMembers.length}</div>
-              <div style={{ fontSize: '11px', textTransform: 'uppercase', opacity: 0.8, letterSpacing: '0.05em' }}>Active Now</div>
-            </div>
-            <div style={{ background: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(10px)', padding: '12px 20px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-              <div style={{ fontSize: '24px', fontWeight: '700' }}>{pausedMembers.length}</div>
-              <div style={{ fontSize: '11px', textTransform: 'uppercase', opacity: 0.8, letterSpacing: '0.05em' }}>On Break</div>
-            </div>
-            <div style={{ background: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(10px)', padding: '12px 20px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-              <div style={{ fontSize: '24px', fontWeight: '700' }}>{idleMembers.length}</div>
-              <div style={{ fontSize: '11px', textTransform: 'uppercase', opacity: 0.8, letterSpacing: '0.05em' }}>Idle</div>
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          title="Team Vitality"
+          subtitle="Real-time synchronization of your creative force. Monitor progress and maintain momentum."
+          gradient="linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)"
+          icon={
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          }
+          stats={[
+            { label: 'Active Now', value: workingMembers.length },
+            { label: 'On Break', value: pausedMembers.length },
+            { label: 'Idle', value: idleMembers.length }
+          ]}
+        />
 
         {/* Filters Bar */}
         <div style={{

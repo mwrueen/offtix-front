@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { myTasksAPI } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import Layout from './Layout';
+import PageHeader from './PageHeader';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -350,30 +351,20 @@ const MyTasksList = () => {
 
   return (
     <Layout>
-      {/* Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-        borderRadius: '12px',
-        padding: '24px 32px',
-        marginBottom: '24px',
-        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)'
-      }}>
-        <h1 style={{
-          fontSize: '28px',
-          fontWeight: '700',
-          color: 'white',
-          margin: '0 0 4px 0'
-        }}>
-          My Tasks
-        </h1>
-        <p style={{
-          fontSize: '14px',
-          color: 'rgba(255, 255, 255, 0.9)',
-          margin: 0
-        }}>
-          {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'} assigned to you
-        </p>
-      </div>
+      <PageHeader
+        title="My Tasks"
+        subtitle={`${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'} assigned to you`}
+        icon={
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+            <rect x="9" y="3" width="6" height="4" rx="1"></rect>
+          </svg>
+        }
+        stats={[
+          { label: 'Pending', value: tasks.filter(t => getTaskStatus(t) === 'pending' || getTaskStatus(t) === 'active').length },
+          { label: 'In Progress', value: tasks.filter(t => getTaskStatus(t) === 'in_progress').length }
+        ]}
+      />
 
       {/* Tasks List */}
       {tasks.length === 0 ? (

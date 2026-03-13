@@ -5,6 +5,7 @@ import { useCompany } from '../context/CompanyContext';
 import { useAuth } from '../context/AuthContext';
 import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import Layout from './Layout';
+import PageHeader from './PageHeader';
 
 const EmployeeList = () => {
   const navigate = useNavigate();
@@ -21,7 +22,6 @@ const EmployeeList = () => {
 
   // Permission derived from context
   const canAddEmployee = hasPermission(PERMISSIONS.ADD_EMPLOYEE);
-
 
   // Currency symbols mapping
   const currencySymbols = {
@@ -52,7 +52,6 @@ const EmployeeList = () => {
   };
 
   useEffect(() => {
-    // Wait for company context to load before checking
     if (state.loading) {
       return;
     }
@@ -94,7 +93,6 @@ const EmployeeList = () => {
     return '#6b7280';
   };
 
-  // Show loading state while context is loading
   if (state.loading) {
     return (
       <Layout>
@@ -108,44 +106,43 @@ const EmployeeList = () => {
   return (
     <Layout>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '30px'
-        }}>
-          <div>
-            <h2 style={{ margin: '0 0 8px 0', color: '#1e293b', fontSize: '28px' }}>
-              Employee Directory
-            </h2>
-            <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>
-              {company?.name} • {filteredEmployees.length} {filteredEmployees.length === 1 ? 'employee' : 'employees'}
-            </p>
-          </div>
-          {canAddEmployee && (
-            <button
-              onClick={() => navigate('/add-employee')}
-              style={{
-                padding: '12px 24px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: '500',
-                fontSize: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <span>➕</span> Add Employee
-            </button>
-          )}
-        </div>
+        <PageHeader
+          title="Employee Directory"
+          subtitle={`${company?.name} • ${filteredEmployees.length} ${filteredEmployees.length === 1 ? 'employee' : 'employees'}`}
+          gradient="linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
+          icon={
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          }
+          actions={
+            canAddEmployee && (
+              <button
+                onClick={() => navigate('/add-employee')}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: 'white',
+                  color: '#3b82f6',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                <span>➕</span> Add Employee
+              </button>
+            )
+          }
+        />
 
-        {/* Filters */}
         <div style={{
           backgroundColor: 'white',
           padding: '20px',
@@ -195,7 +192,6 @@ const EmployeeList = () => {
           </div>
         </div>
 
-        {/* Employee Grid */}
         {loading ? (
           <div style={{
             display: 'grid',
@@ -211,12 +207,7 @@ const EmployeeList = () => {
                 border: '1px solid #e2e8f0'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-                  <div style={{
-                    width: '60px',
-                    height: '60px',
-                    borderRadius: '50%',
-                    backgroundColor: '#f1f5f9'
-                  }} />
+                  <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#f1f5f9' }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ width: '120px', height: '16px', backgroundColor: '#f1f5f9', borderRadius: '4px', marginBottom: '8px' }} />
                     <div style={{ width: '180px', height: '14px', backgroundColor: '#f1f5f9', borderRadius: '4px' }} />
@@ -242,11 +233,7 @@ const EmployeeList = () => {
                   boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                   border: '1px solid #e2e8f0',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  ':hover': {
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                    transform: 'translateY(-2px)'
-                  }
+                  transition: 'all 0.2s'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
@@ -257,7 +244,6 @@ const EmployeeList = () => {
                   e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
-                {/* Employee Header */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
                   <div style={{
                     width: '60px',
@@ -277,92 +263,36 @@ const EmployeeList = () => {
                     {!employee.profile?.profilePicture && employee.name.charAt(0).toUpperCase()}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <h3 style={{
-                      margin: '0 0 4px 0',
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      color: '#1e293b',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
+                    <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {employee.name}
                     </h3>
-                    <p style={{
-                      margin: 0,
-                      fontSize: '13px',
-                      color: '#64748b',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {employee.email}
                     </p>
                   </div>
                 </div>
-
-                {/* Employee Details */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Designation</span>
-                    <span style={{
-                      padding: '4px 12px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      backgroundColor: getDesignationColor(employee.designation) + '15',
-                      color: getDesignationColor(employee.designation)
-                    }}>
+                    <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', backgroundColor: getDesignationColor(employee.designation) + '15', color: getDesignationColor(employee.designation) }}>
                       {employee.designation}
                     </span>
                   </div>
-
-                  {employee.profile?.title && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Title</span>
-                      <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '500' }}>
-                        {employee.profile.title}
-                      </span>
-                    </div>
-                  )}
-
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Joined</span>
                     <span style={{ fontSize: '13px', color: '#1e293b' }}>
-                      {new Date(employee.joinedAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        year: 'numeric'
-                      })}
+                      {new Date(employee.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                     </span>
                   </div>
-
-                  {!employee.isOwner && employee.currentSalary > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Salary</span>
-                      <span style={{ fontSize: '13px', color: '#10b981', fontWeight: '600' }}>
-                        {getCurrencySymbol()}{employee.currentSalary.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            padding: '60px 20px',
-            textAlign: 'center',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-          }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '60px 20px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>👥</div>
             <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#374151' }}>No employees found</h3>
-            <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
-              {searchTerm || filterDesignation !== 'all'
-                ? 'Try adjusting your filters'
-                : 'Start by adding your first employee'}
-            </p>
+            <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>Try adjusting your filters</p>
           </div>
         )}
       </div>
@@ -371,4 +301,3 @@ const EmployeeList = () => {
 };
 
 export default EmployeeList;
-

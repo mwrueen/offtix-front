@@ -4,6 +4,7 @@ import { useCompanyFilter } from '../hooks/useCompanyFilter';
 import { useNavigate } from 'react-router-dom';
 import { getCookie } from '../utils/cookies';
 import Layout from './Layout';
+import PageHeader from './PageHeader';
 import { companyAPI } from '../services/api';
 import { useToast } from '../context/ToastContext';
 
@@ -248,99 +249,32 @@ const Company = () => {
 
   return (
     <Layout>
-      {/* Page Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '40px',
-        borderRadius: '16px',
-        marginBottom: '30px',
-        boxShadow: '0 10px 40px rgba(102, 126, 234, 0.2)',
-        color: 'white'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
-              <div style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '16px',
-                background: 'rgba(255, 255, 255, 0.2)',
-                backdropFilter: 'blur(10px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '32px',
-                fontWeight: '700',
-                border: '2px solid rgba(255, 255, 255, 0.3)'
-              }}>
-                {company.name?.charAt(0)?.toUpperCase() || 'C'}
-              </div>
-              <div>
-                <h1 style={{ margin: '0 0 8px 0', fontSize: '32px', fontWeight: '700' }}>
-                  {company.name}
-                </h1>
-                {company.description && (
-                  <p style={{ margin: 0, fontSize: '16px', opacity: 0.9 }}>
-                    {company.description}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Quick Info Tags */}
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
-              {company.industry && (
-                <span style={{
-                  padding: '6px 14px',
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '20px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  border: '1px solid rgba(255, 255, 255, 0.3)'
-                }}>
-                  {company.industry}
-                </span>
-              )}
-              {company.companySize && (
-                <span style={{
-                  padding: '6px 14px',
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '20px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  border: '1px solid rgba(255, 255, 255, 0.3)'
-                }}>
-                  {company.companySize}
-                </span>
-              )}
-              {company.foundedYear && (
-                <span style={{
-                  padding: '6px 14px',
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '20px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  border: '1px solid rgba(255, 255, 255, 0.3)'
-                }}>
-                  Founded {company.foundedYear}
-                </span>
-              )}
-
-
-            </div>
+      <PageHeader
+        title={company.name}
+        subtitle={company.description}
+        gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+        icon={
+          <div style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: 'white'
+          }}>
+            {company.name?.charAt(0)?.toUpperCase() || 'C'}
           </div>
-
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
+        }
+        stats={[
+          { label: 'Industry', value: company.industry || 'N/A' },
+          { label: 'Size', value: company.companySize || 'N/A' },
+          { label: 'Founded', value: company.foundedYear || 'N/A' }
+        ]}
+        actions={
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {userPermissions.addEmployee && (
               <button
                 onClick={() => navigate('/add-employee')}
                 style={{
                   padding: '12px 24px',
-                  background: 'rgba(255, 255, 255, 0.95)',
+                  background: 'white',
                   color: '#667eea',
                   border: 'none',
                   borderRadius: '10px',
@@ -350,14 +284,6 @@ const Company = () => {
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                   transition: 'all 0.2s',
                   whiteSpace: 'nowrap'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.15)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
                 }}
               >
                 + Add Employee
@@ -379,12 +305,6 @@ const Company = () => {
                   transition: 'all 0.2s',
                   whiteSpace: 'nowrap'
                 }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.2)';
-                }}
               >
                 + Create Role
               </button>
@@ -404,12 +324,6 @@ const Company = () => {
                   backdropFilter: 'blur(10px)',
                   transition: 'all 0.2s',
                   whiteSpace: 'nowrap'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.2)';
                 }}
               >
                 Manage Roles
@@ -431,19 +345,13 @@ const Company = () => {
                   transition: 'all 0.2s',
                   whiteSpace: 'nowrap'
                 }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.2)';
-                }}
               >
                 ✏️ Edit Info
               </button>
             )}
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Company Statistics Cards */}
       <div style={{
@@ -809,14 +717,14 @@ const Company = () => {
               transition: 'all 0.2s',
               cursor: 'default'
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
-              e.currentTarget.style.borderColor = '#cbd5e1';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = 'none';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-            }}>
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
+                e.currentTarget.style.borderColor = '#cbd5e1';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.borderColor = '#e2e8f0';
+              }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '16px' }}>
                 <div style={{
                   width: '48px',
