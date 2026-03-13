@@ -1,9 +1,11 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 
 const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
   const { state: authState } = useAuth();
-  const currentUserId = authState?.user?._id;
+  const { hasPermission, isSuperAdmin } = usePermissions();
+  const currentUserId = authState?.user?._id || authState?.user?.id;
   const getStatusColor = (status) => {
     if (!status || !status.color) {
       return { bg: '#f4f5f7', text: '#5e6c84', border: '#dfe1e6' };
@@ -34,10 +36,10 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
     if (!currentUserId || !task.useSequentialWorkflow || !task.sequentialAssignees) {
       return false;
     }
-    
+
     const currentAssignee = task.sequentialAssignees[task.currentAssigneeIndex];
     if (!currentAssignee) return false;
-    
+
     const assigneeUserId = currentAssignee.user._id || currentAssignee.user;
     return assigneeUserId.toString() === currentUserId.toString();
   };
@@ -73,7 +75,7 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
       >
         <div style={{ padding: '12px 16px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '20px 1fr auto', gap: '12px', alignItems: 'start' }}>
-            
+
             {/* Task Type Icon */}
             <div style={{
               width: '16px',
@@ -91,7 +93,7 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
             }}>
               {level > 0 ? 'S' : 'T'}
             </div>
-            
+
             {/* Main Content - Title and Description */}
             <div style={{ minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
@@ -105,7 +107,7 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
                 }} onClick={() => onEdit(task)}>
                   {task.title}
                 </h4>
-                
+
                 {isActive && (
                   <span style={{
                     padding: '2px 8px',
@@ -120,20 +122,20 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
                     Your Turn
                   </span>
                 )}
-                
+
                 {task.priority && (
-                  <span 
-                    style={{ 
+                  <span
+                    style={{
                       fontSize: '12px',
                       color: priority.color
-                    }} 
+                    }}
                     title={`Priority: ${task.priority}`}
                   >
                     {priority.icon}
                   </span>
                 )}
               </div>
-              
+
               {task.description && (
                 <p style={{
                   margin: '0 0 12px 0',
@@ -149,16 +151,16 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
                 </p>
               )}
             </div>
-            
+
             {/* Right Side - Metadata */}
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: '8px', 
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
               alignItems: 'flex-end',
               minWidth: '200px'
             }}>
-              
+
               {/* Status Row */}
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                 {task.status && (
@@ -177,7 +179,7 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
                   </span>
                 )}
               </div>
-              
+
               {/* Team and Dates Row */}
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '11px', color: '#5e6c84' }}>
                 {task.assignees && task.assignees.length > 0 && (
@@ -186,7 +188,7 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
                     <span>{task.assignees.map(a => a.name).join(', ')}</span>
                   </div>
                 )}
-                
+
                 {task.useSequentialWorkflow && task.sequentialAssignees && task.sequentialAssignees.length > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <span>🔄</span>
@@ -196,7 +198,7 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
                         const userName = user.name || user.email || 'Unknown';
                         const isCurrent = idx === task.currentAssigneeIndex;
                         return (
-                          <span 
+                          <span
                             key={idx}
                             style={{
                               fontWeight: isCurrent ? '700' : '400',
@@ -211,7 +213,7 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
                     </span>
                   </div>
                 )}
-                
+
                 {task.duration && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <span>⏱️</span>
@@ -219,7 +221,7 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
                   </div>
                 )}
               </div>
-              
+
               {/* Dates Row */}
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '11px', color: '#5e6c84' }}>
                 {task.startDate && (
@@ -228,11 +230,11 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
                     <span>{new Date(task.startDate).toLocaleDateString()}</span>
                   </div>
                 )}
-                
+
                 {task.dueDate && (
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
                     gap: '4px',
                     color: new Date(task.dueDate) < new Date() ? '#de350b' : '#5e6c84'
                   }}>
@@ -241,102 +243,108 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
                   </div>
                 )}
               </div>
-              
+
               {/* Action Buttons */}
               <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAddSubtask(task._id);
-                  }}
-                  style={{
-                    padding: '4px 6px',
-                    backgroundColor: 'transparent',
-                    color: '#5e6c84',
-                    border: '1px solid #dfe1e6',
-                    borderRadius: '3px',
-                    cursor: 'pointer',
-                    fontSize: '10px',
-                    transition: 'all 0.15s ease-in-out'
-                  }}
-                  title="Add subtask"
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#f4f5f7';
-                    e.target.style.borderColor = '#b3d4ff';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = 'transparent';
-                    e.target.style.borderColor = '#dfe1e6';
-                  }}
-                >
-                  +
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(task);
-                  }}
-                  style={{
-                    padding: '4px 6px',
-                    backgroundColor: 'transparent',
-                    color: '#5e6c84',
-                    border: '1px solid #dfe1e6',
-                    borderRadius: '3px',
-                    cursor: 'pointer',
-                    fontSize: '10px',
-                    transition: 'all 0.15s ease-in-out'
-                  }}
-                  title="Edit"
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#f4f5f7';
-                    e.target.style.borderColor = '#b3d4ff';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = 'transparent';
-                    e.target.style.borderColor = '#dfe1e6';
-                  }}
-                >
-                  ✏️
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(task._id);
-                  }}
-                  style={{
-                    padding: '4px 6px',
-                    backgroundColor: 'transparent',
-                    color: '#de350b',
-                    border: '1px solid #dfe1e6',
-                    borderRadius: '3px',
-                    cursor: 'pointer',
-                    fontSize: '10px',
-                    transition: 'all 0.15s ease-in-out'
-                  }}
-                  title="Delete"
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#ffebe6';
-                    e.target.style.borderColor = '#ff8f73';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = 'transparent';
-                    e.target.style.borderColor = '#dfe1e6';
-                  }}
-                >
-                  🗑️
-                </button>
+                {(isSuperAdmin || hasPermission(PERMISSIONS.CREATE_TASK)) && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAddSubtask(task._id);
+                    }}
+                    style={{
+                      padding: '4px 6px',
+                      backgroundColor: 'transparent',
+                      color: '#5e6c84',
+                      border: '1px solid #dfe1e6',
+                      borderRadius: '3px',
+                      cursor: 'pointer',
+                      fontSize: '10px',
+                      transition: 'all 0.15s ease-in-out'
+                    }}
+                    title="Add subtask"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f4f5f7';
+                      e.currentTarget.style.borderColor = '#b3d4ff';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.borderColor = '#dfe1e6';
+                    }}
+                  >
+                    +
+                  </button>
+                )}
+                {(isSuperAdmin || hasPermission(PERMISSIONS.EDIT_TASK)) && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(task);
+                    }}
+                    style={{
+                      padding: '4px 6px',
+                      backgroundColor: 'transparent',
+                      color: '#5e6c84',
+                      border: '1px solid #dfe1e6',
+                      borderRadius: '3px',
+                      cursor: 'pointer',
+                      fontSize: '10px',
+                      transition: 'all 0.15s ease-in-out'
+                    }}
+                    title="Edit"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f4f5f7';
+                      e.currentTarget.style.borderColor = '#b3d4ff';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.borderColor = '#dfe1e6';
+                    }}
+                  >
+                    ✏️
+                  </button>
+                )}
+                {(isSuperAdmin || hasPermission(PERMISSIONS.DELETE_TASK)) && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(task._id);
+                    }}
+                    style={{
+                      padding: '4px 6px',
+                      backgroundColor: 'transparent',
+                      color: '#de350b',
+                      border: '1px solid #dfe1e6',
+                      borderRadius: '3px',
+                      cursor: 'pointer',
+                      fontSize: '10px',
+                      transition: 'all 0.15s ease-in-out'
+                    }}
+                    title="Delete"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#ffebe6';
+                      e.currentTarget.style.borderColor = '#ff8f73';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.borderColor = '#dfe1e6';
+                    }}
+                  >
+                    🗑️
+                  </button>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
-      
+
       {/* Subtasks */}
       {task.subtasks && task.subtasks.map(subtask => (
-        <TaskCard 
+        <TaskCard
           key={subtask._id}
-          task={subtask} 
-          level={level + 1} 
+          task={subtask}
+          level={level + 1}
           onEdit={onEdit}
           onDelete={onDelete}
           onAddSubtask={onAddSubtask}

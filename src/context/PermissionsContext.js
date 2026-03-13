@@ -29,6 +29,11 @@ export const PERMISSIONS = {
     REMOVE_EMPLOYEE_FROM_PROJECT: 'removeEmployeeFromProject',
     VIEW_PROJECT_ANALYTICS: 'viewProjectAnalytics',
 
+    // Task Management
+    CREATE_TASK: 'createTask',
+    EDIT_TASK: 'editTask',
+    DELETE_TASK: 'deleteTask',
+
     // Company Settings
     MANAGE_COMPANY_SETTINGS: 'manageCompanySettings',
 };
@@ -45,8 +50,14 @@ const ALL_PERMISSIONS = {
     editDesignation: true,
     deleteDesignation: true,
     createProject: true,
+    editProject: true,
+    deleteProject: true,
     assignEmployeeToProject: true,
     removeEmployeeFromProject: true,
+    viewProjectAnalytics: true,
+    createTask: true,
+    editTask: true,
+    deleteTask: true,
     manageCompanySettings: true,
 };
 
@@ -62,8 +73,14 @@ const NO_PERMISSIONS = {
     editDesignation: false,
     deleteDesignation: false,
     createProject: false,
+    editProject: false,
+    deleteProject: false,
     assignEmployeeToProject: false,
     removeEmployeeFromProject: false,
+    viewProjectAnalytics: false,
+    createTask: false,
+    editTask: false,
+    deleteTask: false,
     manageCompanySettings: false,
 };
 

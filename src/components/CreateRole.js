@@ -29,8 +29,14 @@ const CreateRole = () => {
     editDesignation: false,
     deleteDesignation: false,
     createProject: false,
+    editProject: false,
+    deleteProject: false,
     assignEmployeeToProject: false,
-    removeEmployeeFromProject: false
+    removeEmployeeFromProject: false,
+    viewProjectAnalytics: false,
+    createTask: false,
+    editTask: false,
+    deleteTask: false
   });
 
   const [loading, setLoading] = useState(false);
@@ -153,8 +159,25 @@ const CreateRole = () => {
       ),
       permissions: [
         { key: 'createProject', label: 'Create Project', description: 'Can create new projects' },
+        { key: 'editProject', label: 'Edit Project', description: 'Can edit project details and status' },
+        { key: 'deleteProject', label: 'Delete Project', description: 'Can delete projects' },
         { key: 'assignEmployeeToProject', label: 'Assign to Project', description: 'Can assign employees to projects' },
-        { key: 'removeEmployeeFromProject', label: 'Remove from Project', description: 'Can remove employees from projects' }
+        { key: 'removeEmployeeFromProject', label: 'Remove from Project', description: 'Can remove employees from projects' },
+        { key: 'viewProjectAnalytics', label: 'View Analytics', description: 'Can view project reports and analytics' }
+      ]
+    },
+    {
+      title: 'Task Management',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="9 11 12 14 22 4"></polyline>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+        </svg>
+      ),
+      permissions: [
+        { key: 'createTask', label: 'Create Task', description: 'Can create tasks within projects' },
+        { key: 'editTask', label: 'Edit Task', description: 'Can modify task information' },
+        { key: 'deleteTask', label: 'Delete Task', description: 'Can delete tasks' }
       ]
     }
   ];

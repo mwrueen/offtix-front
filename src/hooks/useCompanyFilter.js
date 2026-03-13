@@ -6,14 +6,14 @@ import { useCompany } from '../context/CompanyContext';
  */
 export const useCompanyFilter = () => {
   const { state } = useCompany();
-  
+
   const getCompanyFilter = () => {
     const selectedCompany = state.selectedCompany;
-    
+
     if (!selectedCompany || selectedCompany.id === 'personal') {
       return { companyId: null, isPersonal: true };
     }
-    
+
     return { companyId: selectedCompany.id, isPersonal: false };
   };
 
@@ -23,22 +23,22 @@ export const useCompanyFilter = () => {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     };
-    
+
     if (filter.companyId) {
       headers['X-Company-Id'] = filter.companyId;
     }
-    
+
     return headers;
   };
 
   const buildApiUrl = (baseUrl, params = {}) => {
     const filter = getCompanyFilter();
     const urlParams = new URLSearchParams(params);
-    
+
     if (filter.companyId) {
       urlParams.set('companyId', filter.companyId);
     }
-    
+
     const queryString = urlParams.toString();
     return queryString ? `${baseUrl}?${queryString}` : baseUrl;
   };
@@ -48,6 +48,7 @@ export const useCompanyFilter = () => {
     companyFilter: getCompanyFilter(),
     getApiHeaders,
     buildApiUrl,
-    isPersonalMode: getCompanyFilter().isPersonal
+    isPersonalMode: getCompanyFilter().isPersonal,
+    state
   };
 };
