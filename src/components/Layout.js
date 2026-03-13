@@ -6,7 +6,9 @@ import { getCookie } from '../utils/cookies';
 import { companyAPI } from '../services/api';
 import SidebarHeader from './SidebarHeader';
 import { useSocket } from '../context/SocketContext';
+import { useChat } from '../context/ChatContext';
 import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
+import GlobalChat from './chat/GlobalChat';
 
 const Layout = ({ children }) => {
   const { state, dispatch } = useAuth();
@@ -20,6 +22,8 @@ const Layout = ({ children }) => {
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
   const [recentNotifications, setRecentNotifications] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const { unreadCounts } = useChat();
 
   // Derive sidebar permission flags from unified context
   const canManageSettings = hasPermission(PERMISSIONS.MANAGE_COMPANY_SETTINGS);
@@ -928,6 +932,50 @@ const Layout = ({ children }) => {
               alignItems: 'center',
               gap: '16px'
             }}>
+              {/* Global Chat Toggle */}
+              <div
+                onClick={() => setIsChatOpen(!isChatOpen)}
+                style={{
+                  position: 'relative',
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '12px',
+                  background: isChatOpen ? '#eff6ff' : 'white',
+                  border: `1px solid ${isChatOpen ? '#93c5fd' : '#e2e8f0'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                }}
+                title="Global Chat"
+              >
+                <div style={{ fontSize: '20px' }}>💬</div>
+                {unreadCounts.total > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-6px',
+                    right: '-6px',
+                    backgroundColor: '#ef4444',
+                    color: 'white',
+                    fontSize: '10px',
+                    fontWeight: '700',
+                    minWidth: '18px',
+                    height: '18px',
+                    borderRadius: '9px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0 4px',
+                    border: '2px solid white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}>
+                    {unreadCounts.total > 99 ? '99+' : unreadCounts.total}
+                  </div>
+                )}
+              </div>
+
               {/* Notification Bell + Dropdown */}
               <div
                 className="notif-dropdown-container"
@@ -1195,6 +1243,7 @@ const Layout = ({ children }) => {
         </main>
       </div>
 
+      {isChatOpen && <GlobalChat onClose={() => setIsChatOpen(false)} />}
     </div>
   );
 };

@@ -53,7 +53,7 @@ const ChatTab = ({ projectId, project }) => {
     });
 
     newSocket.on('message-edited', (updatedMessage) => {
-      setMessages(prev => prev.map(m => 
+      setMessages(prev => prev.map(m =>
         m._id === updatedMessage._id ? updatedMessage : m
       ));
     });
@@ -89,8 +89,8 @@ const ChatTab = ({ projectId, project }) => {
       try {
         setLoading(true);
         const [messagesRes, membersRes] = await Promise.all([
-          chatAPI.getMessages(projectId),
-          chatAPI.getMembers(projectId)
+          chatAPI.getProjectMessages(projectId),
+          chatAPI.getProjectMembers(projectId)
         ]);
         setMessages(messagesRes.data.messages || []);
         setMembers(membersRes.data || []);
@@ -119,7 +119,7 @@ const ChatTab = ({ projectId, project }) => {
     // Check for @ mentions
     const textBeforeCursor = value.substring(0, position);
     const atIndex = textBeforeCursor.lastIndexOf('@');
-    
+
     if (atIndex !== -1) {
       const textAfterAt = textBeforeCursor.substring(atIndex + 1);
       if (!textAfterAt.includes(' ')) {
@@ -141,7 +141,7 @@ const ChatTab = ({ projectId, project }) => {
     }
   };
 
-  const filteredMembers = members.filter(m => 
+  const filteredMembers = members.filter(m =>
     m.name.toLowerCase().includes(mentionSearch) ||
     m.email.toLowerCase().includes(mentionSearch)
   );
@@ -150,10 +150,10 @@ const ChatTab = ({ projectId, project }) => {
     const textBeforeCursor = newMessage.substring(0, cursorPosition);
     const atIndex = textBeforeCursor.lastIndexOf('@');
     const textAfterCursor = newMessage.substring(cursorPosition);
-    
-    const newText = textBeforeCursor.substring(0, atIndex) + 
+
+    const newText = textBeforeCursor.substring(0, atIndex) +
       `@${member.name} ` + textAfterCursor;
-    
+
     setNewMessage(newText);
     setShowMentions(false);
     inputRef.current?.focus();
@@ -212,7 +212,7 @@ const ChatTab = ({ projectId, project }) => {
   const handleDeleteMessage = async (messageId) => {
     if (!window.confirm('Delete this message?')) return;
     try {
-      await chatAPI.deleteMessage(projectId, messageId);
+      await chatAPI.deleteMessage(messageId);
     } catch (error) {
       console.error('Error deleting message:', error);
     }

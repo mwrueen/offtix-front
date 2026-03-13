@@ -63,7 +63,14 @@ export const userAPI = {
 };
 
 export const projectAPI = {
-  getAll: () => api.get('/projects'),
+  getAll: (companyId = null) => {
+    const config = {};
+    if (companyId && companyId !== 'personal') {
+      config.headers = { 'X-Company-Id': companyId };
+      config.params = { companyId };
+    }
+    return api.get('/projects', config);
+  },
   getById: (id) => api.get(`/projects/${id}`),
   create: (projectData) => api.post('/projects', projectData),
   update: (id, projectData) => api.put(`/projects/${id}`, projectData),
@@ -243,18 +250,25 @@ export const leaveAPI = {
 };
 
 export const chatAPI = {
-  // Get messages for a project
-  getMessages: (projectId, params = {}) =>
+  // Generic fetch for any context (project, company, or DM)
+  getMessages: (params) => api.get('/chat/messages', { params }),
+  // Get members for mentions (project or company)
+  getMembers: (params) => api.get('/chat/members', { params }),
+  // Delete message
+  deleteMessage: (messageId) => api.delete(`/chat/messages/${messageId}`),
+  // Edit message
+  editMessage: (messageId, content) => api.put(`/chat/messages/${messageId}`, { content }),
+
+  // Unread counts
+  getUnreadCounts: () => api.get('/chat/unread-counts'),
+  // Mark as read
+  markRead: (data) => api.post('/chat/mark-read', data),
+
+  // Legacy project-specific methods (kept for compatibility)
+  getProjectMessages: (projectId, params = {}) =>
     api.get(`/projects/${projectId}/chat/messages`, { params }),
-  // Get project members for mentions
-  getMembers: (projectId) =>
+  getProjectMembers: (projectId) =>
     api.get(`/projects/${projectId}/chat/members`),
-  // Delete a message
-  deleteMessage: (projectId, messageId) =>
-    api.delete(`/projects/${projectId}/chat/messages/${messageId}`),
-  // Edit a message
-  editMessage: (projectId, messageId, content) =>
-    api.put(`/projects/${projectId}/chat/messages/${messageId}`, { content }),
 };
 
 export const myTasksAPI = {
