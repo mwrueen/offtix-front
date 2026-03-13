@@ -310,132 +310,129 @@ const LeaveManagement = () => {
 
   return (
     <Layout>
-      <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-        <PageHeader
-          title="Leave Management"
-          subtitle="Manage your time off requests and track your balances"
-          gradient="linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
-          icon={
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-          }
-          actions={
-            <button
-              onClick={() => setShowRequestModal(true)}
-              style={{
-                padding: '12px 24px',
-                background: 'white',
-                color: '#3b82f6',
-                border: 'none',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-              }}
-            >
-              + Request Leave
-            </button>
-          }
-        />
+      <PageHeader
+        title="Leave Management"
+        subtitle="Manage your time off requests and track your balances"
+        icon={
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        }
+        actions={
+          <button
+            onClick={() => setShowRequestModal(true)}
+            style={{
+              padding: '12px 24px',
+              background: 'white',
+              color: '#3b82f6',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '600',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+            }}
+          >
+            + Request Leave
+          </button>
+        }
+      />
 
-        {activeTab === 'my-leaves' && renderLeaveBalance()}
+      {activeTab === 'my-leaves' && renderLeaveBalance()}
 
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '2px solid #e2e8f0' }}>
-          {[
-            { id: 'my-leaves', label: 'My Leaves' },
-            { id: 'all-leaves', label: 'All Leaves' },
-            { id: 'pending-approvals', label: 'Pending Approvals' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: '12px 24px',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: activeTab === tab.id ? '2px solid #3b82f6' : '2px solid transparent',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: activeTab === tab.id ? '#3b82f6' : '#64748b',
-                marginBottom: '-2px'
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '2px solid #e2e8f0' }}>
+        {[
+          { id: 'my-leaves', label: 'My Leaves' },
+          { id: 'all-leaves', label: 'All Leaves' },
+          { id: 'pending-approvals', label: 'Pending Approvals' }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              padding: '12px 24px',
+              background: 'transparent',
+              border: 'none',
+              borderBottom: activeTab === tab.id ? '2px solid #3b82f6' : '2px solid transparent',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: activeTab === tab.id ? '#3b82f6' : '#64748b',
+              marginBottom: '-2px'
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        <div style={{ display: 'grid', gap: '16px' }}>
-          {leaves.length === 0 ? (
-            <div style={{ background: 'white', borderRadius: '12px', padding: '40px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
-              <div style={{ fontSize: '16px', color: '#64748b' }}>No leaves found</div>
-            </div>
-          ) : (
-            leaves.map(renderLeaveCard)
-          )}
-        </div>
-
-        {showRequestModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-            <div style={{ background: 'white', borderRadius: '12px', padding: '32px', width: '90%', maxWidth: '600px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
-              <h3 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '700', color: '#1e293b' }}>Request Leave</h3>
-              <form onSubmit={handleRequestLeave}>
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Leave Type</label>
-                  <select value={formData.leaveType} onChange={(e) => setFormData({ ...formData, leaveType: e.target.value })} required style={{ width: '100%', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                    <option value="casual">Casual Leave</option>
-                    <option value="sick">Sick Leave</option>
-                    <option value="annual">Annual Leave</option>
-                    <option value="maternity">Maternity Leave</option>
-                    <option value="paternity">Paternity Leave</option>
-                    <option value="unpaid">Unpaid Leave</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Start Date</label>
-                    <input type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} required style={{ width: '100%', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>End Date</label>
-                    <input type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} required style={{ width: '100%', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px' }} />
-                  </div>
-                </div>
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={formData.halfDay} onChange={(e) => setFormData({ ...formData, halfDay: e.target.checked })} />
-                    <span style={{ fontWeight: '600' }}>Half Day</span>
-                  </label>
-                </div>
-                {formData.halfDay && (
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Half Day Period</label>
-                    <select value={formData.halfDayPeriod} onChange={(e) => setFormData({ ...formData, halfDayPeriod: e.target.value })} style={{ width: '100%', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                      <option value="morning">Morning</option>
-                      <option value="afternoon">Afternoon</option>
-                    </select>
-                  </div>
-                )}
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Reason *</label>
-                  <textarea value={formData.reason} onChange={(e) => setFormData({ ...formData, reason: e.target.value })} required rows="3" style={{ width: '100%', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px' }} />
-                </div>
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                  <button type="button" onClick={() => setShowRequestModal(false)} style={{ padding: '12px 24px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Cancel</button>
-                  <button type="submit" style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Submit Request</button>
-                </div>
-              </form>
-            </div>
+      <div style={{ display: 'grid', gap: '16px' }}>
+        {leaves.length === 0 ? (
+          <div style={{ background: 'white', borderRadius: '12px', padding: '40px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
+            <div style={{ fontSize: '16px', color: '#64748b' }}>No leaves found</div>
           </div>
+        ) : (
+          leaves.map(renderLeaveCard)
         )}
       </div>
+
+      {showRequestModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '32px', width: '90%', maxWidth: '600px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '700', color: '#1e293b' }}>Request Leave</h3>
+            <form onSubmit={handleRequestLeave}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Leave Type</label>
+                <select value={formData.leaveType} onChange={(e) => setFormData({ ...formData, leaveType: e.target.value })} required style={{ width: '100%', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                  <option value="casual">Casual Leave</option>
+                  <option value="sick">Sick Leave</option>
+                  <option value="annual">Annual Leave</option>
+                  <option value="maternity">Maternity Leave</option>
+                  <option value="paternity">Paternity Leave</option>
+                  <option value="unpaid">Unpaid Leave</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Start Date</label>
+                  <input type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} required style={{ width: '100%', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>End Date</label>
+                  <input type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} required style={{ width: '100%', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px' }} />
+                </div>
+              </div>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={formData.halfDay} onChange={(e) => setFormData({ ...formData, halfDay: e.target.checked })} />
+                  <span style={{ fontWeight: '600' }}>Half Day</span>
+                </label>
+              </div>
+              {formData.halfDay && (
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Half Day Period</label>
+                  <select value={formData.halfDayPeriod} onChange={(e) => setFormData({ ...formData, halfDayPeriod: e.target.value })} style={{ width: '100%', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                    <option value="morning">Morning</option>
+                    <option value="afternoon">Afternoon</option>
+                  </select>
+                </div>
+              )}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Reason *</label>
+                <textarea value={formData.reason} onChange={(e) => setFormData({ ...formData, reason: e.target.value })} required rows="3" style={{ width: '100%', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px' }} />
+              </div>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => setShowRequestModal(false)} style={{ padding: '12px 24px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Cancel</button>
+                <button type="submit" style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Submit Request</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

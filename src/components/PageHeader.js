@@ -6,7 +6,7 @@ const PageHeader = ({
     stats = [],
     actions = null,
     icon = null,
-    gradient = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+    gradient = 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
     color = 'white'
 }) => {
     return (

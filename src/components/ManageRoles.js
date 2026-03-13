@@ -259,147 +259,144 @@ const ManageRoles = () => {
 
   return (
     <Layout>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <PageHeader
-          title="Manage Roles"
-          subtitle={`${company?.designations?.length || 0} roles in ${selectedCompany.name}`}
-          gradient="linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)"
-          icon={
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="8.5" cy="7" r="4"></circle>
-              <polyline points="17 11 19 13 23 9"></polyline>
-            </svg>
-          }
-          actions={
-            hasPermission(PERMISSIONS.CREATE_DESIGNATION) && (
-              <button
-                onClick={() => navigate('/create-role')}
-                style={{
-                  padding: '12px 24px',
-                  background: 'white',
-                  color: '#8b5cf6',
-                  border: 'none',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Create New Role
-              </button>
-            )
-          }
-        />
-
-        {/* Roles Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-          gap: '20px'
-        }}>
-          {company?.designations?.map((designation, index) => (
-            <div
-              key={index}
-              style={{
-                background: 'white',
-                padding: '28px',
-                borderRadius: '16px',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-                border: '1px solid #e2e8f0',
-                transition: 'all 0.2s',
-                cursor: 'pointer'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
-                e.currentTarget.style.transform = 'translateY(-4px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-              onClick={() => setSelectedRole(selectedRole === designation ? null : designation)}
-            >
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                  <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#1e293b' }}>
-                    {designation.name}
-                  </h3>
-                  <span style={{ padding: '4px 12px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: 'white', borderRadius: '12px', fontSize: '12px', fontWeight: '600' }}>
-                    {getPermissionCount(designation.permissions)} permissions
-                  </span>
-                </div>
-                {designation.description && (
-                  <p style={{ margin: '8px 0 0 0', fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>
-                    {designation.description}
-                  </p>
-                )}
-              </div>
-
-              {selectedRole === designation && designation.permissions && (
-                <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}>
-                  <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Permissions
-                  </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {Object.entries(designation.permissions).map(([key, value]) => (
-                      value && (
-                        <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#10b981' }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                          </svg>
-                          <span>{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                        </div>
-                      )
-                    ))}
-                  </div>
-
-                  {(hasPermission(PERMISSIONS.EDIT_DESIGNATION) || hasPermission(PERMISSIONS.DELETE_DESIGNATION)) && (
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
-                      {hasPermission(PERMISSIONS.EDIT_DESIGNATION) && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleEditRole(designation); }}
-                          style={{ flex: 1, padding: '10px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}
-                        >
-                          Edit
-                        </button>
-                      )}
-                      {hasPermission(PERMISSIONS.DELETE_DESIGNATION) && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(designation); }}
-                          style={{ flex: 1, padding: '10px', background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {(!company?.designations || company.designations.length === 0) && (
-          <div style={{ background: 'white', padding: '60px', borderRadius: '16px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
-            <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>No Roles Yet</h3>
+      <PageHeader
+        title="Manage Roles"
+        subtitle={`${company?.designations?.length || 0} roles in ${selectedCompany.name}`}
+        icon={
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="8.5" cy="7" r="4"></circle>
+            <polyline points="17 11 19 13 23 9"></polyline>
+          </svg>
+        }
+        actions={
+          hasPermission(PERMISSIONS.CREATE_DESIGNATION) && (
             <button
               onClick={() => navigate('/create-role')}
-              style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '600' }}
+              style={{
+                padding: '12px 24px',
+                background: 'white',
+                color: '#8b5cf6',
+                border: 'none',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '14px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
             >
-              Create First Role
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Create New Role
             </button>
+          )
+        }
+      />
+
+      {/* Roles Grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+        gap: '20px'
+      }}>
+        {company?.designations?.map((designation, index) => (
+          <div
+            key={index}
+            style={{
+              background: 'white',
+              padding: '28px',
+              borderRadius: '16px',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+              border: '1px solid #e2e8f0',
+              transition: 'all 0.2s',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+              e.currentTarget.style.transform = 'translateY(-4px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+            onClick={() => setSelectedRole(selectedRole === designation ? null : designation)}
+          >
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#1e293b' }}>
+                  {designation.name}
+                </h3>
+                <span style={{ padding: '4px 12px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: 'white', borderRadius: '12px', fontSize: '12px', fontWeight: '600' }}>
+                  {getPermissionCount(designation.permissions)} permissions
+                </span>
+              </div>
+              {designation.description && (
+                <p style={{ margin: '8px 0 0 0', fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>
+                  {designation.description}
+                </p>
+              )}
+            </div>
+
+            {selectedRole === designation && designation.permissions && (
+              <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Permissions
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {Object.entries(designation.permissions).map(([key, value]) => (
+                    value && (
+                      <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#10b981' }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                      </div>
+                    )
+                  ))}
+                </div>
+
+                {(hasPermission(PERMISSIONS.EDIT_DESIGNATION) || hasPermission(PERMISSIONS.DELETE_DESIGNATION)) && (
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
+                    {hasPermission(PERMISSIONS.EDIT_DESIGNATION) && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleEditRole(designation); }}
+                        style={{ flex: 1, padding: '10px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}
+                      >
+                        Edit
+                      </button>
+                    )}
+                    {hasPermission(PERMISSIONS.DELETE_DESIGNATION) && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(designation); }}
+                        style={{ flex: 1, padding: '10px', background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        )}
+        ))}
       </div>
+
+      {(!company?.designations || company.designations.length === 0) && (
+        <div style={{ background: 'white', padding: '60px', borderRadius: '16px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
+          <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>No Roles Yet</h3>
+          <button
+            onClick={() => navigate('/create-role')}
+            style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '600' }}
+          >
+            Create First Role
+          </button>
+        </div>
+      )}
 
       {showDeleteConfirm && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }} onClick={() => setShowDeleteConfirm(null)}>

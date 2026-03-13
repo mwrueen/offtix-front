@@ -194,44 +194,41 @@ const Workforce = () => {
 
   return (
     <Layout>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        <PageHeader
-          title="Workforce Overview"
-          subtitle={`Monitor tasks and workload for ${workforceData?.company?.name}`}
-          gradient="linear-gradient(135deg, #1e293b 0%, #0f172a 100%)"
-          icon={
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-          }
-          actions={
-            <div style={{ display: 'flex', gap: '4px', backgroundColor: 'rgba(255,255,255,0.1)', padding: '4px', borderRadius: '10px' }}>
-              <button onClick={() => setViewMode('tasks')} style={{ padding: '8px 16px', background: viewMode === 'tasks' ? 'white' : 'transparent', color: viewMode === 'tasks' ? '#1e293b' : 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Tasks</button>
-              <button onClick={() => setViewMode('employees')} style={{ padding: '8px 16px', background: viewMode === 'employees' ? 'white' : 'transparent', color: viewMode === 'employees' ? '#1e293b' : 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Employees</button>
-            </div>
-          }
-        />
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
-          <SummaryCard icon="👥" label="Employees" value={workforceData?.summary?.totalEmployees || 0} color="#3b82f6" />
-          <SummaryCard icon="📋" label="Active" value={workforceData?.summary?.totalActiveTasks || 0} color="#10b981" />
-          <SummaryCard icon="⚠️" label="Overdue" value={workforceData?.summary?.totalOverdueTasks || 0} color="#ef4444" />
-          <SummaryCard icon="💰" label="Cost" value={workforceData?.costs?.total || 0} color="#0f766e" isCurrency currencyCode={companyCurrency} />
-        </div>
-
-        {viewMode === 'tasks' ? (
-          <RunningTasksTable workforceData={workforceData} formatDate={formatDate} getDaysRemaining={getDaysRemaining} navigate={navigate} currencyCode={companyCurrency} />
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {workforceData?.workforce?.map(item => (
-              <EmployeeCard key={item.employee._id} item={item} isExpanded={expandedEmployee === item.employee._id} onToggle={() => setExpandedEmployee(expandedEmployee === item.employee._id ? null : item.employee._id)} formatDate={formatDate} getDaysRemaining={getDaysRemaining} navigate={navigate} currencyCode={companyCurrency} />
-            ))}
+      <PageHeader
+        title="Workforce Overview"
+        subtitle={`Monitor tasks and workload for ${workforceData?.company?.name}`}
+        icon={
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        }
+        actions={
+          <div style={{ display: 'flex', gap: '4px', backgroundColor: 'rgba(255,255,255,0.1)', padding: '4px', borderRadius: '10px' }}>
+            <button onClick={() => setViewMode('tasks')} style={{ padding: '8px 16px', background: viewMode === 'tasks' ? 'white' : 'transparent', color: viewMode === 'tasks' ? '#1e293b' : 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Tasks</button>
+            <button onClick={() => setViewMode('employees')} style={{ padding: '8px 16px', background: viewMode === 'employees' ? 'white' : 'transparent', color: viewMode === 'employees' ? '#1e293b' : 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Employees</button>
           </div>
-        )}
+        }
+      />
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        <SummaryCard icon="👥" label="Employees" value={workforceData?.summary?.totalEmployees || 0} color="#3b82f6" />
+        <SummaryCard icon="📋" label="Active" value={workforceData?.summary?.totalActiveTasks || 0} color="#10b981" />
+        <SummaryCard icon="⚠️" label="Overdue" value={workforceData?.summary?.totalOverdueTasks || 0} color="#ef4444" />
+        <SummaryCard icon="💰" label="Cost" value={workforceData?.costs?.total || 0} color="#0f766e" isCurrency currencyCode={companyCurrency} />
       </div>
+
+      {viewMode === 'tasks' ? (
+        <RunningTasksTable workforceData={workforceData} formatDate={formatDate} getDaysRemaining={getDaysRemaining} navigate={navigate} currencyCode={companyCurrency} />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {workforceData?.workforce?.map(item => (
+            <EmployeeCard key={item.employee._id} item={item} isExpanded={expandedEmployee === item.employee._id} onToggle={() => setExpandedEmployee(expandedEmployee === item.employee._id ? null : item.employee._id)} formatDate={formatDate} getDaysRemaining={getDaysRemaining} navigate={navigate} currencyCode={companyCurrency} />
+          ))}
+        </div>
+      )}
     </Layout>
   );
 };

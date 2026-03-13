@@ -186,67 +186,64 @@ const Organogram = () => {
 
   return (
     <Layout>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <PageHeader
-          title="Organization Chart"
-          subtitle={`${employees.length} employees in ${selectedCompany.name}`}
-          gradient="linear-gradient(135deg, #0891b2 0%, #0e7490 100%)"
-          icon={
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-          }
-          actions={
-            <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.2)', borderRadius: '10px', padding: '4px' }}>
-              <button onClick={() => setViewMode('tree')} style={{ padding: '8px 16px', background: viewMode === 'tree' ? 'white' : 'transparent', color: viewMode === 'tree' ? '#0891b2' : 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Tree</button>
-              <button onClick={() => setViewMode('list')} style={{ padding: '8px 16px', background: viewMode === 'list' ? 'white' : 'transparent', color: viewMode === 'list' ? '#0891b2' : 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>List</button>
-            </div>
-          }
-        />
-
-        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '24px', padding: '16px 20px', background: 'white', borderRadius: '12px' }}>
-          {designations.map((d, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: getLevelColor(d.level) }} />
-              <span style={{ fontSize: '13px', color: '#475569' }}>L{d.level}: {d.name}</span>
-            </div>
-          ))}
-        </div>
-
-        {viewMode === 'tree' ? (
-          <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '16px' }}>
-            {hierarchy.length > 0 ? hierarchy.map((node) => <EmployeeNode key={node.id} node={node} />) : <p style={{ textAlign: 'center', color: '#64748b' }}>No hierarchy defined yet.</p>}
+      <PageHeader
+        title="Organization Chart"
+        subtitle={`${employees.length} employees in ${selectedCompany.name}`}
+        icon={
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        }
+        actions={
+          <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.2)', borderRadius: '10px', padding: '4px' }}>
+            <button onClick={() => setViewMode('tree')} style={{ padding: '8px 16px', background: viewMode === 'tree' ? 'white' : 'transparent', color: viewMode === 'tree' ? '#0891b2' : 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>Tree</button>
+            <button onClick={() => setViewMode('list')} style={{ padding: '8px 16px', background: viewMode === 'list' ? 'white' : 'transparent', color: viewMode === 'list' ? '#0891b2' : 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>List</button>
           </div>
-        ) : (
-          <div style={{ background: 'white', borderRadius: '16px', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: '#f8fafc' }}>
-                  <th style={{ padding: '16px', textAlign: 'left' }}>EMPLOYEE</th>
-                  <th style={{ padding: '16px', textAlign: 'left' }}>DESIGNATION</th>
-                  <th style={{ padding: '16px', textAlign: 'left' }}>LEVEL</th>
-                  <th style={{ padding: '16px', textAlign: 'center' }}>ACTION</th>
-                </tr>
-              </thead>
-              <tbody>
-                {employees.map((emp) => (
-                  <tr key={emp.id} style={{ borderTop: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '16px' }}>{emp.name}</td>
-                    <td style={{ padding: '16px' }}>{emp.designation}</td>
-                    <td style={{ padding: '16px' }}>Level {emp.level}</td>
-                    <td style={{ padding: '16px', textAlign: 'center' }}>
-                      <button onClick={() => { setEditingEmployee(emp); setSelectedManager(emp.reportsTo || ''); }} style={{ padding: '6px 14px', background: '#0891b2', color: 'white', border: 'none', borderRadius: '6px' }}>Set Manager</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        }
+      />
+
+      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '24px', padding: '16px 20px', background: 'white', borderRadius: '12px' }}>
+        {designations.map((d, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: getLevelColor(d.level) }} />
+            <span style={{ fontSize: '13px', color: '#475569' }}>L{d.level}: {d.name}</span>
           </div>
-        )}
+        ))}
       </div>
+
+      {viewMode === 'tree' ? (
+        <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '16px' }}>
+          {hierarchy.length > 0 ? hierarchy.map((node) => <EmployeeNode key={node.id} node={node} />) : <p style={{ textAlign: 'center', color: '#64748b' }}>No hierarchy defined yet.</p>}
+        </div>
+      ) : (
+        <div style={{ background: 'white', borderRadius: '16px', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#f8fafc' }}>
+                <th style={{ padding: '16px', textAlign: 'left' }}>EMPLOYEE</th>
+                <th style={{ padding: '16px', textAlign: 'left' }}>DESIGNATION</th>
+                <th style={{ padding: '16px', textAlign: 'left' }}>LEVEL</th>
+                <th style={{ padding: '16px', textAlign: 'center' }}>ACTION</th>
+              </tr>
+            </thead>
+            <tbody>
+              {employees.map((emp) => (
+                <tr key={emp.id} style={{ borderTop: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '16px' }}>{emp.name}</td>
+                  <td style={{ padding: '16px' }}>{emp.designation}</td>
+                  <td style={{ padding: '16px' }}>Level {emp.level}</td>
+                  <td style={{ padding: '16px', textAlign: 'center' }}>
+                    <button onClick={() => { setEditingEmployee(emp); setSelectedManager(emp.reportsTo || ''); }} style={{ padding: '6px 14px', background: '#0891b2', color: 'white', border: 'none', borderRadius: '6px' }}>Set Manager</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {editingEmployee && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setEditingEmployee(null)}>

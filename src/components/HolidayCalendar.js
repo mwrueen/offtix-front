@@ -378,93 +378,90 @@ const HolidayCalendar = () => {
 
   return (
     <Layout>
-      <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-        <PageHeader
-          title="Holiday Calendar"
-          subtitle="Plan your holidays and manage company non-working days"
-          gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
-          icon={
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-          }
-        />
+      <PageHeader
+        title="Holiday Calendar"
+        subtitle="Plan your holidays and manage company non-working days"
+        icon={
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        }
+      />
 
-        <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', marginBottom: '24px' }}>
-          <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '700' }}>🏖️ Weekend & Working Days Configuration</h3>
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
-                <div key={index} onClick={() => handleWeekendToggle(index)} style={{ padding: '12px 8px', border: `2px solid ${companySettings.weekends.includes(index) ? '#ef4444' : '#e2e8f0'}`, borderRadius: '8px', textAlign: 'center', cursor: 'pointer', background: companySettings.weekends.includes(index) ? '#fee2e2' : 'white', fontSize: '13px', fontWeight: '600', color: companySettings.weekends.includes(index) ? '#dc2626' : '#64748b' }}>
-                  {day}
-                </div>
-              ))}
-            </div>
+      <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', marginBottom: '24px' }}>
+        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '700' }}>🏖️ Weekend & Working Days Configuration</h3>
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
+              <div key={index} onClick={() => handleWeekendToggle(index)} style={{ padding: '12px 8px', border: `2px solid ${companySettings.weekends.includes(index) ? '#ef4444' : '#e2e8f0'}`, borderRadius: '8px', textAlign: 'center', cursor: 'pointer', background: companySettings.weekends.includes(index) ? '#fee2e2' : 'white', fontSize: '13px', fontWeight: '600', color: companySettings.weekends.includes(index) ? '#dc2626' : '#64748b' }}>
+                {day}
+              </div>
+            ))}
           </div>
-          <button onClick={saveWeekendSettings} disabled={savingSettings} style={{ padding: '10px 20px', background: savingSettings ? '#94a3b8' : 'linear-gradient(135deg, #3b82f6, #2563eb)', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white' }}>
-            {savingSettings ? 'Saving...' : 'Save Settings'}
-          </button>
         </div>
-
-        <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <button onClick={() => changeMonth(-1)} style={{ padding: '10px 20px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>← Previous</button>
-            <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '700' }}>{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
-            <button onClick={() => changeMonth(1)} style={{ padding: '10px 20px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Next →</button>
-          </div>
-          {renderCalendar()}
-        </div>
-
-        {showAddModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-            <div style={{ background: 'white', borderRadius: '12px', padding: '32px', width: '90%', maxWidth: '500px' }}>
-              <h3 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '700' }}>Add Holiday</h3>
-              <form onSubmit={handleAddHoliday}>
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={formData.isRange} onChange={(e) => setFormData({ ...formData, isRange: e.target.checked })} />
-                    <span>Range Holiday</span>
-                  </label>
-                </div>
-                {formData.isRange ? (
-                  <>
-                    <input type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} required style={{ width: '100%', padding: '12px', marginBottom: '16px' }} />
-                    <input type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} required style={{ width: '100%', padding: '12px', marginBottom: '16px' }} />
-                  </>
-                ) : (
-                  <input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} required style={{ width: '100%', padding: '12px', marginBottom: '16px' }} />
-                )}
-                <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required placeholder="Holiday Name" style={{ width: '100%', padding: '12px', marginBottom: '16px' }} />
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                  <button type="button" onClick={() => setShowAddModal(false)} style={{ padding: '12px 24px' }}>Cancel</button>
-                  <button type="submit" style={{ padding: '12px 24px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px' }}>Add</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {showEditModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-            <div style={{ background: 'white', borderRadius: '12px', padding: '32px', width: '90%', maxWidth: '500px' }}>
-              <h3 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '700' }}>Edit Holiday</h3>
-              <form onSubmit={handleUpdateHoliday}>
-                <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required style={{ width: '100%', padding: '12px', marginBottom: '16px' }} />
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'space-between' }}>
-                  <button type="button" onClick={handleDeleteHoliday} style={{ color: '#ef4444' }}>Delete</button>
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <button type="button" onClick={() => setShowEditModal(false)}>Cancel</button>
-                    <button type="submit" style={{ padding: '12px 24px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px' }}>Update</button>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        <button onClick={saveWeekendSettings} disabled={savingSettings} style={{ padding: '10px 20px', background: savingSettings ? '#94a3b8' : 'linear-gradient(135deg, #3b82f6, #2563eb)', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white' }}>
+          {savingSettings ? 'Saving...' : 'Save Settings'}
+        </button>
       </div>
+
+      <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <button onClick={() => changeMonth(-1)} style={{ padding: '10px 20px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>← Previous</button>
+          <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '700' }}>{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
+          <button onClick={() => changeMonth(1)} style={{ padding: '10px 20px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Next →</button>
+        </div>
+        {renderCalendar()}
+      </div>
+
+      {showAddModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '32px', width: '90%', maxWidth: '500px' }}>
+            <h3 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '700' }}>Add Holiday</h3>
+            <form onSubmit={handleAddHoliday}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={formData.isRange} onChange={(e) => setFormData({ ...formData, isRange: e.target.checked })} />
+                  <span>Range Holiday</span>
+                </label>
+              </div>
+              {formData.isRange ? (
+                <>
+                  <input type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} required style={{ width: '100%', padding: '12px', marginBottom: '16px' }} />
+                  <input type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} required style={{ width: '100%', padding: '12px', marginBottom: '16px' }} />
+                </>
+              ) : (
+                <input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} required style={{ width: '100%', padding: '12px', marginBottom: '16px' }} />
+              )}
+              <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required placeholder="Holiday Name" style={{ width: '100%', padding: '12px', marginBottom: '16px' }} />
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => setShowAddModal(false)} style={{ padding: '12px 24px' }}>Cancel</button>
+                <button type="submit" style={{ padding: '12px 24px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px' }}>Add</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '32px', width: '90%', maxWidth: '500px' }}>
+            <h3 style={{ margin: '0 0 24px 0', fontSize: '24px', fontWeight: '700' }}>Edit Holiday</h3>
+            <form onSubmit={handleUpdateHoliday}>
+              <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required style={{ width: '100%', padding: '12px', marginBottom: '16px' }} />
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'space-between' }}>
+                <button type="button" onClick={handleDeleteHoliday} style={{ color: '#ef4444' }}>Delete</button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button type="button" onClick={() => setShowEditModal(false)}>Cancel</button>
+                  <button type="submit" style={{ padding: '12px 24px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px' }}>Update</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

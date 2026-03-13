@@ -187,287 +187,284 @@ const TeamActivity = () => {
 
   return (
     <Layout>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
-        <PageHeader
-          title="Team Vitality"
-          subtitle="Real-time synchronization of your creative force. Monitor progress and maintain momentum."
-          gradient="linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)"
-          icon={
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-          }
-          stats={[
-            { label: 'Active Now', value: workingMembers.length },
-            { label: 'On Break', value: pausedMembers.length },
-            { label: 'Idle', value: idleMembers.length }
-          ]}
-        />
+      <PageHeader
+        title="Team Vitality"
+        subtitle="Real-time synchronization of your creative force. Monitor progress and maintain momentum."
+        icon={
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        }
+        stats={[
+          { label: 'Active Now', value: workingMembers.length },
+          { label: 'On Break', value: pausedMembers.length },
+          { label: 'Idle', value: idleMembers.length }
+        ]}
+      />
 
-        {/* Filters Bar */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '20px',
-          padding: '20px 24px',
-          marginBottom: '32px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '20px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-          flexWrap: 'wrap',
-          border: '1px solid #f1f5f9'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748b' }}>Project:</span>
-            <select
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                backgroundColor: '#f8fafc',
-                fontSize: '14px',
-                color: '#1e293b',
-                outline: 'none',
-                minWidth: '200px'
-              }}
-            >
-              <option value="">All Projects</option>
-              {projects.map(p => (
-                <option key={p._id} value={p._id}>{p.title}</option>
-              ))}
-            </select>
-          </div>
+      {/* Filters Bar */}
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '20px',
+        padding: '20px 24px',
+        marginBottom: '32px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '20px',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        flexWrap: 'wrap',
+        border: '1px solid #f1f5f9'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748b' }}>Project:</span>
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              backgroundColor: '#f8fafc',
+              fontSize: '14px',
+              color: '#1e293b',
+              outline: 'none',
+              minWidth: '200px'
+            }}
+          >
+            <option value="">All Projects</option>
+            {projects.map(p => (
+              <option key={p._id} value={p._id}>{p.title}</option>
+            ))}
+          </select>
+        </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748b' }}>Date:</span>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                backgroundColor: '#f8fafc',
-                fontSize: '14px',
-                color: '#1e293b',
-                outline: 'none'
-              }}
-            />
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748b' }}>Date:</span>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              backgroundColor: '#f8fafc',
+              fontSize: '14px',
+              color: '#1e293b',
+              outline: 'none'
+            }}
+          />
+        </div>
 
+        {(selectedProject || selectedDate) && (
+          <button
+            onClick={clearFilters}
+            style={{
+              marginLeft: 'auto',
+              padding: '8px 16px',
+              background: '#f1f5f9',
+              border: 'none',
+              borderRadius: '10px',
+              fontSize: '13px',
+              fontWeight: '600',
+              color: '#ef4444',
+              cursor: 'pointer'
+            }}
+          >
+            Clear Filters
+          </button>
+        )}
+      </div>
+
+      {/* Content Section */}
+      {(loading || companyState.loading || isInitializing) ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px' }}>
+          <div className="spinning" style={{ width: '40px', height: '40px', border: '3px solid #f3f3f3', borderTop: '3px solid #4f46e5', borderRadius: '50%', marginBottom: '16px' }}></div>
+          <p style={{ color: '#64748b', fontSize: '14px', fontWeight: '500' }}>Synchronizing team state...</p>
+        </div>
+      ) : error ? (
+        <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', padding: '24px', borderRadius: '16px', textAlign: 'center', color: '#991b1b' }}>
+          <p style={{ margin: 0 }}>{error}</p>
+        </div>
+      ) : teamMembers.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '80px 40px', background: 'white', borderRadius: '24px', border: '1px dashed #e2e8f0' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
+          <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#1e293b', margin: '0 0 8px 0' }}>No Activity Found</h3>
+          <p style={{ color: '#64748b', margin: 0 }}>
+            {selectedProject || selectedDate
+              ? `No recorded activity for ${selectedProject ? projects.find(p => p._id === selectedProject)?.title : 'this project'} on ${selectedDate === getLocalToday() ? 'Today' : selectedDate}.`
+              : 'No activity found for your team.'}
+          </p>
+          <p style={{ color: '#94a3b8', fontSize: '13px', marginTop: '12px' }}>Try adjusting your filters or checking back later.</p>
           {(selectedProject || selectedDate) && (
             <button
               onClick={clearFilters}
-              style={{
-                marginLeft: 'auto',
-                padding: '8px 16px',
-                background: '#f1f5f9',
-                border: 'none',
-                borderRadius: '10px',
-                fontSize: '13px',
-                fontWeight: '600',
-                color: '#ef4444',
-                cursor: 'pointer'
-              }}
+              style={{ marginTop: '24px', background: '#4f46e5', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '12px', fontWeight: '600', cursor: 'pointer' }}
             >
-              Clear Filters
+              Reset All Filters
             </button>
           )}
         </div>
-
-        {/* Content Section */}
-        {(loading || companyState.loading || isInitializing) ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px' }}>
-            <div className="spinning" style={{ width: '40px', height: '40px', border: '3px solid #f3f3f3', borderTop: '3px solid #4f46e5', borderRadius: '50%', marginBottom: '16px' }}></div>
-            <p style={{ color: '#64748b', fontSize: '14px', fontWeight: '500' }}>Synchronizing team state...</p>
-          </div>
-        ) : error ? (
-          <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', padding: '24px', borderRadius: '16px', textAlign: 'center', color: '#991b1b' }}>
-            <p style={{ margin: 0 }}>{error}</p>
-          </div>
-        ) : teamMembers.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '80px 40px', background: 'white', borderRadius: '24px', border: '1px dashed #e2e8f0' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
-            <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#1e293b', margin: '0 0 8px 0' }}>No Activity Found</h3>
-            <p style={{ color: '#64748b', margin: 0 }}>
-              {selectedProject || selectedDate
-                ? `No recorded activity for ${selectedProject ? projects.find(p => p._id === selectedProject)?.title : 'this project'} on ${selectedDate === getLocalToday() ? 'Today' : selectedDate}.`
-                : 'No activity found for your team.'}
-            </p>
-            <p style={{ color: '#94a3b8', fontSize: '13px', marginTop: '12px' }}>Try adjusting your filters or checking back later.</p>
-            {(selectedProject || selectedDate) && (
-              <button
-                onClick={clearFilters}
-                style={{ marginTop: '24px', background: '#4f46e5', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '12px', fontWeight: '600', cursor: 'pointer' }}
-              >
-                Reset All Filters
-              </button>
-            )}
-          </div>
-        ) : (
+      ) : (
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '20px',
+          overflow: 'hidden',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          border: '1px solid #f1f5f9'
+        }}>
+          {/* List Header */}
           <div style={{
-            backgroundColor: 'white',
-            borderRadius: '20px',
-            overflow: 'hidden',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #f1f5f9'
+            display: 'grid',
+            gridTemplateColumns: '80px 1.5fr 1fr 2fr 1.2fr 100px',
+            padding: '16px 24px',
+            backgroundColor: '#f8fafc',
+            borderBottom: '1px solid #f1f5f9',
+            fontSize: '12px',
+            fontWeight: '700',
+            color: '#64748b',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
           }}>
-            {/* List Header */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '80px 1.5fr 1fr 2fr 1.2fr 100px',
-              padding: '16px 24px',
-              backgroundColor: '#f8fafc',
-              borderBottom: '1px solid #f1f5f9',
-              fontSize: '12px',
-              fontWeight: '700',
-              color: '#64748b',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              <div>Avatar</div>
-              <div>Team Member</div>
-              <div>Status</div>
-              <div>Current / Last Task</div>
-              <div>Project & Time</div>
-              <div style={{ textAlign: 'right' }}>Action</div>
-            </div>
+            <div>Avatar</div>
+            <div>Team Member</div>
+            <div>Status</div>
+            <div>Current / Last Task</div>
+            <div>Project & Time</div>
+            <div style={{ textAlign: 'right' }}>Action</div>
+          </div>
 
-            {teamMembers.map((member, index) => (
-              <div
-                key={member.user._id}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '80px 1.5fr 1fr 2fr 1.2fr 100px',
+          {teamMembers.map((member, index) => (
+            <div
+              key={member.user._id}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '80px 1.5fr 1fr 2fr 1.2fr 100px',
+                alignItems: 'center',
+                padding: '12px 24px',
+                borderBottom: index < teamMembers.length - 1 ? '1px solid #f8fafc' : 'none',
+                transition: 'background-color 0.2s ease',
+                cursor: 'default'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              {/* Avatar */}
+              <div>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                  display: 'flex',
                   alignItems: 'center',
-                  padding: '12px 24px',
-                  borderBottom: index < teamMembers.length - 1 ? '1px solid #f8fafc' : 'none',
-                  transition: 'background-color 0.2s ease',
-                  cursor: 'default'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                {/* Avatar */}
-                <div>
-                  <div style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#0369a1',
-                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
-                  }}>
-                    {member.user.name.charAt(0).toUpperCase()}
-                  </div>
-                </div>
-
-                {/* User Info */}
-                <div style={{ minWidth: 0, paddingRight: '12px' }}>
-                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {member.user.name}
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {member.user.email}
-                  </div>
-                </div>
-
-                {/* Status */}
-                <div>
-                  {getStatusBadge(member.status)}
-                </div>
-
-                {/* Task Info */}
-                <div style={{ minWidth: 0, paddingRight: '16px' }}>
-                  {(member.currentTask || member.lastTask) ? (
-                    <div>
-                      <div
-                        style={{
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          color: '#334155',
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }}
-                        onClick={() => navigate(`/my-tasks/${(member.currentTask || member.lastTask)._id}`)}
-                      >
-                        {(member.currentTask || member.lastTask).title}
-                      </div>
-                      <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase' }}>
-                        {member.currentTask ? 'Active Task' : (member.status === 'paused' ? 'Paused' : 'Recent')}
-                      </div>
-                    </div>
-                  ) : (
-                    <span style={{ fontSize: '12px', color: '#cbd5e1', fontStyle: 'italic' }}>No activity</span>
-                  )}
-                </div>
-
-                {/* Project & Time */}
-                <div style={{ minWidth: 0 }}>
-                  {(member.currentTask || member.lastTask) ? (
-                    <>
-                      <div style={{ fontSize: '13px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ fontSize: '12px' }}>📁</span>
-                        {(member.currentTask || member.lastTask).project?.title || 'Personal'}
-                      </div>
-                      <div style={{ fontSize: '11px', color: member.currentTask ? '#10b981' : '#94a3b8', marginTop: '2px' }}>
-                        {member.currentTask
-                          ? `Since ${formatDate(member.currentTask.startedAt)}`
-                          : member.status === 'paused'
-                            ? `Paused ${formatDate(member.lastTask.pausedAt)}`
-                            : `Done ${formatDate(member.lastTask.completedAt)}`
-                        }
-                      </div>
-                    </>
-                  ) : null}
-                </div>
-
-                {/* Action */}
-                <div style={{ textAlign: 'right' }}>
-                  <button
-                    onClick={() => navigate(`/employees/${member.user._id}`)}
-                    style={{
-                      background: '#f8fafc',
-                      border: '1px solid #e2e8f0',
-                      color: '#4f46e5',
-                      fontSize: '11px',
-                      fontWeight: '700',
-                      cursor: 'pointer',
-                      padding: '6px 10px',
-                      borderRadius: '8px',
-                      transition: 'all 0.2s',
-                      textTransform: 'uppercase'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = '#4f46e5';
-                      e.target.style.color = 'white';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = '#f8fafc';
-                      e.target.style.color = '#4f46e5';
-                    }}
-                  >
-                    Profile
-                  </button>
+                  justifyContent: 'center',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  color: '#0369a1',
+                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
+                }}>
+                  {member.user.name.charAt(0).toUpperCase()}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+
+              {/* User Info */}
+              <div style={{ minWidth: 0, paddingRight: '12px' }}>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {member.user.name}
+                </div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {member.user.email}
+                </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                {getStatusBadge(member.status)}
+              </div>
+
+              {/* Task Info */}
+              <div style={{ minWidth: 0, paddingRight: '16px' }}>
+                {(member.currentTask || member.lastTask) ? (
+                  <div>
+                    <div
+                      style={{
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        color: '#334155',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}
+                      onClick={() => navigate(`/my-tasks/${(member.currentTask || member.lastTask)._id}`)}
+                    >
+                      {(member.currentTask || member.lastTask).title}
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase' }}>
+                      {member.currentTask ? 'Active Task' : (member.status === 'paused' ? 'Paused' : 'Recent')}
+                    </div>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: '12px', color: '#cbd5e1', fontStyle: 'italic' }}>No activity</span>
+                )}
+              </div>
+
+              {/* Project & Time */}
+              <div style={{ minWidth: 0 }}>
+                {(member.currentTask || member.lastTask) ? (
+                  <>
+                    <div style={{ fontSize: '13px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '12px' }}>📁</span>
+                      {(member.currentTask || member.lastTask).project?.title || 'Personal'}
+                    </div>
+                    <div style={{ fontSize: '11px', color: member.currentTask ? '#10b981' : '#94a3b8', marginTop: '2px' }}>
+                      {member.currentTask
+                        ? `Since ${formatDate(member.currentTask.startedAt)}`
+                        : member.status === 'paused'
+                          ? `Paused ${formatDate(member.lastTask.pausedAt)}`
+                          : `Done ${formatDate(member.lastTask.completedAt)}`
+                      }
+                    </div>
+                  </>
+                ) : null}
+              </div>
+
+              {/* Action */}
+              <div style={{ textAlign: 'right' }}>
+                <button
+                  onClick={() => navigate(`/employees/${member.user._id}`)}
+                  style={{
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    color: '#4f46e5',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    padding: '6px 10px',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s',
+                    textTransform: 'uppercase'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = '#4f46e5';
+                    e.target.style.color = 'white';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = '#f8fafc';
+                    e.target.style.color = '#4f46e5';
+                  }}
+                >
+                  Profile
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <style dangerouslySetInnerHTML={{
         __html: `

@@ -252,7 +252,6 @@ const Company = () => {
       <PageHeader
         title={company.name}
         subtitle={company.description}
-        gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
         icon={
           <div style={{
             fontSize: '24px',
