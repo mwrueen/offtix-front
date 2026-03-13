@@ -1,7 +1,338 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { autoScheduleAllTasks } from '../../../utils/ganttScheduler';
 import { taskAPI } from '../../../services/api';
 import AutoScheduleGuide from '../AutoScheduleGuide';
+
+const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, onDelete, onAddSubtask, isExpanded, onToggleExpand, hasChildren, isHoliday, startDate, todayPosition, teamActivity }) => {
+  const position = getTaskPosition(task);
+  const indent = level * 20;
+
+  const getPriorityColor = (priority) => {
+    const colors = {
+      urgent: '#ef4444', // Red 500
+      high: '#f97316',   // Orange 500
+      medium: '#eab308', // Yellow 500
+      low: '#22c55e'     // Green 500
+    };
+    return colors[priority] || '#3b82f6'; // Blue 500
+  };
+
+  const getIssueTypeIcon = (type) => {
+    const types = {
+      task: { icon: '✓', color: '#3b82f6', bg: '#eff6ff' },
+      bug: { icon: '🐛', color: '#ef4444', bg: '#fef2f2' },
+      story: { icon: '📖', color: '#10b981', bg: '#ecfdf5' },
+      epic: { icon: '⚡', color: '#8b5cf6', bg: '#f5f3ff' },
+      subtask: { icon: '↳', color: '#64748b', bg: '#f1f5f9' }
+    };
+    return types[type] || (level > 0 ? types.subtask : types.task);
+  };
+
+  // Format date for display
+  const formatDate = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const issueType = getIssueTypeIcon(task.issueType || (level > 0 ? 'subtask' : 'task'));
+  const priorityColor = getPriorityColor(task.priority);
+
+  return (
+    <div
+      className="gantt-row-hover"
+      style={{
+        display: 'flex',
+        borderBottom: '1px solid #f1f5f9',
+        minHeight: '60px',
+        backgroundColor: level > 0 ? '#f8fafc' : 'white',
+        transition: 'all 0.2s ease'
+      }}
+    >
+      <div style={{
+        width: '350px',
+        padding: '12px 16px',
+        borderRight: '1px solid #e2e8f0',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        flexShrink: 0,
+        backgroundColor: 'inherit',
+        position: 'relative',
+        zIndex: 2
+      }}>
+        {/* Expand/Collapse Button */}
+        <div style={{ paddingLeft: `${indent}px`, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {hasChildren && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleExpand();
+              }}
+              style={{
+                background: '#f1f5f9',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#64748b',
+                borderRadius: '6px',
+                width: '24px',
+                height: '24px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e2e8f0'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#f1f5f9'}
+            >
+              <span style={{
+                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                display: 'inline-block',
+                fontSize: '10px'
+              }}>
+                ▶
+              </span>
+            </button>
+          )}
+
+          {/* Issue Type Icon */}
+          <div style={{
+            width: '28px',
+            height: '28px',
+            backgroundColor: issueType.bg,
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '14px',
+            marginLeft: hasChildren ? '0' : '32px',
+            flexShrink: 0,
+            border: `1px solid ${issueType.color}20`
+          }}>
+            {issueType.icon}
+          </div>
+        </div>
+
+        {/* Task Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: '14px',
+            fontWeight: '600',
+            color: '#1e293b',
+            marginBottom: '4px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
+            {task.title}
+          </div>
+          <div style={{
+            fontSize: '11px',
+            color: '#64748b',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            flexWrap: 'wrap'
+          }}>
+            {/* Date range */}
+            {(task.startDate || task.dueDate) && (
+              <span style={{
+                color: '#3b82f6',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                backgroundColor: '#eff6ff',
+                padding: '1px 6px',
+                borderRadius: '4px'
+              }}>
+                <span>📅</span> {formatDate(task.startDate) || '?'} - {formatDate(task.dueDate) || '?'}
+              </span>
+            )}
+            {/* Duration */}
+            {task.duration?.value && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ opacity: 0.5 }}>•</span>
+                <span>⏱️ {task.duration.value} {task.duration.unit}</span>
+              </span>
+            )}
+
+            {/* Assignee */}
+            {task.assignees && task.assignees.length > 0 && (() => {
+              const activeMember = teamActivity && teamActivity.find(m =>
+                m.currentTask?._id === task._id &&
+                task.assignees.some(a => (a._id || a) === (m.user?._id || m.user))
+              );
+              return (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: activeMember ? '#ecfdf5' : '#f8fafc',
+                  padding: '1px 8px',
+                  borderRadius: '10px',
+                  border: `1px solid ${activeMember ? '#10b98130' : '#e2e8f0'}`,
+                  color: activeMember ? '#059669' : '#64748b'
+                }}>
+                  <span style={{ opacity: 0.5 }}>•</span>
+                  <img
+                    src={task.assignees[0].profile?.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(task.assignees[0].name)}&background=random`}
+                    style={{ width: '14px', height: '14px', borderRadius: '50%' }}
+                    alt=""
+                  />
+                  <span style={{ fontWeight: activeMember ? '700' : '500' }}>{task.assignees[0].name}</span>
+                  {activeMember && (
+                    <span style={{
+                      width: '6px',
+                      height: '6px',
+                      backgroundColor: '#10b981',
+                      borderRadius: '50%',
+                      display: 'inline-block',
+                      boxShadow: '0 0 0 2px #10b98140'
+                    }} />
+                  )}
+                </span>
+              );
+            })()}
+          </div>
+        </div>
+      </div>
+
+      <div style={{
+        flex: 1,
+        position: 'relative',
+        overflow: 'visible'
+      }}>
+        <div style={{
+          width: totalDays * dayWidth,
+          height: '100%',
+          position: 'relative',
+          minHeight: '60px'
+        }}>
+          {/* Today marker line */}
+          {todayPosition >= 0 && todayPosition <= totalDays * dayWidth && (
+            <div
+              style={{
+                position: 'absolute',
+                left: todayPosition + dayWidth / 2,
+                top: 0,
+                bottom: 0,
+                width: '2px',
+                backgroundColor: '#3b82f6',
+                zIndex: 10,
+                pointerEvents: 'none',
+                boxShadow: '0 0 10px rgba(59, 130, 246, 0.4)'
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: -4,
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                backgroundColor: '#3b82f6'
+              }} />
+            </div>
+          )}
+
+          {/* Task Bar */}
+          <div
+            className="task-bar-transition"
+            title={`${task.title}\n${position.startDate ? position.startDate.toLocaleDateString() : 'No start'} → ${position.endDate ? position.endDate.toLocaleDateString() : 'No end'}\nDuration: ${position.durationDays} day${position.durationDays !== 1 ? 's' : ''}${task.duration?.value ? ` (${task.duration.value} ${task.duration.unit})` : ''}`}
+            style={{
+              position: 'absolute',
+              left: Math.max(0, position.left),
+              width: position.width,
+              height: level > 0 ? '24px' : '32px',
+              top: level > 0 ? '18px' : '14px',
+              background: position.hasDates ? `linear-gradient(135deg, ${priorityColor} 0%, ${priorityColor}dd 100%)` : '#94a3b8',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0 10px',
+              color: 'white',
+              fontSize: level > 0 ? '11px' : '12px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              boxShadow: position.hasDates ? '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)' : '0 1px 2px rgba(0,0,0,0.05)',
+              zIndex: 5,
+              border: position.hasDates ? 'none' : '2px dashed rgba(255,255,255,0.4)',
+              opacity: position.hasDates ? 1 : 0.8
+            }}
+            onClick={() => onEdit(task)}
+          >
+            {/* Task title inside bar */}
+            <span style={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              flex: 1,
+              textShadow: '0 1px 2px rgba(0,0,0,0.2)'
+            }}>
+              {task.title}
+            </span>
+
+            {/* In-progress status pulsator */}
+            {teamActivity && teamActivity.some(m =>
+              m.currentTask?._id === task._id &&
+              task.assignees?.some(a => (a._id || a) === (m.user?._id || m.user))
+            ) && (
+                <div style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: '#fff',
+                  boxShadow: '0 0 0 3px rgba(255, 255, 255, 0.4)',
+                  flexShrink: 0,
+                  marginLeft: '8px',
+                  animation: 'pulse 1.5s infinite'
+                }} />
+              )}
+          </div>
+
+          {/* Progress Overlay */}
+          {task.status && (
+            <div style={{
+              position: 'absolute',
+              left: Math.max(0, position.left),
+              width: task.status.name?.toLowerCase() === 'done' ? position.width :
+                task.status.name?.toLowerCase().includes('progress') ? position.width * 0.5 : 0,
+              height: level > 0 ? '24px' : '32px',
+              top: level > 0 ? '18px' : '14px',
+              backgroundColor: 'rgba(255,255,255,0.15)',
+              borderRadius: '6px',
+              zIndex: 6,
+              pointerEvents: 'none'
+            }} />
+          )}
+
+          {/* Deadline indicator */}
+          {task.dueDate && (
+            <div style={{
+              position: 'absolute',
+              left: position.left + position.width - 2,
+              top: level > 0 ? '12px' : '8px',
+              width: '4px',
+              height: level > 0 ? '36px' : '44px',
+              backgroundColor: '#ef4444',
+              borderRadius: '2px',
+              zIndex: 7,
+              boxShadow: '0 0 8px rgba(239, 68, 68, 0.3)'
+            }} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+const MemoizedGanttRow = memo(GanttRow);
+
 
 const GanttView = ({
   tasks,
@@ -51,24 +382,33 @@ const GanttView = ({
       style.id = styleId;
       style.textContent = `
         .gantt-scroll-container::-webkit-scrollbar {
-          height: 12px;
-          width: 12px;
+          height: 8px;
+          width: 8px;
         }
         .gantt-scroll-container::-webkit-scrollbar-track {
-          background: #f4f5f7;
-          border-radius: 6px;
+          background: #f1f5f9;
         }
         .gantt-scroll-container::-webkit-scrollbar-thumb {
-          background: #0052cc;
-          border-radius: 6px;
-          border: 2px solid #f4f5f7;
+          background: #cbd5e1;
+          border-radius: 4px;
         }
         .gantt-scroll-container::-webkit-scrollbar-thumb:hover {
-          background: #0065ff;
+          background: #94a3b8;
         }
         .gantt-scroll-container {
           scrollbar-width: thin;
-          scrollbar-color: #0052cc #f4f5f7;
+          scrollbar-color: #cbd5e1 #f1f5f9;
+          scroll-behavior: smooth;
+        }
+        .gantt-row-hover:hover {
+          background-color: #f8fafc !important;
+        }
+        .task-bar-transition {
+          transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+        }
+        .task-bar-transition:hover {
+          transform: translateY(-2px) scale(1.02);
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
         }
       `;
       document.head.appendChild(style);
@@ -84,8 +424,34 @@ const GanttView = ({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Calculate date range based on tasks with dates, or use defaults
-  const calculateDateRange = () => {
+  // Pre-calculate holiday map for fast lookups
+  const holidayMap = useMemo(() => {
+    const map = {};
+    const holidays = company?.settings?.holidays || project?.settings?.holidays || [];
+    holidays.forEach(h => {
+      if (h.date) {
+        const d = new Date(h.date);
+        if (!isNaN(d.getTime())) {
+          map[d.toISOString().split('T')[0]] = h.name || 'Holiday';
+        }
+      }
+    });
+    return map;
+  }, [company?.settings?.holidays, project?.settings?.holidays]);
+
+  // Fast holiday checker
+  const isHoliday = useCallback((date) => {
+    if (!date) return false;
+    try {
+      const dateStr = date.toISOString().split('T')[0];
+      return !!holidayMap[dateStr];
+    } catch (e) {
+      return false;
+    }
+  }, [holidayMap]);
+
+  // Pre-calculate date range and total days
+  const { startDate, endDate, totalDays, dateHeaders } = useMemo(() => {
     let minDate = null;
     let maxDate = null;
 
@@ -102,7 +468,6 @@ const GanttView = ({
       }
     });
 
-    // If no task dates, use project dates or defaults
     if (!minDate) {
       minDate = project?.startDate ? new Date(project.startDate) : new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
     }
@@ -110,61 +475,94 @@ const GanttView = ({
       maxDate = project?.endDate ? new Date(project.endDate) : new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000);
     }
 
-    // Add padding: 7 days before and 14 days after
     const paddedStart = new Date(minDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const paddedEnd = new Date(maxDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+    paddedStart.setHours(0, 0, 0, 0);
+    const paddedEnd = new Date(maxDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+    paddedEnd.setHours(0, 0, 0, 0);
 
-    // Ensure today is visible
     if (paddedStart > today) paddedStart.setTime(today.getTime() - 7 * 24 * 60 * 60 * 1000);
     if (paddedEnd < today) paddedEnd.setTime(today.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    return { start: paddedStart, end: paddedEnd };
-  };
+    const days = Math.ceil((paddedEnd - paddedStart) / (1000 * 60 * 60 * 24));
 
-  const dateRange = calculateDateRange();
-  const startDate = dateRange.start;
-  const endDate = dateRange.end;
+    // Generate headers
+    const headers = [];
+    for (let i = 0; i < days; i++) {
+      const d = new Date(paddedStart);
+      d.setDate(d.getDate() + i);
+      headers.push(d);
+    }
 
-  const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-  const dayWidth = 40;
+    return { startDate: paddedStart, endDate: paddedEnd, totalDays: days, dateHeaders: headers };
+  }, [tasks, project?.startDate, project?.endDate, today]);
 
-  // Build task hierarchy
-  const buildTaskHierarchy = (tasks) => {
-    const taskMap = new Map();
-    const rootTasks = [];
-
-    tasks.forEach(task => {
-      taskMap.set(task._id, { ...task, children: [] });
-    });
-
-    tasks.forEach(task => {
-      if (task.parent) {
-        const parentId = typeof task.parent === 'object' ? task.parent._id : task.parent;
-        const parent = taskMap.get(parentId);
-        if (parent) {
-          parent.children.push(taskMap.get(task._id));
-        } else {
-          rootTasks.push(taskMap.get(task._id));
-        }
+  // Group dateHeaders by month for calendar view
+  const monthHeaders = useMemo(() => {
+    if (!dateHeaders || dateHeaders.length === 0) return [];
+    const groups = [];
+    dateHeaders.forEach((date) => {
+      const monthStr = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+      if (groups.length === 0 || groups[groups.length - 1].label !== monthStr) {
+        groups.push({ label: monthStr, count: 1 });
       } else {
-        rootTasks.push(taskMap.get(task._id));
+        groups[groups.length - 1].count++;
       }
     });
+    return groups;
+  }, [dateHeaders]);
 
-    return rootTasks;
-  };
+  const dayWidth = 40;
 
-  const hierarchicalTasks = buildTaskHierarchy(tasks);
+  // Pre-calculate grid data (weekend and holiday status)
+  const gridData = useMemo(() => {
+    return dateHeaders.map(date => {
+      const day = date.getDay();
+      const dateStr = date.toISOString().split('T')[0];
+      return {
+        isWeekend: day === 0 || day === 6,
+        isHol: !!holidayMap[dateStr],
+        holidayName: holidayMap[dateStr] || ''
+      };
+    });
+  }, [dateHeaders, holidayMap]);
 
-  const toggleExpand = (taskId) => {
-    const newExpanded = new Set(expandedTasks);
-    if (newExpanded.has(taskId)) {
-      newExpanded.delete(taskId);
-    } else {
-      newExpanded.add(taskId);
-    }
-    setExpandedTasks(newExpanded);
-  };
+  // Memoize task hierarchy
+  const hierarchicalTasks = useMemo(() => {
+    const buildHierarchy = (taskList) => {
+      const taskMap = new Map();
+      const roots = [];
+
+      taskList.forEach(task => {
+        taskMap.set(task._id, { ...task, children: [] });
+      });
+
+      taskList.forEach(task => {
+        if (task.parent) {
+          const parentId = typeof task.parent === 'object' ? task.parent._id : task.parent;
+          const parent = taskMap.get(parentId);
+          if (parent) {
+            parent.children.push(taskMap.get(task._id));
+          } else {
+            roots.push(taskMap.get(task._id));
+          }
+        } else {
+          roots.push(taskMap.get(task._id));
+        }
+      });
+
+      return roots;
+    };
+    return buildHierarchy(tasks);
+  }, [tasks]);
+
+  const toggleExpand = useCallback((taskId) => {
+    setExpandedTasks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) newSet.delete(taskId);
+      else newSet.add(taskId);
+      return newSet;
+    });
+  }, []);
 
   // Export Gantt chart as PNG
   const exportAsPNG = async () => {
@@ -413,7 +811,7 @@ const GanttView = ({
   };
 
   // Convert task duration to days for display
-  const getDurationInDays = (task) => {
+  const getDurationInDays = useCallback((task) => {
     if (!task.duration || !task.duration.value) return null;
 
     const value = parseFloat(task.duration.value);
@@ -427,9 +825,9 @@ const GanttView = ({
       case 'weeks': return value * 5; // Working days in a week
       default: return value / hoursPerDay;
     }
-  };
+  }, [company?.settings?.timeTracking?.hoursPerDay]);
 
-  const getTaskPosition = (task) => {
+  const getTaskPosition = useCallback((task) => {
     const taskStart = task.startDate ? new Date(task.startDate) : null;
     const taskEnd = task.dueDate ? new Date(task.dueDate) : null;
 
@@ -479,54 +877,14 @@ const GanttView = ({
       durationDays,
       hasDates: !!(task.startDate || task.dueDate)
     };
-  };
+  }, [startDate, dayWidth, today, getDurationInDays]);
 
-  const generateDateHeaders = () => {
-    const headers = [];
-    const current = new Date(startDate);
-
-    while (current <= endDate) {
-      headers.push(new Date(current));
-      current.setDate(current.getDate() + 1);
-    }
-
-    return headers;
-  };
-
-  // Check if a date is a holiday
-  const isHoliday = (date) => {
-    if (!date || isNaN(new Date(date).getTime())) return false;
-    const dateObj = new Date(date);
-
-    const holidays = company?.settings?.holidays || project?.settings?.holidays || [];
-    const dateStr = dateObj.toISOString().split('T')[0];
-    return holidays.some(holiday => {
-      if (!holiday.date) return false;
-      const hDate = new Date(holiday.date);
-      if (isNaN(hDate.getTime())) return false;
-      const holidayDate = hDate.toISOString().split('T')[0];
-      return holidayDate === dateStr;
-    });
-  };
-
-  // Get holiday name for a date
-  const getHolidayName = (date) => {
-    if (!date || isNaN(new Date(date).getTime())) return '';
-    const dateObj = new Date(date);
-
-    const holidays = company?.settings?.holidays || project?.settings?.holidays || [];
-    const dateStr = dateObj.toISOString().split('T')[0];
-    const holiday = holidays.find(h => {
-      if (!h.date) return false;
-      const hDate = new Date(h.date);
-      if (isNaN(hDate.getTime())) return false;
-      const holidayDate = hDate.toISOString().split('T')[0];
-      return holidayDate === dateStr;
-    });
-    return holiday?.name || '';
-  };
-
-  const dateHeaders = generateDateHeaders();
+  // Fast holiday name getter
+  const getHolidayName = useCallback((date) => {
+    if (!date) return '';
+    const dateStr = date.toISOString().split('T')[0];
+    return holidayMap[dateStr] || '';
+  }, [holidayMap]);
 
   // Handle scroll synchronization
   const handleScroll = (e) => {
@@ -614,14 +972,34 @@ const GanttView = ({
     }
   };
 
-  // Calculate today's position for the "Today" marker line
-  const todayOffset = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
-  const todayPosition = todayOffset * dayWidth;
+  const jumpToDate = useCallback((targetDate) => {
+    if (!targetDate) return;
+    const d = new Date(targetDate);
+    d.setHours(0, 0, 0, 0);
+    const offset = Math.floor((d - startDate) / (1000 * 60 * 60 * 24));
+    const newScrollLeft = Math.max(0, offset * dayWidth - 200); // Offset by 200px to center it a bit
 
-  const renderTaskRows = (tasks, level = 0) => {
-    return tasks.map(task => (
+    // Update scroll
+    if (ganttContainerRef.current) {
+      const scrollContainer = ganttContainerRef.current.querySelector('.gantt-scroll-container');
+      if (scrollContainer) {
+        scrollContainer.scrollLeft = newScrollLeft;
+      }
+    }
+  }, [startDate, dayWidth]);
+
+  const jumpToToday = () => jumpToDate(new Date());
+
+  // Calculate today's position for the "Today" marker line
+  const todayPosition = useMemo(() => {
+    const todayOffset = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+    return todayOffset * dayWidth;
+  }, [startDate, today, dayWidth]);
+
+  const renderTaskRows = (taskList, level = 0) => {
+    return taskList.map(task => (
       <React.Fragment key={task._id}>
-        <GanttRow
+        <MemoizedGanttRow
           task={task}
           level={level}
           totalDays={totalDays}
@@ -647,338 +1025,245 @@ const GanttView = ({
 
   return (
     <div style={{
-      backgroundColor: 'white',
-      border: '1px solid #dfe1e6',
-      borderRadius: '3px',
+      backgroundColor: '#f8fafc',
+      border: '1px solid #e2e8f0',
+      borderRadius: '20px',
       overflow: 'hidden',
-      boxShadow: '0 1px 2px rgba(9, 30, 66, 0.08)',
-      position: 'relative'
+      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02)',
+      position: 'relative',
+      margin: '24px 0',
+      fontFamily: '"Outfit", "Inter", sans-serif'
     }}>
-      {/* Auto-Schedule Button */}
+      {/* High-End Integrated Toolbar */}
       <div style={{
-        padding: '16px',
-        borderBottom: '1px solid #dfe1e6',
-        backgroundColor: '#f4f5f7',
+        padding: '24px 32px',
+        borderBottom: '1px solid #e2e8f0',
         display: 'flex',
+        alignItems: 'center',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        backgroundColor: 'white',
+        background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
           <div>
-            <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600', color: '#172b4d' }}>
-              Gantt Chart
-            </h3>
-            <p style={{ margin: 0, fontSize: '12px', color: '#5e6c84' }}>
-              Visualize and auto-schedule tasks based on duration, working days, holidays, and leaves
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <span style={{ fontSize: '20px' }}>🗓️</span>
+              <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>
+                Project Timeline
+              </h2>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{
+                fontSize: '11px',
+                color: '#3b82f6',
+                backgroundColor: '#eff6ff',
+                padding: '2px 10px',
+                borderRadius: '20px',
+                fontWeight: '700',
+                border: '1px solid #3b82f620'
+              }}>
+                {tasks.length} Syncronized Tasks
+              </span>
+              <div style={{ width: '4px', height: '4px', backgroundColor: '#cbd5e1', borderRadius: '50%' }} />
+              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '500' }}>
+                Resource optimized scheduling
+              </span>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#5e6c84' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <div style={{ width: '16px', height: '16px', backgroundColor: '#deebff', border: '1px solid #0052cc', borderRadius: '2px' }}></div>
-              <span>Today</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <div style={{ width: '16px', height: '16px', backgroundColor: '#fafbfc', border: '1px solid #dfe1e6', borderRadius: '2px' }}></div>
-              <span>Weekend</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <div style={{ width: '16px', height: '16px', backgroundColor: '#ffebe6', border: '1px solid #de350b', borderRadius: '2px' }}></div>
-              <span>Holiday 🎉</span>
+
+          <div style={{ width: '1px', height: '40px', backgroundColor: '#e2e8f0' }} />
+
+          {/* Calendar Navigation */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button
+              onClick={jumpToToday}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#eff6ff',
+                color: '#3b82f6',
+                border: '1px solid #3b82f630',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: '700',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dbeafe'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'}
+            >
+              Today
+            </button>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <input
+                type="date"
+                onChange={(e) => jumpToDate(e.target.value)}
+                style={{
+                  padding: '8px 12px', paddingLeft: '32px', borderRadius: '10px', border: '1px solid #e2e8f0',
+                  fontSize: '12px', color: '#475569', fontWeight: '600', outline: 'none', backgroundColor: 'white', cursor: 'pointer'
+                }}
+              />
+              <span style={{ position: 'absolute', left: '10px', fontSize: '14px', pointerEvents: 'none' }}>📅</span>
             </div>
           </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* Documentation Button */}
           <button
             onClick={() => setShowGuide(true)}
             style={{
-              padding: '6px 12px',
+              padding: '10px 20px',
               backgroundColor: 'white',
-              color: '#0052cc',
-              border: '1px solid #0052cc',
-              borderRadius: '3px',
+              color: '#475569',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
               cursor: 'pointer',
-              fontSize: '12px',
+              fontSize: '13px',
               fontWeight: '600',
               display: 'flex',
               alignItems: 'center',
-              gap: '4px'
+              gap: '8px',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
             }}
           >
-            <span>❓</span>
-            How it works
+            <span>📖</span> Guide
           </button>
-        </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          {/* Export Button with Dropdown */}
+
+          {/* Export Dropdown */}
           <div style={{ position: 'relative' }} ref={exportMenuRef}>
             <button
               onClick={() => setShowExportMenu(!showExportMenu)}
               disabled={tasks.length === 0 || isExporting}
               style={{
-                padding: '10px 20px',
-                backgroundColor: tasks.length === 0 ? '#dfe1e6' : '#36b37e',
+                padding: '10px 24px',
+                backgroundColor: tasks.length === 0 ? '#f1f5f9' : '#10b981',
                 color: 'white',
                 border: 'none',
-                borderRadius: '3px',
+                borderRadius: '12px',
                 cursor: tasks.length === 0 || isExporting ? 'not-allowed' : 'pointer',
-                fontSize: '14px',
-                fontWeight: '600',
+                fontSize: '13px',
+                fontWeight: '700',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                if (tasks.length > 0 && !isExporting) {
-                  e.currentTarget.style.backgroundColor = '#2d9d6a';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (tasks.length > 0 && !isExporting) {
-                  e.currentTarget.style.backgroundColor = '#36b37e';
-                }
+                gap: '10px',
+                transition: 'all 0.2s',
+                boxShadow: tasks.length === 0 ? 'none' : '0 4px 12px rgba(16, 185, 129, 0.2)'
               }}
             >
-              {isExporting ? (
-                <>
-                  <span style={{ animation: 'spin 1s linear infinite' }}>⏳</span>
-                  Exporting...
-                </>
-              ) : (
-                <>
-                  <span>📥</span>
-                  Export
-                  <span style={{ fontSize: '10px' }}>▼</span>
-                </>
-              )}
+              <span>📥</span> Export <span style={{ fontSize: '10px', opacity: 0.7 }}>{showExportMenu ? '▲' : '▼'}</span>
             </button>
-
-            {/* Export Dropdown Menu */}
             {showExportMenu && (
               <div style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: '4px',
-                backgroundColor: 'white',
-                borderRadius: '6px',
-                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
-                border: '1px solid #dfe1e6',
-                minWidth: '180px',
-                zIndex: 100,
-                overflow: 'hidden'
+                position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+                border: '1px solid #e2e8f0', minWidth: '220px', zIndex: 100, padding: '6px'
               }}>
-                <button
-                  onClick={exportAsPNG}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    backgroundColor: 'white',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    color: '#172b4d',
-                    transition: 'background-color 0.15s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f4f5f7'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
-                >
-                  <span>🖼️</span>
-                  Export as PNG
-                </button>
-                <button
-                  onClick={exportAsCSV}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    backgroundColor: 'white',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    color: '#172b4d',
-                    transition: 'background-color 0.15s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f4f5f7'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
-                >
-                  <span>📊</span>
-                  Export as CSV
-                </button>
-                <button
-                  onClick={exportAsJSON}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    backgroundColor: 'white',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    color: '#172b4d',
-                    transition: 'background-color 0.15s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f4f5f7'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
-                >
-                  <span>📋</span>
-                  Export as JSON
-                </button>
-                <div style={{ height: '1px', backgroundColor: '#e2e8f0', margin: '4px 0' }} />
-                <button
-                  onClick={exportAsExcelWBS}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    backgroundColor: 'white',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    color: '#172b4d',
-                    transition: 'background-color 0.15s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f4f5f7'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
-                >
-                  <span>📑</span>
-                  Export Excel (WBS)
-                </button>
+                {[
+                  { label: 'Export as PNG', icon: '🖼️', action: exportAsPNG },
+                  { label: 'Export as CSV', icon: '📊', action: exportAsCSV },
+                  { label: 'Export as JSON', icon: '📋', action: exportAsJSON }
+                ].map((item, id) => (
+                  <button key={id} onClick={() => { item.action(); setShowExportMenu(false); }} style={{ width: '100%', padding: '12px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px', color: '#475569', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}>
+                    <span style={{ fontSize: '18px' }}>{item.icon}</span> {item.label}
+                  </button>
+                ))}
               </div>
             )}
           </div>
 
+          {/* Auto-Schedule Button */}
           <button
             onClick={() => setShowAutoScheduleModal(true)}
-            disabled={tasks.length === 0}
             style={{
-              padding: '10px 20px',
-              backgroundColor: tasks.length === 0 ? '#dfe1e6' : '#0052cc',
+              padding: '10px 28px',
+              backgroundColor: '#3b82f6',
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
               color: 'white',
               border: 'none',
-              borderRadius: '3px',
-              cursor: tasks.length === 0 ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: '700',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              if (tasks.length > 0) {
-                e.currentTarget.style.backgroundColor = '#0065ff';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (tasks.length > 0) {
-                e.currentTarget.style.backgroundColor = '#0052cc';
-              }
+              gap: '10px',
+              boxShadow: '0 8px 16px rgba(37, 99, 235, 0.2)'
             }}
           >
-            <span>⚡</span>
-            Auto-Schedule Tasks
+            <span>⚡</span> Auto Schedule
           </button>
         </div>
       </div>
 
-      {/* Gantt Container with Single Horizontal Scroll */}
+
+      {/* Main Gantt Area */}
       <div
         ref={ganttContainerRef}
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          maxHeight: 'calc(100vh - 300px)',
-          overflow: 'hidden',
-          position: 'relative'
+          display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 250px)',
+          overflow: 'hidden', position: 'relative', backgroundColor: 'white'
         }}
       >
-        {/* Scroll Shadow Indicator */}
+        {/* Scroll Shadows */}
         {showScrollShadow && (
           <div style={{
-            position: 'absolute',
-            right: 0,
-            top: '60px',
-            bottom: 0,
-            width: '30px',
-            background: 'linear-gradient(to left, rgba(0, 0, 0, 0.1), transparent)',
-            pointerEvents: 'none',
-            zIndex: 5
+            position: 'absolute', right: 0, top: 0, bottom: 0, width: '40px',
+            background: 'linear-gradient(to left, rgba(248, 250, 252, 0.8), transparent)',
+            pointerEvents: 'none', zIndex: 15
           }} />
         )}
-        {/* Header */}
-        <div style={{
-          display: 'flex',
-          borderBottom: '2px solid #dfe1e6',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-          backgroundColor: '#f4f5f7'
-        }}>
-          <div style={{
-            width: '350px',
-            padding: '12px 16px',
-            backgroundColor: '#f4f5f7',
-            borderRight: '2px solid #dfe1e6',
-            fontSize: '11px',
-            fontWeight: '700',
-            color: '#5e6c84',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            flexShrink: 0
-          }}>
-            Issue
-          </div>
 
+        {/* Header with Sticky Task List and Calendar View */}
+        <div style={{
+          display: 'flex', borderBottom: '2px solid #f1f5f9', position: 'sticky',
+          top: 0, zIndex: 20, backgroundColor: '#f8fafc'
+        }}>
+          {/* Sidebar header (Total Task Detail) */}
           <div style={{
-            flex: 1,
-            backgroundColor: '#f4f5f7',
-            overflow: 'hidden',
-            position: 'relative'
-          }}>
+            width: '350px', borderRight: '1px solid #e2e8f0',
+            fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase',
+            letterSpacing: '0.08em', flexShrink: 0, backgroundColor: '#f8fafc',
+            display: 'flex', alignItems: 'center', padding: '0 24px', alignSelf: 'stretch'
+          }}>Task Detail & Resource</div>
+
+          <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+            {/* Month Row */}
             <div style={{
-              display: 'flex',
-              width: totalDays * dayWidth,
-              transform: `translateX(-${scrollLeft}px)`,
-              transition: 'transform 0.05s linear'
+              display: 'flex', width: totalDays * dayWidth, transform: `translateX(-${scrollLeft}px)`,
+              transition: 'transform 0.1s linear', borderBottom: '1px solid #e2e8f0'
+            }}>
+              {monthHeaders.map((group, idx) => (
+                <div key={idx} style={{
+                  width: group.count * dayWidth, flexShrink: 0, padding: '8px 12px',
+                  fontSize: '11px', fontWeight: '700', color: '#475569', borderRight: '1px solid #e2e8f0',
+                  backgroundColor: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.05em'
+                }}>
+                  {group.label}
+                </div>
+              ))}
+            </div>
+
+            {/* Day Row */}
+            <div style={{
+              display: 'flex', width: totalDays * dayWidth, transform: `translateX(-${scrollLeft}px)`,
+              transition: 'transform 0.1s linear'
             }}>
               {dateHeaders.map((date, index) => {
                 const isToday = date.toDateString() === today.toDateString();
-                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                const isHol = isHoliday(date);
-                const holidayName = isHol ? getHolidayName(date) : '';
-
+                const day = gridData[index];
                 return (
-                  <div
-                    key={index}
-                    title={isHol ? `Holiday: ${holidayName}` : ''}
-                    style={{
-                      width: dayWidth,
-                      padding: '6px 4px',
-                      borderRight: '1px solid #e1e4e8',
-                      fontSize: '10px',
-                      textAlign: 'center',
-                      color: isToday ? '#0052cc' : (isHol ? '#de350b' : '#5e6c84'),
-                      backgroundColor: isToday ? '#deebff' : (isHol ? '#ffebe6' : (isWeekend ? '#fafbfc' : 'transparent')),
-                      fontWeight: isToday || isHol ? '700' : '400',
-                      position: 'relative',
-                      flexShrink: 0
-                    }}
-                  >
-                    <div style={{ fontSize: '11px', marginBottom: '2px' }}>
-                      {date.getDate()}
-                      {isHol && <span style={{ marginLeft: '2px' }}>🎉</span>}
-                    </div>
-                    <div style={{ fontSize: '9px', opacity: 0.8 }}>
-                      {date.toLocaleDateString('en', { weekday: 'short' })}
-                    </div>
+                  <div key={index} title={day.isHol ? `Holiday: ${day.holidayName}` : ''} style={{
+                    width: dayWidth, padding: '12px 0', borderRight: '1px solid #f1f5f9', fontSize: '11px',
+                    textAlign: 'center', color: isToday ? '#3b82f6' : (day.isHol ? '#ef4444' : '#94a3b8'),
+                    backgroundColor: isToday ? '#eff6ff' : (day.isHol ? '#fff1f2' : (day.isWeekend ? '#f8fafc' : 'transparent')),
+                    fontWeight: isToday || day.isHol ? '800' : '600', position: 'relative', flexShrink: 0,
+                    display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '4px',
+                    boxShadow: isToday ? 'inset 0 -3px 0 #3b82f6' : 'none'
+                  }}>
+                    <div style={{ fontSize: '12px', color: isToday ? '#2563eb' : 'inherit' }}>{date.getDate()}</div>
+                    <div style={{ fontSize: '9px', textTransform: 'uppercase', opacity: 0.6 }}>{date.toLocaleDateString('en', { weekday: 'short' }).slice(0, 1)}</div>
+                    {day.isHol && <div style={{ fontSize: '10px' }}>🎁</div>}
                   </div>
                 );
               })}
@@ -987,56 +1272,48 @@ const GanttView = ({
         </div>
 
         {/* Tasks Container with Unified Scroll */}
-        <div
-          className="gantt-scroll-container"
-          style={{
-            flex: 1,
-            overflow: 'auto',
-            position: 'relative'
-          }}
-          onScroll={handleScroll}
-        >
+        <div className="gantt-scroll-container" style={{ flex: 1, overflow: 'auto', position: 'relative' }} onScroll={handleScroll}>
           {tasks.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '80px 24px',
-              color: '#5e6c84'
-            }}>
+            <div style={{ textAlign: 'center', padding: '80px 24px', color: '#5e6c84' }}>
               <div style={{ fontSize: '64px', marginBottom: '20px', opacity: 0.5 }}>📊</div>
               <h4 style={{ margin: '0 0 12px 0', fontSize: '18px', color: '#172b4d', fontWeight: '600' }}>No tasks to display</h4>
               <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.6' }}>Create tasks with dates to see them in the Gantt chart.</p>
             </div>
           ) : (
-            <div style={{
-              minWidth: `${350 + totalDays * dayWidth}px`
-            }}>
-              {renderTaskRows(hierarchicalTasks)}
+            <div style={{ minWidth: `${350 + totalDays * dayWidth}px`, position: 'relative' }}>
+              {/* Unified Background Grid Layer */}
+              <div style={{
+                position: 'absolute', top: 0, left: 350, right: 0, bottom: 0,
+                display: 'flex', pointerEvents: 'none', zIndex: 0
+              }}>
+                {gridData.map((day, i) => (
+                  <div key={i} style={{
+                    width: dayWidth, borderRight: '1px solid #f1f5f9',
+                    backgroundColor: day.isHol ? '#fff1f2' : (day.isWeekend ? '#f8fafc' : 'transparent'),
+                    height: '100%', flexShrink: 0
+                  }} />
+                ))}
+              </div>
+
+              {/* Tasks Content Layer */}
+              <div style={{ position: 'relative', zIndex: 1, minHeight: '100%' }}>
+                {renderTaskRows(hierarchicalTasks)}
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Auto-Schedule Confirmation Modal */}
+      {/* Modals Section */}
       {showAutoScheduleModal && (
         <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
           <div style={{
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            padding: '32px',
-            maxWidth: '600px',
-            width: '90%',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+            backgroundColor: 'white', borderRadius: '8px', padding: '32px',
+            maxWidth: '600px', width: '90%', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
           }}>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: '600', color: '#172b4d' }}>
               ⚡ Auto-Schedule Tasks
@@ -1288,440 +1565,22 @@ const GanttView = ({
       {/* Guide Modal */}
       {showGuide && <AutoScheduleGuide onClose={() => setShowGuide(false)} />}
 
-      {/* Schedule Result Modal */}
       {scheduleResult && (
         <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', zIndex: 1001
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001
         }}>
           <div style={{
-            backgroundColor: 'white', borderRadius: '12px', padding: '32px',
-            maxWidth: '480px', width: '90%', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+            backgroundColor: 'white', borderRadius: '20px', padding: '32px', maxWidth: '480px',
+            width: '90%', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
           }}>
-            {scheduleResult.success ? (
-              <>
-                <div style={{
-                  width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#d1fae5',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  margin: '0 auto 20px', fontSize: '32px'
-                }}>✅</div>
-                <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: '#065f46' }}>
-                  Tasks Scheduled!
-                </h2>
-                <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#6b7280' }}>
-                  Tasks have been scheduled based on priority and duration.
-                </p>
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '20px' }}>
-                  <div style={{ padding: '14px 20px', backgroundColor: '#f0fdf4', borderRadius: '12px', border: '1px solid #bbf7d0', minWidth: '100px' }}>
-                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#16a34a' }}>{scheduleResult.count}</div>
-                    <div style={{ fontSize: '11px', color: '#15803d', fontWeight: '500' }}>SCHEDULED</div>
-                  </div>
-                  <div style={{ padding: '14px 20px', backgroundColor: '#eff6ff', borderRadius: '12px', border: '1px solid #bfdbfe', minWidth: '100px' }}>
-                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#2563eb' }}>
-                      {scheduleResult.mode === 'parallel' ? `${scheduleResult.maxParallel}x` : '1x'}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#1d4ed8', fontWeight: '500' }}>
-                      {scheduleResult.mode === 'parallel' ? 'PARALLEL' : 'SEQUENTIAL'}
-                    </div>
-                  </div>
-                  {scheduleResult.noDuration > 0 && (
-                    <div style={{ padding: '14px 20px', backgroundColor: '#fef3c7', borderRadius: '12px', border: '1px solid #fde68a', minWidth: '100px' }}>
-                      <div style={{ fontSize: '24px', fontWeight: '700', color: '#92400e' }}>{scheduleResult.noDuration}</div>
-                      <div style={{ fontSize: '11px', color: '#92400e', fontWeight: '500' }}>NO DURATION</div>
-                    </div>
-                  )}
-                </div>
-                <div style={{ padding: '10px 14px', backgroundColor: '#f0fdf4', borderRadius: '6px', fontSize: '13px', color: '#065f46', marginBottom: '16px' }}>
-                  📅 Scheduled from: <strong>{scheduleResult.startedFrom === 'today' ? 'Today' : 'Project Start Date'}</strong>
-                </div>
-                {scheduleResult.noDuration > 0 && (
-                  <div style={{ padding: '10px 14px', backgroundColor: '#fef3c7', borderRadius: '6px', fontSize: '12px', color: '#92400e', marginBottom: '16px' }}>
-                    ⚠ <strong>{scheduleResult.noDuration}</strong> task(s) have no duration - add duration to schedule them
-                  </div>
-                )}
-                <button
-                  onClick={() => setScheduleResult(null)}
-                  style={{
-                    padding: '12px 32px', backgroundColor: '#0052cc', border: 'none',
-                    borderRadius: '8px', cursor: 'pointer', fontSize: '14px', color: 'white', fontWeight: '600'
-                  }}
-                >Close</button>
-              </>
-            ) : (
-              <>
-                <div style={{
-                  width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#fee2e2',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  margin: '0 auto 20px', fontSize: '32px'
-                }}>⚠️</div>
-                <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: '#dc2626' }}>
-                  Scheduling Failed
-                </h2>
-                <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#6b7280' }}>
-                  {scheduleResult.error}
-                </p>
-                <button
-                  onClick={() => setScheduleResult(null)}
-                  style={{
-                    padding: '12px 32px', backgroundColor: '#dc2626', border: 'none',
-                    borderRadius: '8px', cursor: 'pointer', fontSize: '14px', color: 'white', fontWeight: '600'
-                  }}
-                >Close</button>
-              </>
-            )}
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>{scheduleResult.success ? '✅' : '⚠️'}</div>
+            <h2 style={{ margin: '0 0 16px 0', fontSize: '24px', fontWeight: '700' }}>{scheduleResult.success ? 'Tasks Scheduled!' : 'Failed'}</h2>
+            <p style={{ color: '#64748b', marginBottom: '24px' }}>{scheduleResult.success ? `Successfully updated ${scheduleResult.count} tasks.` : scheduleResult.error}</p>
+            <button onClick={() => setScheduleResult(null)} style={{ padding: '12px 32px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '700' }}>Close</button>
           </div>
         </div>
       )}
-    </div>
-  );
-};
-
-const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, onDelete, onAddSubtask, isExpanded, onToggleExpand, hasChildren, isHoliday, startDate, todayPosition, teamActivity }) => {
-  const position = getTaskPosition(task);
-  const indent = level * 20;
-
-  const getPriorityColor = (priority) => {
-    const colors = {
-      urgent: '#de350b',
-      high: '#ff8b00',
-      medium: '#ffab00',
-      low: '#36b37e'
-    };
-    return colors[priority] || '#0052cc';
-  };
-
-  const getIssueTypeIcon = (type) => {
-    const types = {
-      task: { icon: '✓', color: '#0052cc', bg: '#deebff' },
-      bug: { icon: '🐛', color: '#de350b', bg: '#ffebe6' },
-      story: { icon: '📖', color: '#00875a', bg: '#e3fcef' },
-      epic: { icon: '⚡', color: '#6554c0', bg: '#eae6ff' },
-      subtask: { icon: '↳', color: '#5e6c84', bg: '#f4f5f7' }
-    };
-    return types[type] || (level > 0 ? types.subtask : types.task);
-  };
-
-  // Format date for display
-  const formatDate = (date) => {
-    if (!date) return '';
-    const d = new Date(date);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
-  const issueType = getIssueTypeIcon(task.issueType || (level > 0 ? 'subtask' : 'task'));
-  const priorityColor = getPriorityColor(task.priority);
-
-  return (
-    <div style={{
-      display: 'flex',
-      borderBottom: '1px solid #f4f5f7',
-      minHeight: '52px',
-      backgroundColor: level > 0 ? '#fafbfc' : 'white',
-      transition: 'background-color 0.15s ease'
-    }}
-      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = level > 0 ? '#f4f5f7' : '#fafbfc'}
-      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = level > 0 ? '#fafbfc' : 'white'}
-    >
-      <div style={{
-        width: '350px',
-        padding: '12px 16px',
-        borderRight: '2px solid #dfe1e6',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        flexShrink: 0,
-        backgroundColor: level > 0 ? '#fafbfc' : 'white'
-      }}>
-        {/* Expand/Collapse Button */}
-        <div style={{ paddingLeft: `${indent}px`, display: 'flex', alignItems: 'center', gap: '4px' }}>
-          {hasChildren && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleExpand();
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '2px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#5e6c84',
-                fontSize: '10px'
-              }}
-            >
-              <span style={{
-                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                transition: 'transform 0.2s',
-                display: 'inline-block'
-              }}>
-                ▶
-              </span>
-            </button>
-          )}
-
-          {/* Issue Type Icon */}
-          <div style={{
-            width: '20px',
-            height: '20px',
-            backgroundColor: issueType.bg,
-            borderRadius: '3px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '11px',
-            marginLeft: hasChildren ? '0' : '14px',
-            flexShrink: 0
-          }}>
-            {issueType.icon}
-          </div>
-        </div>
-
-        {/* Task Info */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            fontSize: '13px',
-            fontWeight: '500',
-            color: '#172b4d',
-            marginBottom: '2px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          }}>
-            {task.title}
-          </div>
-          <div style={{
-            fontSize: '10px',
-            color: '#5e6c84',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            flexWrap: 'wrap'
-          }}>
-            {/* Date range */}
-            {(task.startDate || task.dueDate) && (
-              <span style={{
-                color: '#0052cc',
-                fontWeight: '500'
-              }}>
-                📅 {formatDate(task.startDate) || '?'} → {formatDate(task.dueDate) || '?'}
-              </span>
-            )}
-            {/* Duration */}
-            {task.duration?.value && (
-              <>
-                {(task.startDate || task.dueDate) && <span>•</span>}
-                <span>⏱️ {task.duration.value} {task.duration.unit}</span>
-              </>
-            )}
-            {/* Assignee */}
-            {task.assignees && task.assignees.length > 0 && (() => {
-              const activeMember = teamActivity && teamActivity.find(m =>
-                m.currentTask?._id === task._id &&
-                task.assignees.some(a => (a._id || a) === (m.user?._id || m.user))
-              );
-              return (
-                <>
-                  <span>•</span>
-                  <span style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    color: activeMember ? '#10b981' : 'inherit',
-                    fontWeight: activeMember ? '600' : 'inherit'
-                  }}>
-                    <span>👤 {task.assignees[0].name}</span>
-                    {activeMember && (
-                      <span style={{
-                        width: '8px',
-                        height: '8px',
-                        backgroundColor: '#10b981',
-                        borderRadius: '50%',
-                        display: 'inline-block'
-                      }} />
-                    )}
-                  </span>
-                </>
-              );
-            })()}
-            {/* Priority */}
-            {task.priority && (
-              <>
-                <span>•</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  <div style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    backgroundColor: priorityColor
-                  }} />
-                  <span style={{ textTransform: 'capitalize' }}>{task.priority}</span>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div style={{
-        flex: 1,
-        position: 'relative',
-        overflow: 'visible',
-        backgroundColor: level > 0 ? '#fafbfc' : 'white'
-      }}>
-        <div style={{
-          width: totalDays * dayWidth,
-          height: '100%',
-          position: 'relative',
-          minHeight: '52px'
-        }}>
-          {/* Grid lines for weekends and holidays */}
-          {Array.from({ length: totalDays }).map((_, index) => {
-            const date = new Date(startDate);
-            date.setDate(date.getDate() + index);
-            const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-            const isHol = isHoliday ? isHoliday(date) : false;
-            return (
-              <div
-                key={index}
-                style={{
-                  position: 'absolute',
-                  left: index * dayWidth,
-                  width: dayWidth,
-                  height: '100%',
-                  backgroundColor: isHol ? '#ffebe6' : (isWeekend ? '#fafbfc' : 'transparent'),
-                  borderRight: '1px solid #f4f5f7'
-                }}
-              />
-            );
-          })}
-
-          {/* Today marker line */}
-          {todayPosition >= 0 && todayPosition <= totalDays * dayWidth && (
-            <div
-              style={{
-                position: 'absolute',
-                left: todayPosition + dayWidth / 2,
-                top: 0,
-                bottom: 0,
-                width: '2px',
-                backgroundColor: '#0052cc',
-                zIndex: 10,
-                pointerEvents: 'none'
-              }}
-            />
-          )}
-
-          {/* Task Bar */}
-          <div
-            title={`${task.title}\n${position.startDate ? position.startDate.toLocaleDateString() : 'No start'} → ${position.endDate ? position.endDate.toLocaleDateString() : 'No end'}\nDuration: ${position.durationDays} day${position.durationDays !== 1 ? 's' : ''}${task.duration?.value ? ` (${task.duration.value} ${task.duration.unit})` : ''}`}
-            style={{
-              position: 'absolute',
-              left: Math.max(0, position.left),
-              width: position.width,
-              height: level > 0 ? '20px' : '28px',
-              top: level > 0 ? '16px' : '12px',
-              backgroundColor: position.hasDates ? priorityColor : '#c1c7d0',
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0 8px',
-              color: 'white',
-              fontSize: level > 0 ? '10px' : '11px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              boxShadow: position.hasDates ? '0 2px 4px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.1)',
-              zIndex: 5,
-              transition: 'all 0.2s ease',
-              border: position.hasDates ? 'none' : '2px dashed #8993a4',
-              opacity: position.hasDates ? 1 : 0.7
-            }}
-            onClick={() => onEdit(task)}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.25)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = position.hasDates ? '0 2px 4px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.1)';
-            }}
-          >
-            {/* Task title (left side) */}
-            <span style={{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              flex: 1
-            }}>
-              {!position.hasDates && '⚠️ '}
-              {task.title}
-            </span>
-
-            {/* Duration badge (right side) */}
-            {position.width > 80 && (
-              <span style={{
-                backgroundColor: 'rgba(255,255,255,0.25)',
-                padding: '2px 6px',
-                borderRadius: '3px',
-                fontSize: '10px',
-                marginLeft: '6px',
-                flexShrink: 0
-              }}>
-                {position.durationDays}d
-              </span>
-            )}
-          </div>
-
-          {/* Start date marker */}
-          {task.startDate && (
-            <div style={{
-              position: 'absolute',
-              left: position.left - 1,
-              top: level > 0 ? '14px' : '10px',
-              width: '2px',
-              height: level > 0 ? '24px' : '32px',
-              backgroundColor: '#172b4d',
-              zIndex: 7
-            }} />
-          )}
-
-          {/* Due date marker (deadline indicator) */}
-          {task.dueDate && (
-            <div style={{
-              position: 'absolute',
-              left: position.left + position.width - 1,
-              top: level > 0 ? '14px' : '10px',
-              width: '2px',
-              height: level > 0 ? '24px' : '32px',
-              backgroundColor: '#de350b',
-              zIndex: 7
-            }} />
-          )}
-
-          {/* Progress indicator based on status */}
-          {task.status && task.status.name && (
-            <div
-              style={{
-                position: 'absolute',
-                left: Math.max(0, position.left),
-                width: task.status.name.toLowerCase() === 'done' ? position.width :
-                  task.status.name.toLowerCase().includes('progress') ? position.width * 0.5 :
-                    position.width * 0.1,
-                height: level > 0 ? '20px' : '28px',
-                top: level > 0 ? '16px' : '12px',
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                borderRadius: '4px',
-                zIndex: 6,
-                pointerEvents: 'none'
-              }}
-            />
-          )}
-        </div>
-      </div>
     </div>
   );
 };
