@@ -125,19 +125,19 @@ const CollapsedLogo = ({ selectedCompany, companyData, onClick }) => {
         overflow: 'hidden',
         transition: 'transform 0.2s ease',
       }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'scale(1.05)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'scale(1)';
-      }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.05)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+        }}
       >
         {isPersonal ? (
           <PersonalIcon size={18} />
         ) : companyData?.logo ? (
-          <img 
-            src={companyData.logo} 
-            alt={selectedCompany?.name || 'Company'} 
+          <img
+            src={companyData.logo}
+            alt={selectedCompany?.name || 'Company'}
             style={{
               width: '100%',
               height: '100%',
@@ -273,7 +273,7 @@ const CompanyInfo = ({ companyName, isPersonal }) => {
         overflow: 'hidden',
         textOverflow: 'ellipsis'
       }}>
-        {companyName || 'Tabredon'}
+        {companyName || 'Offtix'}
       </h2>
       <p style={{
         margin: 0,

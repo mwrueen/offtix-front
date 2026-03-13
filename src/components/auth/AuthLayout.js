@@ -24,7 +24,7 @@ const AuthLayout = ({ children, title, subtitle }) => {
         borderRadius: '50%',
         opacity: 0.1
       }} />
-      
+
       <div style={{
         position: 'absolute',
         bottom: '15%',
@@ -78,10 +78,10 @@ const AuthLayout = ({ children, title, subtitle }) => {
               fontWeight: '700',
               color: '#1e293b'
             }}>
-              Tabredon
+              Offtix
             </span>
           </div>
-          
+
           <h1 style={{
             fontSize: '28px',
             fontWeight: '700',
@@ -90,7 +90,7 @@ const AuthLayout = ({ children, title, subtitle }) => {
           }}>
             {title}
           </h1>
-          
+
           <p style={{
             color: '#64748b',
             fontSize: '16px'

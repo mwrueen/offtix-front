@@ -204,7 +204,7 @@ const Hero = () => {
             lineHeight: '1.8',
             color: 'rgba(255, 255, 255, 0.9)'
           }}>
-            Streamline your workflow with Tabredon's professional project management platform.
+            Streamline your workflow with Offtix's professional project management platform.
             Track tasks, manage teams, and deliver projects on time with powerful tools and insights.
           </p>
 

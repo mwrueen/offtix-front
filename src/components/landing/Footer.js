@@ -41,7 +41,7 @@ const Footer = () => {
                 fontSize: '1.5rem',
                 fontWeight: '700'
               }}>
-                Tabredon
+                Offtix
               </span>
             </div>
             <p style={{
@@ -51,7 +51,7 @@ const Footer = () => {
               Professional project management made simple. Streamline your workflow and deliver projects on time.
             </p>
           </div>
-          
+
           <div>
             <h4 style={{
               fontSize: '1rem',
@@ -76,7 +76,7 @@ const Footer = () => {
               </li>
             </ul>
           </div>
-          
+
           <div>
             <h4 style={{
               fontSize: '1rem',
@@ -102,7 +102,7 @@ const Footer = () => {
             </ul>
           </div>
         </div>
-        
+
         <div style={{
           borderTop: '1px solid #334155',
           paddingTop: '30px',
@@ -110,7 +110,7 @@ const Footer = () => {
           color: '#94a3b8'
         }}>
           <p style={{ margin: 0 }}>
-            © 2024 Tabredon. All rights reserved.
+            © 2024 Offtix. All rights reserved.
           </p>
         </div>
       </div>

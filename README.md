@@ -1,6 +1,6 @@
-# Tabredon Client
+# Offtix Client
 
-Frontend React application for the Tabredon project management system.
+Frontend React application for the Offtix project management system.
 
 ## Features
 

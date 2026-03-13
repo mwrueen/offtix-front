@@ -396,7 +396,7 @@ const Layout = ({ children }) => {
       return 'Employee Details';
     }
 
-    return titles[location.pathname] || 'Tabredon';
+    return titles[location.pathname] || 'Offtix';
   };
 
   const sidebarWidth = sidebarCollapsed ? '80px' : '280px';

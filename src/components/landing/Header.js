@@ -50,7 +50,7 @@ const Header = () => {
             fontWeight: '700',
             color: '#1e293b'
           }}>
-            Tabredon
+            Offtix
           </span>
         </div>
 
@@ -84,7 +84,7 @@ const Header = () => {
             About
           </a>
         </nav>
-        
+
         <div style={{
           display: 'flex',
           alignItems: 'center',
