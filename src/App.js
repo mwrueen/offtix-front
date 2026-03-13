@@ -35,6 +35,7 @@ import CompanyList from './components/CompanyList';
 import CompanyDetails from './components/CompanyDetails';
 import MyTasksList from './components/MyTasksList';
 import MyTaskDetails from './components/MyTaskDetails';
+import TeamActivity from './components/TeamActivity';
 import { SocketProvider } from './context/SocketContext';
 import RealTimeNotifications from './components/RealTimeNotifications';
 import { PermissionsProvider } from './context/PermissionsContext';
@@ -178,6 +179,11 @@ function App() {
                       <Route path="/my-tasks/:id" element={
                         <ProtectedRoute>
                           <MyTaskDetails />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/team-activity" element={
+                        <ProtectedRoute>
+                          <TeamActivity />
                         </ProtectedRoute>
                       } />
                     </Routes>

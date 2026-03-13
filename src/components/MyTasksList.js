@@ -171,30 +171,45 @@ const MyTasksList = () => {
 
     const taskStatus = getTaskStatus(task);
     const isLoading = actionLoading[task._id];
+    const canStartTask = task.canStart !== false; // Default to true if not specified
 
     if (taskStatus === 'pending' || taskStatus === 'active') {
       return (
-        <button
-          onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }}
-          disabled={isLoading}
-          style={{
-            padding: '8px 20px',
-            backgroundColor: '#10b981',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.6 : 1,
-            transition: 'all 0.2s',
-            minWidth: '100px'
-          }}
-          onMouseEnter={(e) => !isLoading && (e.target.style.backgroundColor = '#059669')}
-          onMouseLeave={(e) => !isLoading && (e.target.style.backgroundColor = '#10b981')}
-        >
-          {isLoading === 'starting' ? 'Starting...' : '▶️ Start'}
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }}
+            disabled={isLoading || !canStartTask}
+            style={{
+              padding: '8px 20px',
+              backgroundColor: canStartTask ? '#10b981' : '#94a3b8',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: (isLoading || !canStartTask) ? 'not-allowed' : 'pointer',
+              opacity: (isLoading || !canStartTask) ? 0.6 : 1,
+              transition: 'all 0.2s',
+              minWidth: '100px'
+            }}
+            onMouseEnter={(e) => canStartTask && !isLoading && (e.target.style.backgroundColor = '#059669')}
+            onMouseLeave={(e) => canStartTask && !isLoading && (e.target.style.backgroundColor = '#10b981')}
+            title={!canStartTask ? 'Complete or pause your current task first' : ''}
+          >
+            {isLoading === 'starting' ? 'Starting...' : '▶️ Start'}
+          </button>
+          {!canStartTask && (
+            <span style={{
+              fontSize: '11px',
+              color: '#ef4444',
+              fontWeight: '500',
+              textAlign: 'right',
+              maxWidth: '150px'
+            }}>
+              Complete current task first
+            </span>
+          )}
+        </div>
       );
     }
 
@@ -274,27 +289,41 @@ const MyTasksList = () => {
 
     if (taskStatus === 'paused') {
       return (
-        <button
-          onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }}
-          disabled={isLoading}
-          style={{
-            padding: '8px 20px',
-            backgroundColor: '#10b981',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.6 : 1,
-            transition: 'all 0.2s',
-            minWidth: '100px'
-          }}
-          onMouseEnter={(e) => !isLoading && (e.target.style.backgroundColor = '#059669')}
-          onMouseLeave={(e) => !isLoading && (e.target.style.backgroundColor = '#10b981')}
-        >
-          {isLoading === 'starting' ? 'Resuming...' : '▶️ Resume'}
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }}
+            disabled={isLoading || !canStartTask}
+            style={{
+              padding: '8px 20px',
+              backgroundColor: canStartTask ? '#10b981' : '#94a3b8',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: (isLoading || !canStartTask) ? 'not-allowed' : 'pointer',
+              opacity: (isLoading || !canStartTask) ? 0.6 : 1,
+              transition: 'all 0.2s',
+              minWidth: '100px'
+            }}
+            onMouseEnter={(e) => canStartTask && !isLoading && (e.target.style.backgroundColor = '#059669')}
+            onMouseLeave={(e) => canStartTask && !isLoading && (e.target.style.backgroundColor = '#10b981')}
+            title={!canStartTask ? 'Complete or pause your current task first' : ''}
+          >
+            {isLoading === 'starting' ? 'Resuming...' : '▶️ Resume'}
+          </button>
+          {!canStartTask && (
+            <span style={{
+              fontSize: '11px',
+              color: '#ef4444',
+              fontWeight: '500',
+              textAlign: 'right',
+              maxWidth: '150px'
+            }}>
+              Complete current task first
+            </span>
+          )}
+        </div>
       );
     }
 
