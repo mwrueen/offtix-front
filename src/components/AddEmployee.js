@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { getCookie } from '../utils/cookies';
 import Layout from './Layout';
 import Input from './common/Input';
+import { getCurrencySymbol } from '../utils/currency';
 
 const AddEmployee = () => {
   const navigate = useNavigate();
@@ -27,29 +28,6 @@ const AddEmployee = () => {
   const [hasPermission, setHasPermission] = useState(false);
   const [checkingPermission, setCheckingPermission] = useState(true);
 
-  // Currency symbols mapping
-  const currencySymbols = {
-    'USD': '$',
-    'EUR': '€',
-    'GBP': '£',
-    'JPY': '¥',
-    'AUD': 'A$',
-    'CAD': 'C$',
-    'CHF': 'CHF',
-    'CNY': '¥',
-    'INR': '₹',
-    'SGD': 'S$',
-    'HKD': 'HK$',
-    'NZD': 'NZ$',
-    'SEK': 'kr',
-    'NOK': 'kr',
-    'DKK': 'kr',
-    'MXN': 'MX$',
-    'BRL': 'R$',
-    'ZAR': 'R',
-    'AED': 'د.إ',
-    'SAR': '﷼'
-  };
 
   useEffect(() => {
     if (selectedCompany && selectedCompany.id !== 'personal') {
@@ -365,7 +343,7 @@ const AddEmployee = () => {
                   pointerEvents: 'none',
                   zIndex: 1
                 }}>
-                  {currencySymbols[companyCurrency]}
+                  {getCurrencySymbol(companyCurrency)}
                 </span>
                 <input
                   type="number"

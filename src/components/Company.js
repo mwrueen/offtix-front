@@ -7,6 +7,7 @@ import Layout from './Layout';
 import PageHeader from './PageHeader';
 import { companyAPI } from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { getCurrencySymbol } from '../utils/currency';
 
 const Company = () => {
   const { state } = useAuth();
@@ -804,7 +805,7 @@ const Company = () => {
                       <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                     </svg>
                     <span style={{ fontSize: '14px', fontWeight: '600', color: '#10b981' }}>
-                      ${member.currentSalary.toLocaleString()}
+                      {getCurrencySymbol(company.currency)}{member.currentSalary.toLocaleString()}
                     </span>
                   </div>
                 )}

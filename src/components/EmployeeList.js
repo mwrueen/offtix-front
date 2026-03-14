@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import Layout from './Layout';
 import PageHeader from './PageHeader';
+import { getCurrencySymbol } from '../utils/currency';
 
 const EmployeeList = () => {
   const navigate = useNavigate();
@@ -23,33 +24,8 @@ const EmployeeList = () => {
   // Permission derived from context
   const canAddEmployee = hasPermission(PERMISSIONS.ADD_EMPLOYEE);
 
-  // Currency symbols mapping
-  const currencySymbols = {
-    'USD': '$',
-    'EUR': '€',
-    'GBP': '£',
-    'JPY': '¥',
-    'AUD': 'A$',
-    'CAD': 'C$',
-    'CHF': 'CHF',
-    'CNY': '¥',
-    'INR': '₹',
-    'SGD': 'S$',
-    'HKD': 'HK$',
-    'NZD': 'NZ$',
-    'SEK': 'kr',
-    'NOK': 'kr',
-    'DKK': 'kr',
-    'MXN': 'MX$',
-    'BRL': 'R$',
-    'ZAR': 'R',
-    'AED': 'د.إ',
-    'SAR': '﷼'
-  };
 
-  const getCurrencySymbol = () => {
-    return currencySymbols[company?.currency] || '$';
-  };
+  const currencySymbol = getCurrencySymbol(company?.currency);
 
   useEffect(() => {
     if (state.loading) {

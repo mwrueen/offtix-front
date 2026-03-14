@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { companyAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { currencies } from '../../utils/currency';
 
 const CompanySettings = ({ company, isOwner, onRefresh }) => {
   const toast = useToast();
@@ -28,28 +29,6 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
   const [showHolidayForm, setShowHolidayForm] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const currencies = [
-    { code: 'USD', symbol: '$', name: 'US Dollar' },
-    { code: 'EUR', symbol: '€', name: 'Euro' },
-    { code: 'GBP', symbol: '£', name: 'British Pound' },
-    { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-    { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-    { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
-    { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
-    { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
-    { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
-    { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
-    { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },
-    { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' },
-    { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
-    { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone' },
-    { code: 'DKK', symbol: 'kr', name: 'Danish Krone' },
-    { code: 'MXN', symbol: 'MX$', name: 'Mexican Peso' },
-    { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
-    { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
-    { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
-    { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal' }
-  ];
 
   useEffect(() => {
     if (company?.settings) {
@@ -86,7 +65,7 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
       const workingDays = prev.workingDays.includes(day)
         ? prev.workingDays.filter(d => d !== day)
         : [...prev.workingDays, day].sort();
-      
+
       return {
         ...prev,
         workingDays
@@ -99,7 +78,7 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
       const weekends = prev.weekends.includes(day)
         ? prev.weekends.filter(d => d !== day)
         : [...prev.weekends, day].sort();
-      
+
       return {
         ...prev,
         weekends

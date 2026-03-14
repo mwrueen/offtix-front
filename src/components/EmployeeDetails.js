@@ -5,14 +5,9 @@ import { useCompany } from '../context/CompanyContext';
 import { getCookie } from '../utils/cookies';
 import Layout from './Layout';
 import DeleteConfirmModal from './common/DeleteConfirmModal';
+import { getCurrencySymbol } from '../utils/currency';
 
 // ─── Currency helper ───────────────────────────────────────────────────────
-const CURRENCY_SYMBOLS = {
-  USD: '$', EUR: '€', GBP: '£', JPY: '¥', AUD: 'A$', CAD: 'C$',
-  CHF: 'CHF', CNY: '¥', INR: '₹', SGD: 'S$', HKD: 'HK$', NZD: 'NZ$',
-  SEK: 'kr', NOK: 'kr', DKK: 'kr', MXN: 'MX$', BRL: 'R$', ZAR: 'R',
-  AED: 'د.إ', SAR: '﷼',
-};
 
 const fmtDate = (d, opts = { year: 'numeric', month: 'long', day: 'numeric' }) =>
   d ? new Date(d).toLocaleDateString('en-US', opts) : '—';
@@ -64,7 +59,7 @@ const EmployeeDetails = () => {
   const [newDesignation, setNewDesignation] = useState('');
   const [selectedManager, setSelectedManager] = useState('');
 
-  const currSym = CURRENCY_SYMBOLS[company?.currency] || '$';
+  const currSym = getCurrencySymbol(company?.currency);
 
   // ── Data fetching ────────────────────────────────────────────────────────
   useEffect(() => {

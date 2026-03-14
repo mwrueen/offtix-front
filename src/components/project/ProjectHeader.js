@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { projectAPI } from '../../services/api';
 import { useCompany } from '../../context/CompanyContext';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
+import { getCurrencySymbol } from '../../utils/currency';
 
 const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }) => {
   const { state: companyState } = useCompany();
@@ -319,7 +320,7 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
               BUDGET
             </div>
             <div style={{ fontSize: '15px', fontWeight: '600', color: '#ffffff' }}>
-              {project.budget?.amount ? `${companyCurrency} ${project.budget.amount.toLocaleString()}` : 'Not set'}
+              {project.budget?.amount ? `${getCurrencySymbol(companyCurrency)} ${project.budget.amount.toLocaleString()}` : 'Not set'}
             </div>
           </div>
         </div>
