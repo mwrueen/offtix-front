@@ -505,42 +505,63 @@ const TaskCard = ({ task, onEdit, onDelete, onAddSubtask, isDragging, teamActivi
         </div>
 
         {/* Assignees */}
-        {task.assignees && task.assignees.length > 0 && (
+        {((task.assignees && task.assignees.length > 0) || (task.roleAssignments && task.roleAssignments.length > 0)) && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: '-4px'
           }}>
-            {task.assignees.slice(0, 3).map((assignee, index) => {
-              const isActive = teamActivity && teamActivity.some(m =>
-                m.currentTask?._id === task._id &&
-                (m.user?._id === (assignee._id || assignee) || m.user === (assignee._id || assignee))
-              );
+            {(() => {
+              const flattenedAssignments = [];
+              if (task.roleAssignments && task.roleAssignments.length > 0) {
+                task.roleAssignments.forEach(ra => {
+                  const roleName = ra.role?.name || ra.roleName;
+                  if (ra.assignees && ra.assignees.length > 0) {
+                    ra.assignees.forEach(assignee => {
+                      flattenedAssignments.push({ user: assignee, roleName });
+                    });
+                  }
+                });
+              } else if (task.assignees && task.assignees.length > 0) {
+                task.assignees.forEach(user => flattenedAssignments.push({ user }));
+              }
+
               return (
-                <div key={assignee._id || index} style={{ marginLeft: index > 0 ? '-6px' : '0' }}>
-                  <AssigneeAvatar assignee={assignee} isActive={isActive} />
-                </div>
+                <>
+                  {flattenedAssignments.slice(0, 3).map((assignment, index) => {
+                    const assignee = assignment.user;
+                    const isActive = teamActivity && teamActivity.some(m =>
+                      m.currentTask?._id === task._id &&
+                      (m.user?._id === (assignee._id || assignee) || m.user === (assignee._id || assignee))
+                    );
+                    return (
+                      <div key={`${assignee._id || index}-${assignment.roleName || ''}`} style={{ marginLeft: index > 0 ? '-6px' : '0' }}>
+                        <AssigneeAvatar assignee={assignee} roleName={assignment.roleName} isActive={isActive} />
+                      </div>
+                    );
+                  })}
+                  {flattenedAssignments.length > 3 && (
+                    <div style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      backgroundColor: '#f4f5f7',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '9px',
+                      fontWeight: '700',
+                      color: '#5e6c84',
+                      border: '2px solid white',
+                      marginLeft: '-6px',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                    }}>
+                      +{flattenedAssignments.length - 3}
+                    </div>
+                  )}
+                </>
               );
-            })}
-            {task.assignees.length > 3 && (
-              <div style={{
-                width: '24px',
-                height: '24px',
-                borderRadius: '50%',
-                backgroundColor: '#f4f5f7',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '9px',
-                fontWeight: '700',
-                color: '#5e6c84',
-                border: '2px solid white',
-                marginLeft: '-6px',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-              }}>
-                +{task.assignees.length - 3}
-              </div>
-            )}
+            })()}
           </div>
         )}
       </div>
@@ -548,7 +569,7 @@ const TaskCard = ({ task, onEdit, onDelete, onAddSubtask, isDragging, teamActivi
   );
 };
 
-const AssigneeAvatar = ({ assignee, isActive }) => {
+const AssigneeAvatar = ({ assignee, roleName, isActive }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const profilePicture = assignee.profile?.profilePicture;
 
@@ -648,14 +669,14 @@ const AssigneeAvatar = ({ assignee, isActive }) => {
           <div style={{ fontWeight: '600', marginBottom: '2px' }}>
             {assignee.name}
           </div>
+          {roleName && (
+            <div style={{ fontSize: '11px', color: '#00dcff', fontWeight: '700', textTransform: 'uppercase', marginBottom: '2px' }}>
+              {roleName}
+            </div>
+          )}
           {assignee.email && (
             <div style={{ fontSize: '11px', opacity: 0.9 }}>
               {assignee.email}
-            </div>
-          )}
-          {assignee.role && (
-            <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>
-              {assignee.role}
             </div>
           )}
           {/* Tooltip arrow */}

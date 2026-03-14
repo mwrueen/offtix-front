@@ -61,6 +61,12 @@ const Tasks = () => {
   const [scheduleStartFrom, setScheduleStartFrom] = useState('project'); // 'project' or 'today'
   const [scheduleResult, setScheduleResult] = useState(null); // { success: bool, count: number, mode: string }
 
+  // Duration entry states
+  const [isDurationEntryMode, setIsDurationEntryMode] = useState(false);
+  const [durationContext, setDurationContext] = useState({ roleId: '', userId: '' });
+  const [pendingDurations, setPendingDurations] = useState({}); // { taskId: value }
+  const [isSubmittingDurations, setIsSubmittingDurations] = useState(false);
+
   useEffect(() => {
     fetchProjectData();
 
@@ -71,6 +77,34 @@ const Tasks = () => {
 
     return () => clearInterval(intervalId);
   }, [id]);
+
+  const handleSubmitDurations = async () => {
+    if (!durationContext.roleId) return;
+    setIsSubmittingDurations(true);
+    try {
+      const updates = Object.entries(pendingDurations).map(([taskId, duration]) => ({
+        taskId,
+        duration
+      }));
+
+      await taskAPI.bulkUpdateRoleDurations(id, durationContext.roleId, updates, durationContext.userId);
+
+      // Refresh project data (tasks + costs)
+      fetchProjectData();
+
+      // Clear pending
+      setPendingDurations({});
+      setIsDurationEntryMode(false);
+
+      // If there's a cost calculation refresh needed, handle it here
+      // fetchProjectData(); // This is safer
+    } catch (err) {
+      console.error('Error submitting durations:', err);
+      setError('Failed to save durations');
+    } finally {
+      setIsSubmittingDurations(false);
+    }
+  };
 
   const fetchTeamActivity = async () => {
     try {
@@ -224,6 +258,10 @@ const Tasks = () => {
           delete newTaskData[key];
         }
       });
+
+      // Set order to be at the end
+      const maxOrder = tasks.length > 0 ? Math.max(...tasks.map(t => t.order || 0)) : 0;
+      newTaskData.order = maxOrder + 1;
 
       const response = await taskAPI.create(id, newTaskData);
       // setShowInlineCreator(false); // Keep the creator open for next task
@@ -460,6 +498,15 @@ const Tasks = () => {
       if (dueDateFrom && taskDueDate < new Date(dueDateFrom)) return false;
       if (dueDateTo && taskDueDate > new Date(dueDateTo + 'T23:59:59')) return false;
     }
+
+    // Duration Entry Mode Role Filter
+    if (isDurationEntryMode && durationContext.roleId) {
+      const hasRole = task.roleAssignments?.some(ra =>
+        (ra.role?._id === durationContext.roleId) || (ra.role === durationContext.roleId)
+      );
+      if (!hasRole) return false;
+    }
+
     return true;
   });
 
@@ -658,6 +705,35 @@ const Tasks = () => {
 
                 <div style={{ flex: 1 }} />
 
+                {/* Add task duration button */}
+                <button
+                  onClick={() => setIsDurationEntryMode(!isDurationEntryMode)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    padding: '6px 12px', backgroundColor: isDurationEntryMode ? '#ff8b00' : '#ffffff',
+                    border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '13px',
+                    cursor: 'pointer', color: isDurationEntryMode ? 'white' : '#5e6c84', fontWeight: '500',
+                    marginRight: '8px'
+                  }}
+                >
+                  ⏱️ {isDurationEntryMode ? 'Exit Duration Mode' : 'Add task duration'}
+                </button>
+
+                {/* Create Issue Button */}
+                <button
+                  onClick={() => setShowInlineCreator(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    padding: '6px 12px', backgroundColor: '#36b37e',
+                    border: 'none', borderRadius: '3px', fontSize: '13px',
+                    cursor: 'pointer', color: 'white', fontWeight: '500',
+                    marginRight: '8px'
+                  }}
+                >
+                  <span style={{ fontSize: '14px' }}>➕</span>
+                  Create
+                </button>
+
                 {/* Auto-Schedule Button */}
                 <button
                   onClick={() => setShowAutoScheduleModal(true)}
@@ -676,6 +752,58 @@ const Tasks = () => {
                   {filteredTasks.length} {filteredTasks.length === 1 ? 'issue' : 'issues'}
                 </div>
               </div>
+
+              {/* Duration Mode Control Panel */}
+              {isDurationEntryMode && (
+                <div style={{
+                  padding: '12px 16px', backgroundColor: '#fff4e5',
+                  borderBottom: '1px solid #ffd599', display: 'flex', gap: '16px', alignItems: 'center'
+                }}>
+                  <div style={{ fontWeight: '600', color: '#855700', fontSize: '13px' }}>
+                    DURATION ENTRY MODE:
+                  </div>
+
+                  <select
+                    value={durationContext.roleId}
+                    onChange={(e) => {
+                      setDurationContext({ ...durationContext, roleId: e.target.value });
+                      setPendingDurations({}); // Clear pending on role change
+                    }}
+                    style={{ padding: '6px 8px', border: '1px solid #ffab00', borderRadius: '3px', fontSize: '13px' }}
+                  >
+                    <option value="">Select Role *</option>
+                    {taskRoles.map(role => <option key={role._id} value={role._id}>{role.name}</option>)}
+                  </select>
+
+                  <select
+                    value={durationContext.userId}
+                    onChange={(e) => {
+                      setDurationContext({ ...durationContext, userId: e.target.value });
+                      setPendingDurations({}); // Clear pending on user change
+                    }}
+                    style={{ padding: '6px 8px', border: '1px solid #ffab00', borderRadius: '3px', fontSize: '13px' }}
+                  >
+                    <option value="">Select Member (Optional)</option>
+                    {users.map(user => <option key={user._id} value={user._id}>{user.name}</option>)}
+                  </select>
+
+                  <div style={{ flex: 1 }} />
+
+                  {Object.keys(pendingDurations).length > 0 && (
+                    <button
+                      onClick={handleSubmitDurations}
+                      disabled={isSubmittingDurations || !durationContext.roleId}
+                      style={{
+                        padding: '6px 16px', backgroundColor: '#ff8b00', color: 'white',
+                        border: 'none', borderRadius: '3px', fontWeight: '600', cursor: 'pointer',
+                        opacity: (isSubmittingDurations || !durationContext.roleId) ? 0.6 : 1
+                      }}
+                    >
+                      {isSubmittingDurations ? 'Saving...' : `Submit ${Object.keys(pendingDurations).length} Durations`}
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Extended Filters Panel */}
               {showFilters && (
@@ -731,6 +859,17 @@ const Tasks = () => {
 
           {/* Task List Content */}
           <div style={{ flex: 1, overflowY: 'auto', backgroundColor: '#f4f5f7' }}>
+            {/* Inline Task Creator (Universal) */}
+            {showInlineCreator && (
+              <div style={{ padding: '16px 16px 0 16px' }}>
+                <InlineTaskCreator
+                  onCreateTask={handleCreateTask}
+                  onCancel={() => setShowInlineCreator(false)}
+                  defaultDurationUnit={company?.settings?.timeTracking?.defaultDurationUnit || 'hours'}
+                />
+              </div>
+            )}
+
             {currentView === 'list' && (
               <div style={{ padding: '16px' }}>
                 <ListView
@@ -743,38 +882,16 @@ const Tasks = () => {
                   onReorderTasks={handleReorderTasks}
                   taskCosts={taskCosts}
                   teamActivity={teamActivity}
+                  // Duration mode props
+                  isDurationEntryMode={isDurationEntryMode}
+                  durationContext={durationContext}
+                  pendingDurations={pendingDurations}
+                  setPendingDurations={setPendingDurations}
+                  // Filter props
+                  selectedAssignee={selectedAssignee}
+                  selectedTaskRole={isDurationEntryMode && durationContext.roleId ? durationContext.roleId : selectedTaskRole}
+                  selectedProjectRole={selectedProjectRole}
                 />
-
-                {/* Inline Task Creator */}
-                {!showInlineCreator ? (
-                  <button
-                    onClick={() => setShowInlineCreator(true)}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      marginTop: '8px',
-                      backgroundColor: 'white',
-                      border: '1px solid #dfe1e6',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      color: '#5e6c84',
-                      textAlign: 'left',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}
-                  >
-                    <span style={{ fontSize: '16px' }}>➕</span>
-                    Create issue
-                  </button>
-                ) : (
-                  <InlineTaskCreator
-                    onCreateTask={handleCreateTask}
-                    onCancel={() => setShowInlineCreator(false)}
-                    defaultDurationUnit={company?.settings?.timeTracking?.defaultDurationUnit || 'hours'}
-                  />
-                )}
               </div>
             )}
 
@@ -814,6 +931,7 @@ const Tasks = () => {
             project={project}
             users={users}
             taskStatuses={taskStatuses}
+            taskRoles={taskRoles}
             sprints={sprints}
             phases={phases}
             onUpdateTask={handleUpdateTask}
@@ -827,6 +945,7 @@ const Tasks = () => {
             task={assigneeModalTask}
             projectId={id}
             users={users}
+            taskRoles={taskRoles}
             onClose={() => setAssigneeModalTask(null)}
             onUpdate={async () => {
               await fetchProjectData();

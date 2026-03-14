@@ -209,4 +209,3 @@ const InlineTaskCreator = ({ onCreateTask, onCancel, defaultDurationUnit = 'hour
 };
 
 export default InlineTaskCreator;
-

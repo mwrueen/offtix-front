@@ -62,12 +62,39 @@ const formatCurrency = (amount, currencyCode = 'USD') => {
   }).format(amount);
 };
 
-const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskId, onSelectTask, onReorderTasks, taskCosts = {}, teamActivity = [] }) => {
+
+const ListView = ({
+  tasks,
+  onEditTask,
+  onDeleteTask,
+  onAddSubtask,
+  selectedTaskId,
+  onSelectTask,
+  onReorderTasks,
+  taskCosts = {},
+  teamActivity = [],
+  // Duration mode props
+  isDurationEntryMode,
+  durationContext,
+  pendingDurations,
+  setPendingDurations,
+  // Filter props
+  selectedAssignee,
+  selectedTaskRole,
+  selectedProjectRole
+}) => {
   const { state: companyState } = useCompany();
   const companyCurrency = companyState?.selectedCompany?.currency || 'USD';
 
   const [expandedTasks, setExpandedTasks] = useState(new Set());
   const [activeTask, setActiveTask] = useState(null);
+
+  const gridStyle = {
+    display: 'grid',
+    gridTemplateColumns: '40px minmax(300px, 1fr) 120px 100px 160px 100px 80px 100px',
+    gap: '12px',
+    alignItems: 'center'
+  };
 
   // Setup sensors for drag and drop
   const sensors = useSensors(
@@ -173,18 +200,15 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
       }}>
         {/* Header */}
         <div style={{
+          ...gridStyle,
           padding: '12px 16px',
           borderBottom: '2px solid #dfe1e6',
           backgroundColor: '#f4f5f7',
-          display: 'grid',
-          gridTemplateColumns: '40px minmax(350px, 3fr) 140px 120px 160px 100px 100px',
-          gap: '12px',
           fontSize: '11px',
           fontWeight: '700',
           color: '#5e6c84',
           textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-          alignItems: 'center'
+          letterSpacing: '0.5px'
         }}>
           <div></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -207,6 +231,7 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
           <div>Priority</div>
           <div>Assignees</div>
           <div>Due Date</div>
+          <div>Dur (h)</div>
           <div>Cost</div>
         </div>
 
@@ -259,6 +284,15 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
                     taskCosts={taskCosts}
                     companyCurrency={companyCurrency}
                     teamActivity={teamActivity}
+                    // Duration mode props
+                    isDurationEntryMode={isDurationEntryMode}
+                    durationContext={durationContext}
+                    pendingDurations={pendingDurations}
+                    setPendingDurations={setPendingDurations}
+                    // Filter props
+                    selectedAssignee={selectedAssignee}
+                    selectedTaskRole={selectedTaskRole}
+                    selectedProjectRole={selectedProjectRole}
                   />
                 ))}
               </div>
@@ -279,7 +313,30 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
 };
 
 // Sortable wrapper for TaskRow
-const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isExpanded, onToggleExpand, countSubtasks, taskCosts = {}, companyCurrency, teamActivity }) => {
+const SortableTaskRow = ({
+  task,
+  level,
+  onEdit,
+  onDelete,
+  onAddSubtask,
+  isSelected,
+  onSelect,
+  isExpanded,
+  onToggleExpand,
+  countSubtasks,
+  taskCosts = {},
+  companyCurrency,
+  teamActivity,
+  // Duration mode props
+  isDurationEntryMode,
+  durationContext,
+  pendingDurations,
+  setPendingDurations,
+  // Filter props
+  selectedAssignee,
+  selectedTaskRole,
+  selectedProjectRole
+}) => {
   const {
     attributes,
     listeners,
@@ -326,6 +383,15 @@ const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelect
           cost={cost}
           companyCurrency={companyCurrency}
           teamActivity={teamActivity}
+          // Duration mode props
+          isDurationEntryMode={isDurationEntryMode}
+          durationContext={durationContext}
+          pendingDurations={pendingDurations}
+          setPendingDurations={setPendingDurations}
+          // Filter props
+          selectedAssignee={selectedAssignee}
+          selectedTaskRole={selectedTaskRole}
+          selectedProjectRole={selectedProjectRole}
         />
       </div>
 
@@ -351,6 +417,15 @@ const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelect
               taskCosts={taskCosts}
               companyCurrency={companyCurrency}
               teamActivity={teamActivity}
+              // Duration mode props
+              isDurationEntryMode={isDurationEntryMode}
+              durationContext={durationContext}
+              pendingDurations={pendingDurations}
+              setPendingDurations={setPendingDurations}
+              // Filter props
+              selectedAssignee={selectedAssignee}
+              selectedTaskRole={selectedTaskRole}
+              selectedProjectRole={selectedProjectRole}
             />
           ))}
         </div>
@@ -359,7 +434,33 @@ const SortableTaskRow = ({ task, level, onEdit, onDelete, onAddSubtask, isSelect
   );
 };
 
-const TaskListRow = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging, cost, companyCurrency, teamActivity }) => {
+const TaskListRow = ({
+  task,
+  level,
+  indent,
+  hasChildren,
+  subtaskCount,
+  isExpanded,
+  onToggleExpand,
+  onEdit,
+  onDelete,
+  onAddSubtask,
+  isSelected,
+  onSelect,
+  isDragging,
+  cost,
+  companyCurrency,
+  teamActivity,
+  // Duration mode props
+  isDurationEntryMode,
+  durationContext,
+  pendingDurations,
+  setPendingDurations,
+  // Filter props
+  selectedAssignee,
+  selectedTaskRole,
+  selectedProjectRole
+}) => {
   return (
     <TaskListRowContent
       task={task}
@@ -378,11 +479,53 @@ const TaskListRow = ({ task, level, indent, hasChildren, subtaskCount, isExpande
       cost={cost}
       companyCurrency={companyCurrency}
       teamActivity={teamActivity}
+      // Duration mode props
+      isDurationEntryMode={isDurationEntryMode}
+      durationContext={durationContext}
+      pendingDurations={pendingDurations}
+      setPendingDurations={setPendingDurations}
+      // Filter props
+      selectedAssignee={selectedAssignee}
+      selectedTaskRole={selectedTaskRole}
+      selectedProjectRole={selectedProjectRole}
     />
   );
 };
 
-const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, isExpanded, onToggleExpand, onEdit, onDelete, onAddSubtask, isSelected, onSelect, isDragging, cost, companyCurrency, teamActivity }) => {
+const TaskListRowContent = ({
+  task,
+  level,
+  indent,
+  hasChildren,
+  subtaskCount,
+  isExpanded,
+  onToggleExpand,
+  onEdit,
+  onDelete,
+  onAddSubtask,
+  isSelected,
+  onSelect,
+  isDragging,
+  cost,
+  companyCurrency,
+  teamActivity,
+  // Duration mode props
+  isDurationEntryMode,
+  durationContext,
+  pendingDurations,
+  setPendingDurations,
+  // Filter props
+  selectedAssignee,
+  selectedTaskRole,
+  selectedProjectRole
+}) => {
+  const gridStyle = {
+    display: 'grid',
+    gridTemplateColumns: '40px minmax(300px, 1fr) 120px 100px 160px 100px 80px 100px',
+    gap: '12px',
+    alignItems: 'center'
+  };
+
   const getPriorityColor = (priority) => {
     const colors = {
       urgent: '#de350b',
@@ -422,12 +565,9 @@ const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, is
     <div
       onClick={onSelect}
       style={{
+        ...gridStyle,
         padding: '12px 16px',
         borderBottom: '1px solid #f4f5f7',
-        display: 'grid',
-        gridTemplateColumns: '40px minmax(350px, 3fr) 140px 120px 160px 100px 100px',
-        gap: '12px',
-        alignItems: 'center',
         backgroundColor: isSelected ? '#f0f6ff' : 'white',
         borderLeft: isSelected ? '3px solid #0052cc' : '3px solid transparent',
         cursor: isDragging ? 'grabbing' : 'grab',
@@ -570,6 +710,7 @@ const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, is
       {/* Assignees */}
       <AssigneeList
         assignees={task.assignees}
+        roleAssignments={task.roleAssignments}
         teamActivity={teamActivity}
         taskId={task._id}
         onClick={(e) => {
@@ -578,11 +719,60 @@ const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, is
             onEdit(task);
           }
         }}
+        // Filter props
+        selectedAssignee={selectedAssignee}
+        selectedTaskRole={selectedTaskRole}
+        selectedProjectRole={selectedProjectRole}
       />
 
       {/* Due Date */}
       <div style={{ fontSize: '12px', color: '#5e6c84' }}>
         {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-'}
+      </div>
+
+      {/* Duration */}
+      <div style={{ fontSize: '12px' }}>
+        {isDurationEntryMode ? (
+          <input
+            type="number"
+            min="0"
+            step="0.5"
+            placeholder="hr"
+            value={(() => {
+              if (pendingDurations[task._id] !== undefined) return pendingDurations[task._id];
+              // Fallback to existing duration for the selected role
+              const selectedRole = durationContext.roleId;
+              const ra = task.roleAssignments?.find(a =>
+                (a.role?._id === selectedRole) || (a.role === selectedRole)
+              );
+              return ra?.duration?.value || '';
+            })()}
+            onChange={(e) => setPendingDurations({ ...pendingDurations, [task._id]: e.target.value })}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              padding: '4px 8px',
+              border: '1px solid #ffab00',
+              borderRadius: '3px',
+              backgroundColor: '#fffcf5',
+              fontSize: '12px',
+              outline: 'none'
+            }}
+          />
+        ) : (
+          <div style={{ color: '#5e6c84', fontWeight: '500' }}>
+            {(() => {
+              // Show role assignment duration if exists for some role
+              const roleWithDuration = task.roleAssignments?.find(ra => ra.duration?.value);
+              if (roleWithDuration) {
+                // Sum all durations
+                const totalDur = task.roleAssignments.reduce((sum, ra) => sum + (ra.duration?.value || 0), 0);
+                return `${totalDur}h`;
+              }
+              return task.duration?.value ? `${task.duration.value}h` : '-';
+            })()}
+          </div>
+        )}
       </div>
 
       {/* Cost */}
@@ -593,8 +783,18 @@ const TaskListRowContent = ({ task, level, indent, hasChildren, subtaskCount, is
   );
 };
 
-const AssigneeList = ({ assignees, teamActivity = [], taskId, onClick }) => {
-  if (!assignees || assignees.length === 0) {
+const AssigneeList = ({
+  assignees,
+  roleAssignments = [],
+  teamActivity = [],
+  taskId,
+  onClick,
+  // Filter props
+  selectedAssignee,
+  selectedTaskRole,
+  selectedProjectRole
+}) => {
+  if ((!assignees || assignees.length === 0) && (!roleAssignments || roleAssignments.length === 0)) {
     return (
       <div
         onClick={onClick}
@@ -637,6 +837,52 @@ const AssigneeList = ({ assignees, teamActivity = [], taskId, onClick }) => {
     return colors[index];
   };
 
+  // Flatten roleAssignments into a list of { user, roleName }
+  let flattenedAssignments = [];
+  if (roleAssignments && roleAssignments.length > 0) {
+    roleAssignments.forEach(ra => {
+      // Filter by task role if selected
+      const currentRoleId = ra.role?._id || ra.role;
+      if (selectedTaskRole && currentRoleId !== selectedTaskRole) return;
+
+      const roleName = ra.role?.name || ra.roleName;
+      if (ra.assignees && ra.assignees.length > 0) {
+        ra.assignees.forEach(assignee => {
+          // Filter by specific assignee if selected
+          const userId = assignee._id || assignee;
+          if (selectedAssignee && userId !== selectedAssignee) return;
+
+          // Filter by project role if selected (assignee object might have it)
+          if (selectedProjectRole && assignee.projectRole !== selectedProjectRole) return;
+
+          flattenedAssignments.push({
+            user: assignee,
+            roleName: roleName
+          });
+        });
+      }
+    });
+  } else if (assignees && assignees.length > 0) {
+    // Fallback to flat assignees if no roleAssignments
+    assignees.forEach(a => {
+      const userId = a._id || a;
+      if (selectedAssignee && userId !== selectedAssignee) return;
+      if (selectedProjectRole && a.projectRole !== selectedProjectRole) return;
+
+      flattenedAssignments.push({ user: a });
+    });
+  }
+
+  // Final deduplication (same user might have multiple roles)
+  const uniqueMemberMap = new Map();
+  flattenedAssignments.forEach(item => {
+    const userId = item.user._id || item.user;
+    if (!uniqueMemberMap.has(userId)) {
+      uniqueMemberMap.set(userId, item);
+    }
+  });
+  flattenedAssignments = Array.from(uniqueMemberMap.values());
+
   return (
     <div
       onClick={onClick}
@@ -657,15 +903,17 @@ const AssigneeList = ({ assignees, teamActivity = [], taskId, onClick }) => {
         if (onClick) e.currentTarget.style.backgroundColor = 'transparent';
       }}
     >
-      {assignees.slice(0, 3).map((assignee, index) => {
+      {flattenedAssignments.slice(0, 3).map((assignment, index) => {
+        const assignee = assignment.user;
         const isActive = teamActivity.some(m =>
           m.currentTask?._id === taskId &&
           (m.user?._id === (assignee._id || assignee) || m.user === (assignee._id || assignee))
         );
         return (
           <AssigneeAvatar
-            key={assignee._id || index}
+            key={`${assignee._id || index}-${assignment.roleName || ''}`}
             assignee={assignee}
+            roleName={assignment.roleName}
             getInitials={getInitials}
             getAvatarColor={getAvatarColor}
             style={{ marginLeft: index > 0 ? '-6px' : '0' }}
@@ -673,7 +921,7 @@ const AssigneeList = ({ assignees, teamActivity = [], taskId, onClick }) => {
           />
         );
       })}
-      {assignees.length > 3 && (
+      {flattenedAssignments.length > 3 && (
         <div style={{
           width: '24px',
           height: '24px',
@@ -689,14 +937,14 @@ const AssigneeList = ({ assignees, teamActivity = [], taskId, onClick }) => {
           marginLeft: '-6px',
           boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
         }}>
-          +{assignees.length - 3}
+          +{flattenedAssignments.length - 3}
         </div>
       )}
     </div>
   );
 };
 
-const AssigneeAvatar = ({ assignee, getInitials, getAvatarColor, style, isActive }) => {
+const AssigneeAvatar = ({ assignee, roleName, getInitials, getAvatarColor, style, isActive }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const profilePicture = assignee.profile?.profilePicture;
 
@@ -786,6 +1034,11 @@ const AssigneeAvatar = ({ assignee, getInitials, getAvatarColor, style, isActive
           <div style={{ fontWeight: '600', marginBottom: '2px' }}>
             {assignee.name}
           </div>
+          {roleName && (
+            <div style={{ fontSize: '11px', color: '#00dcff', fontWeight: '700', textTransform: 'uppercase', marginBottom: '2px' }}>
+              {roleName}
+            </div>
+          )}
           {assignee.email && (
             <div style={{ fontSize: '11px', opacity: 0.9 }}>
               {assignee.email}
