@@ -201,428 +201,328 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
   };
 
   return (
-    <div>
-      {/* Tags Section */}
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
-            Tags
-          </h3>
-          <button
-            onClick={() => setShowTagModal(true)}
-            style={{
-              padding: '6px 12px',
-              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Add Tag
-          </button>
-        </div>
-        {tags.length > 0 ? (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {tags.map((tag, index) => (
-              <span
-                key={index}
-                style={{
-                  padding: '6px 14px',
-                  backgroundColor: '#f1f5f9',
-                  color: '#475569',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  border: '1px solid #e2e8f0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                #{tag}
-                {isProjectOwner && (
-                  <button
-                    onClick={() => handleRemoveTag(tag)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '2px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      color: '#64748b'
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
-                )}
-              </span>
-            ))}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      {/* Dashboard Top Row: Tags & Budget */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+        {/* Tags Card */}
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '20px',
+          padding: '24px',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '20px' }}>🏷️</span> Project Tags
+            </h3>
+            <button
+              onClick={() => setShowTagModal(true)}
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: '#eff6ff',
+                color: '#2563eb',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#dbeafe'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#eff6ff'}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
           </div>
-        ) : (
-          <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>No tags yet. Click "Add Tag" to create one.</p>
+          {tags.length > 0 ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+              {tags.map((tag, index) => (
+                <span
+                  key={index}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#f8fafc',
+                    color: '#475569',
+                    borderRadius: '12px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    border: '1px solid #e2e8f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <span style={{ color: '#94a3b8' }}>#</span>{tag}
+                  {isProjectOwner && (
+                    <button
+                      onClick={() => handleRemoveTag(tag)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '2px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        color: '#94a3b8',
+                        hover: { color: '#ef4444' }
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  )}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #e2e8f0' }}>
+              <p style={{ margin: 0, fontSize: '14px' }}>No focus tags defined</p>
+            </div>
+          )}
+        </div>
+
+        {/* Budget Tracking Card */}
+        {budget.amount > 0 && (
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '20px',
+            padding: '24px',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+            gridColumn: 'span 2'
+          }}>
+            <h3 style={{ margin: '0 0 24px 0', fontSize: '18px', fontWeight: '700', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '20px' }}>💰</span> Financial Overview
+            </h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '32px', alignItems: 'center' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748b' }}>Usage of Allocated Budget</span>
+                  <span style={{ fontSize: '14px', fontWeight: '800', color: budgetUtilization > 90 ? '#ef4444' : '#10b981' }}>
+                    {budgetUtilization}%
+                  </span>
+                </div>
+                <div style={{ width: '100%', height: '14px', backgroundColor: '#f1f5f9', borderRadius: '10px', overflow: 'hidden', marginBottom: '12px' }}>
+                  <div style={{
+                    width: `${Math.min(100, budgetUtilization)}%`,
+                    height: '100%',
+                    background: budgetUtilization > 100 ? '#ef4444' : 'linear-gradient(90deg, #10b981 0%, #3b82f6 100%)',
+                    borderRadius: '10px',
+                    transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }}></div>
+                </div>
+                <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>
+                  {budgetUtilization > 100
+                    ? '⚠️ Warning: Project is over budget!'
+                    : `You have ${companyCurrency} ${(budget.amount - actualCost.amount).toLocaleString()} remaining.`}
+                </p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '16px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Budget</div>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#1e293b' }}>{companyCurrency} {budget.amount.toLocaleString()}</div>
+                </div>
+                <div style={{ background: budgetUtilization > 100 ? '#fef2f2' : '#f0fdf4', padding: '16px', borderRadius: '16px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: budgetUtilization > 100 ? '#ef4444' : '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Spent</div>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: budgetUtilization > 100 ? '#ef4444' : '#10b981' }}>{companyCurrency} {actualCost.amount.toLocaleString()}</div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Budget Tracking */}
-      {budget.amount > 0 && (
+      {/* Main Dashboard Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '32px' }}>
+
+        {/* Milestones Card */}
         <div style={{
           backgroundColor: '#ffffff',
-          border: '2px solid #e5e7eb',
-          borderRadius: '16px',
-          padding: '24px',
-          marginBottom: '24px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+          borderRadius: '24px',
+          padding: '32px',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
         }}>
-          <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="1" x2="12" y2="23"></line>
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-            </svg>
-            Budget Tracking
-          </h3>
-
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ fontSize: '14px', color: '#64748b' }}>Budget Utilization</span>
-              <span style={{ fontSize: '14px', fontWeight: '600', color: budgetUtilization > 100 ? '#ef4444' : '#1e293b' }}>
-                {budgetUtilization}%
-              </span>
-            </div>
-            <div style={{
-              width: '100%',
-              height: '12px',
-              backgroundColor: '#e5e7eb',
-              borderRadius: '6px',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                width: `${Math.min(100, budgetUtilization)}%`,
-                height: '100%',
-                background: budgetUtilization > 100
-                  ? 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
-                  : budgetUtilization > 80
-                    ? 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)'
-                    : 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
-                transition: 'width 0.3s ease'
-              }}></div>
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ background: '#eff6ff', padding: '8px', borderRadius: '12px' }}>🎯</span>
+              Key Milestones
+            </h3>
+            <button
+              onClick={() => setShowMilestoneModal(true)}
+              style={{
+                padding: '8px 16px',
+                background: '#2563eb',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s',
+                boxShadow: '0 4px 10px rgba(37, 99, 235, 0.2)'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Add
+            </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
-            <div>
-              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Total Budget</div>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b' }}>
-                {companyCurrency} {budget.amount.toLocaleString()}
-              </div>
+          {milestones.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', background: '#f8fafc', borderRadius: '20px', border: '1px dashed #cbd5e1' }}>
+              <p style={{ margin: 0, color: '#94a3b8', fontSize: '15px', fontWeight: '500' }}>Define your first milestone to track progress</p>
             </div>
-            <div>
-              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Actual Cost</div>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: budgetUtilization > 100 ? '#ef4444' : '#1e293b' }}>
-                {companyCurrency} {actualCost.amount.toLocaleString()}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Remaining</div>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: (budget.amount - actualCost.amount) < 0 ? '#ef4444' : '#10b981' }}>
-                {companyCurrency} {(budget.amount - actualCost.amount).toLocaleString()}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative' }}>
+              {/* Timeline Line */}
+              <div style={{ position: 'absolute', left: '11px', top: '10px', bottom: '10px', width: '2px', backgroundColor: '#f1f5f9' }}></div>
 
-      {/* Milestones */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        border: '2px solid #e5e7eb',
-        borderRadius: '16px',
-        padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            Milestones ({milestones.length})
-          </h3>
-          <button
-            onClick={() => setShowMilestoneModal(true)}
-            style={{
-              padding: '8px 16px',
-              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Add Milestone
-          </button>
-        </div>
-
-        {milestones.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px' }}>
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            <p style={{ margin: 0, fontSize: '14px' }}>No milestones defined yet</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {milestones.map((milestone, index) => {
-              const statusColor = getMilestoneStatusColor(milestone.status);
-              return (
-                <div
-                  key={index}
-                  style={{
-                    padding: '16px',
-                    backgroundColor: '#f9fafb',
-                    borderRadius: '12px',
-                    border: '1px solid #e5e7eb'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                    <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#1e293b', flex: 1 }}>
-                      {milestone.title}
-                    </h4>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        backgroundColor: statusColor.bg,
-                        color: statusColor.text,
-                        border: `1px solid ${statusColor.border}`,
-                        textTransform: 'capitalize',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {milestone.status.replace('-', ' ')}
-                      </span>
-                      {isProjectOwner && (
-                        <button
-                          onClick={() => handleDeleteMilestone(milestone._id)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: '4px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            color: '#ef4444'
-                          }}
-                          title="Delete milestone"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                          </svg>
-                        </button>
+              {milestones.map((milestone, index) => {
+                const statusColor = getMilestoneStatusColor(milestone.status);
+                const isCompleted = milestone.status === 'completed';
+                return (
+                  <div key={index} style={{ display: 'flex', gap: '20px', position: 'relative' }}>
+                    <div style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      backgroundColor: isCompleted ? '#10b981' : '#ffffff',
+                      border: `2px solid ${isCompleted ? '#10b981' : '#e2e8f0'}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      zIndex: 1,
+                      boxShadow: '0 0 0 4px #ffffff'
+                    }}>
+                      {isCompleted && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                    </div>
+                    <div style={{
+                      flex: 1,
+                      padding: '20px',
+                      backgroundColor: isCompleted ? '#f0fdf4' : '#f8fafc',
+                      borderRadius: '16px',
+                      border: `1px solid ${isCompleted ? '#dcfce7' : '#e2e8f0'}`,
+                      transition: 'all 0.2s'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                        <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: isCompleted ? '#166534' : '#1e293b' }}>{milestone.title}</h4>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <span style={{
+                            fontSize: '10px',
+                            fontWeight: '800',
+                            textTransform: 'uppercase',
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            background: statusColor.bg,
+                            color: statusColor.text
+                          }}>{milestone.status}</span>
+                          {isProjectOwner && (
+                            <button onClick={() => handleDeleteMilestone(milestone._id)} style={{ border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {milestone.description && <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>{milestone.description}</p>}
+                      {milestone.dueDate && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                          {new Date(milestone.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </div>
                       )}
                     </div>
                   </div>
-                  {milestone.description && (
-                    <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#64748b' }}>
-                      {milestone.description}
-                    </p>
-                  )}
-                  {milestone.dueDate && (
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      <strong>Due:</strong> {new Date(milestone.dueDate).toLocaleDateString()}
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Risks & Dependencies */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+
+          {/* Risks Card */}
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '24px',
+            padding: '28px',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+          }}>
+            <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '800', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ background: '#fef2f2', padding: '6px', borderRadius: '10px' }}>⚠️</span>
+              Identified Risks
+            </h3>
+            {risks.length === 0 ? (
+              <p style={{ margin: 0, color: '#94a3b8', fontSize: '14px', padding: '20px', background: '#f8fafc', borderRadius: '16px', textAlign: 'center' }}>No critical risks reported</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {risks.slice(0, 3).map((risk, idx) => {
+                  const sev = getRiskSeverityColor(risk.severity);
+                  return (
+                    <div key={idx} style={{ padding: '16px', background: '#ffffff', borderRadius: '16px', border: `1px solid ${sev.border}`, borderLeftWidth: '4px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span style={{ fontWeight: '700', fontSize: '14px', color: '#1e293b' }}>{risk.title}</span>
+                        <span style={{ fontSize: '10px', fontWeight: '800', background: sev.bg, color: sev.text, padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>{risk.severity}</span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{risk.mitigation || 'No mitigation plan yet'}</p>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Risks */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        border: '2px solid #e5e7eb',
-        borderRadius: '16px',
-        padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-            <line x1="12" y1="9" x2="12" y2="13"></line>
-            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-          </svg>
-          Risks ({risks.length})
-        </h3>
-
-        {risks.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px' }}>
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-              <line x1="12" y1="9" x2="12" y2="13"></line>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            <p style={{ margin: 0, fontSize: '14px' }}>No risks identified</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {risks.map((risk, index) => {
-              const severityColor = getRiskSeverityColor(risk.severity);
-              return (
-                <div
-                  key={index}
-                  style={{
-                    padding: '16px',
-                    backgroundColor: '#f9fafb',
-                    borderRadius: '12px',
-                    border: '1px solid #e5e7eb'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                    <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#1e293b' }}>
-                      {risk.title}
-                    </h4>
-                    <span style={{
-                      padding: '4px 10px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: '600',
-                      backgroundColor: severityColor.bg,
-                      color: severityColor.text,
-                      border: `1px solid ${severityColor.border}`,
-                      textTransform: 'capitalize',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {risk.severity}
-                    </span>
-                  </div>
-                  {risk.description && (
-                    <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#64748b' }}>
-                      {risk.description}
-                    </p>
-                  )}
-                  <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: '#64748b' }}>
-                    <div><strong>Probability:</strong> {risk.probability}</div>
-                    <div><strong>Status:</strong> {risk.status}</div>
-                  </div>
-                  {risk.mitigation && (
-                    <div style={{ marginTop: '8px', padding: '8px 12px', backgroundColor: '#ffffff', borderRadius: '6px', fontSize: '12px', color: '#64748b' }}>
-                      <strong>Mitigation:</strong> {risk.mitigation}
+          {/* Dependencies Card */}
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '24px',
+            padding: '28px',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+          }}>
+            <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '800', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ background: '#f0fdfa', padding: '6px', borderRadius: '10px' }}>🔗</span>
+              Blocked By
+            </h3>
+            {dependencies.length === 0 ? (
+              <p style={{ margin: 0, color: '#94a3b8', fontSize: '14px', padding: '20px', background: '#f8fafc', borderRadius: '16px', textAlign: 'center' }}>No active dependencies</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {dependencies.slice(0, 3).map((dep, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#f8fafc', borderRadius: '12px' }}>
+                    <div style={{ fontSize: '18px' }}>{dep.type === 'external' ? '🌐' : '🏢'}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '700', fontSize: '13px', color: '#1e293b' }}>{dep.title}</div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>{dep.status}</div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Dependencies */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        border: '2px solid #e5e7eb',
-        borderRadius: '16px',
-        padding: '24px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="18" cy="5" r="3"></circle>
-            <circle cx="6" cy="12" r="3"></circle>
-            <circle cx="18" cy="19" r="3"></circle>
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-          </svg>
-          Dependencies ({dependencies.length})
-        </h3>
-
-        {dependencies.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px' }}>
-              <circle cx="18" cy="5" r="3"></circle>
-              <circle cx="6" cy="12" r="3"></circle>
-              <circle cx="18" cy="19" r="3"></circle>
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-            </svg>
-            <p style={{ margin: 0, fontSize: '14px' }}>No dependencies tracked</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {dependencies.map((dependency, index) => {
-              const statusColor = getDependencyStatusColor(dependency.status);
-              return (
-                <div
-                  key={index}
-                  style={{
-                    padding: '16px',
-                    backgroundColor: '#f9fafb',
-                    borderRadius: '12px',
-                    border: '1px solid #e5e7eb'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                    <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#1e293b' }}>
-                      {dependency.title}
-                    </h4>
-                    <span style={{
-                      padding: '4px 10px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: '600',
-                      backgroundColor: statusColor.bg,
-                      color: statusColor.text,
-                      border: `1px solid ${statusColor.border}`,
-                      textTransform: 'capitalize',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {dependency.status.replace('-', ' ')}
-                    </span>
                   </div>
-                  {dependency.description && (
-                    <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#64748b' }}>
-                      {dependency.description}
-                    </p>
-                  )}
-                  <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: '#64748b' }}>
-                    <div><strong>Type:</strong> {dependency.type}</div>
-                    {dependency.dueDate && (
-                      <div><strong>Due:</strong> {new Date(dependency.dueDate).toLocaleDateString()}</div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Milestone Modal */}

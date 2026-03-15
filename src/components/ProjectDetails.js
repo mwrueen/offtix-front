@@ -19,6 +19,7 @@ import TeamTab from './project/TeamTab';
 import AnalyticsTab from './project/AnalyticsTab';
 import FilesTab from './project/FilesTab';
 import ChatTab from './project/ChatTab';
+import TasksTab from './project/TasksTab';
 import ProjectSidebar, { SIDEBAR_EXPANDED_WIDTH } from './project/ProjectSidebar';
 
 const ProjectDetails = () => {
@@ -248,13 +249,27 @@ const ProjectDetails = () => {
 
   if (!project) return <Layout><div>Project not found</div></Layout>;
 
+  const projectTabs = [
+    { id: 'overview', label: 'Overview', icon: '📋' },
+    { id: 'tasks', label: 'Tasks', icon: '✅' },
+    { id: 'team', label: 'Team', icon: '👥' },
+    { id: 'chat', label: 'Chat', icon: '💬' },
+    { id: 'analytics', label: 'Analytics', icon: '📈', permission: canViewAnalytics },
+    { id: 'files', label: 'Files', icon: '📁' },
+    { id: 'requirements', label: 'Requirements', icon: '📝' },
+    { id: 'meetings', label: 'Meetings', icon: '🤝' },
+    { id: 'phases', label: 'Phases', icon: '🌊' },
+    { id: 'sprints', label: 'Sprints', icon: '🏃' },
+    { id: 'risks', label: 'Risks', icon: '⚠️' },
+    { id: 'dependencies', label: 'Dependencies', icon: '🔗' },
+    { id: 'history', label: 'History', icon: '📜' }
+  ];
+
   return (
     <Layout>
-      {/* Collapsible Sidebar */}
       <ProjectSidebar projectId={id} project={project} onWidthChange={handleSidebarWidthChange} />
 
-      {/* Main Content - adjusts for sidebar */}
-      <div style={{ marginRight: `${sidebarWidth}px`, transition: 'margin-right 0.3s ease' }}>
+      <div style={{ marginRight: `${sidebarWidth}px`, transition: 'margin-right 0.3s ease', padding: '24px' }}>
         <Breadcrumb
           onNavigateToProjects={() => navigate('/projects')}
           projectTitle={project.title}
@@ -262,20 +277,88 @@ const ProjectDetails = () => {
 
         <ProjectHeader
           project={project}
-          onNavigateToTasks={() => navigate(`/projects/${id}/tasks`)}
+          onNavigateToTasks={() => navigate(`/projects/${id}?tab=tasks`)}
           isProjectOwner={isProjectOwner}
           onRefresh={fetchProjectData}
         />
 
-        {/* Tab Content */}
+        {/* Premium Tab Bar */}
         <div style={{
+          display: 'flex',
+          overflowX: 'auto',
+          gap: '8px',
+          padding: '8px',
           backgroundColor: '#ffffff',
-          border: '2px solid #e5e7eb',
           borderRadius: '16px',
           marginBottom: '24px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-          overflow: 'hidden',
-          padding: '24px'
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}>
+          {projectTabs.map((tab) => {
+            if (tab.permission === false) return null;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => navigate(`/projects/${id}?tab=${tab.id}`)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 20px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  backgroundColor: isActive ? '#eff6ff' : 'transparent',
+                  color: isActive ? '#2563eb' : '#64748b',
+                  fontSize: '14px',
+                  fontWeight: isActive ? '700' : '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  whiteSpace: 'nowrap',
+                  position: 'relative'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                    e.currentTarget.style.color = '#334155';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = '#64748b';
+                  }
+                }}
+              >
+                <span style={{ fontSize: '16px' }}>{tab.icon}</span>
+                {tab.label}
+                {isActive && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '6px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '12px',
+                    height: '2px',
+                    backgroundColor: '#2563eb',
+                    borderRadius: '2px'
+                  }} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Tab Content Container */}
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '24px',
+          padding: '32px',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.04)',
+          minHeight: '600px'
         }}>
           {activeTab === 'overview' && (
             <ProjectOverview
@@ -384,6 +467,15 @@ const ProjectDetails = () => {
             <ProjectHistoryTab
               projectId={id}
               project={project}
+            />
+          )}
+
+          {activeTab === 'tasks' && (
+            <TasksTab
+              projectId={id}
+              project={project}
+              users={users}
+              onRefresh={fetchProjectData}
             />
           )}
         </div>

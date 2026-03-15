@@ -13,7 +13,6 @@ import AuthCallback from './components/auth/AuthCallback';
 import Dashboard from './components/Dashboard';
 import Projects from './components/Projects';
 import ProjectDetails from './components/ProjectDetails';
-import Tasks from './components/Tasks';
 import Company from './components/Company';
 import UserList from './components/UserList';
 import Profile from './components/Profile';
@@ -71,11 +70,6 @@ function App() {
                         <Route path="/projects/:id" element={
                           <ProtectedRoute>
                             <ProjectDetails />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/projects/:id/tasks" element={
-                          <ProtectedRoute>
-                            <Tasks />
                           </ProtectedRoute>
                         } />
                         <Route path="/overview" element={

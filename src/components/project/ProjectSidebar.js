@@ -25,7 +25,7 @@ const ProjectSidebar = ({ projectId, project, onWidthChange }) => {
   const notificationTimeoutRef = useRef(null);
 
   // Determine current page based on URL
-  const isTasksPage = location.pathname.includes('/tasks');
+  const isTasksPage = location.search.includes('tab=tasks');
   const isChatPage = location.search.includes('tab=chat');
 
   const tabs = [
@@ -110,9 +110,7 @@ const ProjectSidebar = ({ projectId, project, onWidthChange }) => {
       setShowChatNotification(false);
     }
 
-    if (tab.path === 'tasks') {
-      navigate(`/projects/${projectId}/tasks`);
-    } else if (tab.path === 'overview') {
+    if (tab.path === 'overview') {
       navigate(`/projects/${projectId}`);
     } else {
       navigate(`/projects/${projectId}?tab=${tab.path}`);
@@ -120,7 +118,6 @@ const ProjectSidebar = ({ projectId, project, onWidthChange }) => {
   }, [navigate, projectId]);
 
   const getCurrentTab = () => {
-    if (isTasksPage) return 'tasks';
     const params = new URLSearchParams(location.search);
     return params.get('tab') || 'overview';
   };

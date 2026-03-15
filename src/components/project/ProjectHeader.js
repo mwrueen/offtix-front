@@ -67,262 +67,187 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-      borderRadius: '16px',
-      marginBottom: '24px',
-      boxShadow: '0 10px 40px rgba(59, 130, 246, 0.2)',
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+      borderRadius: '24px',
+      marginBottom: '32px',
+      boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)',
       position: 'relative',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      border: '1px solid rgba(255, 255, 255, 0.1)'
     }}>
-      {/* Background Pattern */}
+      {/* Background Decorative Elements */}
       <div style={{
         position: 'absolute',
-        top: 0,
-        right: 0,
+        top: '-10%',
+        right: '-5%',
         width: '400px',
         height: '400px',
-        background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)',
         borderRadius: '50%',
-        transform: 'translate(30%, -30%)'
+        filter: 'blur(40px)'
+      }}></div>
+      <div style={{
+        position: 'absolute',
+        bottom: '-20%',
+        left: '-10%',
+        width: '300px',
+        height: '300px',
+        background: 'radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%)',
+        borderRadius: '50%',
+        filter: 'blur(30px)'
       }}></div>
 
-      {/* Header Content */}
-      <div style={{ padding: '32px', position: 'relative', zIndex: 1 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
+      <div style={{ padding: '40px', position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap', gap: '24px' }}>
           <div style={{ flex: 1, minWidth: '300px' }}>
-            <h1 style={{ margin: '0 0 12px 0', fontSize: '32px', fontWeight: '700', color: '#ffffff' }}>
-              {project.title}
-            </h1>
-            <p style={{ margin: '0 0 16px 0', color: 'rgba(255, 255, 255, 0.9)', lineHeight: '1.6', fontSize: '15px' }}>
-              {project.description}
-            </p>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <button
-                onClick={() => canEditStatus && setShowStatusModal(true)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '10px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  textTransform: 'capitalize',
-                  backgroundColor: statusConfig.bg,
-                  color: statusConfig.text,
-                  border: `2px solid ${statusConfig.border}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  cursor: canEditStatus ? 'pointer' : 'default',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  if (canEditStatus) {
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-                title={canEditStatus ? 'Click to change status' : ''}
-              >
-                <span>{statusConfig.icon}</span>
-                {statusConfig.label || project.status.replace('_', ' ')}
-                {canEditStatus && <span style={{ marginLeft: '4px', fontSize: '10px' }}>▼</span>}
-              </button>
-              <span style={{
-                padding: '8px 16px',
-                borderRadius: '10px',
-                fontSize: '13px',
-                fontWeight: '600',
-                textTransform: 'capitalize',
-                backgroundColor: priorityConfig.bg,
-                color: priorityConfig.text,
-                border: `2px solid ${priorityConfig.border}`,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}>
-                <span>{priorityConfig.icon}</span>
-                {project.priority} Priority
-              </span>
-              {project.company && (
-                <span style={{
-                  padding: '8px 16px',
-                  borderRadius: '10px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  color: '#ffffff',
-                  border: '2px solid rgba(255, 255, 255, 0.3)',
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+              <h1 style={{ margin: 0, fontSize: '36px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.02em' }}>
+                {project.title}
+              </h1>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => canEditStatus && setShowStatusModal(true)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    backgroundColor: statusConfig.bg,
+                    color: statusConfig.text,
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: canEditStatus ? 'pointer' : 'default',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (canEditStatus) e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <span style={{ fontSize: '14px' }}>{statusConfig.icon}</span>
+                  {statusConfig.label}
+                  {canEditStatus && <span style={{ fontSize: '10px', opacity: 0.7 }}>▼</span>}
+                </button>
+                <div style={{
+                  padding: '6px 14px',
+                  borderRadius: '20px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  backgroundColor: priorityConfig.bg,
+                  color: priorityConfig.text,
+                  border: 'none',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px'
                 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                  </svg>
-                  {project.company.name}
-                </span>
-              )}
+                  <span>{priorityConfig.icon}</span>
+                  {project.priority?.toUpperCase()}
+                </div>
+              </div>
             </div>
+            <p style={{ margin: 0, color: 'rgba(255, 255, 255, 0.7)', lineHeight: '1.625', fontSize: '16px', maxWidth: '800px' }}>
+              {project.description}
+            </p>
           </div>
 
-          <button
-            onClick={onNavigateToTasks}
-            style={{
-              padding: '14px 28px',
-              background: 'rgba(255, 255, 255, 0.2)',
-              backdropFilter: 'blur(10px)',
-              color: '#ffffff',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              fontSize: '15px',
-              fontWeight: '600',
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            {/* Circular Progress Indicator */}
+            <div style={{ position: 'relative', width: '90px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="90" height="90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8" />
+                <circle cx="50" cy="50" r="45" fill="none" stroke="url(#progressGradient)" strokeWidth="8"
+                  strokeDasharray={`${2 * Math.PI * 45}`}
+                  strokeDashoffset={`${2 * Math.PI * 45 * (1 - progress / 100)}`}
+                  strokeLinecap="round"
+                  style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+                />
+                <defs>
+                  <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#10b981" />
+                    <stop offset="100%" stopColor="#3b82f6" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div style={{ position: 'absolute', textAlign: 'center' }}>
+                <div style={{ fontSize: '18px', fontWeight: '800', color: '#ffffff' }}>{progress}%</div>
+                <div style={{ fontSize: '9px', fontWeight: '600', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Done</div>
+              </div>
+            </div>
+
+            <button
+              onClick={onNavigateToTasks}
+              style={{
+                padding: '16px 32px',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '16px',
+                cursor: 'pointer',
+                fontSize: '15px',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: '0 10px 25px rgba(59, 130, 246, 0.4)',
+                whiteSpace: 'nowrap'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-3px)';
+                e.currentTarget.style.boxShadow = '0 15px 30px rgba(59, 130, 246, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 10px 25px rgba(59, 130, 246, 0.4)';
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 11l3 3L22 4"></path>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+              </svg>
+              Manage Project Tasks
+            </button>
+          </div>
+        </div>
+
+        {/* Dynamic Horizontal Stats Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+          gap: '2px',
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          borderRadius: '20px',
+          overflow: 'hidden',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}>
+          {[
+            { label: 'OWNER', value: project.owner?.name || 'Unknown', icon: '👤' },
+            { label: 'TEAM SIZE', value: `${teamSize} Members`, icon: '👥' },
+            { label: 'TIMELINE', value: project.endDate ? `${new Date(project.startDate).toLocaleDateString()} - ${new Date(project.endDate).toLocaleDateString()}` : `Started ${new Date(project.startDate).toLocaleDateString()}`, icon: '📅' },
+            { label: 'BUDGET', value: project.budget?.amount ? `${getCurrencySymbol(companyCurrency)} ${project.budget.amount.toLocaleString()}` : 'Not set', icon: '💰' },
+            { label: 'MILESTONES', value: `${project.milestones?.length || 0} Total`, icon: '🎯' }
+          ].map((stat, idx) => (
+            <div key={idx} style={{
+              backgroundColor: 'rgba(30, 41, 59, 0.5)',
+              padding: '24px',
               display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 11l3 3L22 4"></path>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-            </svg>
-            Manage Tasks
-          </button>
-        </div>
-
-        {/* Progress Bar */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)', fontWeight: '600' }}>
-              Overall Progress
-            </span>
-            <span style={{ fontSize: '14px', color: '#ffffff', fontWeight: '700' }}>
-              {progress}%
-            </span>
-          </div>
-          <div style={{
-            width: '100%',
-            height: '14px',
-            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: '7px',
-            overflow: 'hidden',
-            border: '1px solid rgba(255, 255, 255, 0.3)'
-          }}>
-            <div style={{
-              width: `${progress}%`,
-              height: '100%',
-              background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
-              transition: 'width 0.3s ease',
-              boxShadow: '0 0 10px rgba(16, 185, 129, 0.5)'
-            }}></div>
-          </div>
-        </div>
-
-        {/* Statistics Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px' }}>
-          <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '12px',
-            padding: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
-          }}>
-            <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '6px', fontWeight: '500' }}>
-              OWNER
+              flexDirection: 'column',
+              gap: '8px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '14px' }}>{stat.icon}</span>
+                <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.5)', fontWeight: '700', letterSpacing: '0.05em' }}>{stat.label}</span>
+              </div>
+              <div style={{ fontSize: '15px', fontWeight: '600', color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {stat.value}
+              </div>
             </div>
-            <div style={{ fontSize: '15px', fontWeight: '600', color: '#ffffff' }}>
-              {project.owner?.name || 'Unknown'}
-            </div>
-          </div>
-
-          <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '12px',
-            padding: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
-          }}>
-            <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '6px', fontWeight: '500' }}>
-              TEAM SIZE
-            </div>
-            <div style={{ fontSize: '15px', fontWeight: '600', color: '#ffffff' }}>
-              {teamSize} {teamSize === 1 ? 'Member' : 'Members'}
-            </div>
-          </div>
-
-          <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '12px',
-            padding: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
-          }}>
-            <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '6px', fontWeight: '500' }}>
-              START DATE
-            </div>
-            <div style={{ fontSize: '15px', fontWeight: '600', color: '#ffffff' }}>
-              {new Date(project.startDate).toLocaleDateString()}
-            </div>
-          </div>
-
-          <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '12px',
-            padding: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
-          }}>
-            <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '6px', fontWeight: '500' }}>
-              DUE DATE
-            </div>
-            <div style={{ fontSize: '15px', fontWeight: '600', color: '#ffffff' }}>
-              {project.endDate ? new Date(project.endDate).toLocaleDateString() : 'Not set'}
-            </div>
-          </div>
-
-          <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '12px',
-            padding: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
-          }}>
-            <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '6px', fontWeight: '500' }}>
-              MILESTONES
-            </div>
-            <div style={{ fontSize: '15px', fontWeight: '600', color: '#ffffff' }}>
-              {project.milestones?.length || 0}
-            </div>
-          </div>
-
-          <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '12px',
-            padding: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.2)'
-          }}>
-            <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '6px', fontWeight: '500' }}>
-              BUDGET
-            </div>
-            <div style={{ fontSize: '15px', fontWeight: '600', color: '#ffffff' }}>
-              {project.budget?.amount ? `${getCurrencySymbol(companyCurrency)} ${project.budget.amount.toLocaleString()}` : 'Not set'}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
