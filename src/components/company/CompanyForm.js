@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useCompany } from '../../context/CompanyContext';
+import { useToast } from '../../context/ToastContext';
 
 const CompanyForm = ({ onClose }) => {
+  const toast = useToast();
   const [formData, setFormData] = useState({
     name: '',
     description: ''
@@ -16,7 +18,7 @@ const CompanyForm = ({ onClose }) => {
       await createCompany(formData);
       onClose();
     } catch (error) {
-      alert('Error creating company: ' + error.response?.data?.message);
+      toast.error('Error creating company: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -53,7 +55,7 @@ const CompanyForm = ({ onClose }) => {
             color: '#64748b'
           }}>Set up your company to manage teams and projects</p>
         </div>
-        
+
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '20px' }}>
             <label style={{
@@ -77,10 +79,10 @@ const CompanyForm = ({ onClose }) => {
                 transition: 'border-color 0.15s ease-in-out'
               }}
               value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
           </div>
-          
+
           <div style={{ marginBottom: '32px' }}>
             <label style={{
               display: 'block',
@@ -104,10 +106,10 @@ const CompanyForm = ({ onClose }) => {
                 lineHeight: '1.5'
               }}
               value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
           </div>
-          
+
           <div style={{
             display: 'flex',
             justifyContent: 'flex-end',

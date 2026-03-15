@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { projectAPI } from '../../services/api';
 import { useCompany } from '../../context/CompanyContext';
+import { useToast } from '../../context/ToastContext';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 import { getCurrencySymbol } from '../../utils/currency';
 
 const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }) => {
   const { state: companyState } = useCompany();
+  const toast = useToast();
   const { hasPermission, isSuperAdmin } = usePermissions();
   const companyCurrency = companyState?.selectedCompany?.currency || 'USD';
 
@@ -44,7 +46,7 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
       setScheduledStartDate('');
     } catch (error) {
       console.error('Error updating project status:', error);
-      alert('Failed to update project status');
+      toast.error('Failed to update project status');
     } finally {
       setIsUpdating(false);
     }

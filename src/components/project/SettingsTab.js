@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { projectAPI } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
+  const toast = useToast();
   const [settings, setSettings] = useState({
     timeTracking: {
       defaultDurationUnit: 'hours',
@@ -69,10 +71,10 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
     try {
       await projectAPI.updateSettings(projectId, settings);
       await onRefresh();
-      alert('Settings saved successfully!');
+      toast.success('Settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
-      alert('Failed to save settings. Please try again.');
+      toast.error('Failed to save settings. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -89,7 +91,7 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
       setShowHolidayForm(false);
     } catch (error) {
       console.error('Error adding holiday:', error);
-      alert('Failed to add holiday. Please try again.');
+      toast.error('Failed to add holiday. Please try again.');
     }
   };
 
@@ -109,7 +111,7 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
       setDeleteModal({ isOpen: false, id: null, name: '' });
     } catch (error) {
       console.error('Error removing holiday:', error);
-      alert('Failed to remove holiday. Please try again.');
+      toast.error('Failed to remove holiday. Please try again.');
     }
   };
 

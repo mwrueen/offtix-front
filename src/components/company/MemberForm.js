@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useCompany } from '../../context/CompanyContext';
+import { useToast } from '../../context/ToastContext';
 import api from '../../services/api';
 
 const MemberForm = ({ onClose }) => {
+  const toast = useToast();
   const [users, setUsers] = useState([]);
   const [formData, setFormData] = useState({
     userId: '',
@@ -31,7 +33,7 @@ const MemberForm = ({ onClose }) => {
       await addMember(formData.userId, formData.designation, formData.salary);
       onClose();
     } catch (error) {
-      alert('Error adding member: ' + error.response?.data?.message);
+      toast.error('Error adding member: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -68,7 +70,7 @@ const MemberForm = ({ onClose }) => {
             color: '#64748b'
           }}>Invite a user to join your company team</p>
         </div>
-        
+
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '20px' }}>
             <label style={{
@@ -91,7 +93,7 @@ const MemberForm = ({ onClose }) => {
                 cursor: 'pointer'
               }}
               value={formData.userId}
-              onChange={(e) => setFormData({...formData, userId: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
             >
               <option value="">Choose a user to add...</option>
               {users.map(user => (
@@ -101,7 +103,7 @@ const MemberForm = ({ onClose }) => {
               ))}
             </select>
           </div>
-          
+
           <div style={{ marginBottom: '20px' }}>
             <label style={{
               display: 'block',
@@ -123,7 +125,7 @@ const MemberForm = ({ onClose }) => {
                 cursor: 'pointer'
               }}
               value={formData.designation}
-              onChange={(e) => setFormData({...formData, designation: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
             >
               <option value="">Select designation...</option>
               {company?.designations?.map((designation, index) => (
@@ -133,7 +135,7 @@ const MemberForm = ({ onClose }) => {
               ))}
             </select>
           </div>
-          
+
           <div style={{ marginBottom: '32px' }}>
             <label style={{
               display: 'block',
@@ -146,7 +148,7 @@ const MemberForm = ({ onClose }) => {
               type="number"
               placeholder="Enter monthly salary"
               value={formData.salary}
-              onChange={(e) => setFormData({...formData, salary: Number(e.target.value)})}
+              onChange={(e) => setFormData({ ...formData, salary: Number(e.target.value) })}
               style={{
                 width: '100%',
                 padding: '12px 16px',
@@ -157,7 +159,7 @@ const MemberForm = ({ onClose }) => {
               }}
             />
           </div>
-          
+
           <div style={{
             display: 'flex',
             justifyContent: 'flex-end',

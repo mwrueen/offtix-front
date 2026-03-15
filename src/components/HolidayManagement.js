@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { holidayAPI } from '../services/api';
 import { useCompany } from '../context/CompanyContext';
+import { useToast } from '../context/ToastContext';
 import Layout from './Layout';
 import DeleteConfirmModal from './common/DeleteConfirmModal';
 
 const HolidayManagement = () => {
   const { state } = useCompany();
+  const toast = useToast();
   const selectedCompany = state.selectedCompany;
   const [holidays, setHolidays] = useState([]);
   const [company, setCompany] = useState(null);
@@ -49,7 +51,7 @@ const HolidayManagement = () => {
       fetchHolidays();
     } catch (error) {
       console.error('Error adding holiday:', error);
-      alert(error.response?.data?.error || 'Failed to add holiday');
+      toast.error(error.response?.data?.error || 'Failed to add holiday');
     }
   };
 
@@ -63,7 +65,7 @@ const HolidayManagement = () => {
       fetchHolidays();
     } catch (error) {
       console.error('Error updating holiday:', error);
-      alert('Failed to update holiday');
+      toast.error('Failed to update holiday');
     }
   };
 
@@ -83,7 +85,7 @@ const HolidayManagement = () => {
       setDeleteModal({ isOpen: false, id: null, name: '' });
     } catch (error) {
       console.error('Error deleting holiday:', error);
-      alert('Failed to delete holiday');
+      toast.error('Failed to delete holiday');
     }
   };
 

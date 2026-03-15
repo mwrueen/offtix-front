@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
+import { useToast } from '../../../context/ToastContext';
 import { autoScheduleAllTasks } from '../../../utils/ganttScheduler';
 import { taskAPI } from '../../../services/api';
 import AutoScheduleGuide from '../AutoScheduleGuide';
@@ -346,6 +347,7 @@ const GanttView = ({
   teamActivity = [],
   onRefresh
 }) => {
+  const toast = useToast();
   const [expandedTasks, setExpandedTasks] = useState(new Set());
   const [isAutoScheduling, setIsAutoScheduling] = useState(false);
   const [showAutoScheduleModal, setShowAutoScheduleModal] = useState(false);
@@ -603,7 +605,7 @@ const GanttView = ({
       link.click();
     } catch (error) {
       console.error('Error exporting PNG:', error);
-      alert('Failed to export. Please make sure html2canvas is installed.');
+      toast.error('Failed to export. Please make sure html2canvas is installed.');
     } finally {
       setIsExporting(false);
     }
@@ -804,7 +806,7 @@ const GanttView = ({
 
     } catch (error) {
       console.error('Error exporting Excel WBS:', error);
-      alert('Failed to export Excel. Please try again.');
+      toast.error('Failed to export Excel. Please try again.');
     } finally {
       setIsExporting(false);
     }

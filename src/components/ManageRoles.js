@@ -7,6 +7,7 @@ import { getCookie } from '../utils/cookies';
 import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import Layout from './Layout';
 import PageHeader from './PageHeader';
+import DeleteConfirmModal from './common/DeleteConfirmModal';
 
 // Permission categories for better organization
 const permissionCategories = [
@@ -398,18 +399,14 @@ const ManageRoles = () => {
         </div>
       )}
 
-      {showDeleteConfirm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }} onClick={() => setShowDeleteConfirm(null)}>
-          <div style={{ background: 'white', padding: '32px', borderRadius: '16px', maxWidth: '450px', width: '90%', boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)' }} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '700', color: '#1e293b', textAlign: 'center' }}>Delete Role?</h3>
-            <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#64748b', textAlign: 'center' }}>Are you sure you want to delete "<strong>{showDeleteConfirm?.name}</strong>"?</p>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => setShowDeleteConfirm(null)} style={{ flex: 1, padding: '12px', background: 'white', border: '1px solid #e2e8f0', borderRadius: '10px', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={() => handleDeleteRole(showDeleteConfirm._id)} style={{ flex: 1, padding: '12px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmModal
+        isOpen={!!showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(null)}
+        onConfirm={() => handleDeleteRole(showDeleteConfirm?._id)}
+        title="Delete Role"
+        message={`Are you sure you want to delete "${showDeleteConfirm?.name}"? This action cannot be undone.`}
+        itemName={showDeleteConfirm?.name}
+      />
 
       {editingRole && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)', padding: '20px' }} onClick={() => { setEditingRole(null); setEditPermissions({}); }}>

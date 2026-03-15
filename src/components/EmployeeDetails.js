@@ -5,6 +5,7 @@ import { useCompany } from '../context/CompanyContext';
 import { getCookie } from '../utils/cookies';
 import Layout from './Layout';
 import DeleteConfirmModal from './common/DeleteConfirmModal';
+import { useToast } from '../context/ToastContext';
 import { getCurrencySymbol } from '../utils/currency';
 
 // ─── Currency helper ───────────────────────────────────────────────────────
@@ -37,6 +38,7 @@ const EmployeeDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { state } = useCompany();
+  const toast = useToast();
   const selectedCompany = state.selectedCompany;
   const cvRef = useRef(null);
 
@@ -98,14 +100,14 @@ const EmployeeDetails = () => {
       await employeeAPI.updateSalary(selectedCompany.id, id, parseFloat(newSalary), salaryReason);
       setShowSalaryModal(false); setNewSalary(''); setSalaryReason('');
       fetchEmployeeDetails();
-    } catch { alert('Failed to update salary'); }
+    } catch { toast.error('Failed to update salary'); }
   };
 
   const handleUpdateDesignation = async () => {
     try {
       await employeeAPI.updateDesignation(selectedCompany.id, id, newDesignation);
       setShowDesignationModal(false); fetchEmployeeDetails();
-    } catch { alert('Failed to update designation'); }
+    } catch { toast.error('Failed to update designation'); }
   };
 
   const handleUpdateManager = async () => {
@@ -117,13 +119,13 @@ const EmployeeDetails = () => {
         body: JSON.stringify({ memberId: employee.memberId, reportsTo: selectedManager || null }),
       });
       if (res.ok) { setShowManagerModal(false); fetchEmployeeDetails(); }
-      else { const d = await res.json(); alert(d.message || 'Failed to update manager'); }
-    } catch { alert('Failed to update manager'); }
+      else { const d = await res.json(); toast.error(d.message || 'Failed to update manager'); }
+    } catch { toast.error('Failed to update manager'); }
   };
 
   const handleRemoveEmployee = async () => {
     try { await employeeAPI.remove(selectedCompany.id, id); navigate('/employees'); }
-    catch { alert('Failed to remove employee'); }
+    catch { toast.error('Failed to remove employee'); }
   };
 
   // ── PDF Export ───────────────────────────────────────────────────────────
@@ -183,7 +185,7 @@ const EmployeeDetails = () => {
       printWindow.document.close();
     } catch (e) {
       console.error('Export error', e);
-      alert('PDF export failed. Please try again.');
+      toast.error('PDF export failed. Please try again.');
     } finally {
       setExporting(false);
     }

@@ -1,7 +1,10 @@
+import React, { useState } from 'react';
+import { useToast } from '../../context/ToastContext';
 import { taskStatusAPI } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const TaskStatusManager = ({ projectId, taskStatuses, onStatusesUpdate, selectedStatus, onStatusChange, isProjectOwner = false, ...props }) => {
+  const toast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingStatus, setEditingStatus] = useState(null);
   const [newStatus, setNewStatus] = useState({ name: '', color: '#6b7280' });
@@ -46,8 +49,7 @@ const TaskStatusManager = ({ projectId, taskStatuses, onStatusesUpdate, selected
       setDeleteModal({ isOpen: false, id: null, name: '' });
     } catch (error) {
       console.error('Error deleting status:', error);
-      // We'll use the browser alert here for errors if needed, but the confirmation is now a modal
-      alert(error.response?.data?.error || 'Failed to delete status');
+      toast.error(error.response?.data?.error || 'Failed to delete status');
     }
   };
 

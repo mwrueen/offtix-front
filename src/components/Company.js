@@ -977,6 +977,7 @@ const AddEmployeeModal = ({ company, onClose, onSuccess }) => {
   const [designation, setDesignation] = useState('Employee');
   const [salary, setSalary] = useState('');
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1000,10 +1001,10 @@ const AddEmployeeModal = ({ company, onClose, onSuccess }) => {
         onSuccess();
       } else {
         const error = await response.json();
-        alert(error.message);
+        toast.error(error.message);
       }
     } catch (error) {
-      alert('Error adding employee');
+      toast.error('Error adding employee');
     } finally {
       setLoading(false);
     }
@@ -1123,6 +1124,7 @@ const UpdateSalaryModal = ({ member, company, onClose, onSuccess }) => {
   const [salary, setSalary] = useState(member.currentSalary || '');
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1146,10 +1148,10 @@ const UpdateSalaryModal = ({ member, company, onClose, onSuccess }) => {
         onSuccess();
       } else {
         const error = await response.json();
-        alert(error.message);
+        toast.error(error.message);
       }
     } catch (error) {
-      alert('Error updating salary');
+      toast.error('Error updating salary');
     } finally {
       setLoading(false);
     }
@@ -1250,6 +1252,7 @@ const UpdateSalaryModal = ({ member, company, onClose, onSuccess }) => {
 const UpdateRoleModal = ({ member, company, onClose, onSuccess }) => {
   const [designation, setDesignation] = useState(member.designation || '');
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1272,10 +1275,10 @@ const UpdateRoleModal = ({ member, company, onClose, onSuccess }) => {
         onSuccess();
       } else {
         const error = await response.json();
-        alert(error.message);
+        toast.error(error.message);
       }
     } catch (error) {
-      alert('Error updating role');
+      toast.error('Error updating role');
     } finally {
       setLoading(false);
     }
@@ -1375,6 +1378,7 @@ const CreateDesignationModal = ({ company, onClose, onSuccess }) => {
     removeEmployeeFromProject: false
   });
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1394,10 +1398,10 @@ const CreateDesignationModal = ({ company, onClose, onSuccess }) => {
         onSuccess();
       } else {
         const error = await response.json();
-        alert(error.message);
+        toast.error(error.message);
       }
     } catch (error) {
-      alert('Error creating designation');
+      toast.error('Error creating designation');
     } finally {
       setLoading(false);
     }
@@ -1611,6 +1615,7 @@ const CreateCompanyModal = ({ onClose, onSuccess }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1631,10 +1636,10 @@ const CreateCompanyModal = ({ onClose, onSuccess }) => {
         onSuccess();
       } else {
         const error = await response.json();
-        alert(error.message);
+        toast.error(error.message);
       }
     } catch (error) {
-      alert('Error creating company');
+      toast.error('Error creating company');
     } finally {
       setLoading(false);
     }
