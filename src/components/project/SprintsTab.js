@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { sprintAPI } from '../../services/api';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOwner, onRefresh }) => {
   const [showForm, setShowForm] = useState(false);
@@ -19,6 +19,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
     capacity: '',
     velocity: ''
   });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,7 +36,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
       } else {
         await sprintAPI.create(projectId, data);
       }
-      
+
       await onRefresh();
       resetForm();
     } catch (error) {
@@ -75,14 +76,22 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
     setShowForm(true);
   };
 
-  const handleDelete = async (sprintId) => {
-    if (window.confirm('Are you sure you want to delete this sprint?')) {
-      try {
-        await sprintAPI.delete(projectId, sprintId);
-        await onRefresh();
-      } catch (error) {
-        console.error('Error deleting sprint:', error);
-      }
+  const handleDelete = (sprintId) => {
+    const sprint = sprints.find(s => s._id === sprintId);
+    setDeleteModal({
+      isOpen: true,
+      id: sprintId,
+      name: sprint?.name || 'this sprint'
+    });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await sprintAPI.delete(projectId, deleteModal.id);
+      await onRefresh();
+      setDeleteModal({ isOpen: false, id: null, name: '' });
+    } catch (error) {
+      console.error('Error deleting sprint:', error);
     }
   };
 
@@ -107,8 +116,8 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
   // Filter sprints
   const filteredSprints = sprints.filter(sprint => {
     const matchesSearch = sprint.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (sprint.description && sprint.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         (sprint.goal && sprint.goal.toLowerCase().includes(searchTerm.toLowerCase()));
+      (sprint.description && sprint.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (sprint.goal && sprint.goal.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = filterStatus === 'all' || sprint.status === filterStatus;
     const matchesPhase = filterPhase === 'all' || sprint.phase?._id === filterPhase;
     return matchesSearch && matchesStatus && matchesPhase;
@@ -326,7 +335,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                     placeholder="e.g., Sprint 1, Alpha Release Sprint"
                     style={{
@@ -366,7 +375,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
                   </label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows="3"
                     placeholder="Brief description of the sprint"
                     style={{
@@ -409,7 +418,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
                   </label>
                   <textarea
                     value={formData.goal}
-                    onChange={(e) => setFormData({...formData, goal: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, goal: e.target.value })}
                     rows="2"
                     placeholder="What is the main objective of this sprint?"
                     style={{
@@ -454,7 +463,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
                   </label>
                   <select
                     value={formData.phase}
-                    onChange={(e) => setFormData({...formData, phase: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, phase: e.target.value })}
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
@@ -496,7 +505,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
                   </label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
@@ -540,7 +549,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
                     <input
                       type="date"
                       value={formData.startDate}
-                      onChange={(e) => setFormData({...formData, startDate: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                       required
                       style={{
                         boxSizing: 'border-box',
@@ -580,7 +589,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
                     <input
                       type="date"
                       value={formData.endDate}
-                      onChange={(e) => setFormData({...formData, endDate: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                       required
                       style={{
                         boxSizing: 'border-box',
@@ -622,7 +631,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
                     <input
                       type="number"
                       value={formData.capacity}
-                      onChange={(e) => setFormData({...formData, capacity: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
                       placeholder="80"
                       min="0"
                       step="1"
@@ -664,7 +673,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
                     <input
                       type="number"
                       value={formData.velocity}
-                      onChange={(e) => setFormData({...formData, velocity: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, velocity: e.target.value })}
                       placeholder="20"
                       min="0"
                       step="1"
@@ -765,312 +774,312 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
       {/* Sprints List - Only show when form is not visible */}
       {!showForm && (
         <div style={{ display: 'grid', gap: '16px' }}>
-        {filteredSprints.length === 0 && sprints.length > 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '64px 24px',
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #e1e5e9'
-          }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-              No Sprints Found
-            </h3>
-            <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
-              Try adjusting your search or filter criteria.
-            </p>
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setFilterStatus('all');
-                setFilterPhase('all');
-              }}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#f4f5f7',
-                color: '#5e6c84',
-                border: '1px solid #dfe1e6',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600'
-              }}
-            >
-              Clear Filters
-            </button>
-          </div>
-        ) : sprints.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '64px 24px',
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #e1e5e9'
-          }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏃</div>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-              No Sprints Yet
-            </h3>
-            <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
-              Create sprints to organize your development cycles and track progress.
-            </p>
-            {isProjectOwner && (
+          {filteredSprints.length === 0 && sprints.length > 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '64px 24px',
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              border: '1px solid #e1e5e9'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
+                No Sprints Found
+              </h3>
+              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
+                Try adjusting your search or filter criteria.
+              </p>
               <button
-                onClick={() => setShowForm(true)}
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterStatus('all');
+                  setFilterPhase('all');
+                }}
                 style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#0052cc',
-                  color: 'white',
-                  border: 'none',
+                  padding: '10px 20px',
+                  backgroundColor: '#f4f5f7',
+                  color: '#5e6c84',
+                  border: '1px solid #dfe1e6',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '14px',
-                  fontWeight: '600',
-                  boxShadow: '0 2px 4px rgba(0, 82, 204, 0.2)'
+                  fontWeight: '600'
                 }}
               >
-                Create First Sprint
+                Clear Filters
               </button>
-            )}
-          </div>
-        ) : (
-          filteredSprints.map(sprint => {
-            const statusColor = getStatusColor(sprint.status);
-            const duration = calculateDuration(sprint.startDate, sprint.endDate);
+            </div>
+          ) : sprints.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '64px 24px',
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              border: '1px solid #e1e5e9'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏃</div>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
+                No Sprints Yet
+              </h3>
+              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
+                Create sprints to organize your development cycles and track progress.
+              </p>
+              {isProjectOwner && (
+                <button
+                  onClick={() => setShowForm(true)}
+                  style={{
+                    padding: '12px 24px',
+                    backgroundColor: '#0052cc',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    boxShadow: '0 2px 4px rgba(0, 82, 204, 0.2)'
+                  }}
+                >
+                  Create First Sprint
+                </button>
+              )}
+            </div>
+          ) : (
+            filteredSprints.map(sprint => {
+              const statusColor = getStatusColor(sprint.status);
+              const duration = calculateDuration(sprint.startDate, sprint.endDate);
 
-            return (
-              <div
-                key={sprint._id}
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e1e5e9',
-                  borderRadius: '12px',
-                  padding: '24px',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.08)';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{
-                      margin: '0 0 8px 0',
-                      fontSize: '18px',
-                      fontWeight: '700',
-                      color: '#172b4d',
-                      lineHeight: '1.3'
-                    }}>
-                      {sprint.name}
-                      <span style={{
-                        fontSize: '14px',
-                        color: '#5e6c84',
-                        fontWeight: '500',
-                        marginLeft: '12px'
+              return (
+                <div
+                  key={sprint._id}
+                  style={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e1e5e9',
+                    borderRadius: '12px',
+                    padding: '24px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.08)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{
+                        margin: '0 0 8px 0',
+                        fontSize: '18px',
+                        fontWeight: '700',
+                        color: '#172b4d',
+                        lineHeight: '1.3'
                       }}>
-                        Sprint #{sprint.sprintNumber}
-                      </span>
-                    </h3>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
-                      <span style={{
-                        ...statusColor,
-                        padding: '4px 12px',
-                        borderRadius: '16px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        textTransform: 'capitalize',
-                        border: `1px solid ${statusColor.border}`
-                      }}>
-                        {sprint.status}
-                      </span>
-                      {sprint.phase && (
+                        {sprint.name}
                         <span style={{
+                          fontSize: '14px',
+                          color: '#5e6c84',
+                          fontWeight: '500',
+                          marginLeft: '12px'
+                        }}>
+                          Sprint #{sprint.sprintNumber}
+                        </span>
+                      </h3>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+                        <span style={{
+                          ...statusColor,
                           padding: '4px 12px',
                           borderRadius: '16px',
                           fontSize: '12px',
                           fontWeight: '600',
-                          backgroundColor: '#f4f5f7',
-                          color: '#5e6c84',
-                          border: '1px solid #dfe1e6'
+                          textTransform: 'capitalize',
+                          border: `1px solid ${statusColor.border}`
                         }}>
-                          📁 {sprint.phase.name}
+                          {sprint.status}
                         </span>
-                      )}
-                      <span style={{
-                        padding: '4px 12px',
-                        backgroundColor: '#e6f7ff',
-                        color: '#0052cc',
-                        borderRadius: '16px',
-                        fontSize: '12px',
-                        fontWeight: '600'
-                      }}>
-                        📅 {duration} day{duration !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
-                    <button
-                      onClick={() => setViewingSprint(sprint)}
-                      style={{
-                        padding: '8px 12px',
-                        backgroundColor: '#e6f7ff',
-                        color: '#0052cc',
-                        border: '1px solid #91d5ff',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#0052cc';
-                        e.target.style.color = 'white';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#e6f7ff';
-                        e.target.style.color = '#0052cc';
-                      }}
-                    >
-                      View
-                    </button>
-                    {isProjectOwner && (
-                      <>
-                        <button
-                          onClick={() => handleEdit(sprint)}
-                          style={{
-                            padding: '8px 12px',
+                        {sprint.phase && (
+                          <span style={{
+                            padding: '4px 12px',
+                            borderRadius: '16px',
+                            fontSize: '12px',
+                            fontWeight: '600',
                             backgroundColor: '#f4f5f7',
                             color: '#5e6c84',
-                            border: '1px solid #dfe1e6',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            transition: 'all 0.2s ease'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.backgroundColor = '#0052cc';
-                            e.target.style.color = 'white';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.backgroundColor = '#f4f5f7';
-                            e.target.style.color = '#5e6c84';
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(sprint._id)}
-                          style={{
-                            padding: '8px 12px',
-                            backgroundColor: '#fff1f0',
-                            color: '#cf1322',
-                            border: '1px solid #ffa39e',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            transition: 'all 0.2s ease'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.backgroundColor = '#cf1322';
-                            e.target.style.color = 'white';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.backgroundColor = '#fff1f0';
-                            e.target.style.color = '#cf1322';
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
+                            border: '1px solid #dfe1e6'
+                          }}>
+                            📁 {sprint.phase.name}
+                          </span>
+                        )}
+                        <span style={{
+                          padding: '4px 12px',
+                          backgroundColor: '#e6f7ff',
+                          color: '#0052cc',
+                          borderRadius: '16px',
+                          fontSize: '12px',
+                          fontWeight: '600'
+                        }}>
+                          📅 {duration} day{duration !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
+                      <button
+                        onClick={() => setViewingSprint(sprint)}
+                        style={{
+                          padding: '8px 12px',
+                          backgroundColor: '#e6f7ff',
+                          color: '#0052cc',
+                          border: '1px solid #91d5ff',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#0052cc';
+                          e.target.style.color = 'white';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#e6f7ff';
+                          e.target.style.color = '#0052cc';
+                        }}
+                      >
+                        View
+                      </button>
+                      {isProjectOwner && (
+                        <>
+                          <button
+                            onClick={() => handleEdit(sprint)}
+                            style={{
+                              padding: '8px 12px',
+                              backgroundColor: '#f4f5f7',
+                              color: '#5e6c84',
+                              border: '1px solid #dfe1e6',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#0052cc';
+                              e.target.style.color = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = '#f4f5f7';
+                              e.target.style.color = '#5e6c84';
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(sprint._id)}
+                            style={{
+                              padding: '8px 12px',
+                              backgroundColor: '#fff1f0',
+                              color: '#cf1322',
+                              border: '1px solid #ffa39e',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#cf1322';
+                              e.target.style.color = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = '#fff1f0';
+                              e.target.style.color = '#cf1322';
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {sprint.description && (
-                  <p style={{
-                    margin: '0 0 16px 0',
-                    color: '#5e6c84',
-                    fontSize: '14px',
-                    lineHeight: '1.6'
-                  }}>
-                    {sprint.description}
-                  </p>
-                )}
-
-                {sprint.goal && (
-                  <div style={{
-                    backgroundColor: '#f4f5f7',
-                    padding: '16px',
-                    borderRadius: '8px',
-                    marginBottom: '16px'
-                  }}>
-                    <h5 style={{
-                      margin: '0 0 8px 0',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      color: '#5e6c84',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px'
-                    }}>
-                      Sprint Goal
-                    </h5>
+                  {sprint.description && (
                     <p style={{
-                      margin: 0,
-                      color: '#172b4d',
+                      margin: '0 0 16px 0',
+                      color: '#5e6c84',
                       fontSize: '14px',
                       lineHeight: '1.6'
                     }}>
-                      {sprint.goal}
+                      {sprint.description}
                     </p>
-                  </div>
-                )}
+                  )}
 
-                <div style={{ display: 'flex', gap: '12px', fontSize: '12px', flexWrap: 'wrap' }}>
-                  <span style={{
-                    padding: '6px 12px',
-                    backgroundColor: '#f4f5f7',
-                    color: '#5e6c84',
-                    borderRadius: '16px',
-                    fontWeight: '600'
-                  }}>
-                    📅 {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
-                  </span>
-                  {sprint.capacity && (
+                  {sprint.goal && (
+                    <div style={{
+                      backgroundColor: '#f4f5f7',
+                      padding: '16px',
+                      borderRadius: '8px',
+                      marginBottom: '16px'
+                    }}>
+                      <h5 style={{
+                        margin: '0 0 8px 0',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#5e6c84',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}>
+                        Sprint Goal
+                      </h5>
+                      <p style={{
+                        margin: 0,
+                        color: '#172b4d',
+                        fontSize: '14px',
+                        lineHeight: '1.6'
+                      }}>
+                        {sprint.goal}
+                      </p>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '12px', fontSize: '12px', flexWrap: 'wrap' }}>
                     <span style={{
                       padding: '6px 12px',
-                      backgroundColor: '#fff4e6',
-                      color: '#d46b08',
+                      backgroundColor: '#f4f5f7',
+                      color: '#5e6c84',
                       borderRadius: '16px',
                       fontWeight: '600'
                     }}>
-                      💪 {sprint.capacity}h capacity
+                      📅 {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
                     </span>
-                  )}
-                  {sprint.velocity && (
-                    <span style={{
-                      padding: '6px 12px',
-                      backgroundColor: '#f6ffed',
-                      color: '#389e0d',
-                      borderRadius: '16px',
-                      fontWeight: '600'
-                    }}>
-                      🚀 {sprint.velocity} points
-                    </span>
-                  )}
+                    {sprint.capacity && (
+                      <span style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#fff4e6',
+                        color: '#d46b08',
+                        borderRadius: '16px',
+                        fontWeight: '600'
+                      }}>
+                        💪 {sprint.capacity}h capacity
+                      </span>
+                    )}
+                    {sprint.velocity && (
+                      <span style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#f6ffed',
+                        color: '#389e0d',
+                        borderRadius: '16px',
+                        fontWeight: '600'
+                      }}>
+                        🚀 {sprint.velocity} points
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })
-        )}
+              );
+            })
+          )}
         </div>
       )}
 
@@ -1089,7 +1098,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
           zIndex: 1000,
           padding: '24px'
         }}
-        onClick={() => setViewingSprint(null)}
+          onClick={() => setViewingSprint(null)}
         >
           <div style={{
             backgroundColor: '#ffffff',
@@ -1100,7 +1109,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
             overflow: 'auto',
             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
           }}
-          onClick={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div style={{
               padding: '32px',
@@ -1290,6 +1299,14 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
           </div>
         </div>
       )}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
+        onConfirm={confirmDelete}
+        title="Delete Sprint"
+        message="Are you sure you want to delete this sprint? This action cannot be undone."
+        itemName={deleteModal.name}
+      />
     </div>
   );
 };

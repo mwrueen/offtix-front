@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
 import { taskRoleAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const WorkflowRolesManager = ({ projectId, isProjectOwner, users = [] }) => {
   const { showToast } = useToast();
@@ -15,6 +15,7 @@ const WorkflowRolesManager = ({ projectId, isProjectOwner, users = [] }) => {
     icon: '👤',
     defaultAssignees: []
   });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
 
   useEffect(() => {
     fetchRoles();
@@ -60,11 +61,20 @@ const WorkflowRolesManager = ({ projectId, isProjectOwner, users = [] }) => {
     }
   };
 
-  const handleDelete = async (roleId) => {
-    if (!window.confirm('Are you sure you want to delete this role?')) return;
+  const handleDelete = (roleId) => {
+    const role = roles.find(r => r._id === roleId);
+    setDeleteModal({
+      isOpen: true,
+      id: roleId,
+      name: role?.name || 'this role'
+    });
+  };
+
+  const confirmDelete = async () => {
     try {
-      await taskRoleAPI.delete(projectId, roleId);
+      await taskRoleAPI.delete(projectId, deleteModal.id);
       showToast('Role deleted successfully', 'success');
+      setDeleteModal({ isOpen: false, id: null, name: '' });
       fetchRoles();
     } catch (error) {
       showToast(error.response?.data?.error || 'Failed to delete role', 'error');
@@ -258,6 +268,15 @@ const WorkflowRolesManager = ({ projectId, isProjectOwner, users = [] }) => {
           </div>
         </div>
       )}
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
+        onConfirm={confirmDelete}
+        title="Delete Workflow Role"
+        message="Are you sure you want to delete this role? This may affect existing tasks that use this workflow."
+        itemName={deleteModal.name}
+      />
     </div>
   );
 };

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { requirementAPI } from '../../services/api';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const RequirementsTab = ({ projectId, requirements, setRequirements, users, isProjectOwner, onRefresh }) => {
   const [showForm, setShowForm] = useState(false);
@@ -25,13 +26,14 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
     estimatedHours: '',
     acceptanceCriteria: []
   });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
 
   // Quill editor modules configuration
   const quillModules = {
     toolbar: [
       [{ 'header': [1, 2, 3, false] }],
       ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
       [{ 'color': [] }, { 'background': [] }],
       ['link'],
       ['clean']
@@ -133,14 +135,22 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
     setPendingFiles([]);
   };
 
-  const handleDelete = async (requirementId) => {
-    if (window.confirm('Are you sure you want to delete this requirement?')) {
-      try {
-        await requirementAPI.delete(projectId, requirementId);
-        await onRefresh();
-      } catch (error) {
-        console.error('Error deleting requirement:', error);
-      }
+  const handleDelete = (requirementId) => {
+    const req = requirements.find(r => r._id === requirementId);
+    setDeleteModal({
+      isOpen: true,
+      id: requirementId,
+      name: req?.title || 'this requirement'
+    });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await requirementAPI.delete(projectId, deleteModal.id);
+      await onRefresh();
+      setDeleteModal({ isOpen: false, id: null, name: '' });
+    } catch (error) {
+      console.error('Error deleting requirement:', error);
     }
   };
 
@@ -168,7 +178,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
   // Filter requirements based on search and filters
   const filteredRequirements = requirements.filter(req => {
     const matchesSearch = req.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         req.description.toLowerCase().includes(searchTerm.toLowerCase());
+      req.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || req.status === filterStatus;
     const matchesPriority = filterPriority === 'all' || req.priority === filterPriority;
     const matchesType = filterType === 'all' || req.type === filterType;
@@ -421,7 +431,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
               <input
                 type="text"
                 value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
                 placeholder="Enter a clear, descriptive title"
                 style={{
@@ -468,7 +478,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                 <ReactQuill
                   theme="snow"
                   value={formData.description}
-                  onChange={(value) => setFormData({...formData, description: value})}
+                  onChange={(value) => setFormData({ ...formData, description: value })}
                   modules={quillModules}
                   formats={quillFormats}
                   placeholder="Provide detailed description of the requirement..."
@@ -652,7 +662,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                   </label>
                   <select
                     value={formData.type}
-                    onChange={(e) => setFormData({...formData, type: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
@@ -685,7 +695,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                   </label>
                   <select
                     value={formData.priority}
-                    onChange={(e) => setFormData({...formData, priority: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
@@ -717,7 +727,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                   </label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
@@ -750,7 +760,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                   </label>
                   <select
                     value={formData.assignedTo}
-                    onChange={(e) => setFormData({...formData, assignedTo: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
@@ -783,7 +793,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                   <input
                     type="number"
                     value={formData.estimatedHours}
-                    onChange={(e) => setFormData({...formData, estimatedHours: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, estimatedHours: e.target.value })}
                     placeholder="0"
                     min="0"
                     step="0.5"
@@ -885,265 +895,265 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
           gap: '16px'
         }}>
           {filteredRequirements.map((requirement) => (
-          <div
-            key={requirement._id}
-            style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e1e5e9',
-              borderRadius: '12px',
-              padding: '24px',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.08)';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <div style={{ flex: 1 }}>
-                <h3 style={{
-                  margin: '0 0 8px 0',
-                  fontSize: '18px',
-                  fontWeight: '700',
-                  color: '#172b4d',
-                  lineHeight: '1.3'
-                }}>
-                  {requirement.title}
-                </h3>
-                <p style={{
-                  margin: '0 0 16px 0',
-                  fontSize: '14px',
-                  color: '#5e6c84',
-                  lineHeight: '1.5'
-                }}>
-                  {requirement.description}
-                </p>
-                
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-                  <span style={{
-                    ...getStatusColor(requirement.status),
-                    padding: '4px 12px',
-                    borderRadius: '16px',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    textTransform: 'capitalize',
-                    border: `1px solid ${getStatusColor(requirement.status).border}`
+            <div
+              key={requirement._id}
+              style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e1e5e9',
+                borderRadius: '12px',
+                padding: '24px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.08)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{
+                    margin: '0 0 8px 0',
+                    fontSize: '18px',
+                    fontWeight: '700',
+                    color: '#172b4d',
+                    lineHeight: '1.3'
                   }}>
-                    {requirement.status.replace('-', ' ')}
-                  </span>
-                  
-                  <span style={{
-                    ...getPriorityColor(requirement.priority),
-                    padding: '4px 12px',
-                    borderRadius: '16px',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    textTransform: 'capitalize',
-                    border: `1px solid ${getPriorityColor(requirement.priority).border}`
-                  }}>
-                    {requirement.priority} Priority
-                  </span>
-                  
-                  <span style={{
-                    padding: '4px 12px',
-                    backgroundColor: '#f4f5f7',
+                    {requirement.title}
+                  </h3>
+                  <p style={{
+                    margin: '0 0 16px 0',
+                    fontSize: '14px',
                     color: '#5e6c84',
-                    borderRadius: '16px',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    textTransform: 'capitalize'
+                    lineHeight: '1.5'
                   }}>
-                    {requirement.type.replace('-', ' ')}
-                  </span>
-                  
-                  {requirement.assignedTo && (
+                    {requirement.description}
+                  </p>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                    <span style={{
+                      ...getStatusColor(requirement.status),
+                      padding: '4px 12px',
+                      borderRadius: '16px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      textTransform: 'capitalize',
+                      border: `1px solid ${getStatusColor(requirement.status).border}`
+                    }}>
+                      {requirement.status.replace('-', ' ')}
+                    </span>
+
+                    <span style={{
+                      ...getPriorityColor(requirement.priority),
+                      padding: '4px 12px',
+                      borderRadius: '16px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      textTransform: 'capitalize',
+                      border: `1px solid ${getPriorityColor(requirement.priority).border}`
+                    }}>
+                      {requirement.priority} Priority
+                    </span>
+
                     <span style={{
                       padding: '4px 12px',
+                      backgroundColor: '#f4f5f7',
+                      color: '#5e6c84',
+                      borderRadius: '16px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      textTransform: 'capitalize'
+                    }}>
+                      {requirement.type.replace('-', ' ')}
+                    </span>
+
+                    {requirement.assignedTo && (
+                      <span style={{
+                        padding: '4px 12px',
+                        backgroundColor: '#e6f7ff',
+                        color: '#0052cc',
+                        borderRadius: '16px',
+                        fontSize: '12px',
+                        fontWeight: '600'
+                      }}>
+                        👤 {requirement.assignedTo.name}
+                      </span>
+                    )}
+
+                    {requirement.estimatedHours && (
+                      <span style={{
+                        padding: '4px 12px',
+                        backgroundColor: '#fff4e6',
+                        color: '#d46b08',
+                        borderRadius: '16px',
+                        fontSize: '12px',
+                        fontWeight: '600'
+                      }}>
+                        ⏱️ {requirement.estimatedHours}h
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
+                  <button
+                    onClick={() => setViewingRequirement(requirement)}
+                    style={{
+                      padding: '8px 12px',
                       backgroundColor: '#e6f7ff',
                       color: '#0052cc',
-                      borderRadius: '16px',
+                      border: '1px solid #91d5ff',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
                       fontSize: '12px',
-                      fontWeight: '600'
-                    }}>
-                      👤 {requirement.assignedTo.name}
-                    </span>
-                  )}
-                  
-                  {requirement.estimatedHours && (
-                    <span style={{
-                      padding: '4px 12px',
-                      backgroundColor: '#fff4e6',
-                      color: '#d46b08',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '600'
-                    }}>
-                      ⏱️ {requirement.estimatedHours}h
-                    </span>
+                      fontWeight: '600',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#0052cc';
+                      e.target.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#e6f7ff';
+                      e.target.style.color = '#0052cc';
+                    }}
+                  >
+                    View
+                  </button>
+                  {isProjectOwner && (
+                    <>
+                      <button
+                        onClick={() => handleEdit(requirement)}
+                        style={{
+                          padding: '8px 12px',
+                          backgroundColor: '#f4f5f7',
+                          color: '#5e6c84',
+                          border: '1px solid #dfe1e6',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#0052cc';
+                          e.target.style.color = 'white';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#f4f5f7';
+                          e.target.style.color = '#5e6c84';
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(requirement._id)}
+                        style={{
+                          padding: '8px 12px',
+                          backgroundColor: '#fff1f0',
+                          color: '#cf1322',
+                          border: '1px solid #ffa39e',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#cf1322';
+                          e.target.style.color = 'white';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#fff1f0';
+                          e.target.style.color = '#cf1322';
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
-              
-              <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
-                <button
-                  onClick={() => setViewingRequirement(requirement)}
-                  style={{
-                    padding: '8px 12px',
-                    backgroundColor: '#e6f7ff',
-                    color: '#0052cc',
-                    border: '1px solid #91d5ff',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#0052cc';
-                    e.target.style.color = 'white';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#e6f7ff';
-                    e.target.style.color = '#0052cc';
-                  }}
-                >
-                  View
-                </button>
-                {isProjectOwner && (
-                  <>
-                    <button
-                      onClick={() => handleEdit(requirement)}
-                      style={{
-                        padding: '8px 12px',
-                        backgroundColor: '#f4f5f7',
-                        color: '#5e6c84',
-                        border: '1px solid #dfe1e6',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#0052cc';
-                        e.target.style.color = 'white';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#f4f5f7';
-                        e.target.style.color = '#5e6c84';
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(requirement._id)}
-                      style={{
-                        padding: '8px 12px',
-                        backgroundColor: '#fff1f0',
-                        color: '#cf1322',
-                        border: '1px solid #ffa39e',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#cf1322';
-                        e.target.style.color = 'white';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#fff1f0';
-                        e.target.style.color = '#cf1322';
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
-              </div>
             </div>
-          </div>
-        ))}
+          ))}
 
-        {filteredRequirements.length === 0 && requirements.length > 0 && (
-          <div style={{
-            textAlign: 'center',
-            padding: '64px 24px',
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #e1e5e9'
-          }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-              No Requirements Found
-            </h3>
-            <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
-              Try adjusting your search or filter criteria.
-            </p>
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setFilterStatus('all');
-                setFilterPriority('all');
-                setFilterType('all');
-              }}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#f4f5f7',
-                color: '#5e6c84',
-                border: '1px solid #dfe1e6',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600'
-              }}
-            >
-              Clear Filters
-            </button>
-          </div>
-        )}
-
-        {requirements.length === 0 && (
-          <div style={{
-            textAlign: 'center',
-            padding: '64px 24px',
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #e1e5e9'
-          }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-              No Requirements Yet
-            </h3>
-            <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
-              Start by creating your first requirement to define project specifications.
-            </p>
-            {isProjectOwner && (
+          {filteredRequirements.length === 0 && requirements.length > 0 && (
+            <div style={{
+              textAlign: 'center',
+              padding: '64px 24px',
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              border: '1px solid #e1e5e9'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
+                No Requirements Found
+              </h3>
+              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
+                Try adjusting your search or filter criteria.
+              </p>
               <button
-                onClick={() => setShowForm(true)}
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterStatus('all');
+                  setFilterPriority('all');
+                  setFilterType('all');
+                }}
                 style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#0052cc',
-                  color: 'white',
-                  border: 'none',
+                  padding: '10px 20px',
+                  backgroundColor: '#f4f5f7',
+                  color: '#5e6c84',
+                  border: '1px solid #dfe1e6',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '14px',
-                  fontWeight: '600',
-                  boxShadow: '0 2px 4px rgba(0, 82, 204, 0.2)'
+                  fontWeight: '600'
                 }}
               >
-                Create First Requirement
+                Clear Filters
               </button>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+
+          {requirements.length === 0 && (
+            <div style={{
+              textAlign: 'center',
+              padding: '64px 24px',
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              border: '1px solid #e1e5e9'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
+                No Requirements Yet
+              </h3>
+              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
+                Start by creating your first requirement to define project specifications.
+              </p>
+              {isProjectOwner && (
+                <button
+                  onClick={() => setShowForm(true)}
+                  style={{
+                    padding: '12px 24px',
+                    backgroundColor: '#0052cc',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    boxShadow: '0 2px 4px rgba(0, 82, 204, 0.2)'
+                  }}
+                >
+                  Create First Requirement
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -1162,7 +1172,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
           zIndex: 1000,
           padding: '24px'
         }}
-        onClick={() => setViewingRequirement(null)}
+          onClick={() => setViewingRequirement(null)}
         >
           <div style={{
             backgroundColor: '#ffffff',
@@ -1173,7 +1183,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
             overflow: 'auto',
             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
           }}
-          onClick={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div style={{
               padding: '32px',
@@ -1333,6 +1343,14 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
           </div>
         </div>
       )}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
+        onConfirm={confirmDelete}
+        title="Delete Requirement"
+        message="Are you sure you want to delete this requirement? This action cannot be undone."
+        itemName={deleteModal.name}
+      />
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { io } from 'socket.io-client';
 import { chatAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { getCookie } from '../../utils/cookies';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const ChatTab = ({ projectId, project }) => {
   const { state: authState } = useAuth();
@@ -18,6 +19,7 @@ const ChatTab = ({ projectId, project }) => {
   const [mentionSearch, setMentionSearch] = useState('');
   const [mentionIndex, setMentionIndex] = useState(0);
   const [cursorPosition, setCursorPosition] = useState(0);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -209,10 +211,14 @@ const ChatTab = ({ projectId, project }) => {
     }
   };
 
-  const handleDeleteMessage = async (messageId) => {
-    if (!window.confirm('Delete this message?')) return;
+  const handleDeleteMessage = (messageId) => {
+    setDeleteModal({ isOpen: true, id: messageId });
+  };
+
+  const confirmDeleteMessage = async () => {
     try {
-      await chatAPI.deleteMessage(messageId);
+      await chatAPI.deleteMessage(deleteModal.id);
+      setDeleteModal({ isOpen: false, id: null });
     } catch (error) {
       console.error('Error deleting message:', error);
     }
@@ -580,6 +586,14 @@ const ChatTab = ({ projectId, project }) => {
         </div>
       </div>
 
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null })}
+        onConfirm={confirmDeleteMessage}
+        title="Delete Message"
+        message="Are you sure you want to delete this message? This action cannot be undone."
+        itemName="this message"
+      />
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }

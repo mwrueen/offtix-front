@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { projectAPI } from '../../services/api';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
   const [settings, setSettings] = useState({
@@ -21,6 +22,7 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
   });
 
   const [showHolidayForm, setShowHolidayForm] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -54,7 +56,7 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
       const workingDays = prev.workingDays.includes(day)
         ? prev.workingDays.filter(d => d !== day)
         : [...prev.workingDays, day].sort();
-      
+
       return {
         ...prev,
         workingDays
@@ -91,12 +93,20 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
     }
   };
 
-  const handleRemoveHoliday = async (holidayId) => {
-    if (!window.confirm('Are you sure you want to remove this holiday?')) return;
+  const handleRemoveHoliday = (holidayId) => {
+    const holiday = settings.holidays.find(h => h._id === holidayId);
+    setDeleteModal({
+      isOpen: true,
+      id: holidayId,
+      name: holiday?.name || 'this holiday'
+    });
+  };
 
+  const confirmRemoveHoliday = async () => {
     try {
-      await projectAPI.removeHoliday(projectId, holidayId);
+      await projectAPI.removeHoliday(projectId, deleteModal.id);
       await onRefresh();
+      setDeleteModal({ isOpen: false, id: null, name: '' });
     } catch (error) {
       console.error('Error removing holiday:', error);
       alert('Failed to remove holiday. Please try again.');
@@ -490,6 +500,14 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
           </button>
         </div>
       )}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
+        onConfirm={confirmRemoveHoliday}
+        title="Remove Holiday"
+        message="Are you sure you want to remove this holiday from the project?"
+        itemName={deleteModal.name}
+      />
     </div>
   );
 };

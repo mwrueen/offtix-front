@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
 import { projectAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useCompany } from '../../context/CompanyContext';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const ProjectOverview = ({ project, users, isProjectOwner }) => {
   const { showToast } = useToast();
@@ -14,6 +14,7 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
   const [showTagModal, setShowTagModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, type: null, id: null, name: '' });
 
   // Form states
   const [milestoneForm, setMilestoneForm] = useState({ title: '', description: '', dueDate: '' });
@@ -80,13 +81,22 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
     }
   };
 
-  const handleDeleteMilestone = async (milestoneId) => {
-    if (!window.confirm('Are you sure you want to delete this milestone?')) return;
+  const handleDeleteMilestone = (milestoneId) => {
+    const milestone = milestones.find(m => m._id === milestoneId);
+    setDeleteModal({
+      isOpen: true,
+      type: 'milestone',
+      id: milestoneId,
+      name: milestone?.title || 'this milestone'
+    });
+  };
 
+  const confirmDeleteMilestone = async () => {
     setLoading(true);
     try {
-      await projectAPI.deleteMilestone(project._id, milestoneId);
+      await projectAPI.deleteMilestone(project._id, deleteModal.id);
       showToast('Milestone deleted successfully', 'success');
+      setDeleteModal({ isOpen: false, type: null, id: null, name: '' });
       window.location.reload();
     } catch (error) {
       showToast(error.response?.data?.error || 'Failed to delete milestone', 'error');
@@ -115,13 +125,22 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
     }
   };
 
-  const handleDeleteRisk = async (riskId) => {
-    if (!window.confirm('Are you sure you want to delete this risk?')) return;
+  const handleDeleteRisk = (riskId) => {
+    const risk = risks.find(r => r._id === riskId);
+    setDeleteModal({
+      isOpen: true,
+      type: 'risk',
+      id: riskId,
+      name: risk?.title || 'this risk'
+    });
+  };
 
+  const confirmDeleteRisk = async () => {
     setLoading(true);
     try {
-      await projectAPI.deleteRisk(project._id, riskId);
+      await projectAPI.deleteRisk(project._id, deleteModal.id);
       showToast('Risk deleted successfully', 'success');
+      setDeleteModal({ isOpen: false, type: null, id: null, name: '' });
       window.location.reload();
     } catch (error) {
       showToast(error.response?.data?.error || 'Failed to delete risk', 'error');
@@ -150,13 +169,22 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
     }
   };
 
-  const handleDeleteDependency = async (dependencyId) => {
-    if (!window.confirm('Are you sure you want to delete this dependency?')) return;
+  const handleDeleteDependency = (dependencyId) => {
+    const dep = dependencies.find(d => d._id === dependencyId);
+    setDeleteModal({
+      isOpen: true,
+      type: 'dependency',
+      id: dependencyId,
+      name: dep?.title || 'this dependency'
+    });
+  };
 
+  const confirmDeleteDependency = async () => {
     setLoading(true);
     try {
-      await projectAPI.deleteDependency(project._id, dependencyId);
+      await projectAPI.deleteDependency(project._id, deleteModal.id);
       showToast('Dependency deleted successfully', 'success');
+      setDeleteModal({ isOpen: false, type: null, id: null, name: '' });
       window.location.reload();
     } catch (error) {
       showToast(error.response?.data?.error || 'Failed to delete dependency', 'error');
@@ -185,13 +213,21 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
     }
   };
 
-  const handleRemoveTag = async (tag) => {
-    if (!window.confirm(`Are you sure you want to remove the tag "${tag}"?`)) return;
+  const handleRemoveTag = (tag) => {
+    setDeleteModal({
+      isOpen: true,
+      type: 'tag',
+      id: tag,
+      name: `tag "${tag}"`
+    });
+  };
 
+  const confirmRemoveTag = async () => {
     setLoading(true);
     try {
-      await projectAPI.removeTag(project._id, tag);
+      await projectAPI.removeTag(project._id, deleteModal.id);
       showToast('Tag removed successfully', 'success');
+      setDeleteModal({ isOpen: false, type: null, id: null, name: '' });
       window.location.reload();
     } catch (error) {
       showToast(error.response?.data?.error || 'Failed to remove tag', 'error');
@@ -739,6 +775,20 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
           </div>
         </div>
       )}
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, type: null, id: null, name: '' })}
+        onConfirm={() => {
+          if (deleteModal.type === 'milestone') confirmDeleteMilestone();
+          else if (deleteModal.type === 'risk') confirmDeleteRisk();
+          else if (deleteModal.type === 'dependency') confirmDeleteDependency();
+          else if (deleteModal.type === 'tag') confirmRemoveTag();
+        }}
+        title={`Delete ${deleteModal.type?.charAt(0).toUpperCase() + deleteModal.type?.slice(1)}`}
+        message={`Are you sure you want to delete this ${deleteModal.type}? This action cannot be undone.`}
+        itemName={deleteModal.name}
+      />
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useToast } from '../context/ToastContext';
 import { holidayAPI, companyAPI } from '../services/api';
 import Layout from './Layout';
 import PageHeader from './PageHeader';
+import DeleteConfirmModal from './common/DeleteConfirmModal';
 
 const HolidayCalendar = () => {
   const { state } = useCompany();
@@ -28,6 +29,7 @@ const HolidayCalendar = () => {
     workingDays: [1, 2, 3, 4, 5],
     weekends: [0, 6]
   });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false });
   const [savingSettings, setSavingSettings] = useState(false);
 
   // Drag selection state
@@ -279,18 +281,21 @@ const HolidayCalendar = () => {
     }
   };
 
-  const handleDeleteHoliday = async () => {
-    if (window.confirm('Are you sure you want to delete this holiday?')) {
-      try {
-        await holidayAPI.delete(selectedCompany.id, editingHoliday._id);
-        setShowEditModal(false);
-        setEditingHoliday(null);
-        fetchHolidays();
-        toast.success('Holiday deleted successfully!');
-      } catch (error) {
-        console.error('Error deleting holiday:', error);
-        toast.error(error.response?.data?.error || 'Failed to delete holiday');
-      }
+  const handleDeleteHoliday = () => {
+    setDeleteModal({ isOpen: true });
+  };
+
+  const confirmDeleteHoliday = async () => {
+    try {
+      await holidayAPI.delete(selectedCompany.id, editingHoliday._id);
+      setShowEditModal(false);
+      setEditingHoliday(null);
+      setDeleteModal({ isOpen: false });
+      fetchHolidays();
+      toast.success('Holiday deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting holiday:', error);
+      toast.error(error.response?.data?.error || 'Failed to delete holiday');
     }
   };
 
@@ -462,6 +467,14 @@ const HolidayCalendar = () => {
           </div>
         </div>
       )}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false })}
+        onConfirm={confirmDeleteHoliday}
+        title="Delete Holiday"
+        message="Are you sure you want to delete this holiday?"
+        itemName={editingHoliday?.name}
+      />
     </Layout>
   );
 };

@@ -10,6 +10,7 @@ import ListView from './views/ListView';
 import BoardView from './views/BoardView';
 import GanttView from './views/GanttView';
 import { autoScheduleAllTasks } from '../../utils/ganttScheduler';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onRefresh: onProjectRefresh }) => {
     const { id } = useParams();
@@ -58,6 +59,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const [durationContext, setDurationContext] = useState({ roleId: '', userId: '' });
     const [pendingDurations, setPendingDurations] = useState({}); // { taskId: value }
     const [isSubmittingDurations, setIsSubmittingDurations] = useState(false);
+    const [deleteTaskModal, setDeleteTaskModal] = useState({ isOpen: false, taskId: null, taskTitle: '' });
 
     useEffect(() => {
         fetchProjectData();
@@ -291,18 +293,18 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
         }
     };
 
-    const handleDeleteTask = async (taskId) => {
-        if (window.confirm('Are you sure you want to delete this task?')) {
-            try {
-                await taskAPI.delete(id, taskId);
-                if (selectedTask && selectedTask._id === taskId) {
-                    setSelectedTask(null);
-                }
-                await fetchProjectData();
-                if (onProjectRefresh) onProjectRefresh();
-            } catch (error) {
-                console.error('Error deleting task:', error);
+    const handleDeleteTask = async () => {
+        try {
+            await taskAPI.delete(id, deleteTaskModal.taskId);
+            if (selectedTask && selectedTask._id === deleteTaskModal.taskId) {
+                setSelectedTask(null);
             }
+            await fetchProjectData();
+            if (onProjectRefresh) onProjectRefresh();
+        } catch (error) {
+            console.error('Error deleting task:', error);
+        } finally {
+            setDeleteTaskModal({ isOpen: false, taskId: null, taskTitle: '' });
         }
     };
 

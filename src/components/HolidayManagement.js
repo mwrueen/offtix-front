@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { holidayAPI } from '../services/api';
 import { useCompany } from '../context/CompanyContext';
 import Layout from './Layout';
+import DeleteConfirmModal from './common/DeleteConfirmModal';
 
 const HolidayManagement = () => {
   const { state } = useCompany();
@@ -17,6 +18,7 @@ const HolidayManagement = () => {
     name: '',
     description: ''
   });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
@@ -65,15 +67,23 @@ const HolidayManagement = () => {
     }
   };
 
-  const handleDeleteHoliday = async (holidayId) => {
-    if (window.confirm('Are you sure you want to delete this holiday?')) {
-      try {
-        await holidayAPI.delete(selectedCompany.id, holidayId);
-        fetchHolidays();
-      } catch (error) {
-        console.error('Error deleting holiday:', error);
-        alert('Failed to delete holiday');
-      }
+  const handleDeleteHoliday = (holidayId) => {
+    const holiday = holidays.find(h => h._id === holidayId);
+    setDeleteModal({
+      isOpen: true,
+      id: holidayId,
+      name: holiday?.name || 'this holiday'
+    });
+  };
+
+  const confirmDeleteHoliday = async () => {
+    try {
+      await holidayAPI.delete(selectedCompany.id, deleteModal.id);
+      fetchHolidays();
+      setDeleteModal({ isOpen: false, id: null, name: '' });
+    } catch (error) {
+      console.error('Error deleting holiday:', error);
+      alert('Failed to delete holiday');
     }
   };
 
@@ -87,7 +97,7 @@ const HolidayManagement = () => {
     setShowEditModal(true);
   };
 
-  const filteredHolidays = holidays.filter(h => 
+  const filteredHolidays = holidays.filter(h =>
     new Date(h.date).getFullYear() === filterYear
   );
 
@@ -621,6 +631,14 @@ const HolidayManagement = () => {
           </div>
         )}
       </div>
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
+        onConfirm={confirmDeleteHoliday}
+        title="Delete Holiday"
+        message="Are you sure you want to delete this holiday?"
+        itemName={deleteModal.name}
+      />
     </Layout>
   );
 };

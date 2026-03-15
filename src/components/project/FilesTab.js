@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { projectAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const FilesTab = ({ project, isProjectOwner, onRefresh }) => {
   const [uploading, setUploading] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, fileId: null, fileName: '' });
   const { showToast } = useToast();
 
   const handleFileUpload = async (e) => {
@@ -27,16 +29,16 @@ const FilesTab = ({ project, isProjectOwner, onRefresh }) => {
     }
   };
 
-  const handleDeleteFile = async (attachmentId, fileName) => {
-    if (!window.confirm(`Are you sure you want to delete "${fileName}"?`)) return;
-
+  const handleDeleteFile = async () => {
     try {
-      await projectAPI.deleteAttachment(project._id, attachmentId);
+      await projectAPI.deleteAttachment(project._id, deleteModal.fileId);
       showToast('File deleted successfully', 'success');
       onRefresh();
     } catch (error) {
       console.error('Error deleting file:', error);
       showToast(error.response?.data?.error || 'Failed to delete file', 'error');
+    } finally {
+      setDeleteModal({ isOpen: false, fileId: null, fileName: '' });
     }
   };
 
@@ -95,7 +97,7 @@ const FilesTab = ({ project, isProjectOwner, onRefresh }) => {
               Project Files
             </h2>
           </div>
-          
+
           <p style={{ margin: '0 0 24px 0', color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px' }}>
             Upload and manage project documents, images, and other files
           </p>
@@ -116,18 +118,18 @@ const FilesTab = ({ project, isProjectOwner, onRefresh }) => {
             transition: 'all 0.2s ease',
             opacity: uploading ? 0.6 : 1
           }}
-          onMouseEnter={(e) => {
-            if (!uploading) {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!uploading) {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }
-          }}>
+            onMouseEnter={(e) => {
+              if (!uploading) {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!uploading) {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }
+            }}>
             {uploading ? (
               <>
                 <div style={{
@@ -305,7 +307,7 @@ const FilesTab = ({ project, isProjectOwner, onRefresh }) => {
 
                 {isProjectOwner && (
                   <button
-                    onClick={() => handleDeleteFile(attachment._id, attachment.name)}
+                    onClick={() => setDeleteModal({ isOpen: true, fileId: attachment._id, fileName: attachment.name })}
                     style={{
                       padding: '10px 16px',
                       background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
@@ -340,6 +342,16 @@ const FilesTab = ({ project, isProjectOwner, onRefresh }) => {
           ))}
         </div>
       )}
+
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, fileId: null, fileName: '' })}
+        onConfirm={handleDeleteFile}
+        title="Delete File"
+        message="Are you sure you want to delete this file? This action cannot be undone."
+        itemName={deleteModal.fileName}
+        icon="📁"
+      />
     </div>
   );
 };

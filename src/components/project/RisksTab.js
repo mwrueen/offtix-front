@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { projectAPI } from '../../services/api';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
   const [showForm, setShowForm] = useState(false);
@@ -17,6 +18,7 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
     mitigation: '',
     status: 'identified'
   });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
 
   const risks = project?.risks || [];
 
@@ -28,7 +30,7 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
       } else {
         await projectAPI.addRisk(projectId, formData);
       }
-      
+
       await onRefresh();
       resetForm();
     } catch (error) {
@@ -63,12 +65,20 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
     setViewingRisk(null);
   };
 
-  const handleDelete = async (riskId) => {
-    if (!window.confirm('Are you sure you want to delete this risk?')) return;
-    
+  const handleDelete = (riskId) => {
+    const risk = risks.find(r => r._id === riskId);
+    setDeleteModal({
+      isOpen: true,
+      id: riskId,
+      name: risk?.title || 'this risk'
+    });
+  };
+
+  const confirmDelete = async () => {
     try {
-      await projectAPI.deleteRisk(projectId, riskId);
+      await projectAPI.deleteRisk(projectId, deleteModal.id);
       await onRefresh();
+      setDeleteModal({ isOpen: false, id: null, name: '' });
     } catch (error) {
       console.error('Error deleting risk:', error);
     }
@@ -105,11 +115,11 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
 
   const filteredRisks = risks.filter(risk => {
     const matchesSearch = risk.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         risk.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      risk.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSeverity = filterSeverity === 'all' || risk.severity === filterSeverity;
     const matchesProbability = filterProbability === 'all' || risk.probability === filterProbability;
     const matchesStatus = filterStatus === 'all' || risk.status === filterStatus;
-    
+
     return matchesSearch && matchesSeverity && matchesProbability && matchesStatus;
   });
 
@@ -209,7 +219,7 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
               onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
             />
           </div>
-          
+
           <div>
             <select
               value={filterSeverity}
@@ -341,7 +351,7 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
                   <input
                     type="text"
                     value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     required
                     placeholder="e.g., Budget overrun, Resource unavailability"
                     style={{
@@ -381,7 +391,7 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
                   </label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows="4"
                     placeholder="Describe the risk and its potential impact"
                     style={{
@@ -424,7 +434,7 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
                   </label>
                   <textarea
                     value={formData.mitigation}
-                    onChange={(e) => setFormData({...formData, mitigation: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, mitigation: e.target.value })}
                     rows="3"
                     placeholder="How will this risk be mitigated or managed?"
                     style={{
@@ -469,7 +479,7 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
                   </label>
                   <select
                     value={formData.severity}
-                    onChange={(e) => setFormData({...formData, severity: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, severity: e.target.value })}
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
@@ -511,7 +521,7 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
                   </label>
                   <select
                     value={formData.probability}
-                    onChange={(e) => setFormData({...formData, probability: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, probability: e.target.value })}
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
@@ -552,7 +562,7 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
                   </label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
@@ -653,188 +663,188 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
       {/* Risks List - Only show when form is not visible */}
       {!showForm && (
         <>
-        {filteredRisks.length === 0 ? (
-        <div style={{
-          backgroundColor: '#ffffff',
-          border: '2px dashed #dfe1e6',
-          borderRadius: '16px',
-          padding: '80px 40px',
-          textAlign: 'center',
-          color: '#5e6c84'
-        }}>
-          <div style={{ fontSize: '64px', marginBottom: '16px', opacity: 0.5 }}>⚠️</div>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-            {searchTerm || filterSeverity !== 'all' || filterProbability !== 'all' || filterStatus !== 'all'
-              ? 'No risks match your filters'
-              : 'No risks identified yet'}
-          </h3>
-          <p style={{ margin: 0, fontSize: '14px' }}>
-            {searchTerm || filterSeverity !== 'all' || filterProbability !== 'all' || filterStatus !== 'all'
-              ? 'Try adjusting your search or filter criteria'
-              : 'Click "Add Risk" to identify and track project risks'}
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gap: '16px' }}>
-          {filteredRisks.map((risk) => {
-            const severityColor = getSeverityColor(risk.severity);
-            const probabilityColor = getProbabilityColor(risk.probability);
-            const statusColor = getStatusColor(risk.status);
+          {filteredRisks.length === 0 ? (
+            <div style={{
+              backgroundColor: '#ffffff',
+              border: '2px dashed #dfe1e6',
+              borderRadius: '16px',
+              padding: '80px 40px',
+              textAlign: 'center',
+              color: '#5e6c84'
+            }}>
+              <div style={{ fontSize: '64px', marginBottom: '16px', opacity: 0.5 }}>⚠️</div>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
+                {searchTerm || filterSeverity !== 'all' || filterProbability !== 'all' || filterStatus !== 'all'
+                  ? 'No risks match your filters'
+                  : 'No risks identified yet'}
+              </h3>
+              <p style={{ margin: 0, fontSize: '14px' }}>
+                {searchTerm || filterSeverity !== 'all' || filterProbability !== 'all' || filterStatus !== 'all'
+                  ? 'Try adjusting your search or filter criteria'
+                  : 'Click "Add Risk" to identify and track project risks'}
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: '16px' }}>
+              {filteredRisks.map((risk) => {
+                const severityColor = getSeverityColor(risk.severity);
+                const probabilityColor = getProbabilityColor(risk.probability);
+                const statusColor = getStatusColor(risk.status);
 
-            return (
-              <div
-                key={risk._id}
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: '2px solid #e1e5e9',
-                  borderRadius: '12px',
-                  padding: '24px',
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-                }}
-                onClick={() => setViewingRisk(risk)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#0052cc';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 82, 204, 0.15)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#e1e5e9';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#172b4d' }}>
-                      {risk.title}
-                    </h3>
-                    {risk.description && (
-                      <p style={{ margin: 0, fontSize: '14px', color: '#5e6c84', lineHeight: '1.6' }}>
-                        {risk.description.length > 150 ? `${risk.description.substring(0, 150)}...` : risk.description}
-                      </p>
+                return (
+                  <div
+                    key={risk._id}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      border: '2px solid #e1e5e9',
+                      borderRadius: '12px',
+                      padding: '24px',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+                    }}
+                    onClick={() => setViewingRisk(risk)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#0052cc';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 82, 204, 0.15)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#e1e5e9';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                      <div style={{ flex: 1 }}>
+                        <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#172b4d' }}>
+                          {risk.title}
+                        </h3>
+                        {risk.description && (
+                          <p style={{ margin: 0, fontSize: '14px', color: '#5e6c84', lineHeight: '1.6' }}>
+                            {risk.description.length > 150 ? `${risk.description.substring(0, 150)}...` : risk.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {isProjectOwner && (
+                        <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }} onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => handleEdit(risk)}
+                            style={{
+                              padding: '8px 16px',
+                              backgroundColor: '#f4f5f7',
+                              color: '#172b4d',
+                              border: '1px solid #dfe1e6',
+                              borderRadius: '8px',
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#0052cc';
+                              e.target.style.color = '#ffffff';
+                              e.target.style.borderColor = '#0052cc';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = '#f4f5f7';
+                              e.target.style.color = '#172b4d';
+                              e.target.style.borderColor = '#dfe1e6';
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(risk._id)}
+                            style={{
+                              padding: '8px 16px',
+                              backgroundColor: '#ffffff',
+                              color: '#cf1322',
+                              border: '1px solid #ffccc7',
+                              borderRadius: '8px',
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#cf1322';
+                              e.target.style.color = '#ffffff';
+                              e.target.style.borderColor = '#cf1322';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = '#ffffff';
+                              e.target.style.color = '#cf1322';
+                              e.target.style.borderColor = '#ffccc7';
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      <span style={{
+                        padding: '6px 14px',
+                        borderRadius: '16px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        backgroundColor: severityColor.bg,
+                        color: severityColor.text,
+                        border: `1.5px solid ${severityColor.border}`,
+                        textTransform: 'capitalize'
+                      }}>
+                        Severity: {risk.severity}
+                      </span>
+                      <span style={{
+                        padding: '6px 14px',
+                        borderRadius: '16px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        backgroundColor: probabilityColor.bg,
+                        color: probabilityColor.text,
+                        border: `1.5px solid ${probabilityColor.border}`,
+                        textTransform: 'capitalize'
+                      }}>
+                        Probability: {risk.probability}
+                      </span>
+                      <span style={{
+                        padding: '6px 14px',
+                        borderRadius: '16px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        backgroundColor: statusColor.bg,
+                        color: statusColor.text,
+                        border: `1.5px solid ${statusColor.border}`,
+                        textTransform: 'capitalize'
+                      }}>
+                        {risk.status}
+                      </span>
+                    </div>
+
+                    {risk.mitigation && (
+                      <div style={{
+                        marginTop: '16px',
+                        padding: '12px 16px',
+                        backgroundColor: '#f4f5f7',
+                        borderRadius: '8px',
+                        borderLeft: '4px solid #0052cc'
+                      }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#172b4d', marginBottom: '4px' }}>
+                          Mitigation Strategy:
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#5e6c84', lineHeight: '1.5' }}>
+                          {risk.mitigation.length > 100 ? `${risk.mitigation.substring(0, 100)}...` : risk.mitigation}
+                        </div>
+                      </div>
                     )}
                   </div>
-
-                  {isProjectOwner && (
-                    <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }} onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => handleEdit(risk)}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#f4f5f7',
-                          color: '#172b4d',
-                          border: '1px solid #dfe1e6',
-                          borderRadius: '8px',
-                          fontSize: '13px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#0052cc';
-                          e.target.style.color = '#ffffff';
-                          e.target.style.borderColor = '#0052cc';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = '#f4f5f7';
-                          e.target.style.color = '#172b4d';
-                          e.target.style.borderColor = '#dfe1e6';
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(risk._id)}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#ffffff',
-                          color: '#cf1322',
-                          border: '1px solid #ffccc7',
-                          borderRadius: '8px',
-                          fontSize: '13px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#cf1322';
-                          e.target.style.color = '#ffffff';
-                          e.target.style.borderColor = '#cf1322';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = '#ffffff';
-                          e.target.style.color = '#cf1322';
-                          e.target.style.borderColor = '#ffccc7';
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                  <span style={{
-                    padding: '6px 14px',
-                    borderRadius: '16px',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    backgroundColor: severityColor.bg,
-                    color: severityColor.text,
-                    border: `1.5px solid ${severityColor.border}`,
-                    textTransform: 'capitalize'
-                  }}>
-                    Severity: {risk.severity}
-                  </span>
-                  <span style={{
-                    padding: '6px 14px',
-                    borderRadius: '16px',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    backgroundColor: probabilityColor.bg,
-                    color: probabilityColor.text,
-                    border: `1.5px solid ${probabilityColor.border}`,
-                    textTransform: 'capitalize'
-                  }}>
-                    Probability: {risk.probability}
-                  </span>
-                  <span style={{
-                    padding: '6px 14px',
-                    borderRadius: '16px',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    backgroundColor: statusColor.bg,
-                    color: statusColor.text,
-                    border: `1.5px solid ${statusColor.border}`,
-                    textTransform: 'capitalize'
-                  }}>
-                    {risk.status}
-                  </span>
-                </div>
-
-                {risk.mitigation && (
-                  <div style={{
-                    marginTop: '16px',
-                    padding: '12px 16px',
-                    backgroundColor: '#f4f5f7',
-                    borderRadius: '8px',
-                    borderLeft: '4px solid #0052cc'
-                  }}>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#172b4d', marginBottom: '4px' }}>
-                      Mitigation Strategy:
-                    </div>
-                    <div style={{ fontSize: '13px', color: '#5e6c84', lineHeight: '1.5' }}>
-                      {risk.mitigation.length > 100 ? `${risk.mitigation.substring(0, 100)}...` : risk.mitigation}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                );
+              })}
+            </div>
+          )}
         </>
       )}
 
@@ -1025,6 +1035,14 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
           </div>
         </div>
       )}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
+        onConfirm={confirmDelete}
+        title="Delete Risk"
+        message="Are you sure you want to delete this risk?"
+        itemName={deleteModal.name}
+      />
     </div>
   );
 };

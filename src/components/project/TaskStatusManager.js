@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
 import { taskStatusAPI } from '../../services/api';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const TaskStatusManager = ({ projectId, taskStatuses, onStatusesUpdate, selectedStatus, onStatusChange, isProjectOwner = false, ...props }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingStatus, setEditingStatus] = useState(null);
   const [newStatus, setNewStatus] = useState({ name: '', color: '#6b7280' });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,15 +30,24 @@ const TaskStatusManager = ({ projectId, taskStatuses, onStatusesUpdate, selected
     setShowForm(true);
   };
 
-  const handleDelete = async (statusId) => {
-    if (window.confirm('Are you sure you want to delete this status?')) {
-      try {
-        await taskStatusAPI.delete(projectId, statusId);
-        await onStatusesUpdate();
-      } catch (error) {
-        console.error('Error deleting status:', error);
-        alert(error.response?.data?.error || 'Failed to delete status');
-      }
+  const handleDelete = (statusId) => {
+    const status = taskStatuses.find(s => s._id === statusId);
+    setDeleteModal({
+      isOpen: true,
+      id: statusId,
+      name: status?.name || 'this status'
+    });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await taskStatusAPI.delete(projectId, deleteModal.id);
+      await onStatusesUpdate();
+      setDeleteModal({ isOpen: false, id: null, name: '' });
+    } catch (error) {
+      console.error('Error deleting status:', error);
+      // We'll use the browser alert here for errors if needed, but the confirmation is now a modal
+      alert(error.response?.data?.error || 'Failed to delete status');
     }
   };
 
@@ -48,7 +58,7 @@ const TaskStatusManager = ({ projectId, taskStatuses, onStatusesUpdate, selected
   };
 
   const colors = [
-    '#6b7280', '#ef4444', '#f97316', '#eab308', '#22c55e', 
+    '#6b7280', '#ef4444', '#f97316', '#eab308', '#22c55e',
     '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e'
   ];
 
@@ -88,7 +98,7 @@ const TaskStatusManager = ({ projectId, taskStatuses, onStatusesUpdate, selected
                   type="text"
                   placeholder="Status name"
                   value={newStatus.name}
-                  onChange={(e) => setNewStatus({...newStatus, name: e.target.value})}
+                  onChange={(e) => setNewStatus({ ...newStatus, name: e.target.value })}
                   required
                   style={{
                     width: '100%',
@@ -102,7 +112,7 @@ const TaskStatusManager = ({ projectId, taskStatuses, onStatusesUpdate, selected
               <div>
                 <select
                   value={newStatus.color}
-                  onChange={(e) => setNewStatus({...newStatus, color: e.target.value})}
+                  onChange={(e) => setNewStatus({ ...newStatus, color: e.target.value })}
                   style={{
                     padding: '6px 8px',
                     border: '1px solid #d1d5db',
@@ -237,6 +247,14 @@ const TaskStatusManager = ({ projectId, taskStatuses, onStatusesUpdate, selected
           </div>
         </div>
       )}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
+        onConfirm={confirmDelete}
+        title="Delete Status"
+        message="Are you sure you want to delete this status? Tasks with this status may need to be reassigned."
+        itemName={deleteModal.name}
+      />
     </div>
   );
 };

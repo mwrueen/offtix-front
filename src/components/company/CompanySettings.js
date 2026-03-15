@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { companyAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { currencies } from '../../utils/currency';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const CompanySettings = ({ company, isOwner, onRefresh }) => {
   const toast = useToast();
@@ -27,6 +28,7 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
   });
 
   const [showHolidayForm, setShowHolidayForm] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
   const [saving, setSaving] = useState(false);
 
 
@@ -121,12 +123,20 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
     }
   };
 
-  const handleRemoveHoliday = async (holidayId) => {
-    if (!window.confirm('Are you sure you want to remove this holiday?')) return;
+  const handleRemoveHoliday = (holidayId) => {
+    const holiday = settings.holidays.find(h => h._id === holidayId);
+    setDeleteModal({
+      isOpen: true,
+      id: holidayId,
+      name: holiday?.name || 'this holiday'
+    });
+  };
 
+  const confirmRemoveHoliday = async () => {
     try {
-      await companyAPI.removeHoliday(company._id, holidayId);
+      await companyAPI.removeHoliday(company._id, deleteModal.id);
       await onRefresh();
+      setDeleteModal({ isOpen: false, id: null, name: '' });
       toast.success('Holiday removed successfully!');
     } catch (error) {
       console.error('Error removing holiday:', error);
@@ -649,6 +659,14 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
           </button>
         </div>
       )}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
+        onConfirm={confirmRemoveHoliday}
+        title="Remove Holiday"
+        message="Are you sure you want to remove this holiday from the company settings?"
+        itemName={deleteModal.name}
+      />
     </div>
   );
 };

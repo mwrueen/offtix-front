@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { projectAPI } from '../../services/api';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
   const [showForm, setShowForm] = useState(false);
@@ -15,6 +16,7 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
     status: 'pending',
     dueDate: ''
   });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
 
   const dependencies = project?.dependencies || [];
 
@@ -26,7 +28,7 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
       } else {
         await projectAPI.addDependency(projectId, formData);
       }
-      
+
       await onRefresh();
       resetForm();
     } catch (error) {
@@ -59,12 +61,20 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
     setViewingDependency(null);
   };
 
-  const handleDelete = async (dependencyId) => {
-    if (!window.confirm('Are you sure you want to delete this dependency?')) return;
-    
+  const handleDelete = (dependencyId) => {
+    const dep = dependencies.find(d => d._id === dependencyId);
+    setDeleteModal({
+      isOpen: true,
+      id: dependencyId,
+      name: dep?.title || 'this dependency'
+    });
+  };
+
+  const confirmDelete = async () => {
     try {
-      await projectAPI.deleteDependency(projectId, dependencyId);
+      await projectAPI.deleteDependency(projectId, deleteModal.id);
       await onRefresh();
+      setDeleteModal({ isOpen: false, id: null, name: '' });
     } catch (error) {
       console.error('Error deleting dependency:', error);
     }
@@ -93,10 +103,10 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
 
   const filteredDependencies = dependencies.filter(dep => {
     const matchesSearch = dep.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         dep.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      dep.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || dep.type === filterType;
     const matchesStatus = filterStatus === 'all' || dep.status === filterStatus;
-    
+
     return matchesSearch && matchesType && matchesStatus;
   });
 
@@ -196,7 +206,7 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
               onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
             />
           </div>
-          
+
           <div>
             <select
               value={filterType}
@@ -306,7 +316,7 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
                   <input
                     type="text"
                     value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     required
                     placeholder="e.g., API integration, Third-party service"
                     style={{
@@ -346,7 +356,7 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
                   </label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows="5"
                     placeholder="Describe the dependency and its impact on the project"
                     style={{
@@ -391,7 +401,7 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
                   </label>
                   <select
                     value={formData.type}
-                    onChange={(e) => setFormData({...formData, type: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
@@ -434,7 +444,7 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
                   </label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
@@ -477,7 +487,7 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
                   <input
                     type="date"
                     value={formData.dueDate}
-                    onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                     style={{
                       boxSizing: 'border-box',
                       width: '100%',
@@ -574,171 +584,171 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
       {/* Dependencies List - Only show when form is not visible */}
       {!showForm && (
         <>
-        {filteredDependencies.length === 0 ? (
-        <div style={{
-          backgroundColor: '#ffffff',
-          border: '2px dashed #dfe1e6',
-          borderRadius: '16px',
-          padding: '80px 40px',
-          textAlign: 'center',
-          color: '#5e6c84'
-        }}>
-          <div style={{ fontSize: '64px', marginBottom: '16px', opacity: 0.5 }}>🔗</div>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-            {searchTerm || filterType !== 'all' || filterStatus !== 'all'
-              ? 'No dependencies match your filters'
-              : 'No dependencies tracked yet'}
-          </h3>
-          <p style={{ margin: 0, fontSize: '14px' }}>
-            {searchTerm || filterType !== 'all' || filterStatus !== 'all'
-              ? 'Try adjusting your search or filter criteria'
-              : 'Click "Add Dependency" to track project dependencies'}
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gap: '16px' }}>
-          {filteredDependencies.map((dependency) => {
-            const typeColor = getTypeColor(dependency.type);
-            const statusColor = getStatusColor(dependency.status);
+          {filteredDependencies.length === 0 ? (
+            <div style={{
+              backgroundColor: '#ffffff',
+              border: '2px dashed #dfe1e6',
+              borderRadius: '16px',
+              padding: '80px 40px',
+              textAlign: 'center',
+              color: '#5e6c84'
+            }}>
+              <div style={{ fontSize: '64px', marginBottom: '16px', opacity: 0.5 }}>🔗</div>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
+                {searchTerm || filterType !== 'all' || filterStatus !== 'all'
+                  ? 'No dependencies match your filters'
+                  : 'No dependencies tracked yet'}
+              </h3>
+              <p style={{ margin: 0, fontSize: '14px' }}>
+                {searchTerm || filterType !== 'all' || filterStatus !== 'all'
+                  ? 'Try adjusting your search or filter criteria'
+                  : 'Click "Add Dependency" to track project dependencies'}
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: '16px' }}>
+              {filteredDependencies.map((dependency) => {
+                const typeColor = getTypeColor(dependency.type);
+                const statusColor = getStatusColor(dependency.status);
 
-            return (
-              <div
-                key={dependency._id}
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: '2px solid #e1e5e9',
-                  borderRadius: '12px',
-                  padding: '24px',
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-                }}
-                onClick={() => setViewingDependency(dependency)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#0052cc';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 82, 204, 0.15)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#e1e5e9';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#172b4d' }}>
-                      {dependency.title}
-                    </h3>
-                    {dependency.description && (
-                      <p style={{ margin: 0, fontSize: '14px', color: '#5e6c84', lineHeight: '1.6' }}>
-                        {dependency.description.length > 150 ? `${dependency.description.substring(0, 150)}...` : dependency.description}
-                      </p>
-                    )}
-                  </div>
+                return (
+                  <div
+                    key={dependency._id}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      border: '2px solid #e1e5e9',
+                      borderRadius: '12px',
+                      padding: '24px',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+                    }}
+                    onClick={() => setViewingDependency(dependency)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#0052cc';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 82, 204, 0.15)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#e1e5e9';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                      <div style={{ flex: 1 }}>
+                        <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#172b4d' }}>
+                          {dependency.title}
+                        </h3>
+                        {dependency.description && (
+                          <p style={{ margin: 0, fontSize: '14px', color: '#5e6c84', lineHeight: '1.6' }}>
+                            {dependency.description.length > 150 ? `${dependency.description.substring(0, 150)}...` : dependency.description}
+                          </p>
+                        )}
+                      </div>
 
-                  {isProjectOwner && (
-                    <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }} onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => handleEdit(dependency)}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#f4f5f7',
-                          color: '#172b4d',
-                          border: '1px solid #dfe1e6',
-                          borderRadius: '8px',
-                          fontSize: '13px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#0052cc';
-                          e.target.style.color = '#ffffff';
-                          e.target.style.borderColor = '#0052cc';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = '#f4f5f7';
-                          e.target.style.color = '#172b4d';
-                          e.target.style.borderColor = '#dfe1e6';
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(dependency._id)}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#ffffff',
-                          color: '#cf1322',
-                          border: '1px solid #ffccc7',
-                          borderRadius: '8px',
-                          fontSize: '13px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#cf1322';
-                          e.target.style.color = '#ffffff';
-                          e.target.style.borderColor = '#cf1322';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = '#ffffff';
-                          e.target.style.color = '#cf1322';
-                          e.target.style.borderColor = '#ffccc7';
-                        }}
-                      >
-                        Delete
-                      </button>
+                      {isProjectOwner && (
+                        <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }} onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => handleEdit(dependency)}
+                            style={{
+                              padding: '8px 16px',
+                              backgroundColor: '#f4f5f7',
+                              color: '#172b4d',
+                              border: '1px solid #dfe1e6',
+                              borderRadius: '8px',
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#0052cc';
+                              e.target.style.color = '#ffffff';
+                              e.target.style.borderColor = '#0052cc';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = '#f4f5f7';
+                              e.target.style.color = '#172b4d';
+                              e.target.style.borderColor = '#dfe1e6';
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(dependency._id)}
+                            style={{
+                              padding: '8px 16px',
+                              backgroundColor: '#ffffff',
+                              color: '#cf1322',
+                              border: '1px solid #ffccc7',
+                              borderRadius: '8px',
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#cf1322';
+                              e.target.style.color = '#ffffff';
+                              e.target.style.borderColor = '#cf1322';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = '#ffffff';
+                              e.target.style.color = '#cf1322';
+                              e.target.style.borderColor = '#ffccc7';
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span style={{
-                    padding: '6px 14px',
-                    borderRadius: '16px',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    backgroundColor: typeColor.bg,
-                    color: typeColor.text,
-                    border: `1.5px solid ${typeColor.border}`,
-                    textTransform: 'capitalize'
-                  }}>
-                    {dependency.type}
-                  </span>
-                  <span style={{
-                    padding: '6px 14px',
-                    borderRadius: '16px',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    backgroundColor: statusColor.bg,
-                    color: statusColor.text,
-                    border: `1.5px solid ${statusColor.border}`,
-                    textTransform: 'capitalize'
-                  }}>
-                    {dependency.status}
-                  </span>
-                  {dependency.dueDate && (
-                    <span style={{
-                      padding: '6px 14px',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      backgroundColor: '#f4f5f7',
-                      color: '#5e6c84',
-                      border: '1.5px solid #dfe1e6'
-                    }}>
-                      📅 Due: {new Date(dependency.dueDate).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <span style={{
+                        padding: '6px 14px',
+                        borderRadius: '16px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        backgroundColor: typeColor.bg,
+                        color: typeColor.text,
+                        border: `1.5px solid ${typeColor.border}`,
+                        textTransform: 'capitalize'
+                      }}>
+                        {dependency.type}
+                      </span>
+                      <span style={{
+                        padding: '6px 14px',
+                        borderRadius: '16px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        backgroundColor: statusColor.bg,
+                        color: statusColor.text,
+                        border: `1.5px solid ${statusColor.border}`,
+                        textTransform: 'capitalize'
+                      }}>
+                        {dependency.status}
+                      </span>
+                      {dependency.dueDate && (
+                        <span style={{
+                          padding: '6px 14px',
+                          borderRadius: '16px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          backgroundColor: '#f4f5f7',
+                          color: '#5e6c84',
+                          border: '1.5px solid #dfe1e6'
+                        }}>
+                          📅 Due: {new Date(dependency.dueDate).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </>
       )}
 
@@ -922,6 +932,14 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
           </div>
         </div>
       )}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
+        onConfirm={confirmDelete}
+        title="Delete Dependency"
+        message="Are you sure you want to delete this dependency?"
+        itemName={deleteModal.name}
+      />
     </div>
   );
 };

@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext';
 import { leaveAPI } from '../services/api';
 import Layout from './Layout';
 import PageHeader from './PageHeader';
+import DeleteConfirmModal from './common/DeleteConfirmModal';
 
 const LeaveManagement = () => {
   const { state: authState } = useAuth();
@@ -25,6 +26,7 @@ const LeaveManagement = () => {
     reason: '',
     notes: ''
   });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
 
   useEffect(() => {
     if (selectedCompany && selectedCompany.id !== 'personal') {
@@ -100,18 +102,21 @@ const LeaveManagement = () => {
     }
   };
 
-  const handleCancelLeave = async (leaveId) => {
-    if (window.confirm('Are you sure you want to cancel this leave request?')) {
-      try {
-        await leaveAPI.cancel(selectedCompany.id, leaveId);
-        fetchLeaves();
-        fetchLeaveBalance();
-        toast.success('Leave cancelled successfully!');
-      } catch (error) {
-        console.error('Error cancelling leave:', error);
-        const errorMessage = error.response?.data?.error || 'Failed to cancel leave';
-        toast.error(errorMessage);
-      }
+  const handleCancelLeave = (leaveId) => {
+    setDeleteModal({ isOpen: true, id: leaveId });
+  };
+
+  const confirmCancelLeave = async () => {
+    try {
+      await leaveAPI.cancel(selectedCompany.id, deleteModal.id);
+      fetchLeaves();
+      fetchLeaveBalance();
+      setDeleteModal({ isOpen: false, id: null });
+      toast.success('Leave cancelled successfully!');
+    } catch (error) {
+      console.error('Error cancelling leave:', error);
+      const errorMessage = error.response?.data?.error || 'Failed to cancel leave';
+      toast.error(errorMessage);
     }
   };
 
@@ -433,6 +438,14 @@ const LeaveManagement = () => {
           </div>
         </div>
       )}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null })}
+        onConfirm={confirmCancelLeave}
+        title="Cancel Leave Request"
+        message="Are you sure you want to cancel this leave request?"
+        itemName="this leave request"
+      />
     </Layout>
   );
 };

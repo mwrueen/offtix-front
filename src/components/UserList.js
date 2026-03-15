@@ -4,82 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { userAPI } from '../services/api';
 import Layout from './Layout';
 import UserForm from './UserForm';
+import DeleteConfirmModal from './common/DeleteConfirmModal';
 
-const DeleteConfirmModal = ({ user, onClose, onConfirm }) => {
-  return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 50
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '32px',
-        width: '100%',
-        maxWidth: '400px',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>Delete User</h3>
-          <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>This action cannot be undone.</p>
-        </div>
-        
-        <div style={{
-          padding: '16px',
-          backgroundColor: '#fef2f2',
-          borderRadius: '8px',
-          marginBottom: '24px',
-          border: '1px solid #fecaca'
-        }}>
-          <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#374151' }}>
-            Are you sure you want to delete:
-          </p>
-          <div style={{ fontWeight: '600', color: '#1e293b' }}>{user?.name}</div>
-          <div style={{ fontSize: '12px', color: '#64748b' }}>{user?.email}</div>
-        </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: 'white',
-              color: '#374151',
-              border: '1px solid #d1d5db',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500'
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: '#ef4444',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500'
-            }}
-          >
-            Delete User
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const UserList = () => {
   const { state } = useAuth();
@@ -138,7 +64,7 @@ const UserList = () => {
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
           <h2 style={{ margin: 0, color: '#1e293b' }}>User Management</h2>
-          <button 
+          <button
             onClick={() => setShowForm(true)}
             style={{
               padding: '12px 24px',
@@ -153,7 +79,7 @@ const UserList = () => {
             Add New User
           </button>
         </div>
-        
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {loading ? (
             Array(3).fill(0).map((_, index) => (
@@ -205,7 +131,7 @@ const UserList = () => {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button 
+                  <button
                     onClick={() => navigate(`/users/${user._id}`)}
                     style={{
                       padding: '8px 12px',
@@ -219,7 +145,7 @@ const UserList = () => {
                   >
                     View
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleEditUser(user)}
                     style={{
                       padding: '8px 12px',
@@ -234,7 +160,7 @@ const UserList = () => {
                     Edit
                   </button>
                   {state.user?.role === 'superadmin' && user._id !== state.user.id && (
-                    <button 
+                    <button
                       onClick={() => setShowDeleteModal(user)}
                       style={{
                         padding: '8px 12px',
@@ -260,9 +186,9 @@ const UserList = () => {
           )}
         </div>
       </div>
-      
+
       {showForm && (
-        <UserForm 
+        <UserForm
           user={editingUser}
           onClose={() => {
             setShowForm(false);
@@ -275,14 +201,15 @@ const UserList = () => {
           }}
         />
       )}
-      
-      {showDeleteModal && (
-        <DeleteConfirmModal
-          user={showDeleteModal}
-          onClose={() => setShowDeleteModal(null)}
-          onConfirm={() => handleDeleteUser(showDeleteModal._id)}
-        />
-      )}
+
+      <DeleteConfirmModal
+        isOpen={!!showDeleteModal}
+        onClose={() => setShowDeleteModal(null)}
+        onConfirm={() => handleDeleteUser(showDeleteModal._id)}
+        title="Delete User"
+        message="Are you sure you want to delete this user? This action cannot be undone."
+        itemName={showDeleteModal?.name}
+      />
     </Layout>
   );
 };

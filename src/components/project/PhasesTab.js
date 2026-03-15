@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
 import { phaseAPI } from '../../services/api';
 import { useCompany } from '../../context/CompanyContext';
+import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefresh }) => {
   const { state: companyState } = useCompany();
@@ -20,6 +20,7 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
     budget: '',
     milestones: []
   });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -70,14 +71,22 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
     setShowForm(true);
   };
 
-  const handleDelete = async (phaseId) => {
-    if (window.confirm('Are you sure you want to delete this phase?')) {
-      try {
-        await phaseAPI.delete(projectId, phaseId);
-        await onRefresh();
-      } catch (error) {
-        console.error('Error deleting phase:', error);
-      }
+  const handleDelete = (phaseId) => {
+    const phase = phases.find(p => p._id === phaseId);
+    setDeleteModal({
+      isOpen: true,
+      id: phaseId,
+      name: phase?.name || 'this phase'
+    });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await phaseAPI.delete(projectId, deleteModal.id);
+      await onRefresh();
+      setDeleteModal({ isOpen: false, id: null, name: '' });
+    } catch (error) {
+      console.error('Error deleting phase:', error);
     }
   };
 
@@ -1101,6 +1110,14 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
           </div>
         </div>
       )}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
+        onConfirm={confirmDelete}
+        title="Delete Phase"
+        message="Are you sure you want to delete this phase? All associated milestones will be lost. This action cannot be undone."
+        itemName={deleteModal.name}
+      />
     </div>
   );
 };
