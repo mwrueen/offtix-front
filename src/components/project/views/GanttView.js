@@ -160,41 +160,87 @@ const GanttRow = ({ task, level, totalDays, dayWidth, getTaskPosition, onEdit, o
               </span>
             )}
 
-            {/* Assignee */}
-            {task.assignees && task.assignees.length > 0 && (() => {
-              const activeMember = teamActivity && teamActivity.find(m =>
-                m.currentTask?._id === task._id &&
-                task.assignees.some(a => (a._id || a) === (m.user?._id || m.user))
-              );
+            {/* Assignees */}
+            {((task.assignees && task.assignees.length > 0) || (task.roleAssignments && task.roleAssignments.length > 0)) && (() => {
+              const flattenedAssignments = [];
+              if (task.roleAssignments && task.roleAssignments.length > 0) {
+                task.roleAssignments.forEach(ra => {
+                  const roleName = ra.role?.name || ra.roleName;
+                  if (ra.assignees && ra.assignees.length > 0) {
+                    ra.assignees.forEach(assignee => {
+                      flattenedAssignments.push({ user: assignee, roleName });
+                    });
+                  }
+                });
+              } else if (task.assignees && task.assignees.length > 0) {
+                task.assignees.forEach(user => flattenedAssignments.push({ user }));
+              }
+
               return (
-                <span style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  backgroundColor: activeMember ? '#ecfdf5' : '#f8fafc',
-                  padding: '1px 8px',
-                  borderRadius: '10px',
-                  border: `1px solid ${activeMember ? '#10b98130' : '#e2e8f0'}`,
-                  color: activeMember ? '#059669' : '#64748b'
-                }}>
-                  <span style={{ opacity: 0.5 }}>•</span>
-                  <img
-                    src={task.assignees[0].profile?.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(task.assignees[0].name)}&background=random`}
-                    style={{ width: '14px', height: '14px', borderRadius: '50%' }}
-                    alt=""
-                  />
-                  <span style={{ fontWeight: activeMember ? '700' : '500' }}>{task.assignees[0].name}</span>
-                  {activeMember && (
-                    <span style={{
-                      width: '6px',
-                      height: '6px',
-                      backgroundColor: '#10b981',
+                <div style={{ display: 'flex', alignItems: 'center', gap: '-4px', marginLeft: '4px' }}>
+                  {flattenedAssignments.slice(0, 3).map((assignment, index) => {
+                    const assignee = assignment.user;
+                    const isActive = teamActivity && teamActivity.some(m =>
+                      m.currentTask?._id === task._id &&
+                      (m.user?._id === (assignee._id || assignee) || m.user === (assignee._id || assignee))
+                    );
+                    return (
+                      <div
+                        key={`${assignee._id || index}-${assignment.roleName || ''}`}
+                        title={`${assignee.name}${assignment.roleName ? ` (${assignment.roleName})` : ''}`}
+                        style={{
+                          marginLeft: index > 0 ? '-6px' : '0',
+                          position: 'relative',
+                          zIndex: 10 - index
+                        }}
+                      >
+                        <img
+                          src={assignee.profile?.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(assignee.name)}&background=random`}
+                          style={{
+                            width: '18px',
+                            height: '18px',
+                            borderRadius: '50%',
+                            border: '2px solid white',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                            backgroundColor: 'white'
+                          }}
+                          alt=""
+                        />
+                        {isActive && (
+                          <div style={{
+                            position: 'absolute',
+                            bottom: '-1px',
+                            right: '-1px',
+                            width: '6px',
+                            height: '6px',
+                            backgroundColor: '#10b981',
+                            borderRadius: '50%',
+                            border: '1.5px solid white'
+                          }} />
+                        )}
+                      </div>
+                    );
+                  })}
+                  {flattenedAssignments.length > 3 && (
+                    <div style={{
+                      width: '18px',
+                      height: '18px',
                       borderRadius: '50%',
-                      display: 'inline-block',
-                      boxShadow: '0 0 0 2px #10b98140'
-                    }} />
+                      backgroundColor: '#f1f5f9',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '8px',
+                      fontWeight: '700',
+                      color: '#64748b',
+                      border: '2px solid white',
+                      marginLeft: '-6px',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                    }}>
+                      +{flattenedAssignments.length - 3}
+                    </div>
                   )}
-                </span>
+                </div>
               );
             })()}
           </div>

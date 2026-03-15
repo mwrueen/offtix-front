@@ -37,21 +37,31 @@ const AssigneeModal = ({ task, projectId, users = [], taskRoles = [], onClose, o
 
   const currentRole = taskRoles.find(r => r._id === selectedRoleId);
 
-  // Filter available users for the selected role
-  const filteredAvailableUsers = users.filter(user => {
+  // Get all available users who aren't assigned to THIS role yet
+  const availableUsers = users.filter(user => {
     const matchesSearch = (user.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (user.email || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-    if (!currentRole) return matchesSearch;
+    if (!selectedRoleId) return matchesSearch;
 
-    const userRoles = (user.projectRole || '').split(',').map(r => r.trim());
-    const hasThisRole = userRoles.includes(currentRole.name);
-
-    // Also check if already assigned to THIS role
+    // Check if already assigned to THIS role
     const currentRA = roleAssignments.find(ra => ra.roleId === selectedRoleId);
     const isAlreadyAssignedToThisRole = currentRA?.userIds.includes(user._id);
 
-    return matchesSearch && hasThisRole && !isAlreadyAssignedToThisRole;
+    return matchesSearch && !isAlreadyAssignedToThisRole;
+  });
+
+  // Split into recommended (have the role name in projectRole) and others
+  const recommendedUsers = availableUsers.filter(user => {
+    if (!currentRole) return false;
+    const userRoles = (user.projectRole || '').split(',').map(r => r.trim());
+    return userRoles.includes(currentRole.name);
+  });
+
+  const otherUsers = availableUsers.filter(user => {
+    if (!currentRole) return true;
+    const userRoles = (user.projectRole || '').split(',').map(r => r.trim());
+    return !userRoles.includes(currentRole.name);
   });
 
   const handleToggleUser = (userId) => {
@@ -170,24 +180,50 @@ const AssigneeModal = ({ task, projectId, users = [], taskRoles = [], onClose, o
               />
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
-              {filteredAvailableUsers.length > 0 ? (
-                filteredAvailableUsers.map(user => (
-                  <div key={user._id} onClick={() => handleToggleUser(user._id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 0.2s', marginBottom: '4px' }}>
-                    {user.profile?.profilePicture ? (
-                      <img src={user.profile.profilePicture} alt="" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: getUserColor(user._id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '600' }}>{getUserInitials(user)}</div>
-                    )}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '14px', fontWeight: '600', color: '#172b4d' }}>{user.name}</div>
-                      <div style={{ fontSize: '12px', color: '#5e6c84' }}>{user.email}</div>
+              {recommendedUsers.length > 0 && (
+                <>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#0052cc', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Recommended Members</div>
+                  {recommendedUsers.map(user => (
+                    <div key={user._id} onClick={() => handleToggleUser(user._id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 0.2s', marginBottom: '4px', border: '1px solid transparent' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f4f5f7'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                      {user.profile?.profilePicture ? (
+                        <img src={user.profile.profilePicture} alt="" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: getUserColor(user._id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '600' }}>{getUserInitials(user)}</div>
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#172b4d' }}>{user.name}</div>
+                        <div style={{ fontSize: '11px', color: '#5e6c84' }}>{user.projectRole || 'Team Member'}</div>
+                      </div>
+                      <div style={{ color: '#0052cc', fontWeight: 'bold', fontSize: '18px' }}>+</div>
                     </div>
-                    <div style={{ color: '#0052cc', fontWeight: 'bold', fontSize: '18px' }}>+</div>
-                  </div>
-                ))
-              ) : (
+                  ))}
+                  <div style={{ height: '16px' }} />
+                </>
+              )}
+
+              {otherUsers.length > 0 && (
+                <>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#5e6c84', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{recommendedUsers.length > 0 ? 'Other Team Members' : 'Available Members'}</div>
+                  {otherUsers.map(user => (
+                    <div key={user._id} onClick={() => handleToggleUser(user._id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 0.2s', marginBottom: '4px' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f4f5f7'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                      {user.profile?.profilePicture ? (
+                        <img src={user.profile.profilePicture} alt="" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: getUserColor(user._id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '600' }}>{getUserInitials(user)}</div>
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#172b4d' }}>{user.name}</div>
+                        <div style={{ fontSize: '11px', color: '#5e6c84' }}>{user.projectRole || 'Team Member'}</div>
+                      </div>
+                      <div style={{ color: '#0052cc', fontWeight: 'bold', fontSize: '18px' }}>+</div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {availableUsers.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6b778c', fontSize: '14px' }}>
-                  {searchQuery ? 'No matching users found' : `No unassigned members with "${currentRole?.name}" role.`}
+                  {searchQuery ? 'No matching users found' : 'All members have been assigned to this role.'}
                 </div>
               )}
             </div>

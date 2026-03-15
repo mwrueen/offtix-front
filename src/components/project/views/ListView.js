@@ -873,15 +873,8 @@ const AssigneeList = ({
     });
   }
 
-  // Final deduplication (same user might have multiple roles)
-  const uniqueMemberMap = new Map();
-  flattenedAssignments.forEach(item => {
-    const userId = item.user._id || item.user;
-    if (!uniqueMemberMap.has(userId)) {
-      uniqueMemberMap.set(userId, item);
-    }
-  });
-  flattenedAssignments = Array.from(uniqueMemberMap.values());
+  // No longer deduplicating here to allow showing multiple roles for the same user
+  // (User requested: "added four time but just once")
 
   return (
     <div
