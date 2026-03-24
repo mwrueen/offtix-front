@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import TaskDetailModal from './TaskDetailModal';
 import InlineTaskCreator from './InlineTaskCreator';
 import AssigneeModal from './AssigneeModal';
+import BulkAssigneeModal from './BulkAssigneeModal';
 import ListView from './views/ListView';
 import BoardView from './views/BoardView';
 import GanttView from './views/GanttView';
@@ -51,7 +52,9 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const [isAutoScheduling, setIsAutoScheduling] = useState(false);
     const [schedulingMode, setSchedulingMode] = useState('sequential');
     const [maxParallelTasks, setMaxParallelTasks] = useState(3);
-    const [scheduleStartFrom, setScheduleStartFrom] = useState('project'); // 'project' or 'today'
+    const [scheduleStartFrom, setScheduleStartFrom] = useState('project'); // 'project', 'today', or 'custom'
+    const [customScheduleDate, setCustomScheduleDate] = useState(new Date().toISOString().split('T')[0]);
+    const [scheduleRoleId, setScheduleRoleId] = useState(''); // New: Role-wise scheduling
     const [scheduleResult, setScheduleResult] = useState(null); // { success: bool, count: number, mode: string }
 
     // Duration entry states
@@ -59,7 +62,21 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const [durationContext, setDurationContext] = useState({ roleId: '', userId: '' });
     const [pendingDurations, setPendingDurations] = useState({}); // { taskId: value }
     const [isSubmittingDurations, setIsSubmittingDurations] = useState(false);
+    const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
     const [deleteTaskModal, setDeleteTaskModal] = useState({ isOpen: false, taskId: null, taskTitle: '' });
+
+    useEffect(() => {
+        if (isDurationEntryMode) {
+            const timer = setTimeout(() => {
+                const firstInput = document.querySelector('.duration-input');
+                if (firstInput) {
+                    firstInput.focus();
+                    firstInput.select();
+                }
+            }, 150);
+            return () => clearTimeout(timer);
+        }
+    }, [isDurationEntryMode]);
 
     useEffect(() => {
         fetchProjectData();
@@ -337,23 +354,42 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     };
 
     const handleAutoSchedule = async () => {
-        const startDate = scheduleStartFrom === 'today'
-            ? new Date().toISOString()
-            : project?.startDate;
+        let startDate;
+        if (scheduleStartFrom === 'today') {
+            startDate = new Date().toISOString();
+        } else if (scheduleStartFrom === 'custom') {
+            startDate = new Date(customScheduleDate).toISOString();
+        } else {
+            startDate = project?.startDate;
+        }
 
         if (!startDate) {
-            setScheduleResult({ success: false, error: 'Please set a project start date first' });
+            setScheduleResult({ success: false, error: 'Please set a start date first' });
             setShowAutoScheduleModal(false);
             return;
         }
 
-        const tasksWithDuration = tasks.filter(t => t.duration?.value);
-        const tasksNoDuration = tasks.filter(t => !t.duration?.value);
+        // If role-wise, focus only on tasks that have that role assignment
+        const tasksToConsider = scheduleRoleId
+            ? tasks.filter(t => t.roleAssignments?.some(ra => (ra.role?._id || ra.role) === scheduleRoleId))
+            : tasks;
+
+        const tasksWithDuration = tasksToConsider.filter(t => {
+            if (scheduleRoleId) {
+                const ra = t.roleAssignments?.find(ra => (ra.role?._id || ra.role) === scheduleRoleId);
+                return ra?.duration?.value;
+            }
+            return t.duration?.value;
+        });
+
+        const tasksNoDuration = tasksToConsider.filter(t => !tasksWithDuration.includes(t));
 
         if (tasksWithDuration.length === 0) {
             setScheduleResult({
                 success: false,
-                error: `No tasks have duration set. Please add duration to tasks first.`
+                error: scheduleRoleId
+                    ? `No tasks have duration set for the selected role.`
+                    : `No tasks have duration set. Please add duration to tasks first.`
             });
             setShowAutoScheduleModal(false);
             return;
@@ -380,7 +416,9 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                 {
                     mode: schedulingMode,
                     maxParallel: maxParallelTasks,
-                    forceReschedule: true
+                    forceReschedule: true,
+                    roleId: scheduleRoleId,  // Pass the role filter to the scheduler
+                    useTaskSequence: true    // New opt: follow the current task order
                 }
             );
 
@@ -554,9 +592,14 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                             onClick={() => setIsDurationEntryMode(!isDurationEntryMode)}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: '6px',
-                                padding: '6px 10px', backgroundColor: isDurationEntryMode ? '#ff8b00' : '#ffffff',
-                                border: '1px solid #dfe1e6', borderRadius: '4px', fontSize: '12px',
-                                cursor: 'pointer', color: isDurationEntryMode ? 'white' : '#5e6c84', fontWeight: '500'
+                                padding: '6px 12px',
+                                backgroundColor: isDurationEntryMode ? '#ff8b00' : '#ffffff',
+                                border: isDurationEntryMode ? 'none' : '1px solid #dfe1e6',
+                                borderRadius: '4px', fontSize: '12px',
+                                cursor: 'pointer', color: isDurationEntryMode ? 'white' : '#5e6c84',
+                                fontWeight: '600',
+                                boxShadow: isDurationEntryMode ? '0 4px 10px rgba(255, 139, 0, 0.3)' : 'none',
+                                transition: 'all 0.2s'
                             }}
                         >
                             ⏱️ {isDurationEntryMode ? 'Exit Duration Mode' : 'Add Duration'}
@@ -584,6 +627,18 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                             }}
                         >
                             ⚡ Auto-Schedule
+                        </button>
+
+                        <button
+                            onClick={() => setShowBulkAssignModal(true)}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                padding: '6px 12px', backgroundColor: '#6554c0',
+                                border: 'none', borderRadius: '4px', fontSize: '12px',
+                                cursor: 'pointer', color: 'white', fontWeight: '600'
+                            }}
+                        >
+                            👥 Bulk Assign Member
                         </button>
                     </div>
 
@@ -630,18 +685,73 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
 
                     {/* Duration entry sub-header */}
                     {isDurationEntryMode && (
-                        <div style={{ marginTop: '12px', padding: '10px', backgroundColor: '#fff4e5', borderRadius: '4px', border: '1px solid #ffd599', display: 'flex', gap: '10px', alignItems: 'center' }}>
-                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#855700' }}>DURATION MODE:</span>
-                            <select value={durationContext.roleId} onChange={(e) => setDurationContext({ ...durationContext, roleId: e.target.value })}
-                                style={{ padding: '4px 8px', border: '1px solid #ffab00', borderRadius: '3px', fontSize: '11px' }}>
-                                <option value="">Select Role *</option>
-                                {taskRoles.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
-                            </select>
-                            {Object.keys(pendingDurations).length > 0 && (
-                                <button onClick={handleSubmitDurations} disabled={isSubmittingDurations || !durationContext.roleId}
-                                    style={{ padding: '4px 10px', backgroundColor: '#ff8b00', color: 'white', border: 'none', borderRadius: '3px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}>
-                                    {isSubmittingDurations ? 'Saving...' : `Save ${Object.keys(pendingDurations).length} Durations`}
+                        <div style={{
+                            marginTop: '16px',
+                            padding: '12px 20px',
+                            background: 'linear-gradient(135deg, #fffaf0 0%, #fff4e5 100%)',
+                            borderRadius: '8px',
+                            border: '1px solid #ffab00',
+                            display: 'flex',
+                            gap: '15px',
+                            alignItems: 'center',
+                            boxShadow: '0 4px 15px rgba(255, 171, 0, 0.1)',
+                            animation: 'slideDown 0.3s ease-out'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', fontWeight: '800', color: '#855700', letterSpacing: '0.05em' }}>⏱️ DURATION ENTRY MODE</span>
+                                <div style={{ width: '1px', height: '20px', backgroundColor: '#ffd599' }}></div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <label style={{ fontSize: '11px', fontWeight: '600', color: '#855700' }}>Target Role:</label>
+                                <select
+                                    value={durationContext.roleId}
+                                    onChange={(e) => setDurationContext({ ...durationContext, roleId: e.target.value })}
+                                    style={{
+                                        padding: '6px 12px',
+                                        border: '1px solid #ffab00',
+                                        borderRadius: '6px',
+                                        fontSize: '12px',
+                                        backgroundColor: 'white',
+                                        fontWeight: '600',
+                                        color: '#172b4d',
+                                        cursor: 'pointer',
+                                        outline: 'none',
+                                        minWidth: '150px'
+                                    }}
+                                >
+                                    <option value="">Select a Workflow Role...</option>
+                                    {taskRoles.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
+                                </select>
+                            </div>
+
+                            <div style={{ flex: 1 }}></div>
+
+                            {Object.keys(pendingDurations).length > 0 ? (
+                                <button
+                                    onClick={handleSubmitDurations}
+                                    disabled={isSubmittingDurations || !durationContext.roleId}
+                                    style={{
+                                        padding: '8px 20px',
+                                        backgroundColor: '#ff8b00',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        fontSize: '12px',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 10px rgba(255, 139, 0, 0.3)',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e67e00'}
+                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = '#ff8b00'}
+                                >
+                                    {isSubmittingDurations ? 'Saving Changes...' : `🚀 Save ${Object.keys(pendingDurations).length} Task Durations`}
                                 </button>
+                            ) : (
+                                <span style={{ fontSize: '12px', color: '#855700', fontStyle: 'italic', opacity: 0.8 }}>
+                                    Select a role and enter hours in the list below. Press Tab to move between fields.
+                                </span>
                             )}
                         </div>
                     )}
@@ -704,6 +814,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                         onUpdateTask={handleUpdateTask}
                         employeeLeaves={employeeLeaves}
                         teamActivity={teamActivity}
+                        taskRoles={taskRoles}
                         onRefresh={fetchProjectData}
                     />
                 )}
@@ -743,21 +854,109 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                 />
             )}
 
+            {showBulkAssignModal && (
+                <BulkAssigneeModal
+                    projectId={id}
+                    users={users}
+                    taskRoles={taskRoles}
+                    tasksCount={tasks.length}
+                    onClose={() => setShowBulkAssignModal(false)}
+                    onUpdate={async () => {
+                        await fetchProjectData();
+                        if (onProjectRefresh) onProjectRefresh();
+                    }}
+                />
+            )}
+
             {showAutoScheduleModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowAutoScheduleModal(false)}>
-                    <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', maxWidth: '450px', width: '90%' }} onClick={e => e.stopPropagation()}>
-                        <h3 style={{ margin: '0 0 16px 0' }}>⚡ Auto-Schedule</h3>
-                        <div style={{ marginBottom: '16px' }}>
-                            <label style={{ display: 'block', fontSize: '13px', marginBottom: '8px' }}>Mode</label>
-                            <select value={schedulingMode} onChange={e => setSchedulingMode(e.target.value)} style={{ width: '100%', padding: '8px' }}>
-                                <option value="sequential">Sequential</option>
-                                <option value="parallel">Parallel</option>
-                            </select>
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(9, 30, 66, 0.54)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowAutoScheduleModal(false)}>
+                    <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '28px', maxWidth: '500px', width: '95%', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                            <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#eae6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>⚡</div>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '18px', color: '#172b4d' }}>Auto-Schedule Tasks</h3>
+                                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#5e6c84' }}>Optimize your timeline based on work sequence and availability.</p>
+                            </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '24px' }}>
-                            <button onClick={() => setShowAutoScheduleModal(false)} style={{ padding: '8px 16px', border: '1px solid #dfe1e6', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-                            <button onClick={handleAutoSchedule} disabled={isAutoScheduling} style={{ padding: '8px 16px', backgroundColor: '#0052cc', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                                {isAutoScheduling ? 'Scheduling...' : 'Schedule'}
+
+                        <div style={{ display: 'grid', gap: '20px' }}>
+                            {/* Start Date Selection */}
+                            <div>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#5e6c84', marginBottom: '8px', textTransform: 'uppercase' }}>Start Timeline From</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                                    {['project', 'today', 'custom'].map(opt => (
+                                        <button
+                                            key={opt}
+                                            onClick={() => setScheduleStartFrom(opt)}
+                                            style={{
+                                                padding: '8px', borderRadius: '4px', fontSize: '12px', cursor: 'pointer',
+                                                border: '1px solid #dfe1e6',
+                                                backgroundColor: scheduleStartFrom === opt ? '#deebff' : 'white',
+                                                color: scheduleStartFrom === opt ? '#0052cc' : '#5e6c84',
+                                                fontWeight: scheduleStartFrom === opt ? '600' : '400'
+                                            }}
+                                        >
+                                            {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                                        </button>
+                                    ))}
+                                </div>
+                                {scheduleStartFrom === 'custom' && (
+                                    <input
+                                        type="date"
+                                        value={customScheduleDate}
+                                        onChange={e => setCustomScheduleDate(e.target.value)}
+                                        style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #dfe1e6', fontSize: '14px' }}
+                                    />
+                                )}
+                            </div>
+
+                            {/* Role Selection */}
+                            <div>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#5e6c84', marginBottom: '8px', textTransform: 'uppercase' }}>Role-Wise Scheduling (Optional)</label>
+                                <select
+                                    value={scheduleRoleId}
+                                    onChange={e => setScheduleRoleId(e.target.value)}
+                                    style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #dfe1e6', fontSize: '14px', backgroundColor: 'white' }}
+                                >
+                                    <option value="">All Roles (Global Schedule)</option>
+                                    {taskRoles.map(role => (
+                                        <option key={role._id} value={role._id}>{role.name}</option>
+                                    ))}
+                                </select>
+                                <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#855700', fontStyle: 'italic' }}>
+                                    {scheduleRoleId ? 'Only tasks with this role will be rescheduled sequentially.' : 'All tasks with durations will be rescheduled.'}
+                                </p>
+                            </div>
+
+                            {/* Mode Selection */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#5e6c84', marginBottom: '8px', textTransform: 'uppercase' }}>Strategy</label>
+                                    <select value={schedulingMode} onChange={e => setSchedulingMode(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #dfe1e6', backgroundColor: 'white' }}>
+                                        <option value="sequential">Sequential</option>
+                                        <option value="parallel">Parallel</option>
+                                    </select>
+                                </div>
+                                {schedulingMode === 'parallel' && (
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#5e6c84', marginBottom: '8px', textTransform: 'uppercase' }}>Max Parallel</label>
+                                        <input type="number" min="1" max="10" value={maxParallelTasks} onChange={e => setMaxParallelTasks(parseInt(e.target.value))} style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #dfe1e6' }} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '32px' }}>
+                            <button onClick={() => setShowAutoScheduleModal(false)} style={{ padding: '10px 20px', border: '1px solid #dfe1e6', borderRadius: '6px', cursor: 'pointer', backgroundColor: 'white', color: '#5e6c84', fontWeight: '600' }}>Cancel</button>
+                            <button
+                                onClick={handleAutoSchedule}
+                                disabled={isAutoScheduling}
+                                style={{
+                                    padding: '10px 24px', backgroundColor: '#0052cc', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer',
+                                    fontWeight: '600', boxShadow: '0 4px 10px rgba(0, 82, 204, 0.2)', opacity: isAutoScheduling ? 0.7 : 1
+                                }}
+                            >
+                                {isAutoScheduling ? '⏳ Calculating...' : '⚡ Run Auto-Schedule'}
                             </button>
                         </div>
                     </div>

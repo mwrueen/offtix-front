@@ -79,15 +79,15 @@ const isWorkingDay = (date, workingDays, holidays = [], employeeLeaves = []) => 
 const addWorkingDays = (startDate, daysToAdd, workingDays, holidays, employeeLeaves = []) => {
   let currentDate = new Date(startDate);
   let daysAdded = 0;
-  
+
   while (daysAdded < daysToAdd) {
     currentDate.setDate(currentDate.getDate() + 1);
-    
+
     if (isWorkingDay(currentDate, workingDays, holidays, employeeLeaves)) {
       daysAdded++;
     }
   }
-  
+
   return currentDate;
 };
 
@@ -146,18 +146,18 @@ const filterEmployeeLeaves = (allLeaves, assignees, startDate, endDate) => {
   if (!allLeaves || !assignees || assignees.length === 0) {
     return [];
   }
-  
+
   const assigneeIds = assignees.map(a => typeof a === 'object' ? a._id : a);
-  
+
   return allLeaves.filter(leave => {
     const leaveEmployeeId = typeof leave.employee === 'object' ? leave.employee._id : leave.employee;
     const isAssignedEmployee = assigneeIds.includes(leaveEmployeeId);
     const leaveStart = new Date(leave.startDate);
     const leaveEnd = new Date(leave.endDate);
-    
+
     // Check if leave overlaps with the date range
     const overlaps = leaveStart <= endDate && leaveEnd >= startDate;
-    
+
     return isAssignedEmployee && overlaps && leave.status === 'approved';
   });
 };
@@ -180,25 +180,38 @@ const getNextWorkingDay = (date, workingDays, holidays, employeeLeaves = []) => 
 /**
  * Calculate task dates automatically
  */
-export const calculateTaskDates = (task, projectStartDate, settings, allLeaves = []) => {
+export const calculateTaskDates = (task, projectStartDate, settings, allLeaves = [], options = {}) => {
   const { workingDays = [1, 2, 3, 4, 5], holidays = [], timeTracking = {} } = settings;
+  const { roleId } = options;
+
+  // Find duration and assignees for calculation
+  let durationToUse = task.duration;
+  let assigneesToUse = task.assignees;
+
+  if (roleId) {
+    const ra = task.roleAssignments?.find(a => (a.role?._id || a.role) === roleId);
+    if (ra) {
+      durationToUse = ra.duration || task.duration;
+      assigneesToUse = ra.assignees || task.assignees;
+    }
+  }
 
   // If task has no duration, return null
-  if (!task.duration || !task.duration.value) {
+  if (!durationToUse || !durationToUse.value) {
     return null;
   }
 
   // Convert duration to working days
-  const workingDaysNeeded = convertDurationToWorkingDays(task.duration, timeTracking);
+  const workingDaysNeeded = convertDurationToWorkingDays(durationToUse, timeTracking);
 
   if (workingDaysNeeded === 0) {
     return null;
   }
 
-  // Get employee leaves for this task (rough estimate for date range)
+  // Get employee leaves for this role/task
   const employeeLeaves = filterEmployeeLeaves(
     allLeaves,
-    task.assignees,
+    assigneesToUse,
     new Date(projectStartDate),
     new Date(new Date(projectStartDate).getTime() + workingDaysNeeded * 14 * 24 * 60 * 60 * 1000) // Rough estimate with buffer
   );
@@ -270,15 +283,28 @@ const sortTasksByPriority = (tasks) => {
  * @param {number} options.maxParallel - Maximum number of parallel tasks (for parallel mode)
  */
 export const autoScheduleAllTasks = (tasks, projectStartDate, settings, allLeaves = [], options = {}) => {
-  const { mode = 'sequential', maxParallel = 3 } = options;
+  const { mode = 'sequential', maxParallel = 3, roleId, useTaskSequence = false } = options;
   const { workingDays = [1, 2, 3, 4, 5], holidays = [] } = settings;
   const scheduledTasks = [];
 
-  // Filter only tasks with duration
-  const tasksWithDuration = tasks.filter(task => task.duration?.value);
+  // Filter only tasks with duration (consider role duration if roleId provided)
+  const tasksWithDuration = tasks.filter(task => {
+    if (roleId) {
+      const ra = task.roleAssignments?.find(ra => (ra.role?._id || ra.role) === roleId);
+      return ra?.duration?.value;
+    }
+    return task.duration?.value;
+  });
 
-  // Sort all tasks by priority (urgent first)
-  const sortedTasksToSchedule = sortTasksByPriority(tasksWithDuration);
+  // Sort tasks: either by priority or by current sequence
+  let sortedTasksToSchedule;
+  if (useTaskSequence) {
+    // Keep original sequence (presumed sorted by order from API or UI)
+    sortedTasksToSchedule = [...tasksWithDuration];
+  } else {
+    // Sort all tasks by priority (urgent first)
+    sortedTasksToSchedule = sortTasksByPriority(tasksWithDuration);
+  }
 
   // Start scheduling from the provided start date
   let currentDate = new Date(projectStartDate);
@@ -323,12 +349,14 @@ export const autoScheduleAllTasks = (tasks, projectStartDate, settings, allLeave
             { ...task, startDate: null }, // Force recalculate from currentDate
             currentDate,
             settings,
-            allLeaves
+            allLeaves,
+            { roleId }
           );
 
           if (calculatedDates) {
             scheduledTasks.push({
               taskId: task._id,
+              roleId,
               ...calculatedDates
             });
 
@@ -357,12 +385,14 @@ export const autoScheduleAllTasks = (tasks, projectStartDate, settings, allLeave
         { ...task, startDate: null }, // Force recalculate from currentDate
         currentDate,
         settings,
-        allLeaves
+        allLeaves,
+        { roleId }
       );
 
       if (calculatedDates) {
         scheduledTasks.push({
           taskId: task._id,
+          roleId,
           ...calculatedDates
         });
 

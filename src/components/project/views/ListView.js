@@ -568,19 +568,19 @@ const TaskListRowContent = ({
         ...gridStyle,
         padding: '12px 16px',
         borderBottom: '1px solid #f4f5f7',
-        backgroundColor: isSelected ? '#f0f6ff' : 'white',
-        borderLeft: isSelected ? '3px solid #0052cc' : '3px solid transparent',
+        backgroundColor: isDurationEntryMode ? '#fffbf2' : (isSelected ? '#f0f6ff' : 'white'),
+        borderLeft: isDurationEntryMode ? '3px solid #ffab00' : (isSelected ? '3px solid #0052cc' : '3px solid transparent'),
         cursor: isDragging ? 'grabbing' : 'grab',
         transition: 'all 0.15s ease-in-out',
-        boxShadow: isDragging ? '0 4px 12px rgba(0,0,0,0.15)' : 'none'
+        boxShadow: isDragging ? '0 4px 12px rgba(0,0,0,0.15)' : (isDurationEntryMode ? 'inset 0 0 10px rgba(255, 171, 0, 0.05)' : 'none')
       }}
       onMouseEnter={(e) => {
-        if (!isSelected && !isDragging) {
+        if (!isSelected && !isDragging && !isDurationEntryMode) {
           e.currentTarget.style.backgroundColor = '#fafbfc';
         }
       }}
       onMouseLeave={(e) => {
-        if (!isSelected && !isDragging) {
+        if (!isSelected && !isDragging && !isDurationEntryMode) {
           e.currentTarget.style.backgroundColor = 'white';
         }
       }}
@@ -738,6 +738,7 @@ const TaskListRowContent = ({
             min="0"
             step="0.5"
             placeholder="hr"
+            className="duration-input"
             value={(() => {
               if (pendingDurations[task._id] !== undefined) return pendingDurations[task._id];
               // Fallback to existing duration for the selected role
@@ -748,15 +749,45 @@ const TaskListRowContent = ({
               return ra?.duration?.value || '';
             })()}
             onChange={(e) => setPendingDurations({ ...pendingDurations, [task._id]: e.target.value })}
-            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === 'Tab' || e.key === 'Enter') {
+                e.preventDefault();
+                const inputs = Array.from(document.querySelectorAll('.duration-input'));
+                const currentIndex = inputs.indexOf(e.target);
+                const nextIndex = e.shiftKey ? currentIndex - 1 : currentIndex + 1;
+                if (nextIndex >= 0 && nextIndex < inputs.length) {
+                  inputs[nextIndex].focus();
+                  inputs[nextIndex].select();
+                }
+              }
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.target.select();
+            }}
             style={{
               width: '100%',
-              padding: '4px 8px',
-              border: '1px solid #ffab00',
-              borderRadius: '3px',
-              backgroundColor: '#fffcf5',
-              fontSize: '12px',
-              outline: 'none'
+              padding: '6px 10px',
+              border: pendingDurations[task._id] !== undefined ? '2px solid #ff8b00' : '1px solid #ffab00',
+              borderRadius: '6px',
+              backgroundColor: 'white',
+              fontSize: '13px',
+              fontWeight: '600',
+              color: '#172b4d',
+              outline: 'none',
+              transition: 'all 0.2s',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              textAlign: 'center'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#ff8b00';
+              e.target.style.boxShadow = '0 0 0 3px rgba(255, 139, 0, 0.2)';
+              e.target.style.backgroundColor = 'white';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = pendingDurations[task._id] !== undefined ? '#ff8b00' : '#ffab00';
+              e.target.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
+              e.target.style.backgroundColor = 'white';
             }}
           />
         ) : (

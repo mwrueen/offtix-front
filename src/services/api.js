@@ -131,6 +131,8 @@ export const taskAPI = {
     api.put(`/projects/${projectId}/tasks/${taskId}/role-assignments`, { roleAssignments, useRoleWorkflow }),
   bulkUpdateRoleDurations: (projectId, roleId, updates, userId) =>
     api.post(`/projects/${projectId}/tasks/bulk-update-role-durations`, { roleId, updates, userId }),
+  bulkAssignMember: (projectId, userId, roleIds) =>
+    api.post(`/projects/${projectId}/tasks/bulk-assign-member`, { userId, roleIds }),
   bulkSchedule: (projectId, schedules) => api.post(`/projects/${projectId}/tasks/bulk-schedule`, { schedules }),
 };
 
