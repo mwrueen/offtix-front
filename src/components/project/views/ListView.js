@@ -78,6 +78,7 @@ const ListView = ({
   durationContext,
   pendingDurations,
   setPendingDurations,
+  existingDurations,
   // Filter props
   selectedAssignee,
   selectedTaskRole,
@@ -289,6 +290,7 @@ const ListView = ({
                     durationContext={durationContext}
                     pendingDurations={pendingDurations}
                     setPendingDurations={setPendingDurations}
+                    existingDurations={existingDurations}
                     // Filter props
                     selectedAssignee={selectedAssignee}
                     selectedTaskRole={selectedTaskRole}
@@ -332,6 +334,7 @@ const SortableTaskRow = ({
   durationContext,
   pendingDurations,
   setPendingDurations,
+  existingDurations,
   // Filter props
   selectedAssignee,
   selectedTaskRole,
@@ -388,6 +391,7 @@ const SortableTaskRow = ({
           durationContext={durationContext}
           pendingDurations={pendingDurations}
           setPendingDurations={setPendingDurations}
+          existingDurations={existingDurations}
           // Filter props
           selectedAssignee={selectedAssignee}
           selectedTaskRole={selectedTaskRole}
@@ -422,6 +426,7 @@ const SortableTaskRow = ({
               durationContext={durationContext}
               pendingDurations={pendingDurations}
               setPendingDurations={setPendingDurations}
+              existingDurations={existingDurations}
               // Filter props
               selectedAssignee={selectedAssignee}
               selectedTaskRole={selectedTaskRole}
@@ -456,6 +461,7 @@ const TaskListRow = ({
   durationContext,
   pendingDurations,
   setPendingDurations,
+  existingDurations,
   // Filter props
   selectedAssignee,
   selectedTaskRole,
@@ -484,6 +490,7 @@ const TaskListRow = ({
       durationContext={durationContext}
       pendingDurations={pendingDurations}
       setPendingDurations={setPendingDurations}
+      existingDurations={existingDurations}
       // Filter props
       selectedAssignee={selectedAssignee}
       selectedTaskRole={selectedTaskRole}
@@ -514,6 +521,7 @@ const TaskListRowContent = ({
   durationContext,
   pendingDurations,
   setPendingDurations,
+  existingDurations,
   // Filter props
   selectedAssignee,
   selectedTaskRole,
@@ -732,7 +740,7 @@ const TaskListRowContent = ({
 
       {/* Duration */}
       <div style={{ fontSize: '12px' }}>
-        {isDurationEntryMode ? (
+        {isDurationEntryMode && durationContext?.roleId && durationContext?.userId ? (
           <input
             type="number"
             min="0"
@@ -741,12 +749,12 @@ const TaskListRowContent = ({
             className="duration-input"
             value={(() => {
               if (pendingDurations[task._id] !== undefined) return pendingDurations[task._id];
-              // Fallback to existing duration for the selected role
-              const selectedRole = durationContext.roleId;
-              const ra = task.roleAssignments?.find(a =>
-                (a.role?._id === selectedRole) || (a.role === selectedRole)
-              );
-              return ra?.duration?.value || '';
+              // Fallback: existing duration from TaskUserDuration (converted from minutes to hours)
+              const existingMinutes = existingDurations?.[task._id];
+              if (existingMinutes != null && existingMinutes > 0) {
+                return +(existingMinutes / 60).toFixed(2);
+              }
+              return '';
             })()}
             onChange={(e) => setPendingDurations({ ...pendingDurations, [task._id]: e.target.value })}
             onKeyDown={(e) => {
@@ -793,14 +801,12 @@ const TaskListRowContent = ({
         ) : (
           <div style={{ color: '#5e6c84', fontWeight: '500' }}>
             {(() => {
-              // Show role assignment duration if exists for some role
-              const roleWithDuration = task.roleAssignments?.find(ra => ra.duration?.value);
-              if (roleWithDuration) {
-                // Sum all durations
-                const totalDur = task.roleAssignments.reduce((sum, ra) => sum + (ra.duration?.value || 0), 0);
-                return `${totalDur}h`;
+              // Show aggregated duration from TaskUserDuration records (in hours)
+              if (task.totalDurationMinutes > 0) {
+                const hours = +(task.totalDurationMinutes / 60).toFixed(2);
+                return `${hours}h`;
               }
-              return task.duration?.value ? `${task.duration.value}h` : '-';
+              return '-';
             })()}
           </div>
         )}

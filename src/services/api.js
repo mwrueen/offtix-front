@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getCookie } from '../utils/cookies';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -131,9 +131,16 @@ export const taskAPI = {
     api.put(`/projects/${projectId}/tasks/${taskId}/role-assignments`, { roleAssignments, useRoleWorkflow }),
   bulkUpdateRoleDurations: (projectId, roleId, updates, userId) =>
     api.post(`/projects/${projectId}/tasks/bulk-update-role-durations`, { roleId, updates, userId }),
+  getBulkUserDurations: (projectId, userId, roleId) =>
+    api.get(`/projects/${projectId}/tasks/bulk-durations`, { params: { userId, roleId } }),
   bulkAssignMember: (projectId, userId, roleIds) =>
     api.post(`/projects/${projectId}/tasks/bulk-assign-member`, { userId, roleIds }),
   bulkSchedule: (projectId, schedules) => api.post(`/projects/${projectId}/tasks/bulk-schedule`, { schedules }),
+  // Per-member duration endpoints
+  setRoleDuration: (projectId, taskId, data) =>
+    api.put(`/projects/${projectId}/tasks/${taskId}/role-duration`, data),
+  getTaskDurations: (projectId, taskId) =>
+    api.get(`/projects/${projectId}/tasks/${taskId}/durations`),
 };
 
 export const taskRoleAPI = {

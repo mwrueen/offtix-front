@@ -61,9 +61,24 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const [isDurationEntryMode, setIsDurationEntryMode] = useState(false);
     const [durationContext, setDurationContext] = useState({ roleId: '', userId: '' });
     const [pendingDurations, setPendingDurations] = useState({}); // { taskId: value }
+    const [existingDurations, setExistingDurations] = useState({}); // { taskId: durationMinutes }
     const [isSubmittingDurations, setIsSubmittingDurations] = useState(false);
     const [showBulkAssignModal, setShowBulkAssignModal] = useState(false);
     const [deleteTaskModal, setDeleteTaskModal] = useState({ isOpen: false, taskId: null, taskTitle: '' });
+
+    // Fetch existing durations when both role + user are selected in Duration Entry Mode
+    useEffect(() => {
+        if (isDurationEntryMode && durationContext.roleId && durationContext.userId) {
+            taskAPI.getBulkUserDurations(id, durationContext.userId, durationContext.roleId)
+                .then(res => {
+                    setExistingDurations(res.data || {});
+                    setPendingDurations({}); // reset pending so existing values show as placeholders
+                })
+                .catch(() => setExistingDurations({}));
+        } else {
+            setExistingDurations({});
+        }
+    }, [isDurationEntryMode, durationContext.roleId, durationContext.userId, id]);
 
     useEffect(() => {
         if (isDurationEntryMode) {
@@ -478,10 +493,21 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
             if (dueDateTo && taskDueDate > new Date(dueDateTo + 'T23:59:59')) return false;
         }
         if (isDurationEntryMode && durationContext.roleId) {
+            // Filter to tasks that have this role
             const hasRole = task.roleAssignments?.some(ra =>
                 (ra.role?._id === durationContext.roleId) || (ra.role === durationContext.roleId)
             );
             if (!hasRole) return false;
+
+            // When a user is also selected, further filter to tasks where that user is assigned to that role
+            if (durationContext.userId) {
+                const userInRole = task.roleAssignments?.some(ra => {
+                    const roleMatch = (ra.role?._id === durationContext.roleId) || (ra.role === durationContext.roleId);
+                    const userMatch = ra.assignees?.some(a => (a._id || a) === durationContext.userId);
+                    return roleMatch && userMatch;
+                });
+                if (!userInRole) return false;
+            }
         }
         return true;
     });
@@ -706,7 +732,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                                 <label style={{ fontSize: '11px', fontWeight: '600', color: '#855700' }}>Target Role:</label>
                                 <select
                                     value={durationContext.roleId}
-                                    onChange={(e) => setDurationContext({ ...durationContext, roleId: e.target.value })}
+                                    onChange={(e) => setDurationContext({ roleId: e.target.value, userId: '' })}
                                     style={{
                                         padding: '6px 12px',
                                         border: '1px solid #ffab00',
@@ -725,12 +751,57 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                                 </select>
                             </div>
 
+                            {/* Target User — only shown once a role is picked */}
+                            {durationContext.roleId && (() => {
+                                // Build list of users assigned to the selected role across all tasks
+                                const roleUserMap = new Map();
+                                tasks.forEach(t => {
+                                    t.roleAssignments?.forEach(ra => {
+                                        const roleId = ra.role?._id || ra.role;
+                                        if (roleId === durationContext.roleId) {
+                                            ra.assignees?.forEach(a => {
+                                                const uid = a._id || a;
+                                                if (uid && !roleUserMap.has(uid)) {
+                                                    roleUserMap.set(uid, a.name || users.find(u => u._id === uid)?.name || uid);
+                                                }
+                                            });
+                                        }
+                                    });
+                                });
+                                const roleUsers = Array.from(roleUserMap.entries()).map(([id, name]) => ({ _id: id, name }));
+
+                                return (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <label style={{ fontSize: '11px', fontWeight: '600', color: '#855700' }}>Target User:</label>
+                                        <select
+                                            value={durationContext.userId}
+                                            onChange={(e) => setDurationContext({ ...durationContext, userId: e.target.value })}
+                                            style={{
+                                                padding: '6px 12px',
+                                                border: `1px solid ${durationContext.userId ? '#ffab00' : '#f0a500'}`,
+                                                borderRadius: '6px',
+                                                fontSize: '12px',
+                                                backgroundColor: 'white',
+                                                fontWeight: '600',
+                                                color: '#172b4d',
+                                                cursor: 'pointer',
+                                                outline: 'none',
+                                                minWidth: '150px'
+                                            }}
+                                        >
+                                            <option value="">Select a Member...</option>
+                                            {roleUsers.map(u => <option key={u._id} value={u._id}>{u.name}</option>)}
+                                        </select>
+                                    </div>
+                                );
+                            })()}
+
                             <div style={{ flex: 1 }}></div>
 
                             {Object.keys(pendingDurations).length > 0 ? (
                                 <button
                                     onClick={handleSubmitDurations}
-                                    disabled={isSubmittingDurations || !durationContext.roleId}
+                                    disabled={isSubmittingDurations || !durationContext.roleId || !durationContext.userId}
                                     style={{
                                         padding: '8px 20px',
                                         backgroundColor: '#ff8b00',
@@ -750,7 +821,11 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                                 </button>
                             ) : (
                                 <span style={{ fontSize: '12px', color: '#855700', fontStyle: 'italic', opacity: 0.8 }}>
-                                    Select a role and enter hours in the list below. Press Tab to move between fields.
+                                    {!durationContext.roleId
+                                        ? 'Select a role to begin.'
+                                        : !durationContext.userId
+                                            ? 'Now select a member to filter tasks and enter hours.'
+                                            : 'Enter hours in the list below. Press Tab to move between fields.'}
                                 </span>
                             )}
                         </div>
@@ -785,6 +860,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                         durationContext={durationContext}
                         pendingDurations={pendingDurations}
                         setPendingDurations={setPendingDurations}
+                        existingDurations={existingDurations}
                         selectedAssignee={selectedAssignee}
                         selectedTaskRole={isDurationEntryMode && durationContext.roleId ? durationContext.roleId : selectedTaskRole}
                         selectedProjectRole={selectedProjectRole}

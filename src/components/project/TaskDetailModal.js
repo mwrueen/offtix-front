@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import TaskWorkflow from './TaskWorkflow';
 import { taskAPI } from '../../services/api';
 
@@ -13,12 +13,13 @@ const TaskDetailModal = ({
   onUpdateTask,
   onClose
 }) => {
-  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
-  const [assigneeSearch, setAssigneeSearch] = useState('');
-  const assigneeDropdownRef = useRef(null);
-
   const [formData, setFormData] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Per-member duration state
+  const [durationInputs, setDurationInputs] = useState({});   // { [raId_userId]: minutes }
+  const [savingDuration, setSavingDuration] = useState({});    // { [raId_userId]: bool }
+  const [durationSaved, setDurationSaved] = useState({});      // { [raId_userId]: bool }
 
   useEffect(() => {
     if (task) {
@@ -30,30 +31,30 @@ const TaskDetailModal = ({
         sprint: task.sprint?._id || '',
         phase: task.phase?._id || '',
         dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
-        duration: task.duration || { value: '', unit: 'hours' },
-        assignees: task.assignees?.map(a => a._id || a) || [],
-        role: task.role?._id || task.role || '',
-        roleAssignments: task.roleAssignments?.map(ra => ({
-          roleId: ra.role?._id || ra.role,
-          userIds: ra.assignees?.map(a => a._id || a) || []
-        })) || []
       });
       setHasChanges(false);
     }
   }, [task]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (assigneeDropdownRef.current && !assigneeDropdownRef.current.contains(event.target)) {
-        setShowAssigneeDropdown(false);
-        setAssigneeSearch('');
-      }
-    };
-    if (showAssigneeDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
+  // Load existing per-member durations whenever the task changes
+  const loadDurations = useCallback(async () => {
+    if (!task || !project) return;
+    try {
+      const res = await taskAPI.getTaskDurations(project._id || project.id, task._id);
+      const inputs = {};
+      (res.data.durations || []).forEach(d => {
+        (d.members || []).forEach(m => {
+          const uid = m.user?._id || m.user;
+          if (uid) inputs[`${d.roleAssignmentId}_${uid}`] = m.durationMinutes ? +(m.durationMinutes / 60).toFixed(2) : '';
+        });
+      });
+      setDurationInputs(inputs);
+    } catch (err) {
+      console.error('Error loading durations:', err);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showAssigneeDropdown]);
+  }, [task, project]);
+
+  useEffect(() => { loadDurations(); }, [loadDurations]);
 
   useEffect(() => {
     const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
@@ -64,113 +65,38 @@ const TaskDetailModal = ({
   const handleFieldChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setHasChanges(true);
-
-    // Auto-assignment logic if role is changed
-    if (field === 'role' && value) {
-      const selectedRole = taskRoles.find(r => r._id === value);
-      if (selectedRole) {
-        const matchingUsers = users.filter(u =>
-          u.projectRole && u.projectRole.split(',').map(r => r.trim()).includes(selectedRole.name)
-        );
-
-        if (matchingUsers.length === 1) {
-          const userId = matchingUsers[0]._id;
-          addRoleAssignment(value, userId);
-        }
-      }
-    }
-  };
-
-  const addRoleAssignment = (roleId, userId) => {
-    setFormData(prev => {
-      const currentRoleAssignments = [...(prev.roleAssignments || [])];
-      const roleIndex = currentRoleAssignments.findIndex(ra => ra.roleId === roleId);
-
-      if (roleIndex > -1) {
-        if (!currentRoleAssignments[roleIndex].userIds.includes(userId)) {
-          currentRoleAssignments[roleIndex].userIds.push(userId);
-        }
-      } else {
-        currentRoleAssignments.push({ roleId, userIds: [userId] });
-      }
-
-      // Also ensure flat assignees is updated
-      const allUserIds = new Set(prev.assignees || []);
-      allUserIds.add(userId);
-
-      return {
-        ...prev,
-        roleAssignments: currentRoleAssignments,
-        assignees: Array.from(allUserIds)
-      };
-    });
-    setHasChanges(true);
-  };
-
-  const removeRoleAssignment = (roleId, userId) => {
-    setFormData(prev => {
-      const currentRoleAssignments = (prev.roleAssignments || [])
-        .map(ra => {
-          if (ra.roleId === roleId) {
-            return { ...ra, userIds: ra.userIds.filter(id => id !== userId) };
-          }
-          return ra;
-        })
-        .filter(ra => ra.userIds.length > 0);
-
-      // Re-calculate flat assignees
-      const allUserIds = new Set();
-      currentRoleAssignments.forEach(ra => ra.userIds.forEach(id => allUserIds.add(id)));
-
-      return {
-        ...prev,
-        roleAssignments: currentRoleAssignments,
-        assignees: Array.from(allUserIds)
-      };
-    });
-    setHasChanges(true);
-  };
-
-  const handleToggleAssignee = (userId) => {
-    if (!formData.role) return; // Must have role to add role-wise
-
-    const roleId = formData.role;
-    const currentAssignments = formData.roleAssignments || [];
-    const isAssignedToThisRole = currentAssignments.some(ra => ra.roleId === roleId && ra.userIds.includes(userId));
-
-    if (isAssignedToThisRole) {
-      removeRoleAssignment(roleId, userId);
-    } else {
-      addRoleAssignment(roleId, userId);
-    }
   };
 
   const handleSave = async () => {
     if (task && onUpdateTask && hasChanges) {
       const cleanedData = { ...formData };
-
-      // Format roleAssignments for backend
-      if (cleanedData.roleAssignments) {
-        cleanedData.roleAssignments = cleanedData.roleAssignments.map((ra, idx) => ({
-          role: ra.roleId,
-          assignees: ra.userIds,
-          order: idx + 1
-        }));
-        cleanedData.useRoleWorkflow = cleanedData.roleAssignments.length > 0;
-      }
-
       if (cleanedData.priority === '') delete cleanedData.priority;
       if (cleanedData.status === '') delete cleanedData.status;
       if (cleanedData.sprint === '') delete cleanedData.sprint;
       if (cleanedData.phase === '') delete cleanedData.phase;
       if (cleanedData.dueDate === '') delete cleanedData.dueDate;
-      if (cleanedData.duration && (!cleanedData.duration.value || cleanedData.duration.value === '')) {
-        delete cleanedData.duration;
-      }
-
       await onUpdateTask(task._id, cleanedData);
       setHasChanges(false);
       onClose();
+    }
+  };
+
+  // Save a single member's duration for a role assignment
+  const handleSaveDuration = async (raId, userId, hours) => {
+    const key = `${raId}_${userId}`;
+    setSavingDuration(prev => ({ ...prev, [key]: true }));
+    try {
+      await taskAPI.setRoleDuration(project._id || project.id, task._id, {
+        roleAssignmentId: raId,
+        targetUserId: userId,
+        durationMinutes: Math.round((Number(hours) || 0) * 60),
+      });
+      setDurationSaved(prev => ({ ...prev, [key]: true }));
+      setTimeout(() => setDurationSaved(prev => ({ ...prev, [key]: false })), 2000);
+    } catch (err) {
+      console.error('Error saving duration:', err);
+    } finally {
+      setSavingDuration(prev => ({ ...prev, [key]: false }));
     }
   };
 
@@ -186,18 +112,6 @@ const TaskDetailModal = ({
   };
 
   if (!task) return null;
-
-  const selectedAssignees = users.filter(u => formData.assignees?.includes(u._id)) || [];
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = (user.name || '').toLowerCase().includes(assigneeSearch.toLowerCase());
-    if (!formData.role) return matchesSearch;
-
-    const selectedRoleObj = taskRoles.find(r => r._id === formData.role);
-    if (!selectedRoleObj) return matchesSearch;
-
-    const userRoles = (user.projectRole || '').split(',').map(r => r.trim());
-    return matchesSearch && userRoles.includes(selectedRoleObj.name);
-  });
 
   return (
     <div
@@ -262,6 +176,7 @@ const TaskDetailModal = ({
         <div style={{ flex: 1, overflowY: 'auto', display: 'flex' }}>
           {/* Main Content */}
           <div style={{ flex: 1, padding: '24px', borderRight: '1px solid #dfe1e6' }}>
+            {/* Description */}
             <div style={{ marginBottom: '24px' }}>
               <label style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>
                 Description
@@ -271,38 +186,82 @@ const TaskDetailModal = ({
                 onChange={(e) => handleFieldChange('description', e.target.value)}
                 placeholder="Add a description..."
                 style={{
-                  width: '100%', minHeight: '150px', padding: '12px', border: '1px solid #dfe1e6',
+                  width: '100%', minHeight: '120px', padding: '12px', border: '1px solid #dfe1e6',
                   borderRadius: '3px', fontSize: '14px', fontFamily: 'inherit', resize: 'vertical',
                   backgroundColor: '#fafbfc', lineHeight: '1.6'
                 }}
               />
             </div>
 
-            {/* Duration */}
+            {/* Duration per Role / Member */}
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>
+              <label style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', display: 'block', marginBottom: '12px', textTransform: 'uppercase' }}>
                 Duration
               </label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={formData.duration?.value || ''}
-                  onChange={(e) => handleFieldChange('duration', { value: e.target.value ? parseFloat(e.target.value) : undefined, unit: formData.duration?.unit || 'hours' })}
-                  min="0" step="0.5"
-                  style={{ flex: 1, padding: '8px', border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '14px' }}
-                />
-                <select
-                  value={formData.duration?.unit || 'hours'}
-                  onChange={(e) => handleFieldChange('duration', { value: formData.duration?.value, unit: e.target.value })}
-                  style={{ padding: '8px', border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '14px', minWidth: '100px', cursor: 'pointer' }}
-                >
-                  <option value="minutes">Minutes</option>
-                  <option value="hours">Hours</option>
-                  <option value="days">Days</option>
-                  <option value="weeks">Weeks</option>
-                </select>
-              </div>
+              {task.roleAssignments && task.roleAssignments.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {task.roleAssignments.map(ra => {
+                    const raId = ra._id?.toString() || ra._id;
+                    const roleObj = taskRoles?.find(r => (r._id === (ra.role?._id || ra.role)));
+                    const roleName = ra.role?.name || roleObj?.name || 'Role';
+                    const assignees = ra.assignees || [];
+                    return (
+                      <div key={raId} style={{ backgroundColor: '#f4f5f7', borderRadius: '6px', padding: '12px' }}>
+                        {/* Role header */}
+                        <div style={{ fontSize: '11px', fontWeight: '700', color: '#0052cc', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>
+                          {roleName}
+                        </div>
+                        {assignees.length === 0 ? (
+                          <p style={{ fontSize: '13px', color: '#97a0af', margin: 0 }}>No members assigned</p>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {assignees.map(assignee => {
+                              const uid = assignee._id?.toString() || assignee._id || assignee?.toString();
+                              const userObj = typeof assignee === 'object' ? assignee : users?.find(u => u._id === uid);
+                              const key = `${raId}_${uid}`;
+                              const isSaving = savingDuration[key];
+                              const isSaved = durationSaved[key];
+                              return (
+                                <div key={uid} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'white', border: '1px solid #dfe1e6', borderRadius: '4px', padding: '8px 10px' }}>
+                                  {/* Avatar */}
+                                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: getUserColor(uid), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '600', flexShrink: 0 }}>
+                                    {getUserInitials(userObj)}
+                                  </div>
+                                  {/* Name */}
+                                  <span style={{ flex: 1, fontSize: '13px', fontWeight: '500', color: '#172b4d' }}>
+                                    {userObj?.name || 'Unknown'}
+                                  </span>
+                                  {/* Hours input */}
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.5"
+                                    placeholder="0"
+                                    value={durationInputs[key] ?? ''}
+                                    onChange={e => setDurationInputs(prev => ({ ...prev, [key]: e.target.value }))}
+                                    style={{ width: '70px', padding: '5px 8px', border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '13px', textAlign: 'right' }}
+                                  />
+                                  <span style={{ fontSize: '12px', color: '#5e6c84' }}>hr</span>
+                                  {/* Save button */}
+                                  <button
+                                    onClick={() => handleSaveDuration(raId, uid, durationInputs[key] ?? 0)}
+                                    disabled={isSaving}
+                                    style={{ padding: '5px 10px', fontSize: '12px', fontWeight: '600', borderRadius: '3px', border: 'none', cursor: isSaving ? 'not-allowed' : 'pointer', backgroundColor: isSaved ? '#00875a' : '#0052cc', color: 'white', minWidth: '52px' }}
+                                  >
+                                    {isSaving ? '…' : isSaved ? '✓' : 'Save'}
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p style={{ fontSize: '13px', color: '#97a0af' }}>No role assignments on this task.</p>
+              )}
             </div>
 
             {/* Task Workflow */}
@@ -310,14 +269,10 @@ const TaskDetailModal = ({
               <TaskWorkflow
                 task={task}
                 projectId={project._id || project.id}
-                onTaskUpdate={async (updatedTask) => {
-                  // Refresh task data
+                onTaskUpdate={async () => {
                   try {
-                    const response = await taskAPI.getTaskWithWorkflow(project._id || project.id, task._id);
-                    if (onUpdateTask) {
-                      // Trigger refresh by calling update
-                      await onUpdateTask(task._id, {});
-                    }
+                    await taskAPI.getTaskWithWorkflow(project._id || project.id, task._id);
+                    if (onUpdateTask) await onUpdateTask(task._id, {});
                   } catch (error) {
                     console.error('Error refreshing task:', error);
                   }
@@ -328,19 +283,6 @@ const TaskDetailModal = ({
 
           {/* Side Details */}
           <div style={{ width: '280px', padding: '24px', backgroundColor: '#fafbfc' }}>
-            {/* Role */}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', display: 'block', marginBottom: '8px' }}>ROLE</label>
-              <select
-                value={formData.role || ''}
-                onChange={(e) => handleFieldChange('role', e.target.value)}
-                style={{ width: '100%', padding: '8px', border: '1px solid #dfe1e6', borderRadius: '3px', fontSize: '14px', backgroundColor: 'white', cursor: 'pointer' }}
-              >
-                <option value="">Select role</option>
-                {taskRoles?.map(role => (<option key={role._id} value={role._id}>{role.name}</option>))}
-              </select>
-            </div>
-
             {/* Status */}
             <div style={{ marginBottom: '20px' }}>
               <label style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', display: 'block', marginBottom: '8px' }}>STATUS</label>
@@ -353,70 +295,6 @@ const TaskDetailModal = ({
                 {taskStatuses?.map(status => (<option key={status._id} value={status._id}>{status.name}</option>))}
               </select>
             </div>
-
-            {/* Assignees */}
-            <div style={{ marginBottom: '20px' }} ref={assigneeDropdownRef}>
-              <label style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', display: 'block', marginBottom: '8px' }}>ASSIGNEES</label>
-              <div style={{ position: 'relative' }}>
-                <div onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)} style={{ padding: '8px', backgroundColor: 'white', border: '1px solid #dfe1e6', borderRadius: '3px', cursor: 'pointer', minHeight: '38px' }}>
-                  <span style={{ color: '#5e6c84', fontSize: '14px' }}>
-                    {formData.role ? 'Select users for role...' : 'Select role first to assign'}
-                  </span>
-                </div>
-                {showAssigneeDropdown && formData.role && (
-                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px', backgroundColor: 'white', border: '1px solid #dfe1e6', borderRadius: '3px', boxShadow: '0 4px 8px rgba(9, 30, 66, 0.25)', zIndex: 1000, maxHeight: '200px', overflowY: 'auto' }}>
-                    <input type="text" placeholder="Search users..." value={assigneeSearch} onChange={(e) => setAssigneeSearch(e.target.value)} autoFocus style={{ width: '100%', padding: '8px', border: 'none', borderBottom: '1px solid #dfe1e6', fontSize: '14px', outline: 'none' }} />
-                    {filteredUsers.map(user => {
-                      const isSelected = formData.roleAssignments?.some(ra => ra.roleId === formData.role && ra.userIds.includes(user._id));
-                      return (
-                        <div key={user._id} onClick={() => handleToggleAssignee(user._id)} style={{ padding: '8px 12px', cursor: 'pointer', backgroundColor: isSelected ? '#deebff' : 'transparent', display: 'flex', alignItems: 'center', gap: '8px' }} onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = '#f4f5f7'; }} onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent'; }}>
-                          <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: getUserColor(user._id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '600' }}>{getUserInitials(user)}</div>
-                          <span style={{ fontSize: '14px', flex: 1 }}>{user.name}</span>
-                          {isSelected && <span style={{ color: '#0052cc' }}>✓</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Role Assignments List */}
-            {formData.roleAssignments?.length > 0 && (
-              <div style={{ marginBottom: '20px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {formData.roleAssignments.map((ra, idx) => {
-                    const roleObj = taskRoles.find(r => r._id === ra.roleId);
-                    return ra.userIds.map(uid => {
-                      const userObj = users.find(u => u._id === uid);
-                      return (
-                        <div key={`${ra.roleId}-${uid}`} style={{
-                          display: 'flex', alignItems: 'center', gap: '8px',
-                          backgroundColor: 'white', border: '1px solid #dfe1e6',
-                          padding: '6px 10px', borderRadius: '3px', fontSize: '13px'
-                        }}>
-                          <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: getUserColor(uid), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '600' }}>
-                            {getUserInitials(userObj)}
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <span style={{ fontWeight: '500' }}>{userObj?.name}</span>
-                            <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#e6effc', color: '#0052cc', borderRadius: '3px', fontSize: '11px' }}>
-                              {roleObj?.name}
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => removeRoleAssignment(ra.roleId, uid)}
-                            style={{ background: 'none', border: 'none', color: '#de350b', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      );
-                    });
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* Priority */}
             <div style={{ marginBottom: '20px' }}>
