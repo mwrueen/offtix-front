@@ -194,7 +194,7 @@ const MyTasksList = () => {
               {tasks.map((task, idx) => {
                 const status = getTaskStatus(task);
                 return (
-                  <div key={task._id} onClick={() => navigate(`/my-tasks/${task._id}`)} className="group bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden relative animate-in slide-in-from-bottom-8" style={{ animationDelay: `${idx * 50}ms` }}>
+                  <div key={task._id} onClick={() => navigate(`/my-tasks/${task._id}`)} className={`group bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden relative animate-in slide-in-from-bottom-8 [animation-delay:${idx * 50}ms]`}>
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
                       <div className="flex-1 min-w-0 space-y-4">
                         <div className="flex flex-wrap items-center gap-3">
@@ -222,7 +222,7 @@ const MyTasksList = () => {
 
                           {task.status && (
                             <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
-                              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: task.status.color || '#64748b' }} />
+                              <div className={`w-2.5 h-2.5 rounded-full bg-[${task.status.color || '#64748b'}]`} />
                               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{task.status.name}</span>
                             </div>
                           )}

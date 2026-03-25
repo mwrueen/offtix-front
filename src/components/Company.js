@@ -135,7 +135,7 @@ const Company = () => {
             { label: 'FOUNDED_YEAR', value: company.foundedYear || 'N/A', icon: '🗓', color: 'amber' },
             { label: 'COMPANY_SIZE', value: company.companySize || 'N/A', icon: '🏢', color: 'rose' }
           ].map((stat, i) => (
-            <div key={i} className="bg-white p-10 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-500 group/card relative overflow-hidden hover:-translate-y-2 animate-in slide-in-from-bottom-4" style={{ animationDelay: `${i * 50}ms` }}>
+            <div key={i} className={`bg-white p-10 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-500 group/card relative overflow-hidden hover:-translate-y-2 animate-in slide-in-from-bottom-4 [animation-delay:${i * 50}ms]`}>
               <div className="absolute top-0 right-0 p-8 text-7xl opacity-5 group-hover/card:scale-110 group-hover/card:rotate-12 transition-all duration-700 pointer-events-none select-none">{stat.icon}</div>
               <div className="relative z-10 space-y-4">
                 <div className={`text-4xl font-bold text-slate-900 group-hover/card:text-indigo-600 transition-colors`}>{stat.value}</div>
@@ -162,7 +162,7 @@ const Company = () => {
                 { label: 'Contact Number', value: company.phone, icon: '📞' },
                 { label: 'Corporate Website', value: company.website, icon: '🌐', isLink: true }
               ].map((item, i) => item.value && (
-                <div key={i} className="flex items-center gap-8 p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:border-indigo-100 transition-all duration-500 group/item animate-in slide-in-from-left-4" style={{ animationDelay: `${i * 100}ms` }}>
+                <div key={i} className={`flex items-center gap-8 p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:border-indigo-100 transition-all duration-500 group/item animate-in slide-in-from-left-4 [animation-delay:${i * 100}ms]`}>
                   <div className="w-16 h-16 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-3xl shadow-sm group-hover/item:scale-105 group-hover/item:rotate-3 transition-all duration-500 shrink-0 italic">
                     {item.icon}
                   </div>
@@ -193,7 +193,7 @@ const Company = () => {
                 { label: 'National Identifier', value: company.country },
                 { label: 'Zip Code', value: company.zipCode }
               ].map((loc, i) => loc.value && (
-                <div key={i} className={`p-6 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all duration-500 italic group/loc ${loc.full ? 'md:col-span-2' : ''}`} style={{ animationDelay: `${i * 50}ms` }}>
+                <div key={i} className={`p-6 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all duration-500 italic group/loc ${loc.full ? 'md:col-span-2' : ''} [animation-delay:${i * 50}ms]`} >
                   <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2 italic">{loc.label}</div>
                   <div className="text-lg font-bold text-white uppercase italic tracking-tight leading-relaxed group-hover/loc:text-emerald-400 transition-colors truncate">{loc.value}</div>
                 </div>
@@ -221,7 +221,7 @@ const Company = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 relative z-10">
             {company.members?.map((member, index) => (
-              <div key={member._id} onClick={() => navigate(`/employees/${member.user?._id || member.user}`)} className="group/node p-8 rounded-3xl border border-slate-50 bg-slate-50/50 hover:bg-white hover:border-indigo-100 hover:shadow-xl transition-all duration-500 cursor-pointer overflow-hidden relative animate-in zoom-in-95 hover:-translate-y-1" style={{ animationDelay: `${index * 30}ms` }}>
+              <div key={member._id} onClick={() => navigate(`/employees/${member.user?._id || member.user}`)} className={`group/node p-8 rounded-3xl border border-slate-50 bg-slate-50/50 hover:bg-white hover:border-indigo-100 hover:shadow-xl transition-all duration-500 cursor-pointer overflow-hidden relative animate-in zoom-in-95 hover:-translate-y-1 [animation-delay:${index * 30}ms]`}>
                 <div className="flex items-center gap-6 mb-8 relative z-10">
                   <div className="w-16 h-16 rounded-2xl bg-slate-950 text-white border-4 border-white shadow-md flex items-center justify-center font-bold text-xl italic group-hover/node:bg-indigo-600 transition-all duration-700">
                     {member.user?.name?.charAt(0)}

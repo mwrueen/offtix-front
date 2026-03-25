@@ -18,91 +18,53 @@ const SalaryForm = ({ member, onClose, onUpdate }) => {
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 50
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '32px',
-        width: '100%',
-        maxWidth: '400px'
-      }}>
-        <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>Update Salary</h3>
-        <p style={{ margin: '0 0 24px 0', color: '#64748b' }}>Employee: {member.user?.name}</p>
-        
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>New Salary</label>
-            <input
-              type="number"
-              value={salary}
-              onChange={(e) => setSalary(Number(e.target.value))}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '14px',
-                boxSizing: 'border-box'
-              }}
-            />
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[2500] p-6 animate-in fade-in duration-500">
+      <div className="bg-white rounded-[2.5rem] w-full max-w-md shadow-24 border border-white/20 overflow-hidden animate-in zoom-in-95 duration-500 font-sans">
+        <div className="p-10 space-y-8">
+          <div className="space-y-2">
+            <h3 className="text-2xl font-black text-slate-950 uppercase italic tracking-tight">Adjust Remuneration</h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Subject: {member.user?.name}</p>
           </div>
-          
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Reason</label>
-            <input
-              type="text"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g., Annual increment, Promotion"
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '14px',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
-          
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: '12px 24px',
-                backgroundColor: 'white',
-                color: '#374151',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              style={{
-                padding: '12px 24px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              Update Salary
-            </button>
-          </div>
-        </form>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">New Salary Rate</label>
+              <input
+                type="number"
+                value={salary}
+                onChange={(e) => setSalary(Number(e.target.value))}
+                className="w-full px-6 py-4 bg-slate-100 border-2 border-transparent rounded-2xl text-xl font-black text-indigo-600 outline-none focus:bg-white focus:border-indigo-400 transition-all italic shadow-inner"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Protocol Justification</label>
+              <input
+                type="text"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="e.g. PERFORMANCE_INCREMENT"
+                className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-indigo-400 transition-all italic uppercase"
+              />
+            </div>
+
+            <div className="flex gap-4 pt-6">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 py-4 font-black text-[11px] uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all italic"
+              >
+                Abort
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-4 bg-indigo-600 text-white rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-lg hover:bg-slate-950 transition-all active:scale-95 italic"
+              >
+                Update Data
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -118,91 +80,52 @@ const DesignationForm = ({ onClose, onAdd }) => {
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 50
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '32px',
-        width: '100%',
-        maxWidth: '400px'
-      }}>
-        <h3 style={{ margin: '0 0 24px 0', fontSize: '18px', fontWeight: '600' }}>Add Designation</h3>
-        
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Designation Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '14px',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
-          
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows="3"
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '14px',
-                boxSizing: 'border-box',
-                resize: 'vertical'
-              }}
-            />
-          </div>
-          
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: '12px 24px',
-                backgroundColor: 'white',
-                color: '#374151',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              style={{
-                padding: '12px 24px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              Add Designation
-            </button>
-          </div>
-        </form>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[2500] p-6 animate-in fade-in duration-500">
+      <div className="bg-white rounded-[2.5rem] w-full max-w-md shadow-24 border border-white/20 overflow-hidden animate-in zoom-in-95 duration-500 font-sans">
+        <div className="p-10 space-y-8">
+          <h3 className="text-2xl font-black text-slate-950 uppercase italic tracking-tight">Define Hierarchy</h3>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Role Nomenclature</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. SR_OPERATIONS_LEAD"
+                required
+                className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-950 outline-none focus:bg-white focus:border-indigo-400 transition-all italic uppercase tracking-tight"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Responsibilities</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows="3"
+                placeholder="Outline core directives..."
+                className="w-full px-6 py-4 bg-slate-100 border-2 border-transparent rounded-2xl text-sm font-medium text-slate-600 outline-none focus:bg-white focus:border-indigo-400 transition-all resize-none italic leading-relaxed shadow-inner"
+              />
+            </div>
+
+            <div className="flex gap-4 pt-6">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 py-4 font-black text-[11px] uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all italic"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-4 bg-indigo-600 text-white rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-lg hover:bg-slate-950 transition-all active:scale-95 italic"
+              >
+                Append Role
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -217,81 +140,52 @@ const ChangeDesignationForm = ({ member, designations, onClose, onUpdate }) => {
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 50
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '32px',
-        width: '100%',
-        maxWidth: '400px'
-      }}>
-        <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>Change Designation</h3>
-        <p style={{ margin: '0 0 24px 0', color: '#64748b' }}>Employee: {member.user?.name}</p>
-        
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Select Designation</label>
-            <select
-              value={selectedDesignation}
-              onChange={(e) => setSelectedDesignation(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '14px',
-                boxSizing: 'border-box',
-                backgroundColor: 'white'
-              }}
-            >
-              <option value="">Select a designation</option>
-              {designations.map((designation, index) => (
-                <option key={index} value={designation.name}>
-                  {designation.name}
-                </option>
-              ))}
-            </select>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[2500] p-6 animate-in fade-in duration-500">
+      <div className="bg-white rounded-[2.5rem] w-full max-w-md shadow-24 border border-white/20 overflow-hidden animate-in zoom-in-95 duration-500 font-sans">
+        <div className="p-10 space-y-8">
+          <div className="space-y-2">
+            <h3 className="text-2xl font-black text-slate-950 uppercase italic tracking-tight">Reassign Rank</h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Subject: {member.user?.name}</p>
           </div>
-          
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: '12px 24px',
-                backgroundColor: 'white',
-                color: '#374151',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              style={{
-                padding: '12px 24px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              Update Designation
-            </button>
-          </div>
-        </form>
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="space-y-3">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Target Designation</label>
+              <div className="relative group">
+                <select
+                  value={selectedDesignation}
+                  onChange={(e) => setSelectedDesignation(e.target.value)}
+                  required
+                  className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-[13px] font-bold text-slate-950 focus:border-indigo-400 focus:bg-white transition-all outline-none appearance-none cursor-pointer uppercase italic tracking-tight"
+                >
+                  <option value="">Choose new rank...</option>
+                  {designations.map((designation, index) => (
+                    <option key={index} value={designation.name} className="bg-white">
+                      {designation.name?.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-indigo-400 opacity-40 group-hover:opacity-100 transition-opacity italic font-black text-xs">▼</div>
+              </div>
+            </div>
+
+            <div className="flex gap-4 pt-6">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 py-4 font-black text-[11px] uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all italic active:scale-95"
+              >
+                Abort
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-4 bg-indigo-600 text-white rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-lg hover:bg-slate-950 transition-all active:scale-95 italic"
+              >
+                Confirm Reassignment
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -308,12 +202,12 @@ const CompanyManagement = () => {
   const [showDesignationForm, setShowDesignationForm] = useState(false);
   const [showPermissionForm, setShowPermissionForm] = useState(null);
   const [showChangeDesignationForm, setShowChangeDesignationForm] = useState(null);
-  
+
   // Get user permissions
   const userPermission = company?.permissions?.find(p => p.user?._id === state.user?._id);
   const isOwner = company?.owner?._id === state.user?._id;
   const isSuperAdmin = state.user?.role === 'superadmin';
-  
+
   const canManageEmployees = isSuperAdmin || isOwner || userPermission?.canManageEmployees;
   const canManageDesignations = isSuperAdmin || isOwner || userPermission?.canManageDesignations;
   const canManageSalaries = isSuperAdmin || isOwner || userPermission?.canManageSalaries;
@@ -394,152 +288,89 @@ const CompanyManagement = () => {
   ];
 
   const renderEmployees = () => (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>Team Members</h3>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-slate-50">
+        <div className="space-y-1">
+          <h3 className="text-xl font-black text-slate-950 uppercase italic tracking-tight">Personnel Registry</h3>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Inventory of all active organizational operatives</p>
+        </div>
         {canManageEmployees && (
           <button
             onClick={() => setShowMemberForm(true)}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-slate-950 hover:scale-[1.02] active:scale-95 transition-all italic flex items-center gap-3 w-fit"
           >
-            + Add Employee
+            <span className="text-lg leading-none">+</span> Initialize Operative
           </button>
         )}
       </div>
-      
-      {company.members?.map((member) => (
-        <div key={member._id} style={{
-          padding: '20px',
-          backgroundColor: '#f8fafc',
-          borderRadius: '8px',
-          marginBottom: '16px',
-          border: '1px solid #e2e8f0'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                backgroundColor: '#3b82f6',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: '600',
-                fontSize: '14px'
-              }}>
-                {member.user?.name?.charAt(0)?.toUpperCase() || '?'}
+
+      <div className="grid grid-cols-1 gap-4">
+        {company.members?.map((member) => (
+          <div key={member._id} className="group/node p-6 bg-slate-50 border border-slate-100 rounded-[2rem] hover:bg-white hover:border-indigo-100 hover:shadow-xl transition-all duration-500 overflow-hidden relative">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-2xl bg-slate-950 text-white border-4 border-white shadow-md flex items-center justify-center font-black text-xl italic group-hover/node:bg-indigo-600 transition-all duration-700 shrink-0">
+                  {member.user?.name?.charAt(0)?.toUpperCase() || '?'}
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-lg font-black text-slate-950 uppercase italic tracking-tight truncate mb-1">
+                    {member.user?.name || 'Unknown Subject'}
+                  </h4>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="px-3 py-1 bg-white border border-slate-100 rounded-lg text-[9px] font-bold text-indigo-500 uppercase tracking-widest italic shadow-sm">
+                      {member.designation?.toUpperCase()}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">
+                      Remuneration: <span className="text-slate-950">${member.currentSalary?.toLocaleString() || '0'}/MO</span>
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h4 style={{ margin: '0 0 2px 0', color: '#1e293b', fontSize: '16px', fontWeight: '600' }}>
-                  {member.user?.name || 'Unknown User'}
-                </h4>
-                <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>
-                  {member.designation} • ${member.currentSalary?.toLocaleString() || '0'}/month
-                </p>
+
+              <div className="flex flex-wrap gap-2 lg:opacity-0 group-hover/node:opacity-100 translate-y-2 group-hover/node:translate-y-0 transition-all duration-500">
+                {canManageEmployees && (
+                  <button onClick={() => setShowChangeDesignationForm(member)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 rounded-xl font-black text-[9px] uppercase tracking-widest italic transition-all shadow-sm">Protocol Update</button>
+                )}
+                {canManageSalaries && (
+                  <button onClick={() => setShowSalaryForm(member)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-400 hover:text-emerald-600 hover:border-emerald-200 rounded-xl font-black text-[9px] uppercase tracking-widest italic transition-all shadow-sm">Rate Adjust</button>
+                )}
+                {isOwner && (
+                  <button onClick={() => setShowPermissionForm(member)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-400 hover:text-amber-600 hover:border-amber-200 rounded-xl font-black text-[9px] uppercase tracking-widest italic transition-all shadow-sm">Privileges</button>
+                )}
               </div>
-            </div>
-            
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {canManageEmployees && (
-                <button
-                  onClick={() => setShowChangeDesignationForm(member)}
-                  style={{
-                    padding: '6px 12px',
-                    backgroundColor: '#8b5cf6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '12px'
-                  }}
-                >
-                  Change Role
-                </button>
-              )}
-              {canManageSalaries && (
-                <button
-                  onClick={() => setShowSalaryForm(member)}
-                  style={{
-                    padding: '6px 12px',
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '12px'
-                  }}
-                >
-                  Update Salary
-                </button>
-              )}
-              {isOwner && (
-                <button
-                  onClick={() => setShowPermissionForm(member)}
-                  style={{
-                    padding: '6px 12px',
-                    backgroundColor: '#f59e0b',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '12px'
-                  }}
-                >
-                  Permissions
-                </button>
-              )}
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 
   const renderDesignations = () => (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>Company Designations</h3>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-slate-50">
+        <div className="space-y-1">
+          <h3 className="text-xl font-black text-slate-950 uppercase italic tracking-tight">Organization Tiers</h3>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Hierarchical structure definitions</p>
+        </div>
         {canManageDesignations && (
           <button
             onClick={() => setShowDesignationForm(true)}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-slate-950 hover:scale-[1.02] active:scale-95 transition-all italic flex items-center gap-3 w-fit"
           >
-            + Add Designation
+            <span className="text-lg leading-none">+</span> Append Tier
           </button>
         )}
       </div>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {company.designations?.map((designation, index) => (
-          <div key={index} style={{
-            padding: '16px',
-            backgroundColor: '#f8fafc',
-            borderRadius: '8px',
-            border: '1px solid #e2e8f0'
-          }}>
-            <h4 style={{ margin: '0 0 8px 0', color: '#1e293b', fontSize: '16px', fontWeight: '600' }}>
+          <div key={index} className="p-8 bg-slate-50 border border-slate-100 rounded-[2.5rem] group hover:bg-white hover:border-indigo-100 hover:shadow-xl transition-all duration-500 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-6 text-5xl opacity-[0.03] group-hover:scale-110 transition-transform duration-700 italic font-black">RANK</div>
+            <h4 className="text-lg font-black text-slate-950 uppercase italic tracking-tight mb-3 group-hover:text-indigo-600 transition-colors">
               {designation.name}
             </h4>
-            <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>
-              {designation.description || 'No description'}
+            <p className="text-[11px] font-medium text-slate-500 leading-relaxed italic opacity-70 group-hover:opacity-100 transition-opacity">
+              {designation.description || 'Null security clearance description provided.'}
             </p>
           </div>
         ))}
@@ -548,126 +379,116 @@ const CompanyManagement = () => {
   );
 
   const renderPermissions = () => (
-    <div>
-      <h3 style={{ margin: '0 0 24px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>User Permissions</h3>
-      
-      {company.permissions?.map((permission) => (
-        <div key={permission._id} style={{
-          padding: '20px',
-          backgroundColor: '#f8fafc',
-          borderRadius: '8px',
-          marginBottom: '16px',
-          border: '1px solid #e2e8f0'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h4 style={{ margin: '0 0 4px 0', color: '#1e293b', fontSize: '16px', fontWeight: '600' }}>
-                {permission.user?.name}
-              </h4>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {permission.canManageEmployees && <span style={{ padding: '2px 8px', backgroundColor: '#d1fae5', color: '#065f46', borderRadius: '12px', fontSize: '12px' }}>Employees</span>}
-                {permission.canManageDesignations && <span style={{ padding: '2px 8px', backgroundColor: '#dbeafe', color: '#1e40af', borderRadius: '12px', fontSize: '12px' }}>Designations</span>}
-                {permission.canManageProjects && <span style={{ padding: '2px 8px', backgroundColor: '#fef3c7', color: '#92400e', borderRadius: '12px', fontSize: '12px' }}>Projects</span>}
-                {permission.canManageClients && <span style={{ padding: '2px 8px', backgroundColor: '#e0e7ff', color: '#3730a3', borderRadius: '12px', fontSize: '12px' }}>Clients</span>}
-                {permission.canManageSalaries && <span style={{ padding: '2px 8px', backgroundColor: '#fed7aa', color: '#9a3412', borderRadius: '12px', fontSize: '12px' }}>Salaries</span>}
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="space-y-1 pb-6 border-b border-slate-50">
+        <h3 className="text-xl font-black text-slate-950 uppercase italic tracking-tight">Access Control Lists</h3>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Entitlement matrix for organizational operatives</p>
+      </div>
+
+      <div className="space-y-4">
+        {company.permissions?.map((permission) => (
+          <div key={permission._id} className="p-6 bg-slate-50 border border-slate-100 rounded-[2rem] hover:bg-white hover:border-indigo-100 transition-all duration-500">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="space-y-4">
+                <h4 className="text-md font-black text-slate-900 uppercase italic tracking-tight">
+                  {permission.user?.name}
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { flag: permission.canManageEmployees, label: 'Personnel', color: 'bg-emerald-50 text-emerald-600' },
+                    { flag: permission.canManageDesignations, label: 'Hierarchy', color: 'bg-indigo-50 text-indigo-600' },
+                    { flag: permission.canManageProjects, label: 'Objectives', color: 'bg-amber-50 text-amber-600' },
+                    { flag: permission.canManageClients, label: 'Entities', color: 'bg-rose-50 text-rose-600' },
+                    { flag: permission.canManageSalaries, label: 'Fiscal', color: 'bg-blue-50 text-blue-600' }
+                  ].map((p, i) => p.flag && (
+                    <span key={i} className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest italic border border-current opacity-70 ${p.color}`}>
+                      {p.label}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 
   return (
     <Layout>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '30px'
-      }}>
-        <div>
-          <h2 style={{ margin: '0 0 5px 0', color: '#1e293b', fontSize: '24px' }}>{company.name}</h2>
-          <p style={{ margin: 0, color: '#64748b' }}>{company.description || 'Manage your company team and organization'}</p>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: '24px' }}>
-        {/* Tab Navigation */}
-        <div style={{
-          width: '200px',
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          border: '1px solid #e2e8f0',
-          padding: '20px',
-          height: 'fit-content'
-        }}>
-          {tabs.map((tab) => (
-            <div
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: '12px 16px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                marginBottom: '4px',
-                backgroundColor: activeTab === tab.id ? '#3b82f6' : 'transparent',
-                color: activeTab === tab.id ? 'white' : '#374151',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '14px',
-                fontWeight: '500',
-                transition: 'all 0.2s'
-              }}
-            >
-              <span>{tab.icon}</span>
-              {tab.label}
+      <div className="max-w-[1600px] mx-auto space-y-10 animate-in fade-in duration-700">
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-10 border-b-2 border-slate-100 relative overflow-hidden">
+          <div className="space-y-4 relative z-10">
+            <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full">
+              <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+              <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest italic">Operations Hub</span>
             </div>
-          ))}
+            <h2 className="text-4xl lg:text-6xl font-black text-slate-950 uppercase italic tracking-tighter leading-none">{company.name}</h2>
+            <p className="text-sm font-medium text-slate-500 italic max-w-2xl leading-relaxed">{company.description || 'Organizational structure and personnel orchestration node.'}</p>
+          </div>
+          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-500/[0.03] rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
         </div>
 
-        {/* Tab Content */}
-        <div style={{ flex: 1 }}>
-          {activeTab === 'settings' ? (
-            <CompanySettings
-              company={company}
-              isOwner={isOwner}
-              onRefresh={fetchMyCompany}
-            />
-          ) : (
-            <div style={{
-              backgroundColor: 'white',
-              borderRadius: '12px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              border: '1px solid #e2e8f0',
-              padding: '32px'
-            }}>
-              {activeTab === 'employees' && renderEmployees()}
-              {activeTab === 'designations' && renderDesignations()}
-              {activeTab === 'permissions' && renderPermissions()}
-            </div>
-          )}
+        <div className="flex flex-col xl:flex-row gap-10 items-start">
+          {/* Enhanced Tab Navigation */}
+          <div className="w-full xl:w-72 shrink-0 space-y-2 bg-white p-4 rounded-[2.5rem] border-2 border-slate-50 shadow-sm sticky top-24">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest italic transition-all duration-300 group
+                  ${activeTab === tab.id
+                    ? 'bg-slate-950 text-white shadow-xl translate-x-2'
+                    : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900'}`}
+              >
+                <span className={`text-xl transition-transform group-hover:scale-110 ${activeTab === tab.id ? 'scale-110 rotate-6' : 'opacity-40'}`}>{tab.icon}</span>
+                <span className="flex-1 text-left">{tab.label}</span>
+                {activeTab === tab.id && <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>}
+              </button>
+            ))}
+          </div>
+
+          {/* Dynamic Content Area */}
+          <div className="flex-1 min-w-0 w-full">
+            {activeTab === 'settings' ? (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                <CompanySettings
+                  company={company}
+                  isOwner={isOwner}
+                  onRefresh={fetchMyCompany}
+                />
+              </div>
+            ) : (
+              <div className="bg-white rounded-[3rem] border-2 border-slate-50 p-10 lg:p-14 shadow-sm min-h-[600px] relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none opacity-50"></div>
+                <div className="relative z-10">
+                  {activeTab === 'employees' && renderEmployees()}
+                  {activeTab === 'designations' && renderDesignations()}
+                  {activeTab === 'permissions' && renderPermissions()}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {showMemberForm && <MemberForm onClose={() => setShowMemberForm(false)} />}
       {showSalaryForm && (
-        <SalaryForm 
-          member={showSalaryForm} 
+        <SalaryForm
+          member={showSalaryForm}
           onClose={() => setShowSalaryForm(null)}
           onUpdate={handleSalaryUpdate}
         />
       )}
       {showDesignationForm && (
-        <DesignationForm 
+        <DesignationForm
           onClose={() => setShowDesignationForm(false)}
           onAdd={handleAddDesignation}
         />
       )}
       {showChangeDesignationForm && (
-        <ChangeDesignationForm 
+        <ChangeDesignationForm
           member={showChangeDesignationForm}
           designations={company.designations || []}
           onClose={() => setShowChangeDesignationForm(null)}

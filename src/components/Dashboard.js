@@ -151,7 +151,7 @@ const Dashboard = () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-indigo-600 rounded-full transition-all duration-1000" style={{ width: '60%' }} />
+                      <div className="h-full bg-indigo-600 rounded-full transition-all duration-1000 w-[60%]" />
                     </div>
                     <span className="text-[10px] font-bold text-slate-500">60%</span>
                   </div>
@@ -189,8 +189,8 @@ const Dashboard = () => {
                         <p className="text-[10px] font-bold text-slate-400 uppercase truncate">{t.project?.title || 'Personal'}</p>
                       </div>
                       <span className={`ml-3 px-2 py-1 rounded-lg text-[9px] font-bold uppercase border ${t.priority === 'urgent' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                          t.priority === 'high' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                            'bg-indigo-50 text-indigo-600 border-indigo-100'
+                        t.priority === 'high' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                          'bg-indigo-50 text-indigo-600 border-indigo-100'
                         }`}>
                         {t.priority}
                       </span>

@@ -147,89 +147,79 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div style={{ marginBottom: '32px' }}>
-        <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '600', color: '#172b4d' }}>
-          ⚙️ Company Settings
+    <div className="p-8 space-y-12 animate-in fade-in duration-700 font-sans">
+      <div className="space-y-2 pb-8 border-b border-slate-100">
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full mb-2">
+          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Core Protocol</span>
+        </div>
+        <h2 className="text-3xl font-black text-slate-950 uppercase italic tracking-tighter">
+          Organizational Parameters
         </h2>
-        <p style={{ margin: 0, fontSize: '14px', color: '#5e6c84' }}>
-          Configure company-wide settings that apply to all projects
+        <p className="text-sm font-medium text-slate-400 italic">
+          Configure global orchestration settings for the entity.
         </p>
       </div>
 
       {/* Currency Settings */}
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-          💰 Currency
-        </h3>
+      <div className="bg-white rounded-[2.5rem] p-10 border-2 border-slate-50 shadow-sm transition-all hover:shadow-md">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-xl shadow-inner italic font-black text-indigo-600">
+            $
+          </div>
+          <h3 className="text-xl font-black text-slate-950 uppercase italic tracking-tight">
+            Fiscal Standard
+          </h3>
+        </div>
 
-        <div>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-            DEFAULT CURRENCY
-          </label>
-          <select
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
-            disabled={!isOwner}
-            style={{
-              width: '100%',
-              maxWidth: '400px',
-              padding: '8px',
-              border: '1px solid #dfe1e6',
-              borderRadius: '3px',
-              fontSize: '14px',
-              backgroundColor: isOwner ? 'white' : '#f4f5f7',
-              cursor: isOwner ? 'pointer' : 'not-allowed'
-            }}
-          >
-            {currencies.map((curr) => (
-              <option key={curr.code} value={curr.code}>
-                {curr.symbol} {curr.code} - {curr.name}
-              </option>
-            ))}
-          </select>
-          <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#5e6c84' }}>
-            Used for displaying project and task budgets throughout the system
-          </p>
+        <div className="space-y-6 max-w-xl">
+          <div className="space-y-3">
+            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">
+              Default Ledger Currency
+            </label>
+            <div className="relative group">
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                disabled={!isOwner}
+                className={`w-full px-6 py-4 rounded-2xl text-[13px] font-bold transition-all outline-none appearance-none cursor-pointer uppercase italic border-2 
+                  ${isOwner
+                    ? 'bg-slate-50 border-slate-100 text-slate-950 focus:border-indigo-400 focus:bg-white'
+                    : 'bg-slate-100 border-transparent text-slate-400 cursor-not-allowed'}`}
+              >
+                {currencies.map((curr) => (
+                  <option key={curr.code} value={curr.code}>
+                    {curr.symbol} {curr.code} — {curr.name}
+                  </option>
+                ))}
+              </select>
+              {isOwner && <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-indigo-400 opacity-40 group-hover:opacity-100 transition-opacity italic font-black text-xs">▼</div>}
+            </div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic ml-1 opacity-60">
+              System-wide denominator for all financial metrics.
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Time Tracking Settings */}
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-          ⏱️ Time Tracking
-        </h3>
+      <div className="bg-white rounded-[2.5rem] p-10 border-2 border-slate-50 shadow-sm transition-all hover:shadow-md">
+        <div className="flex items-center gap-4 mb-10">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-xl shadow-inner italic font-black text-emerald-600">
+            T
+          </div>
+          <h3 className="text-xl font-black text-slate-950 uppercase italic tracking-tight">
+            Temporal Metadata
+          </h3>
+        </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              DEFAULT DURATION UNIT
-            </label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10 pb-10 border-b border-slate-50">
+          <div className="space-y-3">
+            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Reporting Unit</label>
             <select
               value={settings.timeTracking.defaultDurationUnit}
               onChange={(e) => handleTimeTrackingChange('defaultDurationUnit', e.target.value)}
               disabled={!isOwner}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                backgroundColor: isOwner ? 'white' : '#f4f5f7',
-                cursor: isOwner ? 'pointer' : 'not-allowed'
-              }}
+              className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-[13px] font-bold text-slate-950 focus:border-indigo-400 focus:bg-white transition-all outline-none appearance-none cursor-pointer uppercase italic"
             >
               <option value="minutes">Minutes</option>
               <option value="hours">Hours</option>
@@ -238,10 +228,8 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
             </select>
           </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              HOURS PER DAY
-            </label>
+          <div className="space-y-3">
+            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Hours Per Cycle</label>
             <input
               type="number"
               min="1"
@@ -249,21 +237,12 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
               value={settings.timeTracking.hoursPerDay}
               onChange={(e) => handleTimeTrackingChange('hoursPerDay', parseInt(e.target.value))}
               disabled={!isOwner}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                backgroundColor: isOwner ? 'white' : '#f4f5f7'
-              }}
+              className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-[13px] font-black text-indigo-600 focus:border-indigo-400 focus:bg-white transition-all outline-none italic"
             />
           </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              DAYS PER WEEK
-            </label>
+          <div className="space-y-3">
+            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Workdays Per Cycle</label>
             <input
               type="number"
               min="1"
@@ -271,85 +250,39 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
               value={settings.timeTracking.daysPerWeek}
               onChange={(e) => handleTimeTrackingChange('daysPerWeek', parseInt(e.target.value))}
               disabled={!isOwner}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                backgroundColor: isOwner ? 'white' : '#f4f5f7'
-              }}
+              className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-[13px] font-black text-indigo-600 focus:border-indigo-400 focus:bg-white transition-all outline-none italic"
             />
           </div>
         </div>
 
-        <div style={{
-          marginTop: '24px',
-          paddingTop: '24px',
-          borderTop: '1px solid #dfe1e6',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '20px'
-        }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              WORKING HOURS START
-            </label>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="space-y-3">
+            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Shift Start Protocol</label>
             <input
               type="time"
               value={settings.timeTracking.workingHoursStart}
               onChange={(e) => handleTimeTrackingChange('workingHoursStart', e.target.value)}
               disabled={!isOwner}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                backgroundColor: isOwner ? 'white' : '#f4f5f7'
-              }}
+              className="w-full px-6 py-4 bg-slate-100 border-2 border-transparent rounded-2xl text-sm font-bold text-slate-950 focus:border-indigo-400 focus:bg-white transition-all outline-none italic"
             />
-            <div style={{ fontSize: '11px', color: '#5e6c84', marginTop: '4px' }}>
-              Daily work start time (e.g., 09:00)
-            </div>
           </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              WORKING HOURS END
-            </label>
+          <div className="space-y-3">
+            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Shift Terminus Protocol</label>
             <input
               type="time"
               value={settings.timeTracking.workingHoursEnd}
               onChange={(e) => handleTimeTrackingChange('workingHoursEnd', e.target.value)}
               disabled={!isOwner}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                backgroundColor: isOwner ? 'white' : '#f4f5f7'
-              }}
+              className="w-full px-6 py-4 bg-slate-100 border-2 border-transparent rounded-2xl text-sm font-bold text-slate-950 focus:border-indigo-400 focus:bg-white transition-all outline-none italic"
             />
-            <div style={{ fontSize: '11px', color: '#5e6c84', marginTop: '4px' }}>
-              Daily work end time (e.g., 17:00)
-            </div>
           </div>
 
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '12px',
-            backgroundColor: '#f4f5f7',
-            borderRadius: '3px',
-            border: '1px solid #dfe1e6'
-          }}>
-            <div>
-              <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '4px' }}>
-                TOTAL HOURS
-              </div>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: '#0052cc' }}>
+          <div className="p-6 bg-slate-950 rounded-[2rem] border border-white/10 shadow-xl flex items-center justify-between group overflow-hidden relative">
+            <div className="absolute inset-0 bg-indigo-500 opacity-0 group-hover:opacity-10 transition-opacity duration-700"></div>
+            <div className="relative z-10">
+              <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1 italic">Effective Quotient</div>
+              <div className="text-2xl font-black text-white italic tracking-tighter">
                 {(() => {
                   const start = settings.timeTracking.workingHoursStart.split(':');
                   const end = settings.timeTracking.workingHoursEnd.split(':');
@@ -358,316 +291,221 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
                   const totalMinutes = endMinutes - startMinutes;
                   const hours = Math.floor(totalMinutes / 60);
                   const minutes = totalMinutes % 60;
-                  return `${hours}h ${minutes}m`;
+                  return `${hours}H ${minutes > 0 ? `${minutes}M` : ''}`;
                 })()}
               </div>
-              <div style={{ fontSize: '11px', color: '#5e6c84', marginTop: '2px' }}>
-                per working day
-              </div>
             </div>
+            <div className="text-4xl opacity-20 group-hover:scale-110 transition-transform duration-700 italic font-black text-white shrink-0">∑</div>
           </div>
         </div>
       </div>
 
-      {/* Working Days */}
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-          📅 Working Days
-        </h3>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
-          {dayNames.map((day, index) => (
-            <div
-              key={index}
-              onClick={() => isOwner && handleWorkingDayToggle(index)}
-              style={{
-                padding: '12px',
-                border: `2px solid ${settings.workingDays.includes(index) ? '#0052cc' : '#dfe1e6'}`,
-                borderRadius: '3px',
-                textAlign: 'center',
-                cursor: isOwner ? 'pointer' : 'not-allowed',
-                backgroundColor: settings.workingDays.includes(index) ? '#deebff' : 'white',
-                transition: 'all 0.2s',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: settings.workingDays.includes(index) ? '#0052cc' : '#5e6c84'
-              }}
-            >
-              {day}
-            </div>
-          ))}
+      {/* Operational Matrix (Working Days & Weekends) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white rounded-[2.5rem] p-10 border-2 border-slate-50 shadow-sm transition-all hover:shadow-md">
+          <h3 className="text-lg font-black text-slate-950 uppercase italic tracking-tight mb-8">
+            Operational Uptime
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {dayNames.map((day, index) => (
+              <button
+                key={index}
+                onClick={() => isOwner && handleWorkingDayToggle(index)}
+                disabled={!isOwner}
+                className={`py-4 rounded-xl text-[10px] font-black uppercase tracking-widest italic transition-all border-2
+                  ${settings.workingDays.includes(index)
+                    ? 'bg-slate-950 border-slate-950 text-white shadow-lg'
+                    : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-indigo-200 hover:bg-white hover:text-indigo-600'}`}
+              >
+                {day.slice(0, 3)}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Weekends */}
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-          🏖️ Weekends
-        </h3>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
-          {dayNames.map((day, index) => (
-            <div
-              key={index}
-              onClick={() => isOwner && handleWeekendToggle(index)}
-              style={{
-                padding: '12px',
-                border: `2px solid ${settings.weekends.includes(index) ? '#de350b' : '#dfe1e6'}`,
-                borderRadius: '3px',
-                textAlign: 'center',
-                cursor: isOwner ? 'pointer' : 'not-allowed',
-                backgroundColor: settings.weekends.includes(index) ? '#ffebe6' : 'white',
-                transition: 'all 0.2s',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: settings.weekends.includes(index) ? '#de350b' : '#5e6c84'
-              }}
-            >
-              {day}
-            </div>
-          ))}
+        <div className="bg-white rounded-[2.5rem] p-10 border-2 border-slate-50 shadow-sm transition-all hover:shadow-md">
+          <h3 className="text-lg font-black text-slate-950 uppercase italic tracking-tight mb-8">
+            Terminal Idle States
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {dayNames.map((day, index) => (
+              <button
+                key={index}
+                onClick={() => isOwner && handleWeekendToggle(index)}
+                disabled={!isOwner}
+                className={`py-4 rounded-xl text-[10px] font-black uppercase tracking-widest italic transition-all border-2
+                  ${settings.weekends.includes(index)
+                    ? 'bg-rose-600 border-rose-600 text-white shadow-lg shadow-rose-100'
+                    : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-rose-200 hover:bg-white hover:text-rose-600'}`}
+              >
+                {day.slice(0, 3)}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Holidays */}
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-            🎉 Company Holidays
-          </h3>
+      <div className="bg-white rounded-[2.5rem] p-10 border-2 border-slate-50 shadow-sm transition-all hover:shadow-md">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-xl shadow-inner italic font-black text-amber-600">
+              H
+            </div>
+            <h3 className="text-xl font-black text-slate-950 uppercase italic tracking-tight">
+              Protocol Exceptions
+            </h3>
+          </div>
           {isOwner && !showHolidayForm && (
             <button
               onClick={() => setShowHolidayForm(true)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#0052cc',
-                color: 'white',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-slate-950 hover:scale-[1.02] active:scale-95 transition-all italic flex items-center gap-3 w-fit"
             >
-              + Add Holiday
+              <span className="text-lg leading-none">+</span> New Exception
             </button>
           )}
         </div>
 
         {showHolidayForm && (
-          <form onSubmit={handleAddHoliday} style={{
-            padding: '16px',
-            backgroundColor: '#f4f5f7',
-            borderRadius: '3px',
-            marginBottom: '16px'
-          }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 3fr auto', gap: '12px', alignItems: 'end' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '4px' }}>
-                  Date *
-                </label>
+          <form onSubmit={handleAddHoliday} className="p-8 bg-slate-50 rounded-[2rem] border-2 border-slate-100 mb-8 animate-in zoom-in-95 duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="space-y-3">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Temporal Coordinate</label>
                 <input
                   type="date"
                   required
                   value={holidayForm.date}
                   onChange={(e) => setHolidayForm({ ...holidayForm, date: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    border: '1px solid #dfe1e6',
-                    borderRadius: '3px',
-                    fontSize: '14px'
-                  }}
+                  className="w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-2xl text-[13px] font-bold text-slate-950 focus:border-indigo-400 transition-all outline-none"
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '4px' }}>
-                  Name *
-                </label>
+              <div className="space-y-3">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Event Nomenclature</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g., New Year's Day"
+                  placeholder="e.g. NATIONAL_PROTOCOL_REST"
                   value={holidayForm.name}
                   onChange={(e) => setHolidayForm({ ...holidayForm, name: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    border: '1px solid #dfe1e6',
-                    borderRadius: '3px',
-                    fontSize: '14px'
-                  }}
+                  className="w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-2xl text-[13px] font-bold text-slate-950 focus:border-indigo-400 transition-all outline-none uppercase italic"
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '4px' }}>
-                  Description (Optional)
-                </label>
+              <div className="space-y-3">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Directive Context</label>
                 <input
                   type="text"
-                  placeholder="Additional details..."
+                  placeholder="Operational bypass reason..."
                   value={holidayForm.description}
                   onChange={(e) => setHolidayForm({ ...holidayForm, description: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    border: '1px solid #dfe1e6',
-                    borderRadius: '3px',
-                    fontSize: '14px'
-                  }}
+                  className="w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-2xl text-[13px] font-bold text-slate-950 focus:border-indigo-400 transition-all outline-none italic"
                 />
               </div>
+            </div>
 
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="submit"
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#0052cc',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '3px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
-                >
-                  Add
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowHolidayForm(false);
-                    setHolidayForm({ date: '', name: '', description: '' });
-                  }}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#f4f5f7',
-                    color: '#5e6c84',
-                    border: '1px solid #dfe1e6',
-                    borderRadius: '3px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                className="flex-1 py-4 bg-indigo-600 text-white rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-lg hover:bg-slate-950 transition-all active:scale-95 italic"
+              >
+                Append Protocol
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowHolidayForm(false);
+                  setHolidayForm({ date: '', name: '', description: '' });
+                }}
+                className="px-8 py-4 bg-white border-2 border-slate-200 text-slate-400 rounded-xl font-black text-[11px] uppercase tracking-widest hover:text-slate-900 transition-all italic"
+              >
+                Abort
+              </button>
             </div>
           </form>
         )}
 
-        {settings.holidays && settings.holidays.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {settings.holidays.map((holiday) => (
+        <div className="space-y-3">
+          {settings.holidays && settings.holidays.length > 0 ? (
+            settings.holidays.map((holiday) => (
               <div
                 key={holiday._id}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '12px',
-                  backgroundColor: '#f4f5f7',
-                  borderRadius: '3px',
-                  border: '1px solid #dfe1e6'
-                }}
+                className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-slate-50 border border-slate-100 rounded-[2rem] hover:bg-white hover:border-indigo-100 hover:shadow-lg transition-all duration-300"
               >
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#172b4d', marginBottom: '4px' }}>
-                    {holiday.name}
+                <div className="flex items-center gap-6">
+                  <div className="px-4 py-2 bg-white border border-slate-100 rounded-xl text-center shadow-sm">
+                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                      {new Date(holiday.date).toLocaleDateString('en-US', { month: 'short' })}
+                    </div>
+                    <div className="text-lg font-black text-slate-950 italic">
+                      {new Date(holiday.date).getDate()}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#5e6c84' }}>
-                    {new Date(holiday.date).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                    {holiday.description && ` • ${holiday.description}`}
+                  <div>
+                    <div className="text-sm font-black text-slate-900 uppercase italic tracking-tight mb-1">
+                      {holiday.name}
+                    </div>
+                    {holiday.description && (
+                      <div className="text-[10px] font-medium text-slate-400 italic">
+                        {holiday.description}
+                      </div>
+                    )}
                   </div>
                 </div>
                 {isOwner && (
                   <button
                     onClick={() => handleRemoveHoliday(holiday._id)}
-                    style={{
-                      padding: '6px 12px',
-                      backgroundColor: '#de350b',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: '500'
-                    }}
+                    className="px-4 py-2 opacity-0 group-hover:opacity-100 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black uppercase tracking-widest italic hover:bg-rose-600 hover:text-white transition-all scale-95 group-hover:scale-100 border border-rose-100"
                   >
-                    Remove
+                    Purge
                   </button>
                 )}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div style={{
-            padding: '32px',
-            textAlign: 'center',
-            color: '#5e6c84',
-            fontSize: '14px'
-          }}>
-            No holidays configured yet. {isOwner && 'Click "Add Holiday" to get started.'}
-          </div>
-        )}
+            ))
+          ) : (
+            <div className="p-20 text-center space-y-4 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-100">
+              <div className="text-4xl opacity-20 italic font-black text-slate-400">NULL</div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.3em] italic">
+                Zero temporal exceptions detected in matrix.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Save Button */}
+      {/* Persistence Controls */}
       {isOwner && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
+        <div className="flex justify-end pt-12">
           <button
             onClick={handleSaveSettings}
             disabled={saving}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: saving ? '#ccc' : '#0052cc',
-              color: 'white',
-              border: 'none',
-              borderRadius: '3px',
-              cursor: saving ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: '500'
-            }}
+            className={`px-12 py-5 rounded-2xl font-black text-[13px] uppercase tracking-[0.25em] shadow-2xl transition-all active:scale-95 italic flex items-center gap-4
+              ${saving
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+                : 'bg-indigo-600 text-white hover:bg-slate-950 hover:-translate-y-1'}`}
           >
-            {saving ? 'Saving...' : 'Save Settings'}
+            {saving ? (
+              <>
+                <div className="w-2 h-2 rounded-full bg-slate-400 animate-ping"></div>
+                Committing Data...
+              </>
+            ) : (
+              'Synchronize Matrix'
+            )}
           </button>
         </div>
       )}
+
       <DeleteConfirmModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
         onConfirm={confirmRemoveHoliday}
-        title="Remove Holiday"
-        message="Are you sure you want to remove this holiday from the company settings?"
+        title="Exception Purge"
+        message="Are you certain about removing this temporal exception from the core matrix?"
         itemName={deleteModal.name}
       />
     </div>
+  );
   );
 };
 
