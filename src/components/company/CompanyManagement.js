@@ -212,32 +212,18 @@ const CompanyManagement = () => {
   const canManageDesignations = isSuperAdmin || isOwner || userPermission?.canManageDesignations;
   const canManageSalaries = isSuperAdmin || isOwner || userPermission?.canManageSalaries;
 
-  if (loading) return <Layout><div style={{ textAlign: 'center', padding: '50px' }}>Loading company...</div></Layout>;
+  if (loading) return <Layout><div className="text-center py-12">Loading company...</div></Layout>;
 
   if (!company) {
     return (
       <Layout>
-        <div style={{
-          textAlign: 'center',
-          padding: '60px 40px',
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>🏢</div>
-          <h3 style={{ margin: '0 0 10px 0', color: '#1e293b' }}>No company yet</h3>
-          <p style={{ margin: '0 0 20px 0', color: '#64748b' }}>Create your company to manage teams and projects!</p>
+        <div className="text-center py-15 px-10 bg-white rounded-xl shadow-sm">
+          <div className="text-5xl mb-5">🏢</div>
+          <h3 className="m-0 mb-2.5 text-slate-800">No company yet</h3>
+          <p className="m-0 mb-5 text-slate-500">Create your company to manage teams and projects!</p>
           <button
             onClick={() => setShowCompanyForm(true)}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '600'
-            }}
+            className="py-3 px-6 bg-blue-500 text-white border-0 rounded-lg cursor-pointer font-semibold hover:bg-blue-600 transition-colors"
           >
             Create Company
           </button>

@@ -259,40 +259,21 @@ const TaskFormJira = ({
           </button>
         </div>
         
-        <div style={{ padding: '32px' }}>
+        <div className="p-8">
           {error && (
-            <div style={{
-              padding: '12px 16px',
-              backgroundColor: '#ffebe6',
-              border: '1px solid #ff8f73',
-              borderRadius: '3px',
-              marginBottom: '24px',
-              color: '#de350b',
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <span style={{ fontSize: '16px' }}>⚠️</span>
+            <div className="py-3 px-4 bg-red-50 border border-red-200 rounded mb-6 text-red-700 text-sm flex items-center gap-2">
+              <span className="text-base">⚠️</span>
               {error}
             </div>
           )}
           
           <form onSubmit={handleSubmitWithExtras}>
             {!editingTask && !parentTask && (
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  color: '#5e6c84',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
+              <div className="mb-6">
+                <label className="block mb-2 text-xs font-bold text-gray-500 uppercase tracking-wide">
                   Issue Type
                 </label>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div className="flex gap-2">
                   {['task', 'bug', 'story', 'epic'].map(type => {
                     const typeInfo = getIssueTypeIcon(type);
                     const isSelected = issueType === type;
@@ -301,38 +282,16 @@ const TaskFormJira = ({
                         key={type}
                         type="button"
                         onClick={() => setIssueType(type)}
-                        style={{
-                          flex: 1,
-                          padding: '12px',
-                          border: `2px solid ${isSelected ? typeInfo.color : '#dfe1e6'}`,
-                          borderRadius: '3px',
-                          backgroundColor: isSelected ? typeInfo.bg : 'white',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '4px',
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.borderColor = typeInfo.color;
-                            e.currentTarget.style.backgroundColor = typeInfo.bg + '40';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.borderColor = '#dfe1e6';
-                            e.currentTarget.style.backgroundColor = 'white';
-                          }
-                        }}
+                        className={`flex-1 p-3 border-2 rounded cursor-pointer flex flex-col items-center gap-1 transition-all ${
+                          isSelected 
+                            ? `border-[${typeInfo.color}] bg-[${typeInfo.bg}]`
+                            : 'border-gray-200 bg-white hover:border-blue-600 hover:bg-blue-50'
+                        }`}
                       >
-                        <span style={{ fontSize: '20px' }}>{typeInfo.icon}</span>
-                        <span style={{ 
-                          fontSize: '12px', 
-                          fontWeight: '600',
-                          color: isSelected ? typeInfo.color : '#5e6c84'
-                        }}>
+                        <span className="text-xl">{typeInfo.icon}</span>
+                        <span className={`text-xs font-semibold ${
+                          isSelected ? `text-[${typeInfo.color}]` : 'text-gray-500'
+                        }`}>
                           {typeInfo.label}
                         </span>
                       </button>
@@ -342,20 +301,12 @@ const TaskFormJira = ({
               </div>
             )}
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '32px' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
               
               <div>
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '8px',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    color: '#5e6c84',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}>
-                    Summary <span style={{ color: '#de350b' }}>*</span>
+                <div className="mb-6">
+                  <label className="block mb-2 text-xs font-bold text-gray-500 uppercase tracking-wide">
+                    Summary <span className="text-red-600">*</span>
                   </label>
                   <input
                     type="text"
@@ -364,37 +315,12 @@ const TaskFormJira = ({
                     onChange={(e) => setTaskForm({...taskForm, title: e.target.value})}
                     required
                     autoFocus
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '2px solid #dfe1e6',
-                      borderRadius: '3px',
-                      fontSize: '14px',
-                      fontFamily: 'inherit',
-                      transition: 'border-color 0.2s, box-shadow 0.2s',
-                      outline: 'none'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.boxShadow = '0 0 0 1px #0052cc';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#dfe1e6';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    className="w-full py-2.5 px-3 border-2 border-gray-200 rounded text-sm outline-none transition-all focus:border-blue-600 focus:shadow-[0_0_0_1px_#0052cc]"
                   />
                 </div>
                 
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{ 
-                    display: 'block', 
-                    marginBottom: '8px', 
-                    fontSize: '12px', 
-                    fontWeight: '700', 
-                    color: '#5e6c84',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}>
+                <div className="mb-6">
+                  <label className="block mb-2 text-xs font-bold text-gray-500 uppercase tracking-wide">
                     Description
                   </label>
                   <textarea
@@ -402,66 +328,22 @@ const TaskFormJira = ({
                     value={taskForm.description}
                     onChange={(e) => setTaskForm({...taskForm, description: e.target.value})}
                     rows="8"
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: '2px solid #dfe1e6',
-                      borderRadius: '3px',
-                      fontSize: '14px',
-                      fontFamily: 'inherit',
-                      resize: 'vertical',
-                      minHeight: '150px',
-                      outline: 'none'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.boxShadow = '0 0 0 1px #0052cc';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#dfe1e6';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    className="w-full p-3 border-2 border-gray-200 rounded text-sm resize-y min-h-[150px] outline-none transition-all focus:border-blue-600 focus:shadow-[0_0_0_1px_#0052cc]"
                   />
                 </div>
                 
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{ 
-                    display: 'block', 
-                    marginBottom: '8px', 
-                    fontSize: '12px', 
-                    fontWeight: '700', 
-                    color: '#5e6c84',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}>
+                <div className="mb-6">
+                  <label className="block mb-2 text-xs font-bold text-gray-500 uppercase tracking-wide">
                     Labels
                   </label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
                     {labels.map((label, index) => (
-                      <span key={index} style={{
-                        padding: '4px 8px',
-                        backgroundColor: '#f4f5f7',
-                        border: '1px solid #dfe1e6',
-                        borderRadius: '3px',
-                        fontSize: '12px',
-                        color: '#172b4d',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
+                      <span key={index} className="py-1 px-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-800 flex items-center gap-1">
                         {label}
                         <button
                           type="button"
                           onClick={() => handleRemoveLabel(label)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#5e6c84',
-                            cursor: 'pointer',
-                            padding: 0,
-                            fontSize: '14px',
-                            lineHeight: 1
-                          }}
+                          className="bg-transparent border-0 text-gray-500 cursor-pointer p-0 text-sm leading-none hover:text-gray-700"
                         >
                           ×
                         </button>
@@ -474,16 +356,7 @@ const TaskFormJira = ({
                     value={labelInput}
                     onChange={(e) => setLabelInput(e.target.value)}
                     onKeyPress={handleAddLabel}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      border: '2px solid #dfe1e6',
-                      borderRadius: '3px',
-                      fontSize: '13px',
-                      outline: 'none'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = '#0052cc'}
-                    onBlur={(e) => e.target.style.borderColor = '#dfe1e6'}
+                    className="w-full py-2 px-3 border-2 border-gray-200 rounded text-xs outline-none focus:border-blue-600"
                   />
                 </div>
               </div>

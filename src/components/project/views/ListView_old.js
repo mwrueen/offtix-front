@@ -148,7 +148,7 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
         }}>
           <div></div>
           <div>Type</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex items-center gap-2">
             Title
             {tasks.length > 0 && (
               <span style={{
@@ -520,35 +520,11 @@ const AssigneeAvatar = ({ assignee }) => {
 
   return (
     <div
-      style={{ position: 'relative', display: 'inline-block' }}
+      className="relative inline-block"
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
-      <div style={{
-        width: '28px',
-        height: '28px',
-        borderRadius: '50%',
-        backgroundColor: getAvatarColor(assignee.name),
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '11px',
-        fontWeight: '700',
-        border: '2px solid white',
-        cursor: 'pointer',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.12)',
-        transition: 'transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'scale(1.15)';
-        e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'scale(1)';
-        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.12)';
-      }}
-      >
+      <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-white cursor-pointer shadow-sm transition-all hover:scale-110 hover:shadow-md" style={{ backgroundColor: getAvatarColor(assignee.name) }}>
         {getInitials(assignee.name)}
       </div>
 

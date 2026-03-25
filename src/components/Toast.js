@@ -55,13 +55,16 @@ const Toast = ({ message, type = 'success', duration = 3000, onClose }) => {
       {/* Progress bar */}
       <div
         className="absolute bottom-0 left-0 h-1 bg-white/20 animate-[shrink_linear_forwards]"
-        style={{ animationDuration: `${duration}ms` }}
+        style={{ '--duration': `${duration}ms` }}
       />
 
       <style>{`
         @keyframes shrink {
           from { width: 100%; }
           to   { width: 0%; }
+        }
+        .animate-\\[shrink_linear_forwards\\] {
+          animation: shrink var(--duration) linear forwards;
         }
       `}</style>
     </div>

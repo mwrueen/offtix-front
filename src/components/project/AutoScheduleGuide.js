@@ -2,78 +2,41 @@ import React from 'react';
 
 const AutoScheduleGuide = ({ onClose }) => {
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      padding: '20px'
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        maxWidth: '800px',
-        width: '100%',
-        maxHeight: '90vh',
-        overflow: 'auto',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
-      }}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-5">
+      <div className="bg-white rounded-xl max-w-[800px] w-full max-h-[90vh] overflow-auto shadow-2xl">
         {/* Header */}
-        <div style={{
-          padding: '24px',
-          borderBottom: '1px solid #dfe1e6',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          position: 'sticky',
-          top: 0,
-          backgroundColor: 'white',
-          zIndex: 1
-        }}>
-          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#172b4d' }}>
+        <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+          <h2 className="m-0 text-2xl font-bold text-gray-800">
             🚀 Auto-Schedule Guide
           </h2>
           <button
             onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '24px',
-              cursor: 'pointer',
-              color: '#5e6c84',
-              padding: '4px 8px'
-            }}
+            className="bg-transparent border-0 text-2xl cursor-pointer text-gray-500 px-2 py-1 hover:text-gray-700"
           >
             ×
           </button>
         </div>
 
         {/* Content */}
-        <div style={{ padding: '24px' }}>
+        <div className="p-6">
           {/* What it does */}
-          <section style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#172b4d', marginBottom: '12px' }}>
+          <section className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">
               What is Auto-Schedule?
             </h3>
-            <p style={{ fontSize: '14px', color: '#5e6c84', lineHeight: '1.6', margin: 0 }}>
+            <p className="text-sm text-gray-600 leading-relaxed m-0">
               Auto-Schedule automatically calculates start and end dates for all your tasks based on their duration,
               considering working days, holidays, and employee leaves. It saves hours of manual planning!
             </p>
           </section>
 
           {/* How it works */}
-          <section style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#172b4d', marginBottom: '16px' }}>
+          <section className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
               How It Works
             </h3>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="flex flex-col gap-4">
               <ScheduleStep
                 number="1"
                 title="Set Task Duration"
@@ -102,29 +65,22 @@ const AutoScheduleGuide = ({ onClose }) => {
           </section>
 
           {/* Example */}
-          <section style={{ marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#172b4d', marginBottom: '12px' }}>
+          <section className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">
               Example Calculation
             </h3>
-            <div style={{
-              backgroundColor: '#f4f5f7',
-              borderRadius: '8px',
-              padding: '16px',
-              fontSize: '13px',
-              fontFamily: 'monospace',
-              lineHeight: '1.8'
-            }}>
+            <div className="bg-gray-50 rounded-lg p-4 text-xs font-mono leading-loose">
               <div><strong>Task:</strong> "Design Homepage" - 3 working days</div>
               <div><strong>Start:</strong> Monday, Jan 1</div>
               <div><strong>Working Days:</strong> Mon-Fri</div>
               <div><strong>Holiday:</strong> Jan 3 (Wednesday)</div>
-              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #dfe1e6' }}>
+              <div className="mt-3 pt-3 border-t border-gray-300">
                 <div>✅ Jan 1 (Mon) - Day 1</div>
                 <div>✅ Jan 2 (Tue) - Day 2</div>
                 <div>❌ Jan 3 (Wed) - Holiday</div>
                 <div>✅ Jan 4 (Thu) - Day 3</div>
               </div>
-              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #dfe1e6', color: '#0052cc', fontWeight: 'bold' }}>
+              <div className="mt-3 pt-3 border-t border-gray-300 text-blue-600 font-bold">
                 <strong>End Date:</strong> Thursday, Jan 4
               </div>
             </div>
@@ -132,10 +88,10 @@ const AutoScheduleGuide = ({ onClose }) => {
 
           {/* Tips */}
           <section>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#172b4d', marginBottom: '16px' }}>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
               💡 Pro Tips
             </h3>
-            <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#5e6c84', lineHeight: '1.8' }}>
+            <ul className="m-0 pl-5 text-sm text-gray-600 leading-loose">
               <li>Set realistic task durations for accurate scheduling</li>
               <li>Keep company holidays updated for better accuracy</li>
               <li>Assign tasks to employees to consider their leaves</li>
@@ -151,40 +107,16 @@ const AutoScheduleGuide = ({ onClose }) => {
 
 const ScheduleStep = ({ number, title, description, icon }) => {
   return (
-    <div style={{
-      display: 'flex',
-      gap: '16px',
-      alignItems: 'flex-start'
-    }}>
-      <div style={{
-        width: '40px',
-        height: '40px',
-        borderRadius: '50%',
-        backgroundColor: '#deebff',
-        color: '#0052cc',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '18px',
-        fontWeight: '700',
-        flexShrink: 0
-      }}>
+    <div className="flex gap-4 items-start">
+      <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-bold shrink-0">
         {number}
       </div>
-      <div style={{ flex: 1 }}>
-        <div style={{
-          fontSize: '16px',
-          fontWeight: '600',
-          color: '#172b4d',
-          marginBottom: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
+      <div className="flex-1">
+        <div className="text-base font-semibold text-gray-800 mb-1 flex items-center gap-2">
           <span>{icon}</span>
           {title}
         </div>
-        <div style={{ fontSize: '14px', color: '#5e6c84', lineHeight: '1.5' }}>
+        <div className="text-sm text-gray-600 leading-normal">
           {description}
         </div>
       </div>

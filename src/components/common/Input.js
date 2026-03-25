@@ -46,7 +46,6 @@ const Input = ({
           disabled={disabled}
           rows={rows || 4}
           className={`${inputBaseClasses} rounded-[3rem] min-h-[120px]`}
-          style={inputStyle}
           {...props}
         />
       );
@@ -64,7 +63,6 @@ const Input = ({
             disabled={disabled}
             multiple={multiple}
             className={`${inputBaseClasses} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} appearance-none pr-16`}
-            style={inputStyle}
             {...props}
           >
             {placeholder && <option value="" className="bg-slate-950 text-white italic">{placeholder.toUpperCase()}</option>}
@@ -96,14 +94,13 @@ const Input = ({
         required={required}
         disabled={disabled}
         className={inputBaseClasses}
-        style={inputStyle}
         {...props}
       />
     );
   };
 
   return (
-    <div className={`mb-10 ${className}`} style={style}>
+    <div className={`mb-10 ${className}`}>
       {label && (
         <label htmlFor={name} className={labelClasses}>
           {label} {required && <span className="text-rose-500 ml-2 animate-pulse">*</span>}

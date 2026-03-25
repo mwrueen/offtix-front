@@ -127,39 +127,42 @@ const AssigneeModal = ({ task, projectId, users = [], taskRoles = [], onClose, o
   if (!task) return null;
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(9, 30, 66, 0.54)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }} onClick={onClose}>
-      <div style={{ backgroundColor: 'white', borderRadius: '12px', width: '95%', maxWidth: '900px', height: '85vh', maxHeight: '750px', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[2000]" onClick={onClose}>
+      <div className="bg-white rounded-xl w-[95%] max-w-[900px] h-[85vh] max-h-[750px] flex flex-col shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
-        <div style={{ padding: '24px', borderBottom: '1px solid #dfe1e6', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(to right, #f4f5f7, #ffffff)' }}>
+        <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white">
           <div>
-            <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#172b4d', letterSpacing: '-0.02em' }}>Manage Role Assignments</h3>
-            <p style={{ margin: '6px 0 0 0', fontSize: '14px', color: '#5e6c84' }}>Assign specific team members to task roles for <strong>{task.title}</strong></p>
+            <h3 className="m-0 text-xl font-bold text-gray-800 tracking-tight">Manage Role Assignments</h3>
+            <p className="mt-1.5 mb-0 text-sm text-gray-600">Assign specific team members to task roles for <strong>{task.title}</strong></p>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '28px', cursor: 'pointer', color: '#5e6c84', padding: '8px', lineHeight: 1, borderRadius: '50%', transition: 'background-color 0.2s' }}>×</button>
+          <button onClick={onClose} className="bg-transparent border-0 text-3xl cursor-pointer text-gray-500 p-2 leading-none rounded-full hover:bg-gray-100 transition-colors">×</button>
         </div>
 
         {/* Triple Column Layout */}
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        <div className="flex-1 flex overflow-hidden">
 
           {/* Column 1: Roles Sidebar */}
-          <div style={{ width: '220px', borderRight: '1px solid #dfe1e6', backgroundColor: '#f9fafb', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '16px 20px', fontSize: '12px', fontWeight: '700', color: '#5e6c84', textTransform: 'uppercase' }}>Select Role</div>
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div className="w-[220px] border-r border-gray-200 bg-gray-50 flex flex-col">
+            <div className="px-5 py-4 text-xs font-bold text-gray-500 uppercase">Select Role</div>
+            <div className="flex-1 overflow-y-auto">
               {taskRoles.map(role => (
                 <div
                   key={role._id}
                   onClick={() => setSelectedRoleId(role._id)}
-                  style={{
-                    padding: '12px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px',
-                    backgroundColor: selectedRoleId === role._id ? '#e6effc' : 'transparent',
-                    borderLeft: `4px solid ${selectedRoleId === role._id ? '#0052cc' : 'transparent'}`,
-                    transition: 'all 0.2s'
-                  }}
+                  className={`p-3 px-5 cursor-pointer flex items-center gap-2.5 transition-all duration-200 ${
+                    selectedRoleId === role._id 
+                      ? 'bg-blue-50 border-l-4 border-l-blue-600' 
+                      : 'bg-transparent border-l-4 border-l-transparent hover:bg-gray-50'
+                  }`}
                 >
-                  <span style={{ fontSize: '14px', fontWeight: selectedRoleId === role._id ? '600' : '400', color: selectedRoleId === role._id ? '#0052cc' : '#42526e' }}>{role.name}</span>
+                  <span className={`text-sm ${
+                    selectedRoleId === role._id 
+                      ? 'font-semibold text-blue-600' 
+                      : 'font-normal text-gray-700'
+                  }`}>{role.name}</span>
                   {roleAssignments.find(ra => ra.roleId === role._id)?.userIds.length > 0 && (
-                    <span style={{ backgroundColor: '#0052cc', color: 'white', borderRadius: '10px', padding: '1px 6px', fontSize: '10px' }}>
+                    <span className="bg-blue-600 text-white rounded-full px-1.5 py-0.5 text-xs">
                       {roleAssignments.find(ra => ra.roleId === role._id).userIds.length}
                     </span>
                   )}
@@ -169,60 +172,61 @@ const AssigneeModal = ({ task, projectId, users = [], taskRoles = [], onClose, o
           </div>
 
           {/* Column 2: Available Members */}
-          <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', borderRight: '1px solid #dfe1e6' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #dfe1e6' }}>
-              <div style={{ marginBottom: '12px', fontSize: '15px', fontWeight: '600', color: '#172b4d' }}>Users with "{currentRole?.name}" Role</div>
+          <div className="flex-[1.2] flex flex-col border-r border-gray-200">
+            <div className="px-5 py-4 border-b border-gray-200">
+              <div className="mb-3 text-base font-semibold text-gray-800">Users with "{currentRole?.name}" Role</div>
               <input
-                type="text" placeholder="Filter team members..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '2px solid #dfe1e6', fontSize: '14px', outline: 'none', transition: 'border-color 0.2s' }}
-                onFocus={(e) => e.target.style.borderColor = '#0052cc'}
-                onBlur={(e) => e.target.style.borderColor = '#dfe1e6'}
+                type="text" 
+                placeholder="Filter team members..." 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full py-2.5 px-3.5 rounded-md border-2 border-gray-200 text-sm outline-none transition-colors focus:border-blue-600"
               />
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+            <div className="flex-1 overflow-y-auto p-4">
               {recommendedUsers.length > 0 && (
                 <>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#0052cc', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Recommended Members</div>
+                  <div className="text-xs font-bold text-blue-600 mb-2 uppercase tracking-wider">Recommended Members</div>
                   {recommendedUsers.map(user => (
-                    <div key={user._id} onClick={() => handleToggleUser(user._id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 0.2s', marginBottom: '4px', border: '1px solid transparent' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f4f5f7'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <div key={user._id} onClick={() => handleToggleUser(user._id)} className="flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors mb-1 border border-transparent hover:bg-gray-50">
                       {user.profile?.profilePicture ? (
-                        <img src={user.profile.profilePicture} alt="" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                        <img src={user.profile.profilePicture} alt="" className="w-9 h-9 rounded-full object-cover" />
                       ) : (
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: getUserColor(user._id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '600' }}>{getUserInitials(user)}</div>
+                        <div className="w-9 h-9 rounded-full text-white flex items-center justify-center text-sm font-semibold" style={{ backgroundColor: getUserColor(user._id) }}>{getUserInitials(user)}</div>
                       )}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#172b4d' }}>{user.name}</div>
-                        <div style={{ fontSize: '11px', color: '#5e6c84' }}>{user.projectRole || 'Team Member'}</div>
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold text-gray-800">{user.name}</div>
+                        <div className="text-xs text-gray-500">{user.projectRole || 'Team Member'}</div>
                       </div>
-                      <div style={{ color: '#0052cc', fontWeight: 'bold', fontSize: '18px' }}>+</div>
+                      <div className="text-blue-600 font-bold text-lg">+</div>
                     </div>
                   ))}
-                  <div style={{ height: '16px' }} />
+                  <div className="h-4" />
                 </>
               )}
 
               {otherUsers.length > 0 && (
                 <>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#5e6c84', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{recommendedUsers.length > 0 ? 'Other Team Members' : 'Available Members'}</div>
+                  <div className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">{recommendedUsers.length > 0 ? 'Other Team Members' : 'Available Members'}</div>
                   {otherUsers.map(user => (
-                    <div key={user._id} onClick={() => handleToggleUser(user._id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 0.2s', marginBottom: '4px' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f4f5f7'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <div key={user._id} onClick={() => handleToggleUser(user._id)} className="flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors mb-1 hover:bg-gray-50">
                       {user.profile?.profilePicture ? (
-                        <img src={user.profile.profilePicture} alt="" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                        <img src={user.profile.profilePicture} alt="" className="w-9 h-9 rounded-full object-cover" />
                       ) : (
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: getUserColor(user._id), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '600' }}>{getUserInitials(user)}</div>
+                        <div className="w-9 h-9 rounded-full text-white flex items-center justify-center text-sm font-semibold" style={{ backgroundColor: getUserColor(user._id) }}>{getUserInitials(user)}</div>
                       )}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#172b4d' }}>{user.name}</div>
-                        <div style={{ fontSize: '11px', color: '#5e6c84' }}>{user.projectRole || 'Team Member'}</div>
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold text-gray-800">{user.name}</div>
+                        <div className="text-xs text-gray-500">{user.projectRole || 'Team Member'}</div>
                       </div>
-                      <div style={{ color: '#0052cc', fontWeight: 'bold', fontSize: '18px' }}>+</div>
+                      <div className="text-blue-600 font-bold text-lg">+</div>
                     </div>
                   ))}
                 </>
               )}
 
               {availableUsers.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6b778c', fontSize: '14px' }}>
+                <div className="text-center py-10 px-5 text-gray-500 text-sm">
                   {searchQuery ? 'No matching users found' : 'All members have been assigned to this role.'}
                 </div>
               )}
@@ -230,35 +234,35 @@ const AssigneeModal = ({ task, projectId, users = [], taskRoles = [], onClose, o
           </div>
 
           {/* Column 3: Current Assignments */}
-          <div style={{ flex: 1, backgroundColor: '#f4f5f7', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #dfe1e6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '12px', fontWeight: '700', color: '#5e6c84', textTransform: 'uppercase' }}>All Assignments</span>
-              <span style={{ fontSize: '11px', color: '#5e6c84', backgroundColor: 'white', padding: '2px 8px', borderRadius: '10px', border: '1px solid #dfe1e6' }}>
+          <div className="flex-1 bg-gray-50 flex flex-col">
+            <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center">
+              <span className="text-xs font-bold text-gray-500 uppercase">All Assignments</span>
+              <span className="text-xs text-gray-600 bg-white py-0.5 px-2 rounded-full border border-gray-200">
                 {roleAssignments.reduce((acc, curr) => acc + curr.userIds.length, 0)} Total
               </span>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+            <div className="flex-1 overflow-y-auto p-4">
               {roleAssignments.length > 0 ? (
                 roleAssignments.map(ra => {
                   const roleObj = taskRoles.find(r => r._id === ra.roleId);
                   return (
-                    <div key={ra.roleId} style={{ marginBottom: '20px' }}>
-                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#5e6c84', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: roleObj?.color || '#0052cc' }}></span>
+                    <div key={ra.roleId} className="mb-5">
+                      <div className="text-xs font-bold text-gray-500 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: roleObj?.color || '#0052cc' }}></span>
                         {roleObj?.name}
                       </div>
                       {ra.userIds.map(uid => {
                         const userObj = users.find(u => u._id === uid);
                         const profilePicture = userObj?.profile?.profilePicture;
                         return (
-                          <div key={uid} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', backgroundColor: 'white', borderRadius: '6px', border: '1px solid #dfe1e6', marginBottom: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                          <div key={uid} className="flex items-center gap-2.5 p-2 px-3 bg-white rounded-md border border-gray-200 mb-1.5 shadow-sm">
                             {profilePicture ? (
-                              <img src={profilePicture} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
+                              <img src={profilePicture} alt="" className="w-6 h-6 rounded-full object-cover" />
                             ) : (
-                              <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: getUserColor(uid), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '600' }}>{getUserInitials(userObj)}</div>
+                              <div className="w-6 h-6 rounded-full text-white flex items-center justify-center text-xs font-semibold" style={{ backgroundColor: getUserColor(uid) }}>{getUserInitials(userObj)}</div>
                             )}
-                            <span style={{ fontSize: '13px', flex: 1, fontWeight: '500', color: '#172b4d' }}>{userObj?.name}</span>
-                            <button onClick={() => removeAssignment(ra.roleId, uid)} style={{ background: 'none', border: 'none', color: '#de350b', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', padding: '4px' }}>×</button>
+                            <span className="text-sm flex-1 font-medium text-gray-800">{userObj?.name}</span>
+                            <button onClick={() => removeAssignment(ra.roleId, uid)} className="bg-transparent border-0 text-red-600 cursor-pointer text-base font-bold p-1 hover:bg-red-50 rounded">×</button>
                           </div>
                         );
                       })}
@@ -266,7 +270,7 @@ const AssigneeModal = ({ task, projectId, users = [], taskRoles = [], onClose, o
                   );
                 })
               ) : (
-                <div style={{ textAlign: 'center', padding: '60px 20px', color: '#6b778c' }}>
+                <div className="text-center py-15 px-5 text-gray-500">
                   <div style={{ fontSize: '32px', marginBottom: '12px' }}>�</div>
                   <div style={{ fontSize: '14px' }}>No members assigned yet.</div>
                   <div style={{ fontSize: '12px', marginTop: '4px' }}>Pick a role and add members from the lists.</div>
@@ -278,9 +282,9 @@ const AssigneeModal = ({ task, projectId, users = [], taskRoles = [], onClose, o
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '20px 24px', borderTop: '1px solid #dfe1e6', display: 'flex', justifyContent: 'flex-end', gap: '12px', backgroundColor: 'white' }}>
-          <button onClick={onClose} disabled={isSaving} style={{ padding: '10px 20px', backgroundColor: 'white', border: '1px solid #dfe1e6', borderRadius: '6px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', color: '#42526e' }}>Cancel</button>
-          <button onClick={handleSave} disabled={isSaving} style={{ padding: '10px 30px', backgroundColor: '#0052cc', border: 'none', borderRadius: '6px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', color: 'white', boxShadow: '0 4px 6px rgba(0, 82, 204, 0.2)' }}>
+        <div className="px-6 py-5 border-t border-gray-200 flex justify-end gap-3 bg-white">
+          <button onClick={onClose} disabled={isSaving} className="py-2.5 px-5 bg-white border border-gray-200 rounded-md text-sm font-semibold cursor-pointer text-gray-600 hover:bg-gray-50">Cancel</button>
+          <button onClick={handleSave} disabled={isSaving} className="py-2.5 px-7 bg-blue-600 border-0 rounded-md text-sm font-semibold cursor-pointer text-white shadow-lg hover:bg-blue-700">
             {isSaving ? 'Updating...' : 'Save Assignments'}
           </button>
         </div>

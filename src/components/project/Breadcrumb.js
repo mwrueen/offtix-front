@@ -2,27 +2,11 @@ import React from 'react';
 
 const Breadcrumb = ({ onNavigateToProjects, projectTitle, currentPage, onNavigateToProject }) => {
   return (
-    <div style={{ marginBottom: '20px' }}>
-      <nav style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        fontSize: '13px',
-        fontWeight: '500',
-        color: '#64748b'
-      }}>
+    <div className="mb-5">
+      <nav className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
         <div
           onClick={onNavigateToProjects}
-          style={{
-            cursor: 'pointer',
-            color: '#3b82f6',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            transition: 'color 0.2s'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.color = '#2563eb'}
-          onMouseLeave={(e) => e.currentTarget.style.color = '#3b82f6'}
+          className="cursor-pointer text-blue-500 flex items-center gap-1 transition-colors hover:text-blue-600"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -39,22 +23,17 @@ const Breadcrumb = ({ onNavigateToProjects, projectTitle, currentPage, onNavigat
           <>
             <span
               onClick={onNavigateToProject}
-              style={{
-                cursor: 'pointer',
-                color: '#3b82f6'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#2563eb'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#3b82f6'}
+              className="cursor-pointer text-blue-500 hover:text-blue-600 transition-colors"
             >
               {projectTitle}
             </span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
-            <span style={{ color: '#1e293b', fontWeight: '700' }}>{currentPage}</span>
+            <span className="text-slate-800 font-bold">{currentPage}</span>
           </>
         ) : (
-          <span style={{ color: '#1e293b', fontWeight: '700' }}>{projectTitle}</span>
+          <span className="text-slate-800 font-bold">{projectTitle}</span>
         )}
       </nav>
     </div>

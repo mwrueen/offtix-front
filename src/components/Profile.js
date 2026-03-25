@@ -207,13 +207,16 @@ const Profile = () => {
                   <div className="space-y-12 animate-in slide-in-from-bottom-4 duration-500">
                     <div className="relative group">
                       <div
-                        className="w-full h-64 rounded-3xl bg-slate-100 border border-slate-200 shadow-inner overflow-hidden relative group-hover:border-indigo-300 transition-colors"
-                        style={{
-                          backgroundImage: (localImages.coverPhoto || profile.profile.coverPhoto)
-                            ? `url(${getImageUrl(localImages.coverPhoto || profile.profile.coverPhoto)})`
-                            : 'linear-gradient(135deg, #4f46e5 0%, #1e1b4b 100%)',
-                          backgroundSize: 'cover', backgroundPosition: 'center'
-                        }}
+                        className={`w-full h-64 rounded-3xl bg-slate-100 border border-slate-200 shadow-inner overflow-hidden relative group-hover:border-indigo-300 transition-colors bg-cover bg-center ${
+                          !(localImages.coverPhoto || profile.profile.coverPhoto) ? 'bg-gradient-to-br from-indigo-500 to-slate-900' : ''
+                        }`}
+                        style={
+                          (localImages.coverPhoto || profile.profile.coverPhoto)
+                            ? {
+                                backgroundImage: `url(${getImageUrl(localImages.coverPhoto || profile.profile.coverPhoto)})`
+                              }
+                            : {}
+                        }
                       >
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-sm">
                           <label htmlFor="cover-up" className="px-8 py-3 bg-white text-slate-950 rounded-xl font-bold text-[11px] uppercase tracking-widest cursor-pointer shadow-lg hover:bg-indigo-50 transition-all">Change Cover Photo</label>
@@ -224,13 +227,16 @@ const Profile = () => {
                       <div className="absolute -bottom-16 left-10">
                         <div className="relative group/avatar">
                           <div
-                            className="w-40 h-40 rounded-[2.5rem] border-8 border-white shadow-xl overflow-hidden bg-slate-200 relative"
-                            style={{
-                              backgroundImage: (localImages.profilePicture || profile.profile.profilePicture)
-                                ? `url(${getImageUrl(localImages.profilePicture || profile.profile.profilePicture)})`
-                                : 'none',
-                              backgroundSize: 'cover', backgroundPosition: 'center'
-                            }}
+                            className={`w-40 h-40 rounded-[2.5rem] border-8 border-white shadow-xl overflow-hidden bg-slate-200 relative bg-cover bg-center ${
+                              !(localImages.profilePicture || profile.profile.profilePicture) ? 'bg-indigo-600' : ''
+                            }`}
+                            style={
+                              (localImages.profilePicture || profile.profile.profilePicture)
+                                ? {
+                                    backgroundImage: `url(${getImageUrl(localImages.profilePicture || profile.profile.profilePicture)})`
+                                  }
+                                : {}
+                            }
                           >
                             {!(localImages.profilePicture || profile.profile.profilePicture) && <div className="w-full h-full flex items-center justify-center text-white text-5xl font-bold bg-indigo-600">{profile.name.charAt(0)}</div>}
                             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/avatar:opacity-100 transition-all flex items-center justify-center">

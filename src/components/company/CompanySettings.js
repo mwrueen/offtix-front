@@ -506,7 +506,6 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
       />
     </div>
   );
-  );
 };
 
 export default CompanySettings;

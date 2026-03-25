@@ -53,47 +53,45 @@ const BulkAssigneeModal = ({ projectId, users = [], taskRoles = [], onClose, onU
     );
 
     return (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(9, 30, 66, 0.54)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }} onClick={onClose}>
-            <div style={{ backgroundColor: 'white', borderRadius: '12px', width: '90%', maxWidth: '600px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[2000]" onClick={onClose}>
+            <div className="bg-white rounded-xl w-[90%] max-w-[600px] shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
 
                 {/* Header */}
-                <div style={{ padding: '24px', borderBottom: '1px solid #dfe1e6', background: 'linear-gradient(to right, #0052cc, #0747a6)', color: 'white' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                    <div className="flex justify-between items-start">
                         <div>
-                            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700' }}>Bulk Member Assignment</h3>
-                            <p style={{ margin: '6px 0 0 0', fontSize: '14px', opacity: 0.9 }}>Assign one member to all {tasksCount} tasks in this project</p>
+                            <h3 className="m-0 text-xl font-bold">Bulk Member Assignment</h3>
+                            <p className="mt-1.5 mb-0 text-sm opacity-90">Assign one member to all {tasksCount} tasks in this project</p>
                         </div>
-                        <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: 'white', padding: '4px', lineHeight: 1 }}>×</button>
+                        <button onClick={onClose} className="bg-transparent border-0 text-2xl cursor-pointer text-white p-1 leading-none hover:bg-white/10 rounded">×</button>
                     </div>
                 </div>
 
-                <div style={{ padding: '24px' }}>
+                <div className="p-6">
                     {/* Step 1: Select Member */}
-                    <div style={{ marginBottom: '24px' }}>
-                        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#5e6c84', marginBottom: '8px', textTransform: 'uppercase' }}>1. Select Member</label>
-                        <div style={{ position: 'relative' }}>
+                    <div className="mb-6">
+                        <label className="block text-xs font-bold text-gray-500 mb-2 uppercase">1. Select Member</label>
+                        <div className="relative">
                             <input
                                 type="text"
                                 placeholder="Search team members..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #dfe1e6', marginBottom: '8px' }}
+                                className="w-full py-2.5 px-3 rounded-md border border-gray-200 mb-2"
                             />
-                            <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #dfe1e6', borderRadius: '6px' }}>
+                            <div className="max-h-[150px] overflow-y-auto border border-gray-200 rounded-md">
                                 {filteredUsers.map(user => (
                                     <div
                                         key={user._id}
                                         onClick={() => setSelectedUserId(user._id)}
-                                        style={{
-                                            padding: '10px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px',
-                                            backgroundColor: selectedUserId === user._id ? '#deebff' : 'white',
-                                            transition: 'background-color 0.2s'
-                                        }}
+                                        className={`py-2.5 px-3 cursor-pointer flex items-center gap-2.5 transition-colors ${
+                                            selectedUserId === user._id ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'
+                                        }`}
                                     >
-                                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#0052cc', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>
+                                        <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">
                                             {user.name?.[0].toUpperCase()}
                                         </div>
-                                        <span style={{ fontSize: '14px', fontWeight: selectedUserId === user._id ? '600' : '400' }}>{user.name}</span>
+                                        <span className={`text-sm ${selectedUserId === user._id ? 'font-semibold' : 'font-normal'}`}>{user.name}</span>
                                     </div>
                                 ))}
                             </div>
@@ -102,47 +100,44 @@ const BulkAssigneeModal = ({ projectId, users = [], taskRoles = [], onClose, onU
 
                     {/* Step 2: Select Roles */}
                     <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                            <label style={{ fontSize: '12px', fontWeight: '700', color: '#5e6c84', textTransform: 'uppercase' }}>2. Select Roles to Assign</label>
-                            <button onClick={handleSelectAllRoles} style={{ background: 'none', border: 'none', color: '#0052cc', fontSize: '12px', cursor: 'pointer', padding: 0 }}>
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase">2. Select Roles to Assign</label>
+                            <button onClick={handleSelectAllRoles} className="bg-transparent border-0 text-blue-600 text-xs cursor-pointer p-0 hover:underline">
                                 {selectedRoleIds.length === taskRoles.length ? 'Deselect All' : 'Select All'}
                             </button>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                        <div className="grid grid-cols-2 gap-2.5">
                             {taskRoles.map(role => (
                                 <div
                                     key={role._id}
                                     onClick={() => handleToggleRole(role._id)}
-                                    style={{
-                                        padding: '10px', borderRadius: '6px', border: '1px solid #dfe1e6', cursor: 'pointer',
-                                        display: 'flex', alignItems: 'center', gap: '8px',
-                                        backgroundColor: selectedRoleIds.includes(role._id) ? '#f4f5f7' : 'white'
-                                    }}
+                                    className={`p-2.5 rounded-md border border-gray-200 cursor-pointer flex items-center gap-2 ${
+                                        selectedRoleIds.includes(role._id) ? 'bg-gray-50' : 'bg-white'
+                                    }`}
                                 >
-                                    <input type="checkbox" checked={selectedRoleIds.includes(role._id)} readOnly style={{ cursor: 'pointer' }} />
-                                    <span style={{ fontSize: '13px' }}>{role.name}</span>
+                                    <input type="checkbox" checked={selectedRoleIds.includes(role._id)} readOnly className="cursor-pointer" />
+                                    <span className="text-xs">{role.name}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#fff7e6', borderRadius: '6px', border: '1px solid #ffe7ba' }}>
-                        <p style={{ margin: 0, fontSize: '13px', color: '#874d00', lineHeight: 1.5 }}>
+                    <div className="mt-6 p-4 bg-amber-50 rounded-md border border-amber-200">
+                        <p className="m-0 text-xs text-amber-800 leading-relaxed">
                             <strong>Caution:</strong> This will add the selected member to every task in this project for the selected roles. Current assignments will not be removed.
                         </p>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div style={{ padding: '20px 24px', borderTop: '1px solid #dfe1e6', display: 'flex', justifyContent: 'flex-end', gap: '12px', backgroundColor: '#f9f9f9' }}>
-                    <button onClick={onClose} disabled={isSaving} style={{ padding: '10px 20px', backgroundColor: 'white', border: '1px solid #dfe1e6', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                <div className="px-6 py-5 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
+                    <button onClick={onClose} disabled={isSaving} className="py-2.5 px-5 bg-white border border-gray-200 rounded cursor-pointer hover:bg-gray-50">Cancel</button>
                     <button
                         onClick={handleSave}
                         disabled={isSaving || !selectedUserId || selectedRoleIds.length === 0}
-                        style={{
-                            padding: '10px 24px', backgroundColor: '#36b37e', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer',
-                            fontWeight: '600', opacity: (isSaving || !selectedUserId || selectedRoleIds.length === 0) ? 0.6 : 1
-                        }}
+                        className={`py-2.5 px-6 bg-emerald-600 text-white border-0 rounded cursor-pointer font-semibold hover:bg-emerald-700 ${
+                            (isSaving || !selectedUserId || selectedRoleIds.length === 0) ? 'opacity-60' : 'opacity-100'
+                        }`}
                     >
                         {isSaving ? 'Assigning...' : 'Confirm Assignments'}
                     </button>

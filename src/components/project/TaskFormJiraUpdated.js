@@ -126,59 +126,21 @@ const TaskFormJira = ({
   
   // Assignee Selector Component
   const AssigneeSelector = () => (
-    <div style={{ marginBottom: '16px', position: 'relative' }} ref={assigneeDropdownRef}>
-      <label style={{ 
-        display: 'block', 
-        marginBottom: '6px', 
-        fontSize: '12px', 
-        fontWeight: '600', 
-        color: '#5e6c84',
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px'
-      }}>
+    <div className="mb-4 relative" ref={assigneeDropdownRef}>
+      <label className="block mb-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
         Assignee
       </label>
       
       {/* Selected Assignees Display */}
-      <div style={{
-        minHeight: '38px',
-        border: '1px solid #dfe1e6',
-        borderRadius: '3px',
-        padding: '4px',
-        backgroundColor: 'white',
-        cursor: 'pointer',
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '4px',
-        alignItems: 'center'
-      }}
+      <div className="min-h-[38px] border border-gray-200 rounded cursor-pointer flex flex-wrap gap-1 items-center p-1 bg-white"
       onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}
       >
         {selectedAssignees.length > 0 ? (
           selectedAssignees.map(user => (
-            <div key={user._id} style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              backgroundColor: '#f4f5f7',
-              padding: '4px 8px',
-              borderRadius: '3px',
-              fontSize: '13px'
-            }}
+            <div key={user._id} className="flex items-center gap-1.5 bg-gray-50 py-1 px-2 rounded text-xs"
             onClick={(e) => e.stopPropagation()}
             >
-              <div style={{
-                width: '20px',
-                height: '20px',
-                borderRadius: '50%',
-                backgroundColor: getUserColor(user._id),
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '10px',
-                fontWeight: '600'
-              }}>
+              <div className="w-5 h-5 rounded-full text-white flex items-center justify-center text-xs font-semibold" style={{ backgroundColor: getUserColor(user._id) }}>
                 {getUserInitials(user)}
               </div>
               <span>{user.name}</span>
@@ -188,30 +150,18 @@ const TaskFormJira = ({
                   e.stopPropagation();
                   handleRemoveAssignee(user._id);
                 }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '0 4px',
-                  fontSize: '16px',
-                  color: '#5e6c84',
-                  lineHeight: '1'
-                }}
+                className="bg-transparent border-0 cursor-pointer px-1 text-base text-gray-500 leading-none hover:text-gray-700"
               >
                 ×
               </button>
             </div>
           ))
         ) : (
-          <span style={{ 
-            color: '#8993a4', 
-            fontSize: '13px',
-            padding: '6px 8px'
-          }}>
+          <span className="text-gray-400 text-xs py-1.5 px-2">
             Unassigned
           </span>
         )}
-        <div style={{ marginLeft: 'auto', padding: '0 8px', color: '#5e6c84' }}>
+        <div className="ml-auto py-0 px-2 text-gray-500">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 10l4-4H4z"/>
           </svg>
@@ -220,22 +170,9 @@ const TaskFormJira = ({
       
       {/* Assignee Dropdown */}
       {showAssigneeDropdown && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          right: 0,
-          marginTop: '4px',
-          backgroundColor: 'white',
-          border: '1px solid #dfe1e6',
-          borderRadius: '3px',
-          boxShadow: '0 4px 8px rgba(9, 30, 66, 0.15)',
-          zIndex: 1000,
-          maxHeight: '300px',
-          overflowY: 'auto'
-        }}>
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-[1000] max-h-[300px] overflow-y-auto">
           {/* Search Input */}
-          <div style={{ padding: '8px', borderBottom: '1px solid #dfe1e6' }}>
+          <div className="p-2 border-b border-gray-200">
             <input
               type="text"
               placeholder="Search users..."
@@ -243,14 +180,7 @@ const TaskFormJira = ({
               onChange={(e) => setAssigneeSearch(e.target.value)}
               onClick={(e) => e.stopPropagation()}
               autoFocus
-              style={{
-                width: '100%',
-                padding: '6px 8px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '13px',
-                outline: 'none'
-              }}
+              className="w-full py-1.5 px-2 border border-gray-200 rounded text-xs outline-none"
             />
           </div>
           
@@ -260,35 +190,15 @@ const TaskFormJira = ({
               e.stopPropagation();
               handleClearAssignees();
             }}
-            style={{
-              padding: '8px 12px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '13px',
-              backgroundColor: selectedAssignees.length === 0 ? '#f4f5f7' : 'transparent',
-              borderBottom: '1px solid #f4f5f7'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f4f5f7'}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = selectedAssignees.length === 0 ? '#f4f5f7' : 'transparent';
-            }}
+            className={`py-2 px-3 cursor-pointer flex items-center gap-2 text-xs border-b border-gray-50 hover:bg-gray-50 ${
+              selectedAssignees.length === 0 ? 'bg-gray-50' : 'bg-transparent'
+            }`}
           >
-            <div style={{
-              width: '24px',
-              height: '24px',
-              borderRadius: '50%',
-              backgroundColor: '#dfe1e6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '14px'
-            }}>
+            <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-sm">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="#5e6c84">
                 <path d="M8 8c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0 1c-2 0-6 1-6 3v1h12v-1c0-2-4-3-6-3z"/>
               </svg>
             </div>
-            <span style={{ color: '#172b4d' }}>Unassigned</span>
+            <span className="text-gray-800">Unassigned</span>
           </div>
 

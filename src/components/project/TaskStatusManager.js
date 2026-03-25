@@ -65,64 +65,38 @@ const TaskStatusManager = ({ projectId, taskStatuses, onStatusesUpdate, selected
   ];
 
   return (
-    <div style={{ marginBottom: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>Status</span>
+    <div className="mb-4">
+      <div className="flex justify-between items-center mb-3">
+        <span className="text-sm font-semibold text-slate-800">Status</span>
         <button
           type="button"
           onClick={() => setShowForm(!showForm)}
-          style={{
-            padding: '4px 8px',
-            backgroundColor: 'transparent',
-            color: '#3b82f6',
-            border: '1px solid #3b82f6',
-            borderRadius: '3px',
-            cursor: 'pointer',
-            fontSize: '12px'
-          }}
+          className="py-1 px-2 bg-transparent text-blue-500 border border-blue-500 rounded cursor-pointer text-xs hover:bg-blue-50"
         >
           {showForm ? 'Cancel' : '+ Add Status'}
         </button>
       </div>
 
       {showForm && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: '#f8fafc',
-          border: '1px solid #e5e7eb',
-          borderRadius: '6px',
-          marginBottom: '12px'
-        }}>
+        <div className="p-3 bg-slate-50 border border-gray-200 rounded-md mb-3">
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-              <div style={{ flex: 1 }}>
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
                 <input
                   type="text"
                   placeholder="Status name"
                   value={newStatus.name}
                   onChange={(e) => setNewStatus({ ...newStatus, name: e.target.value })}
                   required
-                  style={{
-                    width: '100%',
-                    padding: '6px 8px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '3px',
-                    fontSize: '13px'
-                  }}
+                  className="w-full py-1.5 px-2 border border-gray-300 rounded text-xs"
                 />
               </div>
               <div>
                 <select
                   value={newStatus.color}
                   onChange={(e) => setNewStatus({ ...newStatus, color: e.target.value })}
-                  style={{
-                    padding: '6px 8px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '3px',
-                    fontSize: '13px',
-                    backgroundColor: newStatus.color,
-                    color: 'white'
-                  }}
+                  className="py-1.5 px-2 border border-gray-300 rounded text-xs text-white"
+                  style={{ backgroundColor: newStatus.color }}
                 >
                   {colors.map(color => (
                     <option key={color} value={color} style={{ backgroundColor: color }}>
@@ -133,15 +107,7 @@ const TaskStatusManager = ({ projectId, taskStatuses, onStatusesUpdate, selected
               </div>
               <button
                 type="submit"
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '3px',
-                  cursor: 'pointer',
-                  fontSize: '13px'
-                }}
+                className="py-1.5 px-3 bg-blue-500 text-white border-0 rounded cursor-pointer text-xs hover:bg-blue-600"
               >
                 {editingStatus ? 'Update' : 'Add'}
               </button>
@@ -149,15 +115,7 @@ const TaskStatusManager = ({ projectId, taskStatuses, onStatusesUpdate, selected
                 <button
                   type="button"
                   onClick={cancelForm}
-                  style={{
-                    padding: '6px 12px',
-                    backgroundColor: 'transparent',
-                    color: '#64748b',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '3px',
-                    cursor: 'pointer',
-                    fontSize: '13px'
-                  }}
+                  className="py-1.5 px-3 bg-transparent text-slate-500 border border-gray-300 rounded cursor-pointer text-xs hover:bg-gray-50"
                 >
                   Cancel
                 </button>
@@ -170,14 +128,7 @@ const TaskStatusManager = ({ projectId, taskStatuses, onStatusesUpdate, selected
       <select
         value={selectedStatus || ''}
         onChange={(e) => onStatusChange && onStatusChange(e.target.value)}
-        style={{
-          width: '100%',
-          padding: '8px 12px',
-          border: '2px solid #ddd',
-          borderRadius: '3px',
-          fontSize: '14px',
-          backgroundColor: 'white'
-        }}
+        className="w-full py-2 px-3 border-2 border-gray-300 rounded text-sm bg-white"
       >
         <option value="">None</option>
         {taskStatuses.map(status => (
@@ -188,58 +139,29 @@ const TaskStatusManager = ({ projectId, taskStatuses, onStatusesUpdate, selected
       </select>
 
       {isProjectOwner && taskStatuses.length > 0 && (
-        <div style={{ marginTop: '12px' }}>
-          <div style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', marginBottom: '8px' }}>
+        <div className="mt-3">
+          <div className="text-xs font-semibold text-slate-500 mb-2">
             Manage Statuses
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div className="flex flex-col gap-1">
             {taskStatuses.map(status => (
-              <div key={status._id} style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '6px 8px',
-                backgroundColor: '#f8fafc',
-                borderRadius: '3px',
-                border: '1px solid #e5e7eb'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{
-                    width: '12px',
-                    height: '12px',
-                    backgroundColor: status.color,
-                    borderRadius: '2px'
-                  }}></div>
-                  <span style={{ fontSize: '13px', color: '#1e293b' }}>{status.name}</span>
+              <div key={status._id} className="flex items-center justify-between py-1.5 px-2 bg-slate-50 rounded border border-gray-200">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: status.color }}></div>
+                  <span className="text-xs text-slate-800">{status.name}</span>
                 </div>
-                <div style={{ display: 'flex', gap: '4px' }}>
+                <div className="flex gap-1">
                   <button
                     type="button"
                     onClick={() => handleEdit(status)}
-                    style={{
-                      padding: '2px 6px',
-                      backgroundColor: 'transparent',
-                      color: '#64748b',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '2px',
-                      cursor: 'pointer',
-                      fontSize: '11px'
-                    }}
+                    className="py-0.5 px-1.5 bg-transparent text-slate-500 border border-gray-300 rounded cursor-pointer text-xs hover:bg-gray-100"
                   >
                     Edit
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDelete(status._id)}
-                    style={{
-                      padding: '2px 6px',
-                      backgroundColor: 'transparent',
-                      color: '#ef4444',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '2px',
-                      cursor: 'pointer',
-                      fontSize: '11px'
-                    }}
+                    className="py-0.5 px-1.5 bg-transparent text-red-500 border border-gray-300 rounded cursor-pointer text-xs hover:bg-red-50"
                   >
                     Delete
                   </button>

@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { taskRoleAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
@@ -102,34 +103,28 @@ const WorkflowRolesManager = ({ projectId, isProjectOwner, users = [] }) => {
   const iconOptions = ['👤', '🎨', '🗄️', '⚙️', '💻', '🧪', '🚀', '📝', '🔧', '📊', '🎯', '🔐'];
 
   if (loading) {
-    return <div style={{ padding: '20px', textAlign: 'center' }}>Loading workflow roles...</div>;
+    return <div className="p-5 text-center">Loading workflow roles...</div>;
   }
 
   return (
-    <div style={{ padding: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#172b4d' }}>
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="m-0 text-base font-semibold text-gray-800">
           Workflow Roles
         </h3>
         {isProjectOwner && (
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className="flex gap-2">
             {roles.length === 0 && (
               <button
                 onClick={handleInitializeDefaults}
-                style={{
-                  padding: '8px 12px', backgroundColor: '#10b981', color: 'white',
-                  border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px'
-                }}
+                className="py-2 px-3 bg-emerald-500 text-white border-0 rounded cursor-pointer text-xs hover:bg-emerald-600"
               >
                 Initialize Default Roles
               </button>
             )}
             <button
               onClick={() => setShowAddForm(true)}
-              style={{
-                padding: '8px 12px', backgroundColor: '#0052cc', color: 'white',
-                border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px'
-              }}
+              className="py-2 px-3 bg-blue-600 text-white border-0 rounded cursor-pointer text-xs hover:bg-blue-700"
             >
               + Add Role
             </button>
@@ -137,44 +132,38 @@ const WorkflowRolesManager = ({ projectId, isProjectOwner, users = [] }) => {
         )}
       </div>
 
-      <p style={{ fontSize: '13px', color: '#5e6c84', marginBottom: '16px' }}>
+      <p className="text-xs text-gray-500 mb-4">
         Define the sequential roles for task workflows. When a task is started, employees assigned to the first role
         will be notified. Upon completion, they can hand off to the next role with comments, files, and URLs.
       </p>
 
       {roles.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '32px', color: '#5e6c84', backgroundColor: '#f4f5f7', borderRadius: '4px' }}>
-          <div style={{ fontSize: '32px', marginBottom: '8px' }}>📋</div>
-          <p style={{ margin: 0 }}>No workflow roles defined. {isProjectOwner && 'Click "Initialize Default Roles" to get started.'}</p>
+        <div className="text-center py-8 text-gray-500 bg-gray-50 rounded">
+          <div className="text-3xl mb-2">📋</div>
+          <p className="m-0">No workflow roles defined. {isProjectOwner && 'Click "Initialize Default Roles" to get started.'}</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="flex flex-col gap-2">
           {roles.map((role, index) => (
             <div
               key={role._id}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '12px', padding: '12px',
-                backgroundColor: '#ffffff', border: '1px solid #dfe1e6', borderRadius: '4px'
-              }}
+              className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded"
             >
-              <div style={{
-                width: '28px', height: '28px', borderRadius: '4px', backgroundColor: role.color || '#6366f1',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px'
-              }}>
+              <div className="w-7 h-7 rounded flex items-center justify-center text-sm" style={{ backgroundColor: role.color || '#6366f1' }}>
                 {role.icon || '👤'}
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: '500', fontSize: '14px', color: '#172b4d' }}>
+              <div className="flex-1">
+                <div className="font-medium text-sm text-gray-800">
                   {index + 1}. {role.name}
                 </div>
                 {role.description && (
-                  <div style={{ fontSize: '12px', color: '#5e6c84' }}>{role.description}</div>
+                  <div className="text-xs text-gray-500">{role.description}</div>
                 )}
               </div>
               {isProjectOwner && (
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <button onClick={() => startEdit(role)} style={{ padding: '4px 8px', fontSize: '12px', cursor: 'pointer', border: '1px solid #dfe1e6', borderRadius: '3px', backgroundColor: '#fff' }}>Edit</button>
-                  <button onClick={() => handleDelete(role._id)} style={{ padding: '4px 8px', fontSize: '12px', cursor: 'pointer', border: '1px solid #dfe1e6', borderRadius: '3px', backgroundColor: '#fff', color: '#de350b' }}>Delete</button>
+                <div className="flex gap-1">
+                  <button onClick={() => startEdit(role)} className="py-1 px-2 text-xs cursor-pointer border border-gray-200 rounded bg-white hover:bg-gray-50">Edit</button>
+                  <button onClick={() => handleDelete(role._id)} className="py-1 px-2 text-xs cursor-pointer border border-gray-200 rounded bg-white text-red-600 hover:bg-red-50">Delete</button>
                 </div>
               )}
             </div>
@@ -184,57 +173,53 @@ const WorkflowRolesManager = ({ projectId, isProjectOwner, users = [] }) => {
 
       {/* Add/Edit Role Modal */}
       {showAddForm && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-        }}>
-          <div style={{ backgroundColor: '#fff', borderRadius: '8px', padding: '24px', width: '480px', maxHeight: '90vh', overflow: 'auto' }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#172b4d' }}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]">
+          <div className="bg-white rounded-lg p-6 w-[480px] max-h-[90vh] overflow-auto">
+            <h3 className="m-0 mb-4 text-lg text-gray-800">
               {editingRole ? 'Edit Workflow Role' : 'Add Workflow Role'}
             </h3>
             <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500' }}>Name *</label>
+              <div className="mb-4">
+                <label className="block mb-1 text-xs font-medium">Name *</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
-                  style={{ width: '100%', padding: '8px', border: '1px solid #dfe1e6', borderRadius: '4px', fontSize: '14px' }}
+                  className="w-full py-2 px-2 border border-gray-200 rounded text-sm"
                   placeholder="e.g., UI/UX Design"
                 />
               </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500' }}>Description</label>
+              <div className="mb-4">
+                <label className="block mb-1 text-xs font-medium">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #dfe1e6', borderRadius: '4px', fontSize: '14px', minHeight: '60px' }}
+                  className="w-full py-2 px-2 border border-gray-200 rounded text-sm min-h-[60px]"
                   placeholder="Describe what this role involves"
                 />
               </div>
-              <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500' }}>Color</label>
+              <div className="flex gap-4 mb-4">
+                <div className="flex-1">
+                  <label className="block mb-1 text-xs font-medium">Color</label>
                   <input
                     type="color"
                     value={formData.color}
                     onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                    style={{ width: '100%', height: '36px', border: '1px solid #dfe1e6', borderRadius: '4px', cursor: 'pointer' }}
+                    className="w-full h-9 border border-gray-200 rounded cursor-pointer"
                   />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500' }}>Icon</label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                <div className="flex-1">
+                  <label className="block mb-1 text-xs font-medium">Icon</label>
+                  <div className="flex flex-wrap gap-1">
                     {iconOptions.map(icon => (
                       <button
                         key={icon}
                         type="button"
                         onClick={() => setFormData({ ...formData, icon })}
-                        style={{
-                          width: '32px', height: '32px', border: formData.icon === icon ? '2px solid #0052cc' : '1px solid #dfe1e6',
-                          borderRadius: '4px', cursor: 'pointer', fontSize: '16px', backgroundColor: '#fff'
-                        }}
+                        className={`w-8 h-8 rounded cursor-pointer text-base bg-white ${
+                          formData.icon === icon ? 'border-2 border-blue-600' : 'border border-gray-200'
+                        }`}
                       >
                         {icon}
                       </button>
@@ -242,25 +227,25 @@ const WorkflowRolesManager = ({ projectId, isProjectOwner, users = [] }) => {
                   </div>
                 </div>
               </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500' }}>Default Assignees</label>
+              <div className="mb-4">
+                <label className="block mb-1 text-xs font-medium">Default Assignees</label>
                 <select
                   multiple
                   value={formData.defaultAssignees}
                   onChange={(e) => setFormData({ ...formData, defaultAssignees: Array.from(e.target.selectedOptions, o => o.value) })}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #dfe1e6', borderRadius: '4px', fontSize: '14px', minHeight: '80px' }}
+                  className="w-full py-2 px-2 border border-gray-200 rounded text-sm min-h-[80px]"
                 >
                   {users.map(user => (
                     <option key={user._id} value={user._id}>{user.name} ({user.email})</option>
                   ))}
                 </select>
-                <p style={{ fontSize: '11px', color: '#5e6c84', marginTop: '4px' }}>Hold Ctrl/Cmd to select multiple. These will be pre-selected when assigning this role to tasks.</p>
+                <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple. These will be pre-selected when assigning this role to tasks.</p>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                <button type="button" onClick={resetForm} style={{ padding: '8px 16px', border: '1px solid #dfe1e6', borderRadius: '4px', cursor: 'pointer', backgroundColor: '#fff' }}>
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={resetForm} className="py-2 px-4 border border-gray-200 rounded cursor-pointer bg-white hover:bg-gray-50">
                   Cancel
                 </button>
-                <button type="submit" style={{ padding: '8px 16px', backgroundColor: '#0052cc', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                <button type="submit" className="py-2 px-4 bg-blue-600 text-white border-0 rounded cursor-pointer hover:bg-blue-700">
                   {editingRole ? 'Update Role' : 'Create Role'}
                 </button>
               </div>
