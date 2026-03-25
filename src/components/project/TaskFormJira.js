@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import TaskStatusManager from './TaskStatusManager';
+import { Button, Card } from '../ui';
 import { useAuth } from '../../context/AuthContext';
 
 const TaskFormJira = ({
@@ -182,78 +183,25 @@ const TaskFormJira = ({
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(9, 30, 66, 0.54)',
-      display: 'flex',
-      alignItems: 'flex-start',
-      justifyContent: 'center',
-      zIndex: 1000,
-      padding: '40px 20px',
-      overflowY: 'auto'
-    }}
-    onClick={onCancel}
+    <div className="fixed inset-0 bg-[rgba(9,30,66,0.54)] flex items-start justify-center z-[1000] p-10 overflow-y-auto"
+      onClick={onCancel}
     >
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '3px',
-        width: '100%',
-        maxWidth: '900px',
-        boxShadow: '0 20px 32px -8px rgba(9, 30, 66, 0.25)',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
-        marginTop: '20px',
-        marginBottom: '40px'
-      }}
-      onClick={(e) => e.stopPropagation()}
+      <div className="bg-white rounded border w-full max-w-[900px] shadow-[0_20px_32px_-8px_rgba(9,30,66,0.25)] font-sans mt-5 mb-10"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ 
-          padding: '24px 32px', 
-          borderBottom: '2px solid #dfe1e6',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              backgroundColor: getIssueTypeIcon(issueType).bg,
-              borderRadius: '3px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '16px'
-            }}>
+        <div className="p-6 lg:p-8 border-b-2 border-slate-200 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-base font-medium">
               {getIssueTypeIcon(issueType).icon}
             </div>
-            <h2 style={{ 
-              margin: 0, 
-              fontSize: '20px', 
-              fontWeight: '500', 
-              color: '#172b4d'
-            }}>
+            <h2 className="m-0 text-xl font-medium text-slate-800">
               {editingTask ? 'Edit Issue' : parentTask ? 'Create Subtask' : 'Create Issue'}
             </h2>
           </div>
           <button
             type="button"
             onClick={onCancel}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '24px',
-              color: '#5e6c84',
-              cursor: 'pointer',
-              padding: '4px 8px',
-              lineHeight: 1,
-              borderRadius: '3px'
-            }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#f4f5f7'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+            className="bg-transparent border-0 text-2xl text-slate-500 cursor-pointer p-1 rounded hover:bg-slate-100 transition-colors"
           >
             ×
           </button>
@@ -362,24 +310,12 @@ const TaskFormJira = ({
               </div>
               
               <div>
-                <div style={{ 
-                  backgroundColor: '#f4f5f7', 
-                  padding: '16px', 
-                  borderRadius: '3px',
-                  border: '1px solid #dfe1e6'
-                }}>
-                  <h4 style={{ 
-                    margin: '0 0 16px 0', 
-                    fontSize: '12px', 
-                    fontWeight: '700', 
-                    color: '#5e6c84',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}>
+                <div className="bg-slate-100 p-4 rounded border border-slate-200">
+                  <h4 className="m-0 mb-4 text-xs font-bold text-slate-500 uppercase tracking-wide">
                     Details
                   </h4>
                   
-                  <div style={{ marginBottom: '16px' }}>
+                  <div className="mb-4">
                     <TaskStatusManager
                       projectId={projectId}
                       taskStatuses={taskStatuses}
@@ -390,59 +326,21 @@ const TaskFormJira = ({
                     />
                   </div>
                   
-                  <div style={{ marginBottom: '16px', position: 'relative' }} ref={assigneeDropdownRef}>
-                    <label style={{ 
-                      display: 'block', 
-                      marginBottom: '6px', 
-                      fontSize: '12px', 
-                      fontWeight: '600', 
-                      color: '#5e6c84',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px'
-                    }}>
+                  <div className="mb-4 relative" ref={assigneeDropdownRef}>
+                    <label className="block mb-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                       Assignee
                     </label>
                     
                     {/* Selected Assignees Display */}
-                    <div style={{
-                      minHeight: '38px',
-                      border: '1px solid #dfe1e6',
-                      borderRadius: '3px',
-                      padding: '4px',
-                      backgroundColor: 'white',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '4px',
-                      alignItems: 'center'
-                    }}
-                    onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}
+                    <div className="min-h-10 border border-slate-200 rounded p-1 bg-white cursor-pointer flex flex-wrap gap-1 items-center"
+                      onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}
                     >
                       {selectedAssignees.length > 0 ? (
                         selectedAssignees.map(user => (
-                          <div key={user._id} style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            backgroundColor: '#f4f5f7',
-                            padding: '4px 8px',
-                            borderRadius: '3px',
-                            fontSize: '13px'
-                          }}
-                          onClick={(e) => e.stopPropagation()}
+                          <div key={user._id} className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded text-sm"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            <div style={{
-                              width: '20px',
-                              height: '20px',
-                              borderRadius: '50%',
-                              backgroundColor: getUserColor(user._id),
-                              color: 'white',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '10px',
-                              fontWeight: '600'
-                            }}>
+                            <div className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-semibold">
                               {getUserInitials(user)}
                             </div>
                             <span>{user.name}</span>
@@ -452,30 +350,18 @@ const TaskFormJira = ({
                                 e.stopPropagation();
                                 handleRemoveAssignee(user._id);
                               }}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: '0 4px',
-                                fontSize: '16px',
-                                color: '#5e6c84',
-                                lineHeight: '1'
-                              }}
+                              className="bg-transparent border-0 cursor-pointer p-0.5 text-base text-slate-500 hover:text-slate-700"
                             >
                               ×
                             </button>
                           </div>
                         ))
                       ) : (
-                        <span style={{ 
-                          color: '#8993a4', 
-                          fontSize: '13px',
-                          padding: '6px 8px'
-                        }}>
+                        <span className="text-slate-400 text-sm px-2 py-1.5">
                           Unassigned
                         </span>
                       )}
-                      <div style={{ marginLeft: 'auto', padding: '0 8px', color: '#5e6c84' }}>
+                      <div className="ml-auto px-2 text-slate-500">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                           <path d="M8 10l4-4H4z"/>
                         </svg>
@@ -484,22 +370,9 @@ const TaskFormJira = ({
                     
                     {/* Assignee Dropdown */}
                     {showAssigneeDropdown && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        marginTop: '4px',
-                        backgroundColor: 'white',
-                        border: '1px solid #dfe1e6',
-                        borderRadius: '3px',
-                        boxShadow: '0 4px 8px rgba(9, 30, 66, 0.15)',
-                        zIndex: 1000,
-                        maxHeight: '300px',
-                        overflowY: 'auto'
-                      }}>
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg z-[1000] max-h-72 overflow-y-auto">
                         {/* Search Input */}
-                        <div style={{ padding: '8px', borderBottom: '1px solid #dfe1e6' }}>
+                        <div className="p-2 border-b border-slate-200">
                           <input
                             type="text"
                             placeholder="Search users..."
@@ -507,14 +380,7 @@ const TaskFormJira = ({
                             onChange={(e) => setAssigneeSearch(e.target.value)}
                             onClick={(e) => e.stopPropagation()}
                             autoFocus
-                            style={{
-                              width: '100%',
-                              padding: '6px 8px',
-                              border: '1px solid #dfe1e6',
-                              borderRadius: '3px',
-                              fontSize: '13px',
-                              outline: 'none'
-                            }}
+                            className="w-full p-2 border border-slate-200 rounded text-sm outline-none"
                           />
                         </div>
                         
@@ -524,36 +390,14 @@ const TaskFormJira = ({
                             e.stopPropagation();
                             handleClearAssignees();
                           }}
-                          style={{
-                            padding: '8px 12px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            fontSize: '13px',
-                            backgroundColor: selectedAssignees.length === 0 ? '#f4f5f7' : 'transparent',
-                            borderBottom: '1px solid #f4f5f7'
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f4f5f7'}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = selectedAssignees.length === 0 ? '#f4f5f7' : 'transparent';
-                          }}
+                          className={`p-3 cursor-pointer flex items-center gap-2 text-sm border-b border-slate-100 ${selectedAssignees.length === 0 ? 'bg-slate-100' : 'hover:bg-slate-100'}`}
                         >
-                          <div style={{
-                            width: '24px',
-                            height: '24px',
-                            borderRadius: '50%',
-                            backgroundColor: '#dfe1e6',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '14px'
-                          }}>
+                          <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-sm">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="#5e6c84">
                               <path d="M8 8c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0 1c-2 0-6 1-6 3v1h12v-1c0-2-4-3-6-3z"/>
                             </svg>
                           </div>
-                          <span style={{ color: '#172b4d' }}>Unassigned</span>
+                          <span className="text-slate-800">Unassigned</span>
                         </div>
                         
                         {/* User List */}
@@ -566,43 +410,12 @@ const TaskFormJira = ({
                                 e.stopPropagation();
                                 handleToggleAssignee(user._id);
                               }}
-                              style={{
-                                padding: '8px 12px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                fontSize: '13px',
-                                backgroundColor: isSelected ? '#deebff' : 'transparent'
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!isSelected) {
-                                  e.currentTarget.style.backgroundColor = '#f4f5f7';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!isSelected) {
-                                  e.currentTarget.style.backgroundColor = 'transparent';
-                                } else {
-                                  e.currentTarget.style.backgroundColor = '#deebff';
-                                }
-                              }}
+                              className={`p-3 cursor-pointer flex items-center gap-2 text-sm ${isSelected ? 'bg-blue-50' : 'hover:bg-slate-100'}`}
                             >
-                              <div style={{
-                                width: '24px',
-                                height: '24px',
-                                borderRadius: '50%',
-                                backgroundColor: getUserColor(user._id),
-                                color: 'white',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '11px',
-                                fontWeight: '600'
-                              }}>
+                              <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-semibold">
                                 {getUserInitials(user)}
                               </div>
-                              <span style={{ color: '#172b4d', flex: 1 }}>{user.name}</span>
+                              <span className="text-slate-800 flex-1">{user.name}</span>
                               {isSelected && (
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="#0052cc">
                                   <path d="M6.5 11.5l-3-3 1-1 2 2 5-5 1 1z"/>
@@ -615,66 +428,28 @@ const TaskFormJira = ({
                     )}
                   </div>
                   
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ 
-                      display: 'block', 
-                      marginBottom: '6px', 
-                      fontSize: '12px', 
-                      fontWeight: '600', 
-                      color: '#5e6c84'
-                    }}>
+                  <div className="mb-4">
+                    <label className="block mb-1.5 text-xs font-semibold text-slate-500">
                       Reporter
                     </label>
-                    <div style={{
-                      padding: '8px',
-                      backgroundColor: 'white',
-                      border: '1px solid #dfe1e6',
-                      borderRadius: '3px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <div style={{
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '50%',
-                        backgroundColor: getUserColor(currentUser?._id),
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '10px',
-                        fontWeight: '600'
-                      }}>
+                    <div className="p-2 bg-white border border-slate-200 rounded flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-semibold">
                         {getUserInitials(currentUser)}
                       </div>
-                      <span style={{ fontSize: '13px', color: '#172b4d' }}>
+                      <span className="text-sm text-slate-800">
                         {currentUser?.name || 'Unknown'}
                       </span>
                     </div>
                   </div>
                   
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ 
-                      display: 'block', 
-                      marginBottom: '6px', 
-                      fontSize: '12px', 
-                      fontWeight: '600', 
-                      color: '#5e6c84'
-                    }}>
+                  <div className="mb-4">
+                    <label className="block mb-1.5 text-xs font-semibold text-slate-500">
                       Priority
                     </label>
                     <select
                       value={taskForm.priority}
                       onChange={(e) => setTaskForm({...taskForm, priority: e.target.value})}
-                      style={{
-                        width: '100%',
-                        padding: '6px 8px',
-                        border: '1px solid #dfe1e6',
-                        borderRadius: '3px',
-                        fontSize: '13px',
-                        backgroundColor: 'white'
-                      }}
+                      className="w-full p-2 border border-slate-200 rounded text-sm bg-white"
                     >
                       <option value="">None</option>
                       <option value="low">🟢 Low</option>
@@ -684,14 +459,8 @@ const TaskFormJira = ({
                     </select>
                   </div>
                   
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ 
-                      display: 'block', 
-                      marginBottom: '6px', 
-                      fontSize: '12px', 
-                      fontWeight: '600', 
-                      color: '#5e6c84'
-                    }}>
+                  <div className="mb-4">
+                    <label className="block mb-1.5 text-xs font-semibold text-slate-500">
                       Story Points
                     </label>
                     <input
@@ -701,37 +470,18 @@ const TaskFormJira = ({
                       onChange={(e) => setStoryPoints(e.target.value)}
                       min="0"
                       step="1"
-                      style={{
-                        width: '100%',
-                        padding: '6px 8px',
-                        border: '1px solid #dfe1e6',
-                        borderRadius: '3px',
-                        fontSize: '13px'
-                      }}
+                      className="w-full p-2 border border-slate-200 rounded text-sm"
                     />
                   </div>
                   
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ 
-                      display: 'block', 
-                      marginBottom: '6px', 
-                      fontSize: '12px', 
-                      fontWeight: '600', 
-                      color: '#5e6c84'
-                    }}>
+                  <div className="mb-4">
+                    <label className="block mb-1.5 text-xs font-semibold text-slate-600">
                       Phase
                     </label>
                     <select
                       value={taskForm.phase || ''}
                       onChange={(e) => setTaskForm({...taskForm, phase: e.target.value})}
-                      style={{
-                        width: '100%',
-                        padding: '6px 8px',
-                        border: '1px solid #dfe1e6',
-                        borderRadius: '3px',
-                        fontSize: '13px',
-                        backgroundColor: 'white'
-                      }}
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm bg-white"
                     >
                       <option value="">No Phase</option>
                       {phases.map(phase => (
@@ -742,27 +492,14 @@ const TaskFormJira = ({
                     </select>
                   </div>
                   
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ 
-                      display: 'block', 
-                      marginBottom: '6px', 
-                      fontSize: '12px', 
-                      fontWeight: '600', 
-                      color: '#5e6c84'
-                    }}>
+                  <div className="mb-4">
+                    <label className="block mb-1.5 text-xs font-semibold text-slate-500">
                       Sprint
                     </label>
                     <select
                       value={taskForm.sprint || ''}
                       onChange={(e) => setTaskForm({...taskForm, sprint: e.target.value})}
-                      style={{
-                        width: '100%',
-                        padding: '6px 8px',
-                        border: '1px solid #dfe1e6',
-                        borderRadius: '3px',
-                        fontSize: '13px',
-                        backgroundColor: 'white'
-                      }}
+                      className="w-full p-2 border border-slate-200 rounded text-sm bg-white"
                     >
                       <option value="">No Sprint</option>
                       {sprints.map(sprint => (
@@ -775,39 +512,24 @@ const TaskFormJira = ({
 
                   {/* Workflow Roles Section */}
                   {workflowRoles.length > 0 && (
-                    <div style={{ marginBottom: '16px' }}>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: '8px'
-                      }}>
-                        <label style={{
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: '#5e6c84',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px'
-                        }}>
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                           🔄 Workflow Roles
                         </label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={useRoleWorkflow}
                             onChange={(e) => handleToggleRoleWorkflow(e.target.checked)}
-                            style={{ cursor: 'pointer' }}
+                            className="cursor-pointer"
                           />
-                          <span style={{ fontSize: '12px', color: '#5e6c84' }}>Enable</span>
+                          <span className="text-xs text-slate-500">Enable</span>
                         </label>
                       </div>
 
                       {useRoleWorkflow && (
-                        <div style={{
-                          border: '1px solid #dfe1e6',
-                          borderRadius: '4px',
-                          backgroundColor: '#fafbfc'
-                        }}>
+                        <div className="border border-slate-200 rounded bg-slate-50">
                           {workflowRoles
                             .sort((a, b) => a.order - b.order)
                             .map((role, index) => {
@@ -816,106 +538,46 @@ const TaskFormJira = ({
                               const assignedCount = assignment?.assignees?.length || 0;
 
                               return (
-                                <div key={role._id} style={{
-                                  borderBottom: index < workflowRoles.length - 1 ? '1px solid #dfe1e6' : 'none'
-                                }}>
+                                <div key={role._id} className={index < workflowRoles.length - 1 ? 'border-b border-slate-200' : ''}>
                                   {/* Role Header */}
                                   <div
                                     onClick={() => toggleRoleExpanded(role._id)}
-                                    style={{
-                                      padding: '10px 12px',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '8px',
-                                      cursor: 'pointer',
-                                      backgroundColor: isExpanded ? '#f4f5f7' : 'transparent'
-                                    }}
+                                    className="p-3 flex items-center gap-2 cursor-pointer bg-slate-50"
                                   >
-                                    <span style={{ fontSize: '14px' }}>{role.icon || '📋'}</span>
-                                    <div style={{ flex: 1 }}>
-                                      <div style={{
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        color: '#172b4d',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px'
-                                      }}>
-                                        <span style={{
-                                          width: '18px',
-                                          height: '18px',
-                                          borderRadius: '50%',
-                                          backgroundColor: role.color || '#5e6c84',
-                                          color: 'white',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          fontSize: '10px',
-                                          fontWeight: '600'
-                                        }}>
+                                    <span className="text-base">{role.icon || '📋'}</span>
+                                    <div className="flex-1">
+                                      <div className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
+                                        <span className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-semibold">
                                           {index + 1}
                                         </span>
                                         {role.name}
                                       </div>
-                                      <div style={{ fontSize: '11px', color: '#5e6c84', marginTop: '2px' }}>
+                                      <div className="text-xs text-slate-400 mt-0.5">
                                         {assignedCount} assignee{assignedCount !== 1 ? 's' : ''}
                                       </div>
                                     </div>
-                                    <span style={{
-                                      color: '#5e6c84',
-                                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                      transition: 'transform 0.2s'
-                                    }}>▼</span>
+                                    <span className={`text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : 'rotate-0'}`}>▼</span>
                                   </div>
 
                                   {/* Role Assignees */}
                                   {isExpanded && (
-                                    <div style={{
-                                      padding: '8px 12px',
-                                      backgroundColor: '#fff',
-                                      borderTop: '1px solid #eee'
-                                    }}>
-                                      <div style={{ fontSize: '11px', color: '#5e6c84', marginBottom: '6px' }}>
+                                    <div className="p-3 bg-white border-t border-slate-100">
+                                      <div className="text-xs text-slate-400 mb-1.5">
                                         Select assignees for this role:
                                       </div>
-                                      <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                                      <div className="max-h-36 overflow-y-auto">
                                         {users.map(user => {
                                           const isSelected = assignment?.assignees?.includes(user._id);
                                           return (
                                             <div
                                               key={user._id}
                                               onClick={() => handleToggleRoleAssignee(role._id, user._id)}
-                                              style={{
-                                                padding: '6px 8px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px',
-                                                cursor: 'pointer',
-                                                borderRadius: '3px',
-                                                backgroundColor: isSelected ? '#deebff' : 'transparent'
-                                              }}
-                                              onMouseEnter={(e) => {
-                                                if (!isSelected) e.currentTarget.style.backgroundColor = '#f4f5f7';
-                                              }}
-                                              onMouseLeave={(e) => {
-                                                e.currentTarget.style.backgroundColor = isSelected ? '#deebff' : 'transparent';
-                                              }}
+                                              className={`p-2 flex items-center gap-2 cursor-pointer rounded ${isSelected ? 'bg-blue-50' : 'hover:bg-slate-100'}`}
                                             >
-                                              <div style={{
-                                                width: '20px',
-                                                height: '20px',
-                                                borderRadius: '50%',
-                                                backgroundColor: getUserColor(user._id),
-                                                color: 'white',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                fontSize: '9px',
-                                                fontWeight: '600'
-                                              }}>
+                                              <div className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-semibold">
                                                 {getUserInitials(user)}
                                               </div>
-                                              <span style={{ fontSize: '12px', color: '#172b4d', flex: 1 }}>
+                                              <span className="text-xs text-slate-800 flex-1">
                                                 {user.name}
                                               </span>
                                               {isSelected && (
@@ -936,21 +598,15 @@ const TaskFormJira = ({
                       )}
 
                       {useRoleWorkflow && (
-                        <p style={{ fontSize: '10px', color: '#5e6c84', marginTop: '6px', marginBottom: 0 }}>
+                        <p className="text-[10px] text-slate-400 mt-1.5 mb-0">
                           When workflow starts, assignees will be notified in sequence.
                         </p>
                       )}
                     </div>
                   )}
 
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{
-                      display: 'block',
-                      marginBottom: '6px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      color: '#5e6c84'
-                    }}>
+                  <div className="mb-4">
+                    <label className="block mb-1.5 text-xs font-semibold text-slate-500">
                       Original Estimate (hours)
                     </label>
                     <input
@@ -958,117 +614,48 @@ const TaskFormJira = ({
                       placeholder="0h"
                       value={taskForm.duration}
                       onChange={(e) => setTaskForm({...taskForm, duration: e.target.value})}
-                      style={{
-                        width: '100%',
-                        padding: '6px 8px',
-                        border: '1px solid #dfe1e6',
-                        borderRadius: '3px',
-                        fontSize: '13px'
-                      }}
+                      className="w-full p-2 border border-slate-200 rounded text-sm"
                     />
                   </div>
                   
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ 
-                      display: 'block', 
-                      marginBottom: '6px', 
-                      fontSize: '12px', 
-                      fontWeight: '600', 
-                      color: '#5e6c84'
-                    }}>
+                  <div className="mb-4">
+                    <label className="block mb-1.5 text-xs font-semibold text-slate-500">
                       Start Date
                     </label>
                     <input
                       type="date"
                       value={taskForm.startDate || ''}
                       onChange={(e) => setTaskForm({...taskForm, startDate: e.target.value})}
-                      style={{
-                        width: '100%',
-                        padding: '6px 8px',
-                        border: '1px solid #dfe1e6',
-                        borderRadius: '3px',
-                        fontSize: '13px'
-                      }}
+                      className="w-full p-2 border border-slate-200 rounded text-sm"
                     />
                   </div>
                   
-                  <div style={{ marginBottom: '0' }}>
-                    <label style={{ 
-                      display: 'block', 
-                      marginBottom: '6px', 
-                      fontSize: '12px', 
-                      fontWeight: '600', 
-                      color: '#5e6c84'
-                    }}>
+                  <div className="mb-0">
+                    <label className="block mb-1.5 text-xs font-semibold text-slate-500">
                       Due Date
                     </label>
                     <input
                       type="date"
                       value={taskForm.dueDate}
                       onChange={(e) => setTaskForm({...taskForm, dueDate: e.target.value})}
-                      style={{
-                        width: '100%',
-                        padding: '6px 8px',
-                        border: '1px solid #dfe1e6',
-                        borderRadius: '3px',
-                        fontSize: '13px'
-                      }}
+                      className="w-full p-2 border border-slate-200 rounded text-sm"
                     />
                   </div>
                 </div>
               </div>
             </div>
             
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '12px', 
-              paddingTop: '24px', 
-              borderTop: '2px solid #dfe1e6',
-              marginTop: '32px'
-            }}>
-              <div style={{ fontSize: '12px', color: '#5e6c84' }}>
+            <div className="flex justify-between items-center gap-3 pt-6 border-t-2 border-slate-200 mt-8">
+              <div className="text-xs text-slate-500">
                 * Required fields
               </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={onCancel}
-                  style={{
-                    padding: '10px 20px',
-                    backgroundColor: 'transparent',
-                    color: '#5e6c84',
-                    border: 'none',
-                    borderRadius: '3px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    transition: 'background-color 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f4f5f7'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                >
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={onCancel}>
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  style={{
-                    padding: '10px 20px',
-                    backgroundColor: '#0052cc',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '3px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    transition: 'background-color 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#0747a6'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#0052cc'}
-                >
+                </Button>
+                <Button variant="primary" type="submit">
                   {editingTask ? 'Update Issue' : 'Create Issue'}
-                </button>
+                </Button>
               </div>
             </div>
           </form>

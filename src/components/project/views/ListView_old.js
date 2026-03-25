@@ -119,47 +119,16 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
   };
 
   return (
-    <div style={{
-      backgroundColor: 'white',
-      border: '1px solid #e1e4e8',
-      borderRadius: '6px',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-      overflow: 'hidden'
-    }}>
+    <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
       {/* Header with task count */}
-      <div style={{
-        padding: '14px 20px',
-        borderBottom: '2px solid #e1e4e8',
-        backgroundColor: '#fafbfc',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '32px 48px minmax(300px, 2fr) 140px 120px 140px 120px',
-          gap: '16px',
-          fontSize: '11px',
-          fontWeight: '700',
-          color: '#57606a',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-          flex: 1
-        }}>
+      <div className="p-4 border-b-2 border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div className="grid gap-4 text-xs font-bold text-slate-500 uppercase tracking-wide flex-1" style={{ gridTemplateColumns: '32px 48px minmax(300px, 2fr) 140px 120px 140px 120px' }}>
           <div></div>
           <div>Type</div>
           <div className="flex items-center gap-2">
             Title
             {tasks.length > 0 && (
-              <span style={{
-                backgroundColor: '#0969da',
-                color: 'white',
-                padding: '2px 8px',
-                borderRadius: '12px',
-                fontSize: '10px',
-                fontWeight: '700',
-                textTransform: 'none'
-              }}>
+              <span className="bg-blue-600 text-white px-2 py-0.5 rounded-xl text-xs font-bold normal-case">
                 {tasks.length}
               </span>
             )}
@@ -173,29 +142,10 @@ const ListView = ({ tasks, onEditTask, onDeleteTask, onAddSubtask, selectedTaskI
 
       <div>
         {tasks.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '80px 24px',
-            color: '#57606a',
-            backgroundColor: '#fafbfc'
-          }}>
-            <div style={{
-              fontSize: '64px',
-              marginBottom: '20px',
-              opacity: 0.6
-            }}>📋</div>
-            <h4 style={{
-              margin: '0 0 12px 0',
-              fontSize: '18px',
-              color: '#24292f',
-              fontWeight: '600'
-            }}>No issues yet</h4>
-            <p style={{
-              margin: 0,
-              fontSize: '14px',
-              color: '#57606a',
-              lineHeight: '1.6'
-            }}>Create an issue to get started with your project tracking.</p>
+          <div className="text-center p-20 text-slate-500 bg-slate-50">
+            <div className="text-6xl mb-5 opacity-60">📋</div>
+            <h4 className="m-0 mb-3 text-lg text-slate-800 font-semibold">No issues yet</h4>
+            <p className="m-0 text-sm text-slate-500 leading-relaxed">Create an issue to get started with your project tracking.</p>
           </div>
         ) : (
           <div>
