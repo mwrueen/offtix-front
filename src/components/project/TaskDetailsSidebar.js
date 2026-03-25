@@ -21,11 +21,9 @@ const TaskDetailsSidebar = ({
   const [assigneeSearch, setAssigneeSearch] = useState('');
   const assigneeDropdownRef = useRef(null);
 
-  // Local state for form fields
   const [formData, setFormData] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Initialize form data when selectedTask changes
   useEffect(() => {
     if (selectedTask) {
       setFormData({
@@ -43,7 +41,6 @@ const TaskDetailsSidebar = ({
     }
   }, [selectedTask]);
 
-  // Click outside handler for assignee dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (assigneeDropdownRef.current && !assigneeDropdownRef.current.contains(event.target)) {
@@ -51,14 +48,8 @@ const TaskDetailsSidebar = ({
         setAssigneeSearch('');
       }
     };
-
-    if (showAssigneeDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    if (showAssigneeDropdown) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showAssigneeDropdown]);
 
   const handleFieldChange = (field, value) => {
@@ -77,40 +68,19 @@ const TaskDetailsSidebar = ({
 
   const handleSave = async () => {
     if (selectedTask && onUpdateTask && hasChanges) {
-      // Clean up the form data before sending
       const cleanedData = { ...formData };
-
-      // Remove empty string values and replace with undefined
-      if (cleanedData.priority === '') {
-        delete cleanedData.priority;
-      }
-      if (cleanedData.status === '') {
-        delete cleanedData.status;
-      }
-      if (cleanedData.sprint === '') {
-        delete cleanedData.sprint;
-      }
-      if (cleanedData.phase === '') {
-        delete cleanedData.phase;
-      }
-      if (cleanedData.dueDate === '') {
-        delete cleanedData.dueDate;
-      }
-
-      // Clean up duration - remove if value is empty or undefined
-      if (cleanedData.duration) {
-        if (!cleanedData.duration.value || cleanedData.duration.value === '') {
-          delete cleanedData.duration;
-        }
-      }
-
+      if (cleanedData.priority === '') delete cleanedData.priority;
+      if (cleanedData.status === '') delete cleanedData.status;
+      if (cleanedData.sprint === '') delete cleanedData.sprint;
+      if (cleanedData.phase === '') delete cleanedData.phase;
+      if (cleanedData.dueDate === '') delete cleanedData.dueDate;
+      if (cleanedData.duration && (!cleanedData.duration.value || cleanedData.duration.value === '')) delete cleanedData.duration;
       await onUpdateTask(selectedTask._id, cleanedData);
       setHasChanges(false);
     }
   };
 
   const handleCancel = () => {
-    // Reset form data to original task data
     if (selectedTask) {
       setFormData({
         title: selectedTask.title || '',
@@ -130,725 +100,186 @@ const TaskDetailsSidebar = ({
   const getUserInitials = (user) => {
     if (!user || !user.name) return '?';
     const names = user.name.split(' ');
-    if (names.length >= 2) {
-      return (names[0][0] + names[names.length - 1][0]).toUpperCase();
-    }
+    if (names.length >= 2) return (names[0][0] + names[names.length - 1][0]).toUpperCase();
     return user.name.substring(0, 2).toUpperCase();
   };
 
-  const getUserColor = (userId) => {
-    const colors = ['#0052cc', '#00875a', '#ff8b00', '#6554c0', '#00b8d9', '#ff5630'];
-    const index = userId ? userId.charCodeAt(userId.length - 1) % colors.length : 0;
-    return colors[index];
-  };
-
-  const getPriorityIcon = (priority) => {
-    const icons = {
-      urgent: { icon: '⬆️', color: '#d73527', label: 'Urgent' },
-      high: { icon: '⬆', color: '#ff8b00', label: 'High' },
-      medium: { icon: '➡', color: '#ffab00', label: 'Medium' },
-      low: { icon: '⬇', color: '#36b37e', label: 'Low' }
+  const getPriorityConfig = (priority) => {
+    const map = {
+      urgent: { icon: '!', label: 'Critical', bg: 'bg-rose-600', text: 'text-white' },
+      high: { icon: '↑', label: 'High', bg: 'bg-rose-100', text: 'text-rose-600' },
+      medium: { icon: '-', label: 'Medium', bg: 'bg-indigo-100', text: 'text-indigo-600' },
+      low: { icon: '↓', label: 'Low', bg: 'bg-slate-100', text: 'text-slate-500' }
     };
-    return icons[priority] || { icon: '➡', color: '#6b7280', label: 'None' };
+    return map[priority] || { icon: '?', label: 'None', bg: 'bg-slate-50', text: 'text-slate-400' };
   };
 
-  const getIssueTypeIcon = (type) => {
-    const types = {
-      task: { icon: '✓', color: '#0052cc', label: 'Task' },
-      bug: { icon: '🐛', color: '#de350b', label: 'Bug' },
-      story: { icon: '📖', color: '#00875a', label: 'Story' },
-      epic: { icon: '⚡', color: '#6554c0', label: 'Epic' }
-    };
-    return types[type] || types.task;
-  };
-
-  // Collapsed view
   if (isCollapsed) {
     return (
-      <div style={{
-        width: '48px',
-        backgroundColor: '#f4f5f7',
-        borderLeft: '1px solid #dfe1e6',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        paddingTop: '16px'
-      }}>
-        <button
-          onClick={onToggleCollapse}
-          style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '20px',
-            cursor: 'pointer',
-            color: '#5e6c84',
-            padding: '8px',
-            borderRadius: '3px',
-            transition: 'background-color 0.2s'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dfe1e6'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-          title="Expand sidebar"
-        >
-          ◀
-        </button>
+      <div className="w-12 bg-slate-50 border-l border-slate-200 flex flex-col items-center pt-4 transition-all h-screen sticky top-0">
+        <button onClick={onToggleCollapse} className="p-2 rounded-lg hover:bg-slate-200 text-slate-400 transition-all font-bold" title="Expand Details">◀</button>
       </div>
     );
   }
 
-  // If no task is selected, show project information
   if (!selectedTask) {
     return (
-      <div style={{
-        width: '380px',
-        backgroundColor: '#f4f5f7',
-        borderLeft: '1px solid #dfe1e6',
-        overflowY: 'auto',
-        padding: '24px',
-        position: 'relative'
-      }}>
-        <button
-          onClick={onToggleCollapse}
-          style={{
-            position: 'absolute',
-            top: '16px',
-            right: '16px',
-            background: 'none',
-            border: 'none',
-            fontSize: '16px',
-            cursor: 'pointer',
-            color: '#5e6c84',
-            padding: '4px',
-            borderRadius: '3px'
-          }}
-          title="Collapse sidebar"
-        >
-          ▶
-        </button>
-        <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '600', color: '#172b4d' }}>
-          Project Details
-        </h3>
-        
-        {/* Project Info */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px', textTransform: 'uppercase' }}>
-            Project Name
-          </div>
-          <div style={{ fontSize: '14px', color: '#172b4d' }}>
-            {project.title}
-          </div>
-        </div>
-
-        {project.description && (
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px', textTransform: 'uppercase' }}>
-              Description
-            </div>
-            <div style={{ fontSize: '14px', color: '#172b4d', lineHeight: '1.5' }}>
-              {project.description}
+      <div className="w-[400px] bg-slate-50 border-l border-slate-200 overflow-y-auto p-10 relative h-screen sticky top-0 font-sans">
+        <button onClick={onToggleCollapse} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-900 font-bold">▶</button>
+        <div className="space-y-10">
+          <div>
+            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 italic underline underline-offset-8">Project Hub Overview</h3>
+            <div className="p-8 bg-white rounded-3xl border border-slate-200 shadow-sm space-y-2">
+              <h2 className="text-xl font-bold text-slate-900 uppercase italic tracking-tight">{project.title}</h2>
+              <p className="text-xs text-slate-500 italic leading-relaxed">{project.description}</p>
             </div>
           </div>
-        )}
 
-        {/* Team Members */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px', textTransform: 'uppercase' }}>
-            Team Members ({users.length})
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {users.map(user => (
-              <div key={user._id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: getUserColor(user._id),
-                  color: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: '600'
-                }}>
-                  {getUserInitials(user)}
-                </div>
-                <div>
-                  <div style={{ fontSize: '14px', color: '#172b4d', fontWeight: '500' }}>
-                    {user.name}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#5e6c84' }}>
-                    {user.email}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div>
-          <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px', textTransform: 'uppercase' }}>
-            Recent Activity
-          </div>
-          {project.activityLog && project.activityLog.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {project.activityLog.slice(-5).reverse().map((activity, index) => (
-                <div key={index} style={{
-                  padding: '12px',
-                  backgroundColor: 'white',
-                  borderRadius: '3px',
-                  border: '1px solid #dfe1e6'
-                }}>
-                  <div style={{ fontSize: '13px', color: '#172b4d', marginBottom: '4px' }}>
-                    {activity.description || activity.action}
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#5e6c84' }}>
-                    {new Date(activity.timestamp).toLocaleString()}
+          <div>
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Staff Roster ({users.length})</h3>
+            <div className="grid grid-cols-1 gap-3">
+              {users.map(user => (
+                <div key={user._id} className="flex items-center gap-4 p-3 bg-white border border-slate-100 rounded-2xl hover:border-indigo-100 transition-all group">
+                  <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-md group-hover:scale-110 transition-transform">{getUserInitials(user)}</div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 italic">{user.name}</div>
+                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{user.email}</div>
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <div style={{ fontSize: '13px', color: '#5e6c84', fontStyle: 'italic' }}>
-              No recent activity
-            </div>
-          )}
+          </div>
         </div>
       </div>
     );
   }
 
-  // Show task details
-  const issueType = getIssueTypeIcon(selectedTask.issueType || 'task');
-  const priority = getPriorityIcon(formData.priority || selectedTask.priority);
+  const priorityCfg = getPriorityConfig(formData.priority || selectedTask.priority);
   const selectedAssignees = users.filter(u => formData.assignees?.includes(u._id)) || [];
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(assigneeSearch.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => user.name.toLowerCase().includes(assigneeSearch.toLowerCase()));
 
   return (
-    <div style={{
-      width: '380px',
-      backgroundColor: '#f4f5f7',
-      borderLeft: '1px solid #dfe1e6',
-      overflowY: 'auto',
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
-      {/* Header */}
-      <div style={{
-        padding: '16px 24px',
-        borderBottom: '1px solid #dfe1e6',
-        backgroundColor: 'white',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '16px' }}>{issueType.icon}</span>
-          <span style={{ fontSize: '12px', color: '#5e6c84', fontWeight: '600' }}>
-            {issueType.label.toUpperCase()}
-          </span>
+    <div className="w-[420px] bg-slate-50 border-l border-slate-200 overflow-y-auto flex flex-col h-screen sticky top-0 font-sans shadow-2xl">
+      <div className="px-8 py-6 bg-white border-b border-slate-100 flex justify-between items-center z-20">
+        <div className="flex items-center gap-3">
+          <span className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold italic shadow-md">T</span>
+          <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest italic">Task Inspector</span>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button
-            onClick={onToggleCollapse}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '16px',
-              cursor: 'pointer',
-              color: '#5e6c84',
-              padding: '4px'
-            }}
-            title="Collapse sidebar"
-          >
-            ▶
-          </button>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '20px',
-              cursor: 'pointer',
-              color: '#5e6c84',
-              padding: '4px'
-            }}
-          >
-            ✕
-          </button>
+        <div className="flex items-center gap-2">
+          <button onClick={onToggleCollapse} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-950 font-bold">▶</button>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-600 text-xl font-bold">✕</button>
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{ padding: '24px', flex: 1 }}>
-        {/* Title */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ fontSize: '20px', fontWeight: '600', color: '#172b4d', lineHeight: '1.3' }}>
-            {selectedTask.title}
-          </div>
-        </div>
-
-        {/* Description */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px', textTransform: 'uppercase' }}>
-            Description
-          </div>
+      <div className="p-8 space-y-8 flex-1">
+        <div className="p-8 bg-white rounded-3xl border border-slate-200 shadow-sm space-y-4 group">
+          <input
+            className="w-full text-lg font-bold text-slate-950 uppercase italic tracking-tight outline-none focus:text-indigo-600 transition-colors bg-transparent"
+            value={formData.title}
+            onChange={(e) => handleFieldChange('title', e.target.value)}
+          />
           <textarea
             value={formData.description || ''}
             onChange={(e) => handleFieldChange('description', e.target.value)}
-            placeholder="Add a description..."
-            style={{
-              width: '100%',
-              minHeight: '100px',
-              padding: '8px',
-              border: '1px solid #dfe1e6',
-              borderRadius: '3px',
-              fontSize: '14px',
-              fontFamily: 'inherit',
-              resize: 'vertical',
-              backgroundColor: 'white'
-            }}
+            placeholder="Document task requirements..."
+            className="w-full min-h-[120px] p-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-medium text-slate-600 italic leading-relaxed outline-none focus:bg-white focus:border-indigo-100 transition-all resize-none"
           />
         </div>
 
-        {/* Details Section */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Status */}
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              STATUS
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {/* Current Status Display */}
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Lifecycle Status</label>
+            <div className="grid grid-cols-1 gap-2">
               {selectedTask.status && (
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 12px',
-                  backgroundColor: selectedTask.status.color || '#dfe1e6',
-                  color: 'white',
-                  borderRadius: '3px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  alignSelf: 'flex-start'
-                }}>
-                  <span style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: 'white'
-                  }} />
+                <div className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest italic shadow-lg flex items-center gap-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                   {selectedTask.status.name}
                 </div>
               )}
-
-              {/* Status Dropdown */}
               <select
                 value={formData.status || ''}
                 onChange={(e) => handleFieldChange('status', e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '3px',
-                  fontSize: '14px',
-                  backgroundColor: 'white',
-                  cursor: 'pointer'
-                }}
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-900 outline-none focus:border-indigo-400 cursor-pointer shadow-sm transition-all"
               >
-                <option value="">Select status</option>
-                {taskStatuses && taskStatuses.length > 0 ? (
-                  taskStatuses.map(status => (
-                    <option key={status._id} value={status._id}>{status.name}</option>
-                  ))
-                ) : (
-                  <option disabled>No statuses available</option>
-                )}
+                <option value="">Update Hub Status</option>
+                {taskStatuses?.map(status => <option key={status._id} value={status._id}>{status.name}</option>)}
               </select>
             </div>
           </div>
 
-          {/* Assignees */}
-          <div ref={assigneeDropdownRef}>
-            <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              ASSIGNEES
-            </div>
-            <div style={{ position: 'relative' }}>
-              <div
-                onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}
-                style={{
-                  padding: '8px',
-                  backgroundColor: 'white',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '3px',
-                  cursor: 'pointer',
-                  minHeight: '38px'
-                }}
-              >
-                {selectedAssignees.length > 0 ? (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                    {selectedAssignees.map(user => (
-                      <div key={user._id} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '2px 6px',
-                        backgroundColor: '#f4f5f7',
-                        borderRadius: '3px',
-                        fontSize: '12px'
-                      }}>
-                        <div style={{
-                          width: '20px',
-                          height: '20px',
-                          borderRadius: '50%',
-                          backgroundColor: getUserColor(user._id),
-                          color: 'white',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '10px',
-                          fontWeight: '600'
-                        }}>
-                          {getUserInitials(user)}
-                        </div>
-                        <span>{user.name}</span>
-                      </div>
-                    ))}
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Assigned Personnel</label>
+            <div className="relative" ref={assigneeDropdownRef}>
+              <div onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)} className="p-4 bg-white border border-slate-200 rounded-2xl cursor-pointer min-h-[50px] flex flex-wrap gap-2 shadow-sm hover:border-indigo-100 transition-all">
+                {selectedAssignees.length > 0 ? selectedAssignees.map(user => (
+                  <div key={user._id} className="flex items-center gap-2 px-3 py-1 bg-slate-100 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600 uppercase tracking-tight italic">
+                    <div className="w-5 h-5 rounded-md bg-slate-900 text-white flex items-center justify-center text-[8px]">{getUserInitials(user)}</div>
+                    <span>{user.name}</span>
                   </div>
-                ) : (
-                  <span style={{ color: '#5e6c84', fontSize: '14px' }}>Unassigned</span>
-                )}
+                )) : <span className="text-[10px] text-slate-400 font-bold italic uppercase tracking-widest mt-0.5">Unassigned Entity</span>}
               </div>
 
               {showAssigneeDropdown && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  marginTop: '4px',
-                  backgroundColor: 'white',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '3px',
-                  boxShadow: '0 4px 8px rgba(9, 30, 66, 0.25)',
-                  zIndex: 1000,
-                  maxHeight: '300px',
-                  overflowY: 'auto'
-                }}>
-                  <input
-                    type="text"
-                    placeholder="Search users..."
-                    value={assigneeSearch}
-                    onChange={(e) => setAssigneeSearch(e.target.value)}
-                    autoFocus
-                    style={{
-                      width: '100%',
-                      padding: '8px',
-                      border: 'none',
-                      borderBottom: '1px solid #dfe1e6',
-                      fontSize: '14px',
-                      outline: 'none'
-                    }}
-                  />
-                  {filteredUsers && filteredUsers.length > 0 ? (
-                    filteredUsers.map(user => {
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-3xl shadow-xl z-[100] max-h-[280px] overflow-hidden flex flex-col font-sans">
+                  <input type="text" placeholder="Search roster..." value={assigneeSearch} onChange={(e) => setAssigneeSearch(e.target.value)} autoFocus className="w-full px-6 py-4 text-xs font-bold border-b border-slate-100 outline-none focus:bg-slate-50 transition-all uppercase italic" />
+                  <div className="overflow-y-auto flex-1">
+                    {filteredUsers.map(user => {
                       const isSelected = selectedAssignees.some(a => a._id === user._id);
                       return (
-                        <div
-                          key={user._id}
-                          onClick={() => handleToggleAssignee(user._id)}
-                          style={{
-                            padding: '8px 12px',
-                            cursor: 'pointer',
-                            backgroundColor: isSelected ? '#deebff' : 'transparent',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isSelected) e.currentTarget.style.backgroundColor = '#f4f5f7';
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
-                          }}
-                        >
-                          <div style={{
-                            width: '24px',
-                            height: '24px',
-                            borderRadius: '50%',
-                            backgroundColor: getUserColor(user._id),
-                            color: 'white',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '11px',
-                            fontWeight: '600'
-                          }}>
-                            {getUserInitials(user)}
+                        <div key={user._id} onClick={() => handleToggleAssignee(user._id)} className={`flex items-center gap-4 px-6 py-4 cursor-pointer transition-all ${isSelected ? 'bg-indigo-50 border-l-4 border-indigo-600' : 'hover:bg-slate-50 border-l-4 border-transparent'}`}>
+                          <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold italic shadow-sm">{getUserInitials(user)}</div>
+                          <div className="flex-1">
+                            <div className="text-xs font-bold text-slate-900 italic">{user.name}</div>
+                            <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{user.email}</div>
                           </div>
-                          <span style={{ fontSize: '14px', flex: 1 }}>{user.name}</span>
-                          {isSelected && (
-                            <span style={{ color: '#0052cc', fontSize: '16px' }}>✓</span>
-                          )}
+                          {isSelected && <span className="text-indigo-600 font-bold">✓</span>}
                         </div>
                       );
-                    })
-                  ) : (
-                    <div style={{ padding: '12px', textAlign: 'center', color: '#5e6c84', fontSize: '14px' }}>
-                      No users found
-                    </div>
-                  )}
+                    })}
+                  </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Priority */}
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              PRIORITY
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Priority Scale</label>
+              <div className="space-y-2">
+                {selectedTask.priority && (
+                  <div className={`px-4 py-2.5 rounded-xl text-[9px] font-bold uppercase tracking-widest shadow-sm flex items-center gap-2 italic ${priorityCfg.bg} ${priorityCfg.text}`}>
+                    <span className="font-bold text-sm">{priorityCfg.icon}</span>
+                    {selectedTask.priority}
+                  </div>
+                )}
+                <select value={formData.priority || ''} onChange={(e) => handleFieldChange('priority', e.target.value)} className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-900 outline-none bg-white shadow-sm">
+                  <option value="">None</option>
+                  <option value="urgent">Critical !</option>
+                  <option value="high">High +</option>
+                  <option value="medium">Medium =</option>
+                  <option value="low">Low -</option>
+                </select>
+              </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {/* Current Priority Display */}
-              {selectedTask.priority && (
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 12px',
-                  backgroundColor:
-                    selectedTask.priority === 'urgent' ? '#de350b' :
-                    selectedTask.priority === 'high' ? '#ff5630' :
-                    selectedTask.priority === 'medium' ? '#ff991f' :
-                    '#36b37e',
-                  color: 'white',
-                  borderRadius: '3px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  alignSelf: 'flex-start'
-                }}>
-                  {selectedTask.priority === 'urgent' && '⬆️'}
-                  {selectedTask.priority === 'high' && '⬆'}
-                  {selectedTask.priority === 'medium' && '➡'}
-                  {selectedTask.priority === 'low' && '⬇'}
-                  {' '}
-                  {selectedTask.priority.charAt(0).toUpperCase() + selectedTask.priority.slice(1)}
-                </div>
-              )}
-
-              {/* Priority Dropdown */}
-              <select
-                value={formData.priority || ''}
-                onChange={(e) => handleFieldChange('priority', e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '3px',
-                  fontSize: '14px',
-                  backgroundColor: 'white',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="">None</option>
-                <option value="urgent">⬆️ Urgent</option>
-                <option value="high">⬆ High</option>
-                <option value="medium">➡ Medium</option>
-                <option value="low">⬇ Low</option>
-              </select>
+            <div className="space-y-2 text-right">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1 text-right block">Timeline Target</label>
+              <input type="date" value={formData.dueDate || ''} onChange={(e) => handleFieldChange('dueDate', e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest text-indigo-600 outline-none shadow-sm text-center" />
             </div>
           </div>
 
-          {/* Sprint */}
-          {sprints && sprints.length > 0 && (
-            <div>
-              <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-                SPRINT
-              </div>
-              <select
-                value={formData.sprint || ''}
-                onChange={(e) => handleFieldChange('sprint', e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '3px',
-                  fontSize: '14px',
-                  backgroundColor: 'white',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="">None</option>
-                {sprints.map(sprint => (
-                  <option key={sprint._id} value={sprint._id}>
-                    {sprint.name} (Sprint #{sprint.sprintNumber})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Phase */}
-          {phases && phases.length > 0 && (
-            <div>
-              <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-                PHASE
-              </div>
-              <select
-                value={formData.phase || ''}
-                onChange={(e) => handleFieldChange('phase', e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '3px',
-                  fontSize: '14px',
-                  backgroundColor: 'white',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="">None</option>
-                {phases.map(phase => (
-                  <option key={phase._id} value={phase._id}>{phase.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Duration */}
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              DURATION (OPTIONAL)
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input
-                type="number"
-                placeholder="0"
-                value={formData.duration?.value || ''}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  handleFieldChange('duration', {
-                    value: value ? parseFloat(value) : undefined,
-                    unit: formData.duration?.unit || 'hours'
-                  });
-                }}
-                min="0"
-                step="0.5"
-                style={{
-                  flex: 1,
-                  padding: '8px',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '3px',
-                  fontSize: '14px',
-                  backgroundColor: 'white'
-                }}
-              />
-              <select
-                value={formData.duration?.unit || 'hours'}
-                onChange={(e) => {
-                  handleFieldChange('duration', {
-                    value: formData.duration?.value,
-                    unit: e.target.value
-                  });
-                }}
-                style={{
-                  padding: '8px',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '3px',
-                  fontSize: '14px',
-                  backgroundColor: 'white',
-                  cursor: 'pointer',
-                  minWidth: '100px'
-                }}
-              >
-                <option value="minutes">Minutes</option>
-                <option value="hours">Hours</option>
-                <option value="days">Days</option>
-                <option value="weeks">Weeks</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Due Date */}
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              DUE DATE
-            </div>
-            <input
-              type="date"
-              value={formData.dueDate || ''}
-              onChange={(e) => handleFieldChange('dueDate', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                backgroundColor: 'white'
-              }}
-            />
+          <div className="pt-8 border-t border-slate-100">
+            <TaskWorkflow task={selectedTask} projectId={project._id || project.id} onRefresh={() => onUpdateTask(selectedTask._id, {})} />
           </div>
         </div>
-
-        {/* Task Workflow */}
-        {selectedTask && project && (
-          <TaskWorkflow
-            task={selectedTask}
-            projectId={project._id || project.id}
-            onTaskUpdate={(updatedTask) => {
-              // Refresh task data by calling parent update
-              if (onUpdateTask) {
-                // Trigger a refresh by updating with empty object
-                onUpdateTask(selectedTask._id, {});
-              }
-            }}
-          />
-        )}
       </div>
 
-      {/* Save/Cancel Buttons - Fixed at bottom */}
       {hasChanges && (
-        <div style={{
-          padding: '16px 24px',
-          borderTop: '1px solid #dfe1e6',
-          backgroundColor: 'white',
-          display: 'flex',
-          gap: '8px',
-          justifyContent: 'flex-end'
-        }}>
-          <button
-            onClick={handleCancel}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: 'white',
-              border: '1px solid #dfe1e6',
-              borderRadius: '3px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              color: '#5e6c84'
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#0052cc',
-              border: 'none',
-              borderRadius: '3px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              color: 'white'
-            }}
-          >
-            Save Changes
-          </button>
+        <div className="p-8 bg-slate-950 text-white animate-in slide-in-from-bottom-full duration-500 shadow-2xl relative z-30">
+          <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-4 italic text-center">Protocol Changes Detected</p>
+          <div className="flex gap-4">
+            <button onClick={handleCancel} className="flex-1 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-white transition-all italic underline underline-offset-8">Abort</button>
+            <button onClick={handleSave} className="flex-[2] py-4 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-lg hover:bg-emerald-600 transition-all italic">Commit Shifts</button>
+          </div>
         </div>
       )}
     </div>
@@ -856,4 +287,3 @@ const TaskDetailsSidebar = ({
 };
 
 export default TaskDetailsSidebar;
-

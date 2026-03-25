@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCompany } from '../context/CompanyContext';
 import { useToast } from '../context/ToastContext';
 import Layout from './Layout';
+import PageHeader from './PageHeader';
 import Input from './common/Input';
 
 const CreateCompany = () => {
@@ -42,7 +43,7 @@ const CreateCompany = () => {
 
   const handleAddRole = () => {
     if (!newRole.name.trim()) {
-      toast?.showToast?.('ROLE_NAME_EMPTY_IDENTIFICATION_REQUIRED', 'error');
+      toast?.showToast?.('Role name is required for identification.', 'error');
       return;
     }
     setAdditionalRoles(prev => [...prev, { ...newRole, id: Date.now() }]);
@@ -55,10 +56,10 @@ const CreateCompany = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = 'ENTITY_NAME_REQUIRED_FOR_REGISTRY';
-    if (!formData.description.trim()) newErrors.description = 'MISSION_DESCRIPTION_AWAITING_INPUT';
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'INVALID_COMMUNICATION_ADDRESS';
-    if (formData.website && !/^https?:\/\/.+/.test(formData.website)) newErrors.website = 'URL_PROTOCOL_ERROR_HTTPS_REQUIRED';
+    if (!formData.name.trim()) newErrors.name = 'Organization name is required.';
+    if (!formData.description.trim()) newErrors.description = 'Mission description is required.';
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email address.';
+    if (formData.website && !/^https?:\/\/.+/.test(formData.website)) newErrors.website = 'Website must start with http/https.';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -67,7 +68,7 @@ const CreateCompany = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
-      toast?.showToast?.('FORM_ENCRYPTION_ERRORS_DETECTED', 'error');
+      toast?.showToast?.('Please correct the highlighted errors.', 'error');
       return;
     }
     setLoading(true);
@@ -79,405 +80,152 @@ const CreateCompany = () => {
         additionalRoles: additionalRoles.map(role => ({ name: role.name, description: role.description }))
       };
       await createCompany(companyData);
-      toast?.showToast?.('CLUSTER_INITIALIZED_SUCCESSFULLY_LINK_ESTABLISHED', 'success');
+      toast?.showToast?.('Organization registered successfully.', 'success');
       navigate('/overview');
     } catch (error) {
       console.error('Error creating company:', error);
-      toast?.showToast?.(error.response?.data?.message || 'CLUSTER_INITIALIZATION_FAILURE_RETRY_PROTOCOL', 'error');
+      toast?.showToast?.(error.response?.data?.message || 'Failed to initialize organization.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const companySizeOptions = [
-    { value: '', label: 'IDENTIFY_ENTITY_SCALE' },
-    { value: '1-10', label: '1-10_NODES' },
-    { value: '11-50', label: '11-50_NODES' },
-    { value: '51-200', label: '51-200_NODES' },
-    { value: '201-500', label: '201-500_NODES' },
-    { value: '501-1000', label: '501-1000_NODES' },
-    { value: '1000+', label: '1000+_NODES' }
+    { value: '', label: 'Select Employee Count' },
+    { value: '1-10', label: '1-10 Employees' },
+    { value: '11-50', label: '11-50 Employees' },
+    { value: '51-200', label: '51-200 Employees' },
+    { value: '201-500', label: '201-500 Employees' },
+    { value: '501-1000', label: '501-1000 Employees' },
+    { value: '1000+', label: '1000+ Employees' }
   ];
 
   const industryOptions = [
-    { value: '', label: 'IDENTIFY_SECTOR_CLUSTER' },
-    { value: 'Technology', label: 'TECH_MATRIX' },
-    { value: 'Finance', label: 'FINANCIAL_GRID' },
-    { value: 'Healthcare', label: 'BIO_SYSTEMS' },
-    { value: 'Education', label: 'KNOWLEDGE_CORE' },
-    { value: 'Retail', label: 'COMMERCE_UPLINK' },
-    { value: 'Manufacturing', label: 'PRODUCTION_LINE' },
-    { value: 'Consulting', label: 'ADVISORY_NODE' },
-    { value: 'Real Estate', label: 'GEO_ASSETS' },
-    { value: 'Other', label: 'X_UNKNOWN_SECTOR' }
+    { value: '', label: 'Select Industry Sector' },
+    { value: 'Technology', label: 'Technology & Software' },
+    { value: 'Finance', label: 'Financial Services' },
+    { value: 'Healthcare', label: 'Healthcare & Biotech' },
+    { value: 'Education', label: 'Education & Training' },
+    { value: 'Retail', label: 'Retail & E-commerce' },
+    { value: 'Manufacturing', label: 'Manufacturing & Industrial' },
+    { value: 'Consulting', label: 'Professional Consulting' },
+    { value: 'Real Estate', label: 'Real Estate & Construction' },
+    { value: 'Other', label: 'Other/Not Listed' }
   ];
 
   return (
     <Layout>
-      <div className="max-w-[1200px] mx-auto py-24 px-10 italic pb-60">
-        {/* Modern Tactical Header */}
-        <div className="mb-24 text-center lg:text-left relative group">
-          <div className="absolute -left-10 top-0 w-2 h-full bg-indigo-600 rounded-full animate-pulse group-hover:w-4 transition-all" />
-          <h1 className="text-7xl lg:text-8xl font-black text-slate-950 tracking-tighter mb-6 uppercase italic leading-none drop-shadow-sm group-hover:text-indigo-600 transition-colors">
-            ESTABLISH_NEW_CLUSTER
-          </h1>
-          <p className="text-xl font-black text-slate-400 italic uppercase tracking-[0.4em] underline underline-offset-[16px] decoration-slate-100">
-            Define organizational parameters and mission-critical objectives.
-          </p>
-        </div>
+      <div className="max-w-7xl mx-auto py-12 px-6 space-y-12 animate-in fade-in duration-1000 font-sans pb-40">
+        <PageHeader
+          title="Incorporate New Organization"
+          subtitle="Establish organizational parameters and initialize the primary command structure."
+          icon="🏢"
+          actions={<button onClick={() => navigate('/overview')} className="px-8 py-3 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-rose-600 transition-all underline underline-offset-8 italic">Back to Overview</button>}
+        />
 
-        {/* Form Matrix */}
-        <form onSubmit={handleSubmit} className="space-y-20 animate-in fade-in slide-in-from-bottom-12 duration-1200">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          {/* Main Configuration */}
+          <div className="lg:col-span-8 space-y-12 italic">
+            <section className="bg-white p-12 lg:p-16 rounded-[4rem] border border-slate-200 shadow-sm space-y-12 relative overflow-hidden group">
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-4">Core Specifications & Mission</h3>
+              <div className="space-y-10">
+                <Input label="Organization Legal Name" name="name" value={formData.name} onChange={handleChange} placeholder="i.e. Global Dynamics Corporation" required error={errors.name} />
+                <Input label="Mission Statement & Executive Summary" name="description" type="textarea" value={formData.description} onChange={handleChange} placeholder="Define the primary operational objectives and scope..." required rows={4} error={errors.description} />
 
-          {/* Core Specs Section */}
-          <section className="bg-white rounded-[6rem] p-16 shadow-24 border-8 border-slate-50 relative overflow-hidden group/sec">
-            <div className="absolute top-0 right-0 p-24 text-[240px] font-black italic opacity-[0.03] grayscale pointer-events-none select-none text-slate-900 leading-none">CORE</div>
-            <div className="flex items-center gap-8 mb-16 border-b-4 border-slate-100 pb-10 relative z-10 italic">
-              <div className="w-20 h-20 rounded-[2.5rem] bg-indigo-600 text-white flex items-center justify-center text-4xl shadow-24 group-hover/sec:rotate-12 transition-transform duration-700 border-4 border-white">
-                📋
-              </div>
-              <div className="space-y-4">
-                <h2 className="text-4xl font-black text-slate-950 tracking-tighter uppercase italic leading-none text-indigo-600">
-                  CORE_SPECIFICATIONS_MATRIX
-                </h2>
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.6em] italic opacity-60 underline underline-offset-8 decoration-slate-50">Primary_Entity_Neural_Data_Sync</p>
-              </div>
-            </div>
-
-            <div className="space-y-12 relative z-10 max-w-5xl">
-              <Input
-                label="ENTITY_CLUSTER_NAME"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="E.G., NEURAL_DYNAMICS_CORP_ALPHA"
-                required
-                error={errors.name}
-              />
-
-              <Input
-                label="MISSION_OBJECTIVE_SUMMARY"
-                name="description"
-                type="textarea"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="DEFINE_PRIMARY_OPERATIONAL_OBJECTIVES_FOR_THIS_CLUSTER..."
-                required
-                rows={4}
-                error={errors.description}
-                helperText="OPERATIONAL_SCOPE_AND_ARCHITECTURAL_MAPPING_ID_..."
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                <Input
-                  label="SECTOR_IDENT"
-                  name="industry"
-                  type="select"
-                  value={formData.industry}
-                  onChange={handleChange}
-                  options={industryOptions}
-                />
-
-                <Input
-                  label="ENTITY_SCALE_RANK"
-                  name="companySize"
-                  type="select"
-                  value={formData.companySize}
-                  onChange={handleChange}
-                  options={companySizeOptions}
-                />
-
-                <Input
-                  label="ORIGIN_CYCLE_Y"
-                  name="foundedYear"
-                  type="number"
-                  value={formData.foundedYear}
-                  onChange={handleChange}
-                  placeholder="202X_CYCLE"
-                  min="1800"
-                  max={new Date().getFullYear()}
-                />
-              </div>
-            </div>
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[160px] -translate-y-1/2 translate-x-1/2 -z-0 pointer-events-none group-hover/sec:scale-125 transition-transform duration-2000"></div>
-          </section>
-
-          {/* Contact & Geo Grid Omega */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-            {/* Comms Network Input */}
-            <section className="bg-white rounded-[5rem] p-14 shadow-24 border-8 border-slate-50 group/comms relative overflow-hidden italic">
-              <div className="absolute top-0 right-0 p-16 text-[180px] font-black italic opacity-[0.02] grayscale pointer-events-none select-none text-slate-900 leading-none">COMMS</div>
-              <div className="flex items-center gap-8 mb-12 border-b-4 border-slate-50 pb-8 relative z-10">
-                <div className="w-16 h-16 rounded-[2rem] bg-indigo-50 text-indigo-600 flex items-center justify-center text-3xl shadow-inner group-hover/comms:scale-110 group-hover/comms:rotate-12 transition-all duration-700">
-                  🌐
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
+                  <Input label="Industry Sector" name="industry" type="select" value={formData.industry} onChange={handleChange} options={industryOptions} />
+                  <Input label="Organization Scale" name="companySize" type="select" value={formData.companySize} onChange={handleChange} options={companySizeOptions} />
+                  <Input label="Founded Cycle" name="foundedYear" type="number" value={formData.foundedYear} onChange={handleChange} placeholder="YYYY" min="1800" max={new Date().getFullYear()} />
                 </div>
-                <div>
-                  <h2 className="text-2xl font-black text-slate-950 uppercase tracking-tighter leading-none mb-3"> COMMS_CHANNEL_ID </h2>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic opacity-40">EXTERNAL_UPLINK_SIGNATURES</p>
-                </div>
-              </div>
-
-              <div className="space-y-10 relative z-10">
-                <Input
-                  label="SECURE_EMAIL_PROTOCOL"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="OPS_CENTER@ENTITY.IO"
-                  error={errors.email}
-                />
-
-                <Input
-                  label="DIRECT_VOICE_UPLINK"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="+X_CHANNEL_IDENT"
-                />
-
-                <Input
-                  label="WEB_TERMINAL_INTERFACE"
-                  name="website"
-                  type="url"
-                  value={formData.website}
-                  onChange={handleChange}
-                  placeholder="HTTPS://TERMINAL_NODE.NET"
-                  error={errors.website}
-                />
               </div>
             </section>
 
-            {/* Geo Matrix Input */}
-            <section className="bg-white rounded-[5rem] p-14 shadow-24 border-8 border-slate-50 group/geo relative overflow-hidden italic">
-              <div className="absolute top-0 right-0 p-16 text-[180px] font-black italic opacity-[0.02] grayscale pointer-events-none select-none text-slate-900 leading-none">GEO</div>
-              <div className="flex items-center gap-8 mb-12 border-b-4 border-slate-50 pb-8 relative z-10">
-                <div className="w-16 h-16 rounded-[2rem] bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl shadow-inner group-hover/geo:scale-110 group-hover/geo:rotate-12 transition-all duration-700">
-                  📍
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <section className="bg-white p-12 rounded-[3.5rem] border border-slate-200 shadow-sm space-y-8">
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-4">Communication Channels</h3>
+                <div className="space-y-8">
+                  <Input label="Primary Business Email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="ops@organization.io" error={errors.email} />
+                  <Input label="Direct Contact Line" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="+X XXX-XXX-XXXX" />
+                  <Input label="Official Web Presence" name="website" type="url" value={formData.website} onChange={handleChange} placeholder="https://organization.io" error={errors.website} />
                 </div>
+              </section>
+
+              <section className="bg-white p-12 rounded-[3.5rem] border border-slate-200 shadow-sm space-y-8">
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-4">Geospatial Logistics</h3>
+                <div className="space-y-8">
+                  <Input label="Headquarters Address" name="address" value={formData.address} onChange={handleChange} placeholder="Physical street location..." />
+                  <div className="grid grid-cols-2 gap-6">
+                    <Input label="Metro Core" name="city" value={formData.city} onChange={handleChange} placeholder="City Name" />
+                    <Input label="Region / State" name="state" value={formData.state} onChange={handleChange} placeholder="State" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-6">
+                    <Input label="Territory" name="country" value={formData.country} onChange={handleChange} placeholder="Country" />
+                    <Input label="Postal Index" name="zipCode" value={formData.zipCode} onChange={handleChange} placeholder="ZIP Code" />
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <section className="bg-slate-900 p-12 lg:p-20 rounded-[5rem] text-white space-y-12 shadow-2xl relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent pointer-events-none" />
+              <div className="flex items-center gap-10 mb-8 relative z-10 border-b border-white/5 pb-10">
+                <div className="w-20 h-20 rounded-[2rem] bg-indigo-600 text-white flex items-center justify-center text-4xl shadow-xl group-hover:rotate-12 transition-all">🛡️</div>
                 <div>
-                  <h2 className="text-2xl font-black text-slate-950 uppercase tracking-tighter leading-none mb-3"> GEOSPATIAL_COORDS </h2>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic opacity-40">PHYSICAL_SECTOR_IDENTIFICATION</p>
+                  <h3 className="text-3xl font-black uppercase tracking-tighter italic">Administrative Authority</h3>
+                  <p className="text-[11px] font-bold text-indigo-400 uppercase tracking-widest mt-2">Initialize Security & Permission Levels</p>
                 </div>
               </div>
 
-              <div className="space-y-10 relative z-10">
-                <Input
-                  label="HQ_PRIMARY_COORD"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  placeholder="PHYSICAL_LOCATION_DATA..."
-                />
-
-                <div className="grid grid-cols-2 gap-8">
-                  <Input
-                    label="METRO_CORE"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    placeholder="TERMINAL_CITY"
-                  />
-
-                  <Input
-                    label="SECTOR_DISTRICT"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleChange}
-                    placeholder="SECTOR_7_DELTA"
-                  />
+              <div className="relative z-10 space-y-10">
+                <div className="bg-white/5 p-8 rounded-[3rem] border border-white/5 backdrop-blur-md">
+                  <p className="text-sm font-medium text-slate-400 uppercase tracking-widest leading-relaxed">By initializing this organization, you will be granted permanent <span className="text-white font-bold">EXECUTIVE OWNER</span> privileges over all personnel, project logs, and financial assets linked to this sector.</p>
                 </div>
-
-                <div className="grid grid-cols-2 gap-8">
-                  <Input
-                    label="TERRITORY_IDENT"
-                    name="country"
-                    value={formData.country}
-                    onChange={handleChange}
-                    placeholder="NEUTRAL_ZONE_X"
-                  />
-
-                  <Input
-                    label="ZIP_INDEX_HASH"
-                    name="zipCode"
-                    value={formData.zipCode}
-                    onChange={handleChange}
-                    placeholder="SIG_XXXXX"
-                  />
-                </div>
+                <Input label="Your Professional Title / Designation" name="founderRole" value={formData.founderRole} onChange={handleChange} placeholder="e.g. Executive Director / Managing Partner" required inputClassName="bg-white/5 border-white/10 text-white text-2xl py-8 font-black uppercase italic tracking-tighter focus:bg-white/10" />
               </div>
             </section>
           </div>
 
-          {/* Root Command Designation Zeta */}
-          <section className="bg-slate-950 rounded-[6rem] p-16 shadow-24 border-8 border-slate-900 relative overflow-hidden group/root italic">
-            <div className="absolute top-0 right-0 p-24 text-[240px] font-black italic opacity-[0.03] grayscale pointer-events-none select-none text-white leading-none">ROOT</div>
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent pointer-events-none group-hover/root:opacity-20 transition-opacity duration-1000" />
-            <div className="flex items-center gap-10 mb-16 border-b-8 border-white/5 pb-12 relative z-10">
-              <div className="w-24 h-24 rounded-[3.5rem] bg-indigo-600 text-white flex items-center justify-center text-5xl shadow-24 group-hover/root:rotate-12 group-hover/root:scale-110 transition-all duration-1000 border-4 border-white animate-pulse">
-                👑
-              </div>
-              <div className="space-y-4">
-                <h2 className="text-4xl font-black text-white tracking-tighter uppercase italic leading-none drop-shadow-sm">
-                  ROOT_COMMAND_DESIGNATION
-                </h2>
-                <p className="text-[12px] font-black text-indigo-400 uppercase tracking-[0.6em] italic opacity-60 underline underline-offset-8 decoration-white/5">Primary_Sector_Identity_Lock</p>
-              </div>
-            </div>
+          {/* Sidebar / Roles */}
+          <div className="lg:col-span-4 space-y-8 italic">
+            <section className="bg-white p-10 rounded-[3.5rem] border border-slate-200 shadow-sm space-y-10">
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-4 text-center">Operational Role Matrix</h3>
 
-            <div className="relative z-10 bg-white/5 border-4 border-white/5 rounded-[3.5rem] p-10 mb-16 backdrop-blur-3xl group-hover/root:bg-white/10 transition-all duration-1000">
-              <div className="flex gap-10 items-start">
-                <span className="text-5xl bg-white/10 w-20 h-20 rounded-[2rem] flex items-center justify-center shadow-24 border-2 border-white/5 grayscale group-hover/root:grayscale-0 group-hover/root:rotate-12 transition-all">🛡️</span>
-                <div className="space-y-6 flex-1">
-                  <p className="text-2xl font-black text-indigo-400 uppercase tracking-tighter"> AUTHORIZATION_ROOT_GRANTED </p>
-                  <p className="text-sm text-white/40 font-black leading-relaxed italic uppercase tracking-widest max-w-2xl group-hover/root:text-white/60 transition-colors">
-                    Initializing this cluster grants permanent ROOT administrative privileges over all entities, mission logs, and financial resource allocation streams linked to this sector. Confirm your tactical designation.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <Input
-              label="OPERATIONAL_ROOT_TITLE"
-              name="founderRole"
-              value={formData.founderRole}
-              onChange={handleChange}
-              placeholder="E.G., FOUNDER_COMMAND_DIRECTOR"
-              required
-              helperText="SPECIFY_YOUR_DESIGNATION_RANK_WITHIN_THE_PRIMARY_COMMAND_STRUCTURE_..."
-              inputClassName="bg-white/5 border-white/10 focus:bg-white/10 text-white font-black tracking-tight uppercase placeholder:text-slate-800 text-2xl py-8 pl-10"
-            />
-            <div className="absolute -bottom-48 -left-48 w-[600px] h-[600px] bg-indigo-500/5 rounded-full blur-[180px] -z-0 pointer-events-none group-hover/root:scale-125 transition-transform duration-2000"></div>
-          </section>
-
-          {/* Subsidiary Operational Nodes Eta */}
-          <section className="bg-white rounded-[6rem] p-16 shadow-24 border-8 border-slate-50 relative overflow-hidden italic group/subs animate-in zoom-in-95">
-            <div className="absolute bottom-0 right-0 p-24 text-[240px] font-black italic opacity-[0.02] grayscale pointer-events-none select-none text-slate-950 leading-none">NODES</div>
-            <div className="flex items-center justify-between gap-8 mb-16 border-b-4 border-slate-50 pb-12">
-              <div className="flex items-center gap-10">
-                <div className="w-20 h-20 rounded-[2.5rem] bg-slate-950 text-white flex items-center justify-center text-4xl shadow-24 group-hover/subs:rotate-12 transition-all duration-700 border-4 border-white">
-                  👥
-                </div>
-                <div className="space-y-4">
-                  <h2 className="text-4xl font-black text-slate-950 tracking-tighter uppercase italic leading-none group-hover/subs:text-indigo-600 transition-colors">
-                    SUBSIDIARY_OPERATIONAL_NODES
-                  </h2>
-                  <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.6em] italic opacity-60 underline underline-offset-8 decoration-slate-50">Authorized_Hierarchy_Designations</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
-              <div className="space-y-10">
-                <h3 className="text-[12px] font-black text-slate-400 uppercase tracking-[0.8em] mb-8 border-b-4 border-slate-50 pb-6 italic underline underline-offset-8"> CURRENT_REGISTRY_STATE </h3>
+              <div className="space-y-6">
                 {additionalRoles.length === 0 ? (
-                  <div className="py-24 text-center bg-slate-50/50 rounded-[4.5rem] border-8 border-dashed border-slate-100 flex flex-col items-center gap-10 grayscale opacity-20">
-                    <div className="text-9xl mb-4">🗂️</div>
-                    <p className="text-[14px] font-black text-slate-300 uppercase tracking-[0.8em] italic"> NO_SUBSIDIARY_ROLES_DETECTED </p>
+                  <div className="py-20 text-center bg-slate-50/50 rounded-[3.5rem] border-4 border-dashed border-slate-100 grayscale opacity-20">
+                    <span className="text-7xl block mb-6">📂</span>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No Subsidiary Roles Defined</p>
                   </div>
                 ) : (
-                  <div className="space-y-6">
-                    {additionalRoles.map((role, i) => (
-                      <div
-                        key={role.id}
-                        className="group flex items-center justify-between p-8 bg-slate-50/50 hover:bg-white border-4 border-slate-50 hover:border-indigo-100 rounded-[3rem] transition-all duration-1000 hover:shadow-24 relative overflow-hidden animate-in slide-in-from-left-8" style={{ animationDelay: `${i * 100}ms` }}
-                      >
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-bl-full translate-x-12 -translate-y-12 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform duration-1000" />
-                        <div className="flex-1 min-w-0 pr-6 relative z-10">
-                          <div className="text-xl font-black text-slate-950 uppercase italic tracking-tighter mb-2 leading-none group-hover:text-indigo-600 transition-colors">{role.name}</div>
-                          <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest italic truncate opacity-60 underline underline-offset-4 decoration-slate-100">{role.description || 'MISSION_BRIEF_NEGATIVE'}</div>
+                  <div className="space-y-4">
+                    {additionalRoles.map(role => (
+                      <div key={role.id} className="p-6 bg-slate-50 border border-slate-100 rounded-3xl flex justify-between items-center group/role">
+                        <div className="min-w-0 pr-4">
+                          <p className="font-bold text-slate-900 uppercase tracking-tight truncate">{role.name}</p>
+                          <p className="text-[9px] text-slate-400 uppercase tracking-widest truncate">{role.description || 'No description'}</p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveRole(role.id)}
-                          className="w-14 h-14 bg-rose-50 text-rose-500 hover:bg-rose-600 hover:text-white rounded-[1.5rem] transition-all duration-500 flex items-center justify-center shadow-sm hover:shadow-24 hover:rotate-90 active:scale-90 shrink-0 border-2 border-transparent hover:border-white relative z-10 text-xl font-black"
-                        >
-                          ×
-                        </button>
+                        <button type="button" onClick={() => handleRemoveRole(role.id)} className="w-10 h-10 rounded-xl bg-white border border-slate-200 text-rose-500 hover:bg-rose-600 hover:text-white transition-all font-bold text-xl flex items-center justify-center shadow-sm">×</button>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              <div className="p-12 bg-slate-950 rounded-[5rem] shadow-24 border-8 border-slate-900 group/form-role relative overflow-hidden italic animate-in slide-in-from-right-12 duration-1200 transition-all hover:scale-[1.02]">
-                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-indigo-500/10 to-transparent pointer-events-none" />
-                <div className="space-y-10 relative z-10">
-                  <div className="flex items-center gap-6 mb-4">
-                    <div className="w-12 h-12 rounded-2xl bg-white/5 border-2 border-white/10 flex items-center justify-center text-xl shadow-inner text-indigo-400">⚡</div>
-                    <h4 className="text-[12px] font-black text-indigo-400 uppercase tracking-[0.8em] italic"> INITIALIZE_NODE_MODULE </h4>
-                  </div>
-
-                  <Input
-                    label="NODE_DESIGNATION_RANK"
-                    name="roleName"
-                    value={newRole.name}
-                    onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
-                    placeholder="E.G., PROJECT_COORD_7"
-                    inputClassName="bg-white/5 border-white/10 focus:bg-white/10 text-white font-black tracking-tight uppercase text-lg py-6"
-                  />
-
-                  <Input
-                    label="MISSION_BRIEF_ID"
-                    name="roleDescription"
-                    type="textarea"
-                    value={newRole.description}
-                    onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
-                    placeholder="SPECIFY_SECTOR_RESPONSIBILITIES_LOGS..."
-                    rows={3}
-                    inputClassName="bg-white/5 border-white/10 focus:bg-white/10 text-white text-sm italic py-6 leading-loose"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={handleAddRole}
-                    className="w-full h-24 bg-white text-slate-950 rounded-[2.5rem] font-black text-base uppercase tracking-[0.6em] transition-all hover:bg-indigo-400 hover:text-white shadow-24 active:scale-95 group/btn-add relative overflow-hidden border-8 border-white/10 shrink-0"
-                  >
-                    <span className="relative z-10 flex items-center justify-center gap-6">
-                      <span className="text-3xl group-hover/btn-add:rotate-90 transition-transform duration-700">＋</span>
-                      REGISTER_NODE_SIG
-                    </span>
-                    <div className="absolute top-0 left-0 w-full h-full bg-white/20 -translate-x-full group-hover/btn-add:animate-[shimmer_3s_infinite]" />
-                  </button>
+              <div className="p-10 bg-slate-50 rounded-[3rem] border border-slate-100 space-y-8">
+                <h4 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest italic text-center">Initialize New Role Module</h4>
+                <div className="space-y-6">
+                  <Input label="Designation Name" name="roleName" value={newRole.name} onChange={(e) => setNewRole({ ...newRole, name: e.target.value })} placeholder="e.g. Lead Project Coordinator" inputClassName="bg-white py-4" />
+                  <Input label="Scope of Authority" name="roleDescription" type="textarea" value={newRole.description} onChange={(e) => setNewRole({ ...newRole, description: e.target.value })} placeholder="Briefly define responsibilities..." rows={2} inputClassName="bg-white py-4" />
+                  <button type="button" onClick={handleAddRole} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg hover:bg-slate-950 transition-all active:scale-95 italic">+ Register Role</button>
                 </div>
-                <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover/form-role:scale-150 transition-transform duration-2000"></div>
               </div>
+            </section>
+
+            <div className="px-4 space-y-6 pt-10">
+              <button type="submit" disabled={loading} className="w-full py-8 bg-slate-950 text-white rounded-[2.5rem] font-bold text-sm uppercase tracking-[0.3em] shadow-2xl hover:bg-indigo-600 hover:-translate-y-2 transition-all active:scale-95 disabled:grayscale italic border-8 border-white">
+                {loading ? 'Initializing Core...' : 'Confirm Incorporation 🚀'}
+              </button>
             </div>
-          </section>
-
-          {/* Action Sequencer Omega */}
-          <div className="flex flex-col sm:flex-row gap-10 justify-center lg:justify-end pt-20 border-t-8 border-slate-50 pb-40">
-            <button
-              type="button"
-              onClick={() => navigate('/overview')}
-              disabled={loading}
-              className="px-16 py-8 bg-white border-4 border-slate-100 hover:border-slate-300 text-slate-400 rounded-[3.5rem] text-[13px] font-black uppercase tracking-[0.6em] transition-all hover:text-rose-600 active:scale-95 disabled:opacity-50 italic underline underline-offset-[16px] decoration-slate-50"
-            >
-              ABORT_CLUSTER_ID_INIT
-            </button>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className={`px-24 py-8 rounded-[3.5rem] font-black text-[14px] uppercase tracking-[0.8em] text-white shadow-24 transition-all hover:scale-110 active:scale-95 group/submit relative overflow-hidden border-8 border-white min-w-[360px] italic ${loading ? 'bg-slate-300 text-slate-500 grayscale' : 'bg-slate-950 shadow-indigo-950/20 hover:bg-indigo-600'}`}
-            >
-              <span className="relative z-10 flex items-center justify-center gap-8">
-                {loading ? (
-                  <>
-                    <div className="w-10 h-10 border-8 border-white/20 border-t-white rounded-full animate-spin"></div>
-                    SYNCHRONIZING_CORE_PULSE...
-                  </>
-                ) : (
-                  <>
-                    <span className="text-3xl group-hover:rotate-12 transition-transform duration-700">🏢</span>
-                    CONFIRM_DEPLOYMENT_LINK
-                    <span className="text-3xl group-hover:translate-x-4 transition-transform duration-700">➜</span>
-                  </>
-                )}
-              </span>
-              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_3s_infinite] -z-0"></div>
-            </button>
           </div>
         </form>
       </div>

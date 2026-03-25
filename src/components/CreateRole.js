@@ -7,6 +7,7 @@ import { getCookie } from '../utils/cookies';
 import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import Layout from './Layout';
 import Input from './common/Input';
+import PageHeader from './PageHeader';
 
 const CreateRole = () => {
   const navigate = useNavigate();
@@ -42,51 +43,30 @@ const CreateRole = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-
-  // No need for local permission check — handled by PermissionsContext
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const handlePermissionChange = (permission) => {
-    setPermissions(prev => ({
-      ...prev,
-      [permission]: !prev[permission]
-    }));
+    setPermissions(prev => ({ ...prev, [permission]: !prev[permission] }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Role name is required';
-    }
-
+    if (!formData.name.trim()) newErrors.name = 'Role name is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) {
       toast?.showToast?.('Please fix the errors in the form', 'error');
       return;
     }
-
     setLoading(true);
-
     try {
       const token = getCookie('authToken');
       const response = await fetch(`/api/companies/${selectedCompany.id}/designations`, {
@@ -112,72 +92,47 @@ const CreateRole = () => {
     } catch (error) {
       console.error('Error creating role:', error);
       toast?.showToast?.('Failed to create role. Please try again.', 'error');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const permissionGroups = [
     {
       title: 'Employee Management',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-          <circle cx="9" cy="7" r="4"></circle>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-        </svg>
-      ),
+      icon: '👥',
       permissions: [
-        { key: 'addEmployee', label: 'Add Employee', description: 'Can invite new employees to the company' },
-        { key: 'viewEmployeeList', label: 'View Employee List', description: 'Can view all employees in the company' },
-        { key: 'editEmployee', label: 'Edit Employee', description: 'Can update employee information and salary' }
+        { key: 'addEmployee', label: 'Invite Employees', description: 'Authorize new staff invitations.' },
+        { key: 'viewEmployeeList', label: 'Directory Access', description: 'View professional profiles.' },
+        { key: 'editEmployee', label: 'Modify Personnel', description: 'Update profile and compensation.' }
       ]
     },
     {
-      title: 'Role Management',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-          <circle cx="8.5" cy="7" r="4"></circle>
-          <polyline points="17 11 19 13 23 9"></polyline>
-        </svg>
-      ),
+      title: 'Role Architecture',
+      icon: '🛡️',
       permissions: [
-        { key: 'createDesignation', label: 'Create Role', description: 'Can create new roles/designations' },
-        { key: 'viewDesignations', label: 'View Roles', description: 'Can view all roles/designations' },
-        { key: 'editDesignation', label: 'Edit Role', description: 'Can modify role permissions' },
-        { key: 'deleteDesignation', label: 'Delete Role', description: 'Can delete roles/designations' }
+        { key: 'createDesignation', label: 'Define Roles', description: 'Create new authority levels.' },
+        { key: 'viewDesignations', label: 'Audit Roles', description: 'Monitor structural hierarchy.' },
+        { key: 'editDesignation', label: 'Update Authority', description: 'Modify active permissions.' },
+        { key: 'deleteDesignation', label: 'Revoke Roles', description: 'Remove structural designations.' }
       ]
     },
     {
-      title: 'Project Management',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-        </svg>
-      ),
+      title: 'Project Operations',
+      icon: '📁',
       permissions: [
-        { key: 'createProject', label: 'Create Project', description: 'Can create new projects' },
-        { key: 'editProject', label: 'Edit Project', description: 'Can edit project details and status' },
-        { key: 'deleteProject', label: 'Delete Project', description: 'Can delete projects' },
-        { key: 'assignEmployeeToProject', label: 'Assign to Project', description: 'Can assign employees to projects' },
-        { key: 'removeEmployeeFromProject', label: 'Remove from Project', description: 'Can remove employees from projects' },
-        { key: 'viewProjectAnalytics', label: 'View Analytics', description: 'Can view project reports and analytics' }
+        { key: 'createProject', label: 'Initiate Projects', description: 'Start new mission clusters.' },
+        { key: 'editProject', label: 'Manage Scope', description: 'Modify project parameters.' },
+        { key: 'deleteProject', label: 'Archive Projects', description: 'Remove project signals.' },
+        { key: 'assignEmployeeToProject', label: 'Staff Allocation', description: 'Assign resources to tasks.' },
+        { key: 'viewProjectAnalytics', label: 'Performance Review', description: 'Access operational reports.' }
       ]
     },
     {
-      title: 'Task Management',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 11 12 14 22 4"></polyline>
-          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-        </svg>
-      ),
+      title: 'Task Execution',
+      icon: '✅',
       permissions: [
-        { key: 'createTask', label: 'Create Task', description: 'Can create tasks within projects' },
-        { key: 'editTask', label: 'Edit Task', description: 'Can modify task information' },
-        { key: 'deleteTask', label: 'Delete Task', description: 'Can delete tasks' }
+        { key: 'createTask', label: 'Define Tasks', description: 'Create project deliverables.' },
+        { key: 'editTask', label: 'Modify Tasks', description: 'Update execution status.' },
+        { key: 'deleteTask', label: 'Flush Tasks', description: 'Remove task nodes.' }
       ]
     }
   ];
@@ -185,47 +140,30 @@ const CreateRole = () => {
   if (!selectedCompany || selectedCompany.id === 'personal') {
     return (
       <Layout>
-        <div className="bg-white p-12 rounded-xl text-center shadow-sm">
-          <h2 className="text-slate-800 mb-4">No Company Selected</h2>
-          <p className="text-slate-500 mb-6">
-            Please select a company to create roles
+        <div className="bg-white p-20 rounded-3xl text-center shadow-lg border border-slate-200 animate-in fade-in zoom-in-95 duration-500">
+          <div className="text-8xl mb-6 opacity-20">🏢</div>
+          <h2 className="text-3xl font-bold text-slate-800 uppercase italic tracking-tight">No Organization Selected</h2>
+          <p className="text-slate-500 mb-10 max-w-sm mx-auto font-medium">
+            Please select an active organization to define new authority roles.
           </p>
-          <button
-            onClick={() => navigate('/overview')}
-            className="px-6 py-3 bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-0 rounded-lg cursor-pointer font-semibold"
-          >
-            Go to Overview
-          </button>
+          <button onClick={() => navigate('/overview')} className="px-10 py-4 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-900 transition-all shadow-lg active:scale-95">Go to Overview</button>
         </div>
       </Layout>
     );
   }
 
-  if (permLoading) {
-    return (
-      <Layout>
-        <div className="text-center p-12">
-          <div className="text-lg text-slate-500">Checking permissions...</div>
-        </div>
-      </Layout>
-    );
-  }
+  if (permLoading) return <Layout><div className="p-40 text-center animate-pulse"><div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" /><p className="text-xs font-bold text-slate-400 uppercase tracking-widest italic">Syncing Permissions...</p></div></Layout>;
 
   if (!hasPermission(PERMISSIONS.CREATE_DESIGNATION)) {
     return (
       <Layout>
-        <div className="bg-white p-12 rounded-xl text-center shadow-sm">
-          <div className="text-5xl mb-5">🔒</div>
-          <h2 className="text-slate-800 mb-4">Access Denied</h2>
-          <p className="text-slate-500 mb-6">
-            You don't have permission to create roles
+        <div className="bg-white p-20 rounded-3xl text-center shadow-lg border border-slate-200 animate-in fade-in zoom-in-95 duration-500">
+          <div className="text-8xl mb-6 opacity-20">🔒</div>
+          <h2 className="text-3xl font-bold text-slate-800 uppercase italic tracking-tight">Access Restricted</h2>
+          <p className="text-slate-500 mb-10 max-w-sm mx-auto font-medium font-sans">
+            You do not possess the necessary clearance level to define new organizational roles.
           </p>
-          <button
-            onClick={() => navigate('/overview')}
-            className="px-6 py-3 bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-0 rounded-lg cursor-pointer font-semibold"
-          >
-            Go to Overview
-          </button>
+          <button onClick={() => navigate('/overview')} className="px-10 py-4 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-900 transition-all shadow-lg active:scale-95">Release Signal</button>
         </div>
       </Layout>
     );
@@ -233,132 +171,74 @@ const CreateRole = () => {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-10 rounded-2xl mb-8 shadow-2xl shadow-emerald-500/20 text-white">
-          <div className="flex items-center gap-4 mb-3">
-            <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/30">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="8.5" cy="7" r="4"></circle>
-                <polyline points="17 11 19 13 23 9"></polyline>
-              </svg>
+      <div className="max-w-5xl mx-auto space-y-10 pb-40">
+        <PageHeader
+          title="Create New Role"
+          subtitle={`Define a specific clearance level and permission matrix for ${selectedCompany.name}.`}
+          icon="🛡️"
+          stats={[
+            { label: 'Clearing Center', value: selectedCompany.name },
+            { label: 'Mode', value: 'WRITE_ACCESS' }
+          ]}
+          actions={
+            <div className="flex gap-4">
+              <button onClick={() => navigate('/manage-roles')} className="px-8 py-3.5 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-rose-600 transition-all italic underline underline-offset-8">Abort Protocol</button>
+              <button onClick={handleSubmit} disabled={loading} className="px-10 py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg hover:bg-slate-950 transition-all disabled:opacity-50 italic"> {loading ? 'Processing...' : 'Authorize New Role'} </button>
             </div>
-            <div>
-              <h1 className="m-0 mb-1 text-3xl font-bold">
-                Create New Role
-              </h1>
-              <p className="m-0 text-base opacity-90">
-                Define a new role with custom permissions for {selectedCompany.name}
-              </p>
+          }
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 font-sans">
+          <div className="lg:col-span-4 space-y-6">
+            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-8">
+              <h3 className="text-base font-bold text-slate-900 uppercase italic tracking-tight border-b border-slate-100 pb-4">Role Fundamentals</h3>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Designation Label</label>
+                  <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="e.g. Lead Architect" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:border-indigo-400 transition-all italic" />
+                  {errors.name && <p className="text-[10px] text-rose-500 font-bold ml-1">{errors.name}</p>}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Mission Description</label>
+                  <textarea name="description" value={formData.description} onChange={handleChange} rows="4" placeholder="Detail the authority scope..." className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-600 outline-none focus:bg-white focus:border-indigo-400 transition-all resize-none italic" />
+                </div>
+              </div>
+            </div>
+            <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden group">
+              <div className="relative z-10">
+                <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-4 opacity-80 italic">Hierarchy Notice</p>
+                <p className="text-sm font-medium italic leading-relaxed text-slate-300">Defining precise permissions ensures secure organizational integrity and operational efficiency.</p>
+              </div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             </div>
           </div>
-        </div>
 
-        {/* Form Card */}
-        <div className="bg-white p-10 rounded-2xl shadow-sm border border-slate-200">
-          <form onSubmit={handleSubmit}>
-            {/* Basic Information */}
-            <div className="mb-8">
-              <h3 className="m-0 mb-5 text-lg font-bold text-slate-800">
-                Basic Information
-              </h3>
-
-              <div className="mb-5">
-                <Input
-                  label="Role Name"
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="e.g., Senior Developer, Marketing Manager"
-                  error={errors.name}
-                  required
-                />
-              </div>
-
-              <div>
-                <Input
-                  label="Description (Optional)"
-                  type="textarea"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Describe the responsibilities and expectations for this role"
-                  rows={3}
-                />
-              </div>
-            </div>
-
-            {/* Permissions */}
-            <div className="mb-8">
-              <h3 className="m-0 mb-5 text-lg font-bold text-slate-800">
-                Permissions
-              </h3>
-
-              <div className="flex flex-col gap-6">
-                {permissionGroups.map((group, index) => (
-                  <div key={index} className="p-6 bg-slate-50 rounded-xl border border-slate-200">
-                    <div className="flex items-center gap-2.5 mb-4 text-slate-600">
-                      {group.icon}
-                      <h4 className="m-0 text-base font-semibold">
-                        {group.title}
-                      </h4>
-                    </div>
-
-                    <div className="flex flex-col gap-3">
-                      {group.permissions.map((perm) => (
-                        <label
-                          key={perm.key}
-                          className="flex items-start gap-3 cursor-pointer p-3 bg-white rounded-lg border border-slate-200 transition-all duration-200 hover:border-slate-300 hover:shadow-sm"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={permissions[perm.key]}
-                            onChange={() => handlePermissionChange(perm.key)}
-                            className="w-4.5 h-4.5 mt-0.5 cursor-pointer accent-emerald-500"
-                          />
-                          <div className="flex-1">
-                            <div className="font-semibold text-slate-800 mb-1">
-                              {perm.label}
-                            </div>
-                            <div className="text-xs text-slate-500">
-                              {perm.description}
-                            </div>
-                          </div>
-                        </label>
-                      ))}
-                    </div>
+          <div className="lg:col-span-8 space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {permissionGroups.map((group, index) => (
+                <div key={index} className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm space-y-6 transition-all hover:border-indigo-100 hover:shadow-md">
+                  <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
+                    <span className="text-2xl">{group.icon}</span>
+                    <h4 className="text-sm font-bold text-slate-900 uppercase italic tracking-tight">{group.title}</h4>
                   </div>
-                ))}
-              </div>
+                  <div className="space-y-3">
+                    {group.permissions.map((perm) => (
+                      <label key={perm.key} className={`group/perm flex items-start gap-3 cursor-pointer p-4 rounded-2xl border transition-all ${permissions[perm.key] ? 'bg-indigo-50/50 border-indigo-200' : 'bg-slate-50 border-slate-100 hover:border-slate-300'}`}>
+                        <div className={`mt-1 h-5 w-5 rounded-md border-2 transition-all flex items-center justify-center ${permissions[perm.key] ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-300 group-hover/perm:border-indigo-400'}`}>
+                          {permissions[perm.key] && <span className="text-white text-[10px]">✓</span>}
+                        </div>
+                        <input type="checkbox" className="hidden" checked={permissions[perm.key]} onChange={() => handlePermissionChange(perm.key)} />
+                        <div className="flex-1">
+                          <p className={`text-xs font-bold uppercase tracking-tight transition-colors ${permissions[perm.key] ? 'text-indigo-900' : 'text-slate-800'}`}>{perm.label}</p>
+                          <p className="text-[10px] text-slate-400 font-medium leading-relaxed mt-0.5">{perm.description}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 justify-end pt-5 border-t border-slate-200">
-              <button
-                type="button"
-                onClick={() => navigate('/manage-roles')}
-                disabled={loading}
-                className={`px-7 py-3 bg-white text-slate-500 border border-slate-200 rounded-xl font-semibold text-sm transition-all duration-200 ${
-                  loading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-slate-50'
-                }`}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className={`px-7 py-3 text-white border-0 rounded-xl font-semibold text-sm transition-all duration-200 ${
-                  loading 
-                    ? 'bg-slate-400 cursor-not-allowed' 
-                    : 'bg-gradient-to-br from-emerald-500 to-emerald-600 cursor-pointer shadow-lg shadow-emerald-500/30 hover:shadow-xl'
-                }`}
-              >
-                {loading ? 'Creating Role...' : 'Create Role'}
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
       </div>
     </Layout>
@@ -366,4 +246,3 @@ const CreateRole = () => {
 };
 
 export default CreateRole;
-

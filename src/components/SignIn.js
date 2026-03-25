@@ -42,9 +42,9 @@ const SignIn = () => {
       dispatch({ type: 'LOGIN_SUCCESS', payload: response.data });
       navigate(from, { replace: true });
     } catch (error) {
-      let errorMessage = 'Sign in protocol failure';
-      if (error.response) errorMessage = error.response.data?.error || error.response.data?.message || 'Invalid credentials recorded';
-      else if (error.request) errorMessage = 'Transmission error: Check link status';
+      let errorMessage = 'Failed to sign in. Please try again.';
+      if (error.response) errorMessage = error.response.data?.error || error.response.data?.message || 'Invalid credentials provided.';
+      else if (error.request) errorMessage = 'Network error: Please check your connection.';
       setError(errorMessage);
       dispatch({ type: 'SET_LOADING', payload: false });
       setIsLoading(false);
@@ -53,60 +53,60 @@ const SignIn = () => {
 
   return (
     <AuthLayout
-      title="IDENTITY_ACCESS"
-      subtitle="Synchronize your authority profile to secure terminal access."
+      title="Access Portal"
+      subtitle="Sign in to your professional workspace to manage projects and personnel."
     >
       {error && (
-        <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 px-10 py-6 rounded-[2.5rem] mb-12 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-6 animate-in slide-in-from-top-6 duration-700 italic shadow-24 shadow-rose-500/5">
-          <span className="text-2xl">⚠️</span>
+        <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 px-8 py-4 rounded-2xl mb-8 text-[11px] font-bold uppercase tracking-widest flex items-center gap-4 animate-in slide-in-from-top-4 duration-500 italic">
+          <span className="text-xl">!</span>
           {error}
         </div>
       )}
 
       <SocialLoginButtons />
 
-      <div className="relative flex items-center my-16 opacity-30">
+      <div className="relative flex items-center my-12 opacity-30">
         <div className="flex-1 h-px bg-gradient-to-r from-transparent to-white/20"></div>
-        <span className="px-10 text-[9px] font-black text-white uppercase tracking-[0.5em] italic whitespace-nowrap">SECURE_CREDENTIAL_BLOCK</span>
+        <span className="px-6 text-[9px] font-bold text-white uppercase tracking-[0.4em] italic whitespace-nowrap">Secure Credentials</span>
         <div className="flex-1 h-px bg-gradient-to-l from-transparent to-white/20"></div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-12 group/form">
-        <div className="space-y-4">
-          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic ml-4">EMAIL_REGISTRY_IDENT</label>
-          <div className="relative group/input">
+      <form onSubmit={handleSubmit} className="space-y-8 italic">
+        <div className="space-y-3">
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-4">Email Address</label>
+          <div className="relative group">
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
               required
-              placeholder="IDENT_USER@NODE.SYS"
-              className="w-full px-12 py-7 bg-white/5 border border-white/10 rounded-[3rem] text-sm font-black text-white uppercase tracking-wider outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/5 shadow-inner"
+              placeholder="name@organization.com"
+              className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[2.5rem] text-sm font-bold text-white outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/10 shadow-inner lowercase"
             />
-            <div className="absolute right-10 top-1/2 -translate-y-1/2 text-2xl grayscale group-hover/input:grayscale-0 transition-grayscale duration-700">📧</div>
+            <div className="absolute right-8 top-1/2 -translate-y-1/2 text-xl grayscale group-hover:grayscale-0 transition-all opacity-20">✉️</div>
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex justify-between items-center px-4">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">SECRET_KEYPHRASE</label>
-            <Link to="/forgot-password" size="small" className="text-indigo-400 no-underline text-[9px] font-black uppercase tracking-[0.3em] hover:text-indigo-300 transition-colors italic">RESET_VAULT_LINK</Link>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Secret Password</label>
+            <Link to="/forgot-password" size="small" className="text-indigo-400 no-underline text-[9px] font-bold uppercase tracking-widest hover:text-indigo-300 transition-colors">Forgot?</Link>
           </div>
-          <div className="relative group/input">
+          <div className="relative group">
             <input
               type={showPassword ? 'text' : 'password'}
               name="password"
               value={formData.password}
               onChange={handleChange}
               required
-              placeholder="••••••••••••••••"
-              className="w-full pl-12 pr-24 py-7 bg-white/5 border border-white/10 rounded-[3rem] text-sm font-black text-indigo-400 uppercase tracking-[0.5em] outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/5 shadow-inner"
+              placeholder="••••••••••••"
+              className="w-full pl-8 pr-20 py-5 bg-white/5 border border-white/10 rounded-[2.5rem] text-sm font-bold text-indigo-300 tracking-[0.4em] outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/10 shadow-inner"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-8 top-1/2 -translate-y-1/2 w-14 h-14 rounded-2xl bg-white/5 border border-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center text-xl italic"
+              className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-white/5 text-white/40 hover:text-white transition-all flex items-center justify-center text-lg"
             >
               {showPassword ? '👁️' : '🔒'}
             </button>
@@ -116,31 +116,29 @@ const SignIn = () => {
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full py-8 rounded-[3rem] font-black text-[10px] uppercase tracking-[0.5em] transition-all duration-1000 flex items-center justify-center gap-6 shadow-24 active:scale-95 group overflow-hidden relative italic ${isLoading
-            ? 'bg-slate-950 text-slate-600 grayscale cursor-not-allowed border border-white/5'
-            : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.02] shadow-indigo-600/30 border-2 border-indigo-500/20'
+          className={`w-full py-6 rounded-[2.5rem] font-bold text-[11px] uppercase tracking-[0.3em] transition-all duration-700 flex items-center justify-center gap-6 shadow-2xl active:scale-95 group overflow-hidden relative ${isLoading
+            ? 'bg-slate-900 text-slate-600 grayscale cursor-not-allowed border border-white/5'
+            : 'bg-indigo-600 text-white hover:bg-slate-950 hover:scale-[1.02] shadow-indigo-600/20 border border-white/10'
             }`}
         >
-          <span className="relative z-10">{isLoading ? 'SYNCHRONIZING_PHASE_01...' : 'GRANT_ACCESS_DIRECTIVE'}</span>
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-[shimmer_3s_infinite] -z-0" />
-
+          <span className="relative z-10">{isLoading ? 'Authenticating...' : 'Sign In Now'}</span>
           {isLoading ? (
-            <div className="w-5 h-5 border-4 border-indigo-200 border-t-white rounded-full animate-spin" />
+            <div className="w-4 h-4 border-4 border-indigo-200 border-t-white rounded-full animate-spin" />
           ) : (
-            <span className="text-2xl group-hover:translate-x-6 transition-transform duration-1000 opacity-60">➜</span>
+            <span className="text-xl group-hover:translate-x-4 transition-transform duration-700 opacity-60">➜</span>
           )}
         </button>
       </form>
 
-      <div className="text-center pt-12 space-y-4">
-        <p className="text-slate-500 text-[9px] font-black uppercase tracking-[0.4em] italic opacity-60">
-          UNREGISTERED_OPERATIONAL_TARGET?
+      <div className="text-center pt-10 space-y-4 font-sans italic">
+        <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest opacity-60">
+          New to the organization?
         </p>
         <Link
           to="/signup"
-          className="inline-block text-white no-underline font-black text-[10px] uppercase tracking-[0.5em] hover:text-indigo-400 transition-all italic border-b-2 border-white/10 hover:border-indigo-500 pb-2"
+          className="inline-block text-white no-underline font-bold text-[10px] uppercase tracking-widest hover:text-indigo-400 transition-all border-b border-white/10 hover:border-indigo-500 pb-1"
         >
-          INITIALIZE_NEW_AUTH_NODE
+          Create New Account
         </Link>
       </div>
     </AuthLayout>

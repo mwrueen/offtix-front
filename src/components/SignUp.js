@@ -45,8 +45,8 @@ const SignUp = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) { setError('Keyphrase mismatch detected'); return; }
-    if (formData.password.length < 6) { setError('Encryption key insufficient length'); return; }
+    if (formData.password !== formData.confirmPassword) { setError('Passwords do not match.'); return; }
+    if (formData.password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     setIsLoading(true);
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
@@ -55,135 +55,90 @@ const SignUp = () => {
       dispatch({ type: 'LOGIN_SUCCESS', payload: response.data });
       navigate(from, { replace: true });
     } catch (error) {
-      setError(error.response?.data?.error || 'Initialization protocol failed');
+      setError(error.response?.data?.error || 'Registration failed. Please try again.');
       dispatch({ type: 'SET_LOADING', payload: false });
       setIsLoading(false);
     }
   };
 
   const getSColor = () => {
-    if (passwordStrength <= 2) return 'bg-rose-500 shadow-rose-500/50';
-    if (passwordStrength <= 3) return 'bg-amber-500 shadow-amber-500/50';
-    return 'bg-emerald-500 shadow-emerald-500/50';
+    if (passwordStrength <= 2) return 'bg-rose-500';
+    if (passwordStrength <= 3) return 'bg-amber-500';
+    return 'bg-emerald-500';
   };
 
   const getSText = () => {
-    if (passwordStrength <= 2) return 'FRAGILE_NODE';
-    if (passwordStrength <= 3) return 'SYSTEM_STANDARD';
-    return 'FORTRESS_LEVEL_9';
+    if (passwordStrength <= 2) return 'Weak / Simple';
+    if (passwordStrength <= 3) return 'Moderate Strength';
+    return 'Highly Secure';
   };
 
   return (
     <AuthLayout
-      title="IDENTITY_NEXUS"
-      subtitle="Initialize your authority node in the orchestration registry."
+      title="Create Account"
+      subtitle="Register your professional profile to begin managing projects and teams."
     >
       {error && (
-        <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 px-10 py-6 rounded-[2.5rem] mb-12 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-6 animate-in slide-in-from-top-6 duration-700 italic shadow-24 shadow-rose-500/5">
-          <span className="text-2xl">⚠️</span>
+        <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 px-8 py-4 rounded-2xl mb-8 text-[11px] font-bold uppercase tracking-widest flex items-center gap-4 animate-in slide-in-from-top-4 duration-500 italic">
+          <span className="text-xl">!</span>
           {error}
         </div>
       )}
 
       <SocialLoginButtons />
 
-      <div className="relative flex items-center my-16 opacity-30">
+      <div className="relative flex items-center my-12 opacity-30">
         <div className="flex-1 h-px bg-gradient-to-r from-transparent to-white/20"></div>
-        <span className="px-10 text-[9px] font-black text-white uppercase tracking-[0.5em] italic whitespace-nowrap">INIT_PHASE_01_ENCRYPTION_LINK</span>
+        <span className="px-6 text-[9px] font-bold text-white uppercase tracking-[0.4em] italic whitespace-nowrap">Profile Registration</span>
         <div className="flex-1 h-px bg-gradient-to-l from-transparent to-white/20"></div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-10 group/form">
+      <form onSubmit={handleSubmit} className="space-y-8 italic">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-4">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic ml-4">DISPLAY_IDENTITY</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              placeholder="FULL_IDENTITY_NAME"
-              className="w-full px-12 py-7 bg-white/5 border border-white/10 rounded-[3rem] text-sm font-black text-white uppercase tracking-wider outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/5 shadow-inner"
-            />
+          <div className="space-y-3">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-4">Full Name</label>
+            <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Professional Name" className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[2.5rem] text-sm font-bold text-white outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/10 shadow-inner uppercase tracking-tight" />
           </div>
-
-          <div className="space-y-4">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic ml-4">ACCESS_MAILBOX</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              placeholder="NODE@DOMAIN.SYS"
-              className="w-full px-12 py-7 bg-white/5 border border-white/10 rounded-[3rem] text-sm font-black text-white uppercase tracking-wider outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/5 shadow-inner"
-            />
+          <div className="space-y-3">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-4">Work Email</label>
+            <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="name@organization.com" className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[2.5rem] text-sm font-bold text-white outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/10 shadow-inner lowercase" />
           </div>
         </div>
 
-        <div className="space-y-4">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic ml-4">MASTER_PRIV_KEY</label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-            placeholder="••••••••••••••••••••"
-            className="w-full px-12 py-7 bg-white/5 border border-white/10 rounded-[3rem] text-sm font-black text-indigo-400 uppercase tracking-[0.5em] outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/5 shadow-inner"
-          />
+        <div className="space-y-3">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-4">Account Password</label>
+          <input type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="••••••••••••••••" className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[2.5rem] text-sm font-bold text-indigo-300 tracking-[0.4em] outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/10 shadow-inner" />
           {formData.password && (
-            <div className="pt-6 px-10">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.4em] italic">SIGNAL_STRENGTH_INDEX</span>
-                <span className={`text-[9px] font-black uppercase tracking-[0.3em] italic ${passwordStrength <= 2 ? 'text-rose-500' : passwordStrength <= 3 ? 'text-amber-500' : 'text-emerald-500'}`}>
-                  {getSText()}
-                </span>
+            <div className="pt-4 px-6 scale-95 origin-left">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic">Security Strength</span>
+                <span className={`text-[8px] font-bold uppercase tracking-widest italic ${passwordStrength <= 2 ? 'text-rose-500' : 'text-emerald-500'}`}>{getSText()}</span>
               </div>
-              <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden flex gap-1.5 p-[2px]">
+              <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden flex gap-1">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className={`flex-1 h-full rounded-full transition-all duration-1000 ${i < passwordStrength ? getSColor() : 'bg-transparent opacity-0'}`}></div>
+                  <div key={i} className={`flex-1 h-full rounded-full transition-all duration-700 ${i < passwordStrength ? getSColor() : 'bg-white/5'}`}></div>
                 ))}
               </div>
             </div>
           )}
         </div>
 
-        <div className="space-y-4 pb-4">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic ml-4">CONFIRM_AUTHORITY</label>
-          <input
-            type="password"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-            placeholder="••••••••••••••••••••"
-            className="w-full px-12 py-7 bg-white/5 border border-white/10 rounded-[3rem] text-sm font-black text-indigo-400 uppercase tracking-[0.5em] outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/5 shadow-inner"
-          />
+        <div className="space-y-3">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-4">Confirm Password</label>
+          <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required placeholder="••••••••••••••••" className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[2.5rem] text-sm font-bold text-indigo-300 tracking-[0.4em] outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/10 shadow-inner" />
         </div>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className={`w-full py-8 bg-indigo-600 text-white rounded-[3.5rem] font-black text-[10px] uppercase tracking-[0.6em] shadow-24 active:scale-95 group overflow-hidden relative transition-all duration-1000 italic ${isLoading ? 'grayscale opacity-50 cursor-not-allowed border border-white/5' : 'hover:bg-indigo-700 hover:scale-[1.02] shadow-indigo-600/30'}`}
-        >
-          <span className="relative z-10">{isLoading ? 'DEPLOYING_NODE_01...' : 'FORGE_USER_IDENTITY'}</span>
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-[shimmer_3s_infinite] -z-0" />
-          {!isLoading && <span className="absolute right-12 top-1/2 -translate-y-1/2 text-2xl group-hover:translate-x-6 transition-transform duration-1000 opacity-60">➜</span>}
+        <button type="submit" disabled={isLoading} className={`w-full py-6 mt-4 rounded-[2.5rem] font-bold text-[11px] uppercase tracking-[0.3em] transition-all duration-700 flex items-center justify-center gap-6 shadow-2xl active:scale-95 group overflow-hidden relative ${isLoading ? 'bg-slate-900 text-slate-600 grayscale' : 'bg-indigo-600 text-white hover:bg-slate-950 shadow-indigo-600/20 border border-white/10'}`}>
+          <span className="relative z-10">{isLoading ? 'Registering...' : 'Create My Account'}</span>
+          {!isLoading && <span className="text-xl group-hover:translate-x-4 transition-transform duration-700 opacity-60">➜</span>}
         </button>
       </form>
 
-      <div className="text-center pt-12 space-y-4">
-        <p className="text-slate-500 text-[9px] font-black uppercase tracking-[0.4em] italic opacity-60">
-          EXISTING_AUTHORITY_VAULT?
+      <div className="text-center pt-10 space-y-4 font-sans italic">
+        <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest opacity-60">
+          Already have an account?
         </p>
-        <Link
-          to="/signin"
-          className="inline-block text-white no-underline font-black text-[10px] uppercase tracking-[0.5em] hover:text-indigo-400 transition-all italic border-b-2 border-white/10 hover:border-indigo-500 pb-2"
-        >
-          SYNCHRONIZE_EXISTING_VAULT
-        </Link>
+        <Link to="/signin" className="inline-block text-white no-underline font-bold text-[10px] uppercase tracking-widest hover:text-indigo-400 transition-all border-b border-white/10 hover:border-indigo-500 pb-1">Sign In Instead</Link>
       </div>
     </AuthLayout>
   );

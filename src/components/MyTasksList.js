@@ -25,11 +25,10 @@ const MyTasksList = () => {
     try {
       setLoading(true);
       const response = await myTasksAPI.getAll();
-      setTasks(response.data);
+      setTasks(response.data || []);
       setError(null);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to fetch tasks');
-      toast?.showToast?.('MISSION_DIRECTIVE_SYNC_FAILED', 'error');
+      setError(err.response?.data?.error || 'Unable to load task stream.');
     } finally { setLoading(false); }
   };
 
@@ -38,9 +37,9 @@ const MyTasksList = () => {
     try {
       if (workflowType === 'sequential') await myTasksAPI.startSequential(taskId);
       else await myTasksAPI.start(taskId);
-      toast?.showToast?.('DIRECTIVE_PROCESS_INITIALIZED', 'success');
+      toast?.showToast?.('Task processing started.', 'success');
       fetchTasks();
-    } catch (err) { toast?.showToast?.(err.response?.data?.error || 'FAILED_TO_START_SIG', 'error'); }
+    } catch (err) { toast?.showToast?.('Failed to start task.', 'error'); }
     finally { setActionLoading(prev => ({ ...prev, [taskId]: null })); }
   };
 
@@ -48,9 +47,9 @@ const MyTasksList = () => {
     setActionLoading(prev => ({ ...prev, [taskId]: 'pausing' }));
     try {
       await myTasksAPI.pauseSequential(taskId);
-      toast?.showToast?.('SIGNAL_SUSPENDED_ON_STANDBY', 'info');
+      toast?.showToast?.('Task paused.', 'info');
       fetchTasks();
-    } catch (err) { toast?.showToast?.(err.response?.data?.error || 'FAILED_TO_PAUSE_SIG', 'error'); }
+    } catch (err) { toast?.showToast?.('Failed to pause task.', 'error'); }
     finally { setActionLoading(prev => ({ ...prev, [taskId]: null })); }
   };
 
@@ -73,13 +72,13 @@ const MyTasksList = () => {
     try {
       if (actionModal === 'complete') {
         await myTasksAPI.completeSequential(taskId, formData.note, formData.message, formData.link, selectedFiles);
-        toast?.showToast?.('MISSION_DIRECTIVE_SYNC_SUCCESSFUL', 'success');
+        toast?.showToast?.('Task completed successfully.', 'success');
       } else {
         await myTasksAPI.sendBackSequential(taskId, formData.note, formData.message, formData.link, selectedFiles);
-        toast?.showToast?.('DIRECTIVE_REPELLED_TO_PREVIOUS_NODE', 'info');
+        toast?.showToast?.('Task returned to previous step.', 'info');
       }
       setActionModal(null); setActiveTask(null); setFormData({ note: '', message: '', link: '' }); setSelectedFiles([]); fetchTasks();
-    } catch (err) { toast?.showToast?.(err.response?.data?.error || 'ACTION_PROTOCOL_FAILURE', 'error'); }
+    } catch (err) { toast?.showToast?.('Submission failed.', 'error'); }
     finally { setActionLoading(prev => ({ ...prev, [taskId]: null })); }
   };
 
@@ -91,7 +90,7 @@ const MyTasksList = () => {
       active: 'bg-indigo-50 text-indigo-600 border-indigo-100',
       in_progress: 'bg-emerald-50 text-emerald-600 border-emerald-100',
       paused: 'bg-amber-50 text-amber-600 border-amber-100',
-      completed: 'bg-indigo-600 text-white border-white shadow-24',
+      completed: 'bg-indigo-600 text-white border-indigo-700',
       needs_changes: 'bg-rose-50 text-rose-600 border-rose-100'
     };
     return map[status] || 'bg-slate-100 text-slate-400 border-slate-200';
@@ -112,34 +111,29 @@ const MyTasksList = () => {
 
     if (taskStatus === 'pending' || taskStatus === 'active') {
       return (
-        <div className="flex flex-col items-end gap-4 shrink-0">
-          <button
-            onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }}
-            disabled={isLoading || !canStartTask}
-            className={`px-12 py-5 rounded-[2.5rem] font-black text-[11px] uppercase tracking-[0.4em] transition-all active:scale-95 shadow-24 italic border-8 border-white relative overflow-hidden group/btn ${canStartTask ? 'bg-slate-950 text-white hover:bg-indigo-600 hover:scale-110' : 'bg-slate-50 text-slate-300 cursor-not-allowed shadow-none border-slate-100 font-bold opacity-40'}`}
-          >
-            <span className="relative z-10 flex items-center gap-4"> {isLoading === 'starting' ? 'SYNCING...' : '▶ INITIALIZE_SIGNAL'} </span>
-            <div className="absolute top-0 left-0 w-full h-full bg-white/10 -translate-x-full group-hover/btn:animate-[shimmer_3s_infinite]" />
-          </button>
-          {!canStartTask && <span className="text-[10px] font-black text-rose-500 uppercase italic tracking-[0.2em] text-right max-w-[280px] opacity-60 underline underline-offset-8 decoration-rose-100">AWAITING_PREREQUISITE_CLEARANCE_SIG</span>}
-        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }}
+          disabled={isLoading || !canStartTask}
+          className={`px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all active:scale-95 shadow-md flex items-center gap-2 ${canStartTask ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-100 text-slate-300 cursor-not-allowed opacity-50'}`}
+        >
+          {isLoading === 'starting' ? 'Starting...' : 'Start Task'}
+        </button>
       );
     }
 
     if (taskStatus === 'in_progress') {
       return (
-        <div className="flex flex-wrap justify-end gap-6 shrink-0">
+        <div className="flex items-center gap-3">
           {task.workflowType === 'sequential' && (
-            <button onClick={(e) => { e.stopPropagation(); handlePause(task._id); }} disabled={isLoading} className="px-10 py-5 bg-amber-500 text-white border-4 border-white rounded-[2.5rem] font-black text-[11px] uppercase tracking-[0.4em] shadow-24 hover:bg-amber-600 hover:scale-110 transition-all active:scale-95 italic group relative overflow-hidden">
-              <span className="relative z-10">⏸ PAUSE</span>
+            <button onClick={(e) => { e.stopPropagation(); handlePause(task._id); }} disabled={isLoading} className="px-6 py-3 bg-amber-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-amber-600 transition-all active:scale-95">
+              Pause
             </button>
           )}
-          <button onClick={(e) => handleCompleteClick(e, task)} disabled={isLoading} className="px-12 py-5 bg-indigo-600 text-white border-8 border-white rounded-[2.5rem] font-black text-[11px] uppercase tracking-[0.5em] shadow-24 hover:bg-slate-950 hover:scale-110 transition-all active:scale-95 italic group relative overflow-hidden">
-            <span className="relative z-10 flex items-center gap-4"> ✓ COMPLETE <span className="text-2xl">→</span> </span>
-            <div className="absolute top-0 left-0 w-full h-full bg-white/10 -translate-x-full group-hover:animate-[shimmer_3s_infinite]" />
+          <button onClick={(e) => handleCompleteClick(e, task)} disabled={isLoading} className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95">
+            Complete
           </button>
           {task.workflowType === 'sequential' && (
-            <button onClick={(e) => handleSendBackClick(e, task)} disabled={isLoading} className="px-8 py-5 bg-white text-rose-600 border-4 border-rose-100 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.4em] hover:bg-rose-50 hover:border-rose-300 transition-all active:scale-95 italic">↩ REPEL_SIG</button>
+            <button onClick={(e) => handleSendBackClick(e, task)} disabled={isLoading} className="px-6 py-3 bg-white text-rose-600 border border-rose-100 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-95">Return</button>
           )}
         </div>
       );
@@ -147,9 +141,8 @@ const MyTasksList = () => {
 
     if (taskStatus === 'paused') {
       return (
-        <button onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }} disabled={isLoading || !canStartTask} className="px-12 py-5 bg-emerald-600 text-white border-8 border-white rounded-[2.5rem] font-black text-[11px] uppercase tracking-[0.5em] shadow-24 hover:bg-slate-950 hover:scale-110 transition-all active:scale-95 italic group relative overflow-hidden shrink-0">
-          <span className="relative z-10 flex items-center gap-4"> ▶ RESUME_SIGNAL </span>
-          <div className="absolute top-0 left-0 w-full h-full bg-white/10 -translate-x-full group-hover:animate-[shimmer_3s_infinite]" />
+        <button onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }} disabled={isLoading || !canStartTask} className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95">
+          Resume
         </button>
       );
     }
@@ -158,106 +151,88 @@ const MyTasksList = () => {
 
   if (loading) return (
     <Layout>
-      <div className="max-w-[1700px] mx-auto px-10 py-60 text-center animate-pulse space-y-16 italic">
-        <div className="w-40 h-40 border-[16px] border-slate-50 border-t-indigo-600 rounded-[4rem] animate-spin mx-auto shadow-24" />
-        <p className="text-[12px] font-black uppercase tracking-[0.8em] text-slate-400 italic underline underline-offset-[16px] decoration-indigo-200">SYNCHRONIZING_PERSONAL_DIRECTIVE_STREAMS_...</p>
+      <div className="p-40 text-center animate-in fade-in space-y-8">
+        <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto" />
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading task stream...</p>
       </div>
     </Layout>
   );
 
   if (error) return (
     <Layout>
-      <div className="max-w-5xl mx-auto my-40 p-32 bg-white rounded-[7rem] border-8 border-rose-100 text-center shadow-24 relative overflow-hidden group animate-in zoom-in-95 duration-1200 italic">
-        <div className="absolute top-0 right-0 p-32 text-[260px] font-black italic opacity-[0.03] grayscale pointer-events-none select-none text-rose-950 leading-none">ABORT</div>
-        <div className="relative z-10 space-y-12">
-          <div className="text-[180px] grayscale opacity-10 group-hover:scale-125 group-hover:rotate-12 group-hover:grayscale-0 transition-all duration-3000 inline-block drop-shadow-2xl">⚠️</div>
-          <div>
-            <h3 className="text-6xl font-black text-rose-950 uppercase italic tracking-tighter drop-shadow-sm group-hover:text-rose-600 transition-all leading-none">SIGNAL_ACCESS_PROTOCOL_DENIED</h3>
-            <p className="text-xl font-black text-slate-400 uppercase tracking-[0.4em] italic mt-12 leading-relaxed opacity-60 underline underline-offset-[24px] decoration-rose-50 max-w-4xl mx-auto text-center">{error.toUpperCase()}</p>
-          </div>
-          <button onClick={fetchTasks} className="mt-12 px-24 py-8 bg-slate-950 text-white rounded-[3rem] font-black text-[14px] uppercase tracking-[0.8em] transition-all hover:bg-rose-950 hover:scale-110 active:scale-95 shadow-24 italic border-8 border-white group relative overflow-hidden">
-            <span className="relative z-10">RE-INITIATE_CORE_SYNC_PROTOCOL</span>
-            <div className="absolute top-0 left-0 w-full h-full bg-white/10 -translate-x-full group-hover:animate-[shimmer_3s_infinite]" />
-          </button>
-        </div>
-        <div className="absolute -bottom-64 -left-64 w-[1000px] h-[1000px] bg-rose-500/[0.03] rounded-full blur-[200px] pointer-events-none group-hover:scale-125 transition-transform duration-[4s]" />
+      <div className="max-w-xl mx-auto my-40 p-12 bg-white rounded-3xl border border-slate-200 text-center shadow-lg animate-in zoom-in-95">
+        <div className="text-6xl mb-6">⚠️</div>
+        <h3 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h3>
+        <p className="text-slate-500 text-sm mb-8">{error}</p>
+        <button onClick={fetchTasks} className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all">Retry Connection</button>
       </div>
     </Layout>
   );
 
   return (
     <Layout>
-      <div className="max-w-[1700px] mx-auto px-6 py-20 space-y-24 animate-in fade-in duration-1500 italic pb-60">
+      <div className="space-y-12 animate-in fade-in duration-700 pb-40">
         <PageHeader
-          title="PERSONAL_DIRECTIVE_STREAM"
-          subtitle={`${tasks.length} ACTIVE_MISSIONS_PENDING_ACTION_WITHIN_THE_SYSTEM_GRID`}
-          icon={<div className="w-24 h-24 bg-slate-950 text-white rounded-[3.5rem] flex items-center justify-center text-5xl shadow-24 border-8 border-white shadow-indigo-950/20 group-hover:rotate-12 transition-transform duration-1000 italic shrink-0">🛰️</div>}
+          title="Personal Task Stream"
+          subtitle={`${tasks.length} active assignments requiring attention.`}
+          icon="📋"
           stats={[
-            { label: 'AWAITING_PROTOCOL', value: tasks.filter(t => ['pending', 'active'].includes(getTaskStatus(t))).length, color: 'indigo' },
-            { label: 'IN_EXECUTION_SYSTS', value: tasks.filter(t => getTaskStatus(t) === 'in_progress').length, color: 'emerald' }
+            { label: 'Pending', value: tasks.filter(t => ['pending', 'active'].includes(getTaskStatus(t))).length },
+            { label: 'In Progress', value: tasks.filter(t => getTaskStatus(t) === 'in_progress').length }
           ]}
         />
 
-        <div className="space-y-12">
+        <div className="space-y-6">
           {tasks.length === 0 ? (
-            <div className="bg-white rounded-[7rem] p-60 text-center border-[12px] border-dashed border-slate-50 relative overflow-hidden group/empty shadow-24 animate-in zoom-in-95 duration-1500">
-              <div className="absolute top-0 right-0 p-32 text-[280px] font-black italic opacity-[0.03] grayscale pointer-events-none select-none text-slate-950 leading-none">CLEAR</div>
-              <div className="relative z-10 space-y-16">
-                <div className="text-[200px] grayscale opacity-10 group-hover/empty:scale-125 group-hover/empty:rotate-[15deg] group-hover/empty:grayscale-0 transition-all duration-[2.5s] inline-block drop-shadow-2xl select-none">🎯</div>
-                <div>
-                  <h3 className="text-7xl font-black text-slate-950 uppercase italic tracking-tighter drop-shadow-sm group-hover/empty:text-indigo-600 transition-colors leading-none">ALL_DIRECTIVES_VERIFIED</h3>
-                  <p className="text-xl font-black text-slate-400 uppercase tracking-[0.6em] italic opacity-60 max-w-5xl mx-auto leading-relaxed mt-12 underline underline-offset-[24px] decoration-slate-100 text-center">System queue cleared. Personnel readiness status: OPTIMAL. Awaiting next tactical signal from primary command nodes for synchronization sequence.</p>
-                </div>
-              </div>
-              <div className="absolute -bottom-64 -left-64 w-[1000px] h-[1000px] bg-indigo-500/[0.04] rounded-full blur-[200px] pointer-events-none group-hover/empty:scale-125 transition-transform duration-[3s]" />
+            <div className="bg-white rounded-3xl p-32 text-center border border-slate-200 shadow-sm transition-all duration-500 hover:shadow-md">
+              <div className="text-7xl mb-6">🎯</div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">Queue Clear</h3>
+              <p className="text-slate-500 text-sm">All directives have been processed. Awaiting new assignments.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-12">
+            <div className="grid grid-cols-1 gap-6">
               {tasks.map((task, idx) => {
                 const status = getTaskStatus(task);
                 return (
-                  <div key={task._id} onClick={() => navigate(`/my-tasks/${task._id}`)} className={`group bg-white rounded-[6rem] p-16 border-8 border-slate-50 shadow-sm hover:shadow-24 hover:-translate-y-8 lg:hover:-translate-y-16 transition-all duration-1000 cursor-pointer overflow-hidden relative animate-in slide-in-from-bottom-24 group/card`} style={{ animationDelay: `${idx * 100}ms` }}>
-                    <div className="absolute top-0 left-0 w-4 h-full bg-slate-100 group-hover:bg-indigo-600 transition-all duration-[1.2s] ${status === 'in_progress' ? 'bg-indigo-600 w-6' : ''}" />
-                    <div className="absolute top-0 right-0 p-20 text-[260px] font-black italic opacity-[0.015] grayscale pointer-events-none select-none text-slate-950 leading-none group-hover:scale-125 transition-transform duration-[3s]">SIG</div>
-
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-16 relative z-10">
-                      <div className="flex-1 min-w-0 space-y-10">
-                        <div className="flex flex-wrap items-center gap-6">
+                  <div key={task._id} onClick={() => navigate(`/my-tasks/${task._id}`)} className="group bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden relative animate-in slide-in-from-bottom-8" style={{ animationDelay: `${idx * 50}ms` }}>
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
+                      <div className="flex-1 min-w-0 space-y-4">
+                        <div className="flex flex-wrap items-center gap-3">
                           {task.priority && (
-                            <span className={`px-8 py-2.5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.4em] italic shadow-24 border-4 border-white group/prio hover:scale-110 transition-all ${task.priority === 'urgent' ? 'bg-rose-600 text-white' : task.priority === 'high' ? 'bg-amber-400 text-white' : 'bg-slate-950 text-white shadow-indigo-950/20'}`}>
-                              <span className="opacity-40 mr-2">#</span>{task.priority.toUpperCase()}_PRIORITY_LEVEL
+                            <span className={`px-4 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider ${task.priority === 'urgent' ? 'bg-rose-600 text-white' : task.priority === 'high' ? 'bg-amber-400 text-amber-900' : 'bg-slate-100 text-slate-600'}`}>
+                              {task.priority} Priority
                             </span>
                           )}
-                          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.5em] bg-white px-8 py-2.5 rounded-[2rem] border-4 border-slate-50 shadow-inner italic hover:bg-slate-50 transition-all truncate max-w-md"> {task.project?.title?.toUpperCase() || 'GLOBAL_CORE_SECTOR'} </span>
+                          <span className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-4 py-1 rounded-full border border-indigo-100 truncate max-w-xs">
+                            {task.project?.title || 'Global Workspace'}
+                          </span>
                         </div>
 
-                        <div className="space-y-4">
-                          <h3 className="text-4xl lg:text-5xl font-black text-slate-950 uppercase italic tracking-tighter truncate group-hover:text-indigo-600 transition-all leading-none drop-shadow-sm">{task.title}</h3>
-                          <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.6em] italic opacity-40 underline underline-offset-8 decoration-slate-50"> NODE_ID: {task._id.slice(-16).toUpperCase()} </p>
+                        <div className="space-y-1">
+                          <h3 className="text-xl font-bold text-slate-900 truncate group-hover:text-indigo-600 transition-colors">{task.title}</h3>
+                          <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">ID: {task._id.slice(-8).toUpperCase()}</p>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-12 pt-4">
-                          <div className="flex items-center gap-6 group/status-tag">
-                            <div className={`w-4 h-4 rounded-full shadow-[0_0_15px_currentColor] group-hover/status-tag:animate-ping ${status === 'in_progress' ? 'bg-indigo-600' : 'bg-slate-300'}`} />
-                            <span className={`px-10 py-3 rounded-[2.5rem] text-[11px] font-black uppercase tracking-[0.6em] border-8 shadow-24 transition-all hover:scale-110 italic ${getStatusClasses(status)}`}> {status.toUpperCase().replace('_', ' ')} </span>
+                        <div className="flex flex-wrap items-center gap-6 pt-2">
+                          <div className="flex items-center gap-3">
+                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all ${getStatusClasses(status)}`}>
+                              {status.replace('_', ' ')}
+                            </span>
                           </div>
 
                           {task.status && (
-                            <div className="flex items-center gap-8 border-l-8 border-slate-50 pl-12 italic group/sub-status">
-                              <div className="w-4 h-4 rounded-[1rem] shadow-[0_0_10px_currentColor] animate-pulse" style={{ backgroundColor: task.status.color || '#64748b' }} />
-                              <div className="flex flex-col">
-                                <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.6em] leading-none mb-2 underline underline-offset-4 decoration-slate-100">SUB_SIGNAL_STATUS_SIG</span>
-                                <span className="text-[11px] font-black uppercase tracking-widest leading-none drop-shadow-sm" style={{ color: task.status.color || '#64748b' }}>{task.status.name?.toUpperCase()}</span>
-                              </div>
+                            <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
+                              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: task.status.color || '#64748b' }} />
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{task.status.name}</span>
                             </div>
                           )}
                         </div>
                       </div>
 
-                      <div className="shrink-0 group-hover:scale-105 transition-transform duration-1000" onClick={e => e.stopPropagation()}> {renderActionButtons(task)} </div>
+                      <div className="shrink-0" onClick={e => e.stopPropagation()}>
+                        {renderActionButtons(task)}
+                      </div>
                     </div>
-
-                    <div className="absolute -bottom-64 -right-64 w-[600px] h-[600px] bg-indigo-500/[0.04] rounded-full blur-[180px] group-hover:opacity-100 opacity-0 transition-opacity duration-2000 pointer-events-none group-hover:scale-125" />
                   </div>
                 );
               })}
@@ -265,81 +240,60 @@ const MyTasksList = () => {
           )}
         </div>
 
-        {/* Neural Interaction Modal Zeta */}
         {actionModal && (
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-3xl flex items-center justify-center z-[2000] p-12 lg:p-24 animate-in fade-in duration-700">
-            <div className="bg-white rounded-[7rem] w-full max-w-6xl max-h-[95vh] flex flex-col shadow-24 overflow-hidden animate-in zoom-in-95 duration-700 border-8 border-white/20 relative italic">
-              <div className="absolute top-0 right-0 p-32 text-[320px] font-black italic opacity-[0.015] grayscale pointer-events-none select-none text-slate-950 leading-none">MODAL</div>
-
-              <div className="px-20 py-16 border-b-8 border-white/5 bg-slate-950 text-white flex items-center justify-between relative overflow-hidden shrink-0">
-                <div className="relative z-10 space-y-4">
-                  <h2 className="text-5xl lg:text-6xl font-black uppercase italic tracking-tighter leading-none drop-shadow-2xl">{actionModal === 'complete' ? 'MISSION_SIGNAL_FINALIZE' : 'DIRECTIVE_REPEL_PROTOCOL'}</h2>
-                  <p className="text-[12px] font-black text-indigo-400 uppercase tracking-[0.8em] italic underline underline-offset-8 decoration-white/5"> NODE_SIG_UPLINK: {activeTask?._id?.toUpperCase()} </p>
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[2000] p-6 animate-in fade-in duration-300">
+            <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20">
+              <div className="px-8 py-6 border-b border-slate-100 bg-slate-900 text-white flex items-center justify-between shrink-0">
+                <div>
+                  <h2 className="text-xl font-bold uppercase tracking-tight">{actionModal === 'complete' ? 'Submit Task Progress' : 'Return for Revision'}</h2>
+                  <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mt-1">ID: {activeTask?._id?.toUpperCase()}</p>
                 </div>
-                <button onClick={() => { setActionModal(null); setActiveTask(null); }} className="w-24 h-24 rounded-[3.5rem] bg-white/5 border-8 border-white/10 text-white flex items-center justify-center text-5xl hover:bg-rose-600 hover:text-white hover:border-white transition-all active:scale-90 group/close relative z-10 font-black">✕</button>
-                <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-indigo-600/10 rounded-full blur-[200px] -translate-y-1/2 translate-x-1/2 animate-pulse pointer-events-none"></div>
+                <button onClick={() => { setActionModal(null); setActiveTask(null); }} className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center text-xl hover:bg-rose-600 transition-all active:scale-90 font-bold">×</button>
               </div>
 
-              <div className="p-16 lg:p-24 overflow-y-auto space-y-16 scrollbar-none flex-1 bg-white relative z-10">
-                <div className="space-y-8">
-                  <label className="text-[13px] font-black text-slate-400 uppercase tracking-[0.6em] flex items-center gap-6 italic ml-10 underline underline-offset-[16px] decoration-slate-100 mb-8"> <span className="w-4 h-12 bg-indigo-600 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.5)] animate-bounce" /> PRIMARY_MISSION_SUCCESS_LOG </label>
-                  <div className="rounded-[4rem] border-8 border-slate-50 overflow-hidden shadow-24 focus-within:border-indigo-100 transition-all bg-white p-6 relative group/editor">
-                    <ReactQuill value={formData.note} onChange={(v) => setFormData({ ...formData, note: v })} className="min-h-[300px] mb-16 border-none text-xl font-bold italic" theme="snow" placeholder="RECOVER_MISSION_DATA_AND_DOCUMENT_PROTOCOL_SUCCESS_LOGS_..." />
-                    <div className="absolute top-0 right-0 p-12 text-8xl font-black italic opacity-[0.03] select-none pointer-events-none group-hover/editor:opacity-10 transition-opacity">TEXT_DATA</div>
+              <div className="p-8 lg:p-12 overflow-y-auto space-y-10 scrollbar-none flex-1 bg-white">
+                <div className="space-y-4">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Internal Note (Private)</label>
+                  <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm focus-within:border-indigo-400 transition-all p-2">
+                    <ReactQuill value={formData.note} onChange={(v) => setFormData({ ...formData, note: v })} className="min-h-[200px] border-none text-sm font-medium" theme="snow" placeholder="Document your progress or implementation details..." />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
-                  <div className="space-y-8">
-                    <label className="text-[12px] font-black text-slate-400 uppercase tracking-[0.5em] italic ml-12"> ENCRYPTED_MISSION_COMMS </label>
-                    <textarea value={formData.message} onChange={e => setFormData({ ...formData, message: e.target.value })} className="w-full px-12 py-10 bg-slate-50 border-8 border-slate-50 rounded-[4rem] text-xl font-black italic tracking-tighter outline-none focus:bg-white focus:border-indigo-600 focus:shadow-24 transition-all min-h-[250px] lg:min-h-[350px] resize-none placeholder:text-slate-200 shadow-inner scrollbar-none" placeholder="INITIALIZE_TRANSMISSION_PAYLOAD_DIRECTIVES_..." />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                  <div className="space-y-3">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Communication Log</label>
+                    <textarea value={formData.message} onChange={e => setFormData({ ...formData, message: e.target.value })} className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 transition-all min-h-[200px] resize-none" placeholder="Message for the next person in workflow..." />
                   </div>
-                  <div className="space-y-12">
-                    <div className="space-y-8">
-                      <label className="text-[12px] font-black text-slate-400 uppercase tracking-[0.5em] italic ml-12"> EXTERNAL_INTEGRATION_RESOURCE_LINK </label>
-                      <input type="text" value={formData.link} onChange={e => setFormData({ ...formData, link: e.target.value })} className="w-full px-12 py-8 bg-slate-50 border-8 border-slate-50 rounded-[2.5rem] text-sm font-black italic tracking-widest outline-none focus:bg-white focus:border-indigo-600 transition-all shadow-inner placeholder:text-slate-200" placeholder="HTTPS://UPLINK.DYNAMICS_CORE.NET" />
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Relevant Resource Link</label>
+                      <input type="text" value={formData.link} onChange={e => setFormData({ ...formData, link: e.target.value })} className="w-full px-6 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-indigo-400 transition-all" placeholder="https://resource-link.com" />
                     </div>
-                    <div className="space-y-8">
-                      <label className="text-[12px] font-black text-slate-400 uppercase tracking-[0.5em] italic ml-12"> TARGET_ASSET_EVIDENCE_STREAM </label>
-                      <div className="border-8 border-dashed border-slate-100 rounded-[4rem] p-16 bg-slate-50 group/upload hover:bg-white hover:border-indigo-600 transition-all cursor-pointer relative overflow-hidden flex flex-col items-center justify-center gap-8 shadow-inner min-h-[200px]">
-                        <div className="text-8xl grayscale group-hover/upload:grayscale-0 group-hover/upload:scale-125 group-hover/upload:rotate-12 transition-all duration-1000 select-none drop-shadow-2xl">📎</div>
+                    <div className="space-y-3">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Supporting Documents</label>
+                      <div className="border-2 border-dashed border-slate-200 rounded-2xl p-10 bg-slate-50 hover:bg-white hover:border-indigo-600 transition-all cursor-pointer relative flex flex-col items-center justify-center gap-4 min-h-[140px]">
+                        <div className="text-4xl grayscale">📎</div>
                         <input type="file" multiple onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer z-20" />
-                        <div className="text-center relative z-10 px-6">
-                          <p className="text-[14px] font-black text-slate-900 uppercase tracking-[0.4em] mb-2">{selectedFiles.length > 0 ? `${selectedFiles.length} MISSION_FILES_STAGED` : 'STAGING_AREA_FOR_ASSET_FILES'}</p>
-                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic opacity-60"> AUTHORIZED_TRANSFER_NODE_ACTIVE </p>
+                        <div className="text-center px-4">
+                          <p className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-1">{selectedFiles.length > 0 ? `${selectedFiles.length} files selected` : 'Click to upload files'}</p>
+                          <p className="text-[10px] text-slate-400 font-medium">Max 50MB per file</p>
                         </div>
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/[0.03] rounded-bl-full group-hover/upload:scale-[3] transition-transform duration-2000 -z-0" />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="px-20 py-16 border-t-8 border-slate-50 flex flex-col sm:flex-row justify-end gap-12 bg-slate-50/50 relative z-20 shrink-0">
-                <button onClick={() => { setActionModal(null); setActiveTask(null); }} className="px-12 py-6 font-black text-[13px] uppercase tracking-[0.6em] text-slate-400 hover:text-rose-600 transition-all italic underline underline-offset-[16px] decoration-slate-100 hover:decoration-rose-100">X_ABORT_MODAL_COMMAND</button>
+              <div className="px-8 py-6 border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-4 bg-slate-50 shrink-0">
+                <button onClick={() => { setActionModal(null); setActiveTask(null); }} className="px-8 py-3 font-bold text-[11px] uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all">Cancel</button>
                 <button
                   onClick={handleModalSubmit}
                   disabled={activeTask && actionLoading[activeTask._id]}
-                  className={`px-24 py-8 rounded-[3.5rem] font-black text-[14px] uppercase tracking-[0.8em] text-white transition-all hover:scale-110 active:scale-95 shadow-24 italic border-8 border-white group/submit relative overflow-hidden min-w-[400px] ${actionModal === 'complete' ? 'bg-indigo-600 shadow-indigo-500/30' : 'bg-rose-600 shadow-rose-500/30'} ${(activeTask && actionLoading[activeTask._id]) ? 'grayscale opacity-50 cursor-wait' : ''}`}
+                  className={`px-12 py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] text-white transition-all hover:scale-105 active:scale-95 shadow-lg min-w-[240px] ${actionModal === 'complete' ? 'bg-indigo-600' : 'bg-rose-600'} ${(activeTask && actionLoading[activeTask._id]) ? 'grayscale opacity-50 cursor-wait' : ''}`}
                 >
-                  <span className="relative z-10 flex items-center justify-center gap-10">
-                    {(activeTask && actionLoading[activeTask._id]) ? (
-                      <>
-                        <div className="w-8 h-8 border-8 border-white/20 border-t-white rounded-full animate-spin" />
-                        SYNCHRONIZING_CORE...
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-4xl group-hover/submit:rotate-12 transition-transform duration-700">{actionModal === 'complete' ? '🎖️' : '↪'}</span>
-                        {actionModal === 'complete' ? 'AUTHORIZE_FINAL_MISSION_SYNC' : 'CONFIRM_REPEL_SEQ_PROTOCOL'}
-                        <span className="text-3xl group-hover/submit:translate-x-6 transition-transform duration-700">→</span>
-                      </>
-                    )}
-                  </span>
-                  <div className="absolute top-0 left-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_3s_infinite]" />
+                  {(activeTask && actionLoading[activeTask._id]) ? 'Processing...' : (actionModal === 'complete' ? 'Finalize Submission' : 'Confirm Return')}
                 </button>
               </div>
-              <div className="absolute -bottom-64 -right-64 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[180px] pointer-events-none" />
             </div>
           </div>
         )}
