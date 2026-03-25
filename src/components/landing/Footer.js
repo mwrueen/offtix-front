@@ -2,114 +2,60 @@ import React from 'react';
 
 const Footer = () => {
   return (
-    <footer style={{
-      backgroundColor: '#1e293b',
-      color: 'white',
-      padding: '60px 24px 30px'
-    }}>
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto'
-      }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '40px',
-          marginBottom: '40px'
-        }}>
+    <footer className="bg-slate-800 text-white py-15 px-6 pb-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-10 mb-10">
           <div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '16px'
-            }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#667eea',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: 'bold'
-              }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white font-bold">
                 T
               </div>
-              <span style={{
-                fontSize: '1.5rem',
-                fontWeight: '700'
-              }}>
+              <span className="text-2xl font-bold">
                 Offtix
               </span>
             </div>
-            <p style={{
-              color: '#94a3b8',
-              lineHeight: '1.6'
-            }}>
+            <p className="text-slate-400 leading-relaxed">
               Professional project management made simple. Streamline your workflow and deliver projects on time.
             </p>
           </div>
 
           <div>
-            <h4 style={{
-              fontSize: '1rem',
-              fontWeight: '600',
-              marginBottom: '16px'
-            }}>
+            <h4 className="text-base font-semibold mb-4">
               Product
             </h4>
-            <ul style={{
-              listStyle: 'none',
-              padding: 0,
-              margin: 0
-            }}>
-              <li style={{ marginBottom: '8px' }}>
-                <a href="#" style={{ color: '#94a3b8', textDecoration: 'none' }}>Features</a>
+            <ul className="list-none p-0 m-0">
+              <li className="mb-2">
+                <a href="#" className="text-slate-400 no-underline hover:text-white transition-colors">Features</a>
               </li>
-              <li style={{ marginBottom: '8px' }}>
-                <a href="#" style={{ color: '#94a3b8', textDecoration: 'none' }}>Pricing</a>
+              <li className="mb-2">
+                <a href="#" className="text-slate-400 no-underline hover:text-white transition-colors">Pricing</a>
               </li>
-              <li style={{ marginBottom: '8px' }}>
-                <a href="#" style={{ color: '#94a3b8', textDecoration: 'none' }}>Integrations</a>
+              <li className="mb-2">
+                <a href="#" className="text-slate-400 no-underline hover:text-white transition-colors">Integrations</a>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 style={{
-              fontSize: '1rem',
-              fontWeight: '600',
-              marginBottom: '16px'
-            }}>
+            <h4 className="text-base font-semibold mb-4">
               Company
             </h4>
-            <ul style={{
-              listStyle: 'none',
-              padding: 0,
-              margin: 0
-            }}>
-              <li style={{ marginBottom: '8px' }}>
-                <a href="#" style={{ color: '#94a3b8', textDecoration: 'none' }}>About</a>
+            <ul className="list-none p-0 m-0">
+              <li className="mb-2">
+                <a href="#" className="text-slate-400 no-underline hover:text-white transition-colors">About</a>
               </li>
-              <li style={{ marginBottom: '8px' }}>
-                <a href="#" style={{ color: '#94a3b8', textDecoration: 'none' }}>Contact</a>
+              <li className="mb-2">
+                <a href="#" className="text-slate-400 no-underline hover:text-white transition-colors">Contact</a>
               </li>
-              <li style={{ marginBottom: '8px' }}>
-                <a href="#" style={{ color: '#94a3b8', textDecoration: 'none' }}>Privacy</a>
+              <li className="mb-2">
+                <a href="#" className="text-slate-400 no-underline hover:text-white transition-colors">Privacy</a>
               </li>
             </ul>
           </div>
         </div>
 
-        <div style={{
-          borderTop: '1px solid #334155',
-          paddingTop: '30px',
-          textAlign: 'center',
-          color: '#94a3b8'
-        }}>
-          <p style={{ margin: 0 }}>
+        <div className="border-t border-slate-600 pt-8 text-center text-slate-400">
+          <p className="m-0">
             © 2024 Offtix. All rights reserved.
           </p>
         </div>

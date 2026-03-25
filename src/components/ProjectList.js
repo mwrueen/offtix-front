@@ -90,7 +90,7 @@ const ProjectList = ({ projects, onUpdate, onDelete }) => {
   return (
     <div>
       {editingProject && (
-        <div style={{ marginBottom: '30px' }}>
+        <div className="mb-8">
           <ProjectForm
             onSubmit={handleUpdate}
             initialData={editingProject}
@@ -99,11 +99,7 @@ const ProjectList = ({ projects, onUpdate, onDelete }) => {
         </div>
       )}
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-        gap: '24px'
-      }}>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-6">
         {projects.map((project) => {
           const statusConfig = getStatusConfig(project.status);
           const priorityConfig = getPriorityConfig(project.priority);
@@ -112,122 +108,53 @@ const ProjectList = ({ projects, onUpdate, onDelete }) => {
           return (
             <div
               key={project._id}
-              style={{
-                backgroundColor: 'white',
-                borderRadius: '16px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-                border: '2px solid #f1f5f9',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                overflow: 'hidden',
-                position: 'relative',
-                height: 'fit-content'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.12)';
-                e.currentTarget.style.borderColor = '#cbd5e1';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
-                e.currentTarget.style.borderColor = '#f1f5f9';
-              }}
+              className="bg-white rounded-2xl shadow-lg border-2 border-slate-100 transition-all duration-300 cursor-pointer overflow-hidden relative h-fit hover:-translate-y-1 hover:shadow-xl hover:border-slate-300"
             >
               {/* Card Header with Status */}
-              <div style={{
-                padding: '24px 24px 20px 24px',
-                borderBottom: '2px solid #f8fafc'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '16px' }}>
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '12px',
-                    background: `linear-gradient(135deg, ${logo.color} 0%, ${logo.color}dd 100%)`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '20px',
-                    fontWeight: 'bold',
-                    color: 'white',
-                    flexShrink: 0,
-                    boxShadow: `0 4px 12px ${logo.color}40`
-                  }}>
+              <div className="p-6 pb-5 border-b-2 border-slate-50">
+                <div className="flex items-start gap-3.5 mb-4">
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold text-white flex-shrink-0"
+                    style={{
+                      background: `linear-gradient(135deg, ${logo.color} 0%, ${logo.color}dd 100%)`,
+                      boxShadow: `0 4px 12px ${logo.color}40`
+                    }}
+                  >
                     {logo.letter}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <h3 style={{
-                      margin: '0 0 6px 0',
-                      color: '#0f172a',
-                      fontSize: '17px',
-                      fontWeight: '700',
-                      lineHeight: '1.4',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical'
-                    }}>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="m-0 mb-1.5 text-slate-900 text-[17px] font-bold leading-snug overflow-hidden text-ellipsis line-clamp-2">
                       {project.title}
                     </h3>
-                    <p style={{
-                      margin: 0,
-                      color: '#64748b',
-                      fontSize: '13px',
-                      lineHeight: '1.5',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical'
-                    }}>
+                    <p className="m-0 text-slate-500 text-xs leading-relaxed overflow-hidden text-ellipsis line-clamp-2">
                       {project.description || 'No description provided'}
                     </p>
                   </div>
                 </div>
 
                 {/* Status and Priority Badges */}
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <span style={{
-                    backgroundColor: statusConfig.bg,
-                    color: statusConfig.text,
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    border: `1px solid ${statusConfig.border}`
-                  }}>
+                <div className="flex gap-2 flex-wrap">
+                  <span 
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5"
+                    style={{
+                      backgroundColor: statusConfig.bg,
+                      color: statusConfig.text,
+                      border: `1px solid ${statusConfig.border}`
+                    }}
+                  >
                     {statusConfig.icon} {statusConfig.label}
                   </span>
-                  <span style={{
-                    backgroundColor: priorityConfig.bg,
-                    color: priorityConfig.text,
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}>
+                  <span 
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5"
+                    style={{
+                      backgroundColor: priorityConfig.bg,
+                      color: priorityConfig.text
+                    }}
+                  >
                     {priorityConfig.icon} {project.priority?.charAt(0).toUpperCase() + project.priority?.slice(1) || 'Medium'}
                   </span>
                   {project.endDate && (
-                    <span style={{
-                      backgroundColor: '#f1f5f9',
-                      color: '#475569',
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}>
+                    <span className="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                         <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -241,41 +168,13 @@ const ProjectList = ({ projects, onUpdate, onDelete }) => {
               </div>
 
               {/* Action Buttons */}
-              <div style={{
-                padding: '20px 24px 24px 24px',
-                display: 'flex',
-                gap: '10px'
-              }}>
+              <div className="p-5 px-6 pb-6 flex gap-2.5">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     window.location.href = `/projects/${project._id}`;
                   }}
-                  style={{
-                    flex: 1,
-                    padding: '12px 16px',
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '10px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    transition: 'all 0.2s ease',
-                    boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 2px 8px rgba(59, 130, 246, 0.3)';
-                  }}
+                  className="flex-1 px-4 py-3 bg-gradient-to-br from-blue-500 to-blue-700 text-white border-0 rounded-xl cursor-pointer text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-200 shadow-lg shadow-blue-500/30 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/40"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -289,31 +188,7 @@ const ProjectList = ({ projects, onUpdate, onDelete }) => {
                       e.stopPropagation();
                       handleEdit(project);
                     }}
-                    style={{
-                      padding: '12px 14px',
-                      backgroundColor: '#f8fafc',
-                      color: '#475569',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '10px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#e0f2fe';
-                      e.target.style.borderColor = '#0ea5e9';
-                      e.target.style.color = '#0c4a6e';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#f8fafc';
-                      e.target.style.borderColor = '#e2e8f0';
-                      e.target.style.color = '#475569';
-                    }}
+                    className="px-3.5 py-3 bg-slate-50 text-slate-600 border-2 border-slate-200 rounded-xl cursor-pointer text-sm font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-900"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -327,30 +202,7 @@ const ProjectList = ({ projects, onUpdate, onDelete }) => {
                       e.stopPropagation();
                       handleDeleteClick(project);
                     }}
-                    style={{
-                      padding: '12px 14px',
-                      backgroundColor: '#fef2f2',
-                      color: '#dc2626',
-                      border: '2px solid #fecaca',
-                      borderRadius: '10px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#fee2e2';
-                      e.target.style.borderColor = '#f87171';
-                      e.target.style.color = '#b91c1c';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#fef2f2';
-                      e.target.style.borderColor = '#fecaca';
-                      e.target.style.color = '#dc2626';
-                    }}
+                    className="px-3.5 py-3 bg-red-50 text-red-600 border-2 border-red-200 rounded-xl cursor-pointer text-sm font-semibold flex items-center justify-center transition-all duration-200 hover:bg-red-100 hover:border-red-400 hover:text-red-700"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="3 6 5 6 21 6"></polyline>

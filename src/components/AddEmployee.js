@@ -103,17 +103,17 @@ const AddEmployee = () => {
     const newErrors = {};
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'Email required for uplink';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = 'Invalid communication address';
     }
 
     if (!formData.designation) {
-      newErrors.designation = 'Designation is required';
+      newErrors.designation = 'Designation required';
     }
 
     if (formData.salary && isNaN(formData.salary)) {
-      newErrors.salary = 'Salary must be a number';
+      newErrors.salary = 'Compensation must be numeric';
     }
 
     setErrors(newErrors);
@@ -124,7 +124,7 @@ const AddEmployee = () => {
     e.preventDefault();
 
     if (!validateForm()) {
-      toast?.showToast?.('Please fix the errors in the form', 'error');
+      toast?.showToast?.('Encryption errors detected in form', 'error');
       return;
     }
 
@@ -147,15 +147,15 @@ const AddEmployee = () => {
 
       if (response.ok) {
         const data = await response.json();
-        toast?.showToast?.(data.message || 'Invitation sent successfully!', 'success');
+        toast?.showToast?.(data.message || 'Invitation broadcast successful!', 'success');
         navigate('/overview');
       } else {
         const errorData = await response.json();
-        toast?.showToast?.(errorData.message || 'Failed to send invitation', 'error');
+        toast?.showToast?.(errorData.message || 'Broadcast failed', 'error');
       }
     } catch (error) {
       console.error('Error sending invitation:', error);
-      toast?.showToast?.('Failed to send invitation. Please try again.', 'error');
+      toast?.showToast?.('Broadcasting error. Check network link.', 'error');
     } finally {
       setLoading(false);
     }
@@ -164,30 +164,15 @@ const AddEmployee = () => {
   if (!selectedCompany || selectedCompany.id === 'personal') {
     return (
       <Layout>
-        <div style={{
-          background: 'white',
-          padding: '50px',
-          borderRadius: '12px',
-          textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h2 style={{ color: '#1e293b', marginBottom: '16px' }}>No Company Selected</h2>
-          <p style={{ color: '#64748b', marginBottom: '24px' }}>
-            Please select a company to add employees
-          </p>
+        <div className="bg-white p-24 rounded-[56px] text-center shadow-sm border border-slate-100 flex flex-col items-center">
+          <div className="text-8xl mb-8 opacity-20 grayscale">🏢</div>
+          <h2 className="text-slate-800 mb-4 text-3xl font-black tracking-tight">Node Not Selected</h2>
+          <p className="text-slate-500 mb-10 max-w-sm font-medium uppercase text-xs tracking-[0.2em]">Select a company node to initiate person-to-person uplink.</p>
           <button
             onClick={() => navigate('/overview')}
-            style={{
-              padding: '12px 24px',
-              background: 'linear-gradient(135deg, #667eea, #764ba2)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '600'
-            }}
+            className="px-10 py-5 bg-slate-900 text-white rounded-[24px] font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all active:scale-95 shadow-xl shadow-slate-200"
           >
-            Go to Overview
+            Return to Overview
           </button>
         </div>
       </Layout>
@@ -197,8 +182,9 @@ const AddEmployee = () => {
   if (checkingPermission || loadingDesignations) {
     return (
       <Layout>
-        <div style={{ textAlign: 'center', padding: '50px' }}>
-          <div style={{ fontSize: '18px', color: '#64748b' }}>Loading...</div>
+        <div className="flex flex-col items-center justify-center p-24 text-center">
+          <div className="text-6xl mb-6 animate-pulse">📡</div>
+          <div className="text-lg font-black text-slate-400 uppercase tracking-widest italic animate-pulse">Authenticating Uplink...</div>
         </div>
       </Layout>
     );
@@ -207,31 +193,15 @@ const AddEmployee = () => {
   if (!hasPermission) {
     return (
       <Layout>
-        <div style={{
-          background: 'white',
-          padding: '50px',
-          borderRadius: '12px',
-          textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔒</div>
-          <h2 style={{ color: '#1e293b', marginBottom: '16px' }}>Access Denied</h2>
-          <p style={{ color: '#64748b', marginBottom: '24px' }}>
-            You don't have permission to add employees
-          </p>
+        <div className="bg-white p-24 rounded-[56px] text-center shadow-sm border border-slate-100 flex flex-col items-center">
+          <div className="text-8xl mb-10 bg-rose-50 w-32 h-32 rounded-[40px] flex items-center justify-center text-rose-500 shadow-inner">🔒</div>
+          <h2 className="text-slate-800 mb-4 text-3xl font-black tracking-tight">Authorization Refused</h2>
+          <p className="text-slate-500 mb-10 max-w-sm font-medium uppercase text-xs tracking-[0.2em]">Your neural link level is insufficient for employee induction.</p>
           <button
             onClick={() => navigate('/overview')}
-            style={{
-              padding: '12px 24px',
-              background: 'linear-gradient(135deg, #667eea, #764ba2)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '600'
-            }}
+            className="px-10 py-5 bg-rose-600 text-white rounded-[24px] font-black text-xs uppercase tracking-widest hover:bg-rose-700 transition-all active:scale-95 shadow-xl shadow-rose-100"
           >
-            Go to Overview
+            Abort Protocol
           </button>
         </div>
       </Layout>
@@ -240,29 +210,14 @@ const AddEmployee = () => {
 
   return (
     <Layout>
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <div className="max-w-3xl mx-auto py-12 px-6">
         {/* Header */}
-        <div style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          padding: '40px',
-          borderRadius: '16px',
-          marginBottom: '30px',
-          boxShadow: '0 10px 40px rgba(102, 126, 234, 0.2)',
-          color: 'white'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
-            <div style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '14px',
-              background: 'rgba(255, 255, 255, 0.2)',
-              backdropFilter: 'blur(10px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '2px solid rgba(255, 255, 255, 0.3)'
-            }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-12 lg:p-16 rounded-[56px] mb-12 shadow-2xl shadow-indigo-200 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-64 h-full bg-white/5 -skew-x-12 -z-0 group-hover:bg-white/10 transition-colors duration-700"></div>
+
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-8 relative z-10 text-white">
+            <div className="w-20 h-20 rounded-[28px] bg-white/10 backdrop-blur-xl flex items-center justify-center border-2 border-white/20 shadow-inner group-hover:rotate-6 transition-all duration-500">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                 <circle cx="8.5" cy="7" r="4"></circle>
                 <line x1="20" y1="8" x2="20" y2="14"></line>
@@ -270,79 +225,64 @@ const AddEmployee = () => {
               </svg>
             </div>
             <div>
-              <h1 style={{ margin: '0 0 4px 0', fontSize: '28px', fontWeight: '700' }}>
-                Invite Employee
-              </h1>
-              <p style={{ margin: 0, fontSize: '15px', opacity: 0.9 }}>
-                Send an invitation to join {selectedCompany.name}
+              <h1 className="text-4xl lg:text-5xl font-black tracking-tight mb-2">Personnel Uplink</h1>
+              <p className="text-indigo-100 font-bold uppercase text-[10px] tracking-[0.3em] opacity-80">
+                Initiating invitation for <span className="text-white italic underline decoration-indigo-400 group-hover:decoration-white transition-all">{selectedCompany.name}</span>
               </p>
             </div>
           </div>
         </div>
 
         {/* Form Card */}
-        <div style={{
-          background: 'white',
-          padding: '40px',
-          borderRadius: '16px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '24px' }}>
+        <div className="bg-white p-12 lg:p-16 rounded-[56px] shadow-sm border border-slate-100 group">
+          <form onSubmit={handleSubmit} className="space-y-10">
+            <div className="space-y-4">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-2 flex items-center gap-3">
+                Target Email <span className="w-8 h-[1px] bg-slate-100"></span>
+              </label>
               <Input
-                label="Employee Email"
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="employee@example.com"
+                placeholder="subject@offtix.net"
                 error={errors.email}
                 required
-                helperText="An invitation will be sent to this email address"
+                className="w-full px-8 py-5 bg-slate-50 border-b-4 border-slate-100 rounded-[24px] text-slate-700 font-bold outline-none focus:bg-white focus:border-indigo-500 transition-all shadow-inner border-t-0 border-l-0 border-r-0"
+                noLabel
               />
+              <p className="text-[10px] font-bold text-slate-400 italic ml-2 tracking-wide uppercase opacity-60">System will broadcast a neural link invitation</p>
             </div>
 
-            <div style={{ marginBottom: '24px' }}>
-              <Input
-                label="Designation / Role"
-                type="select"
-                name="designation"
-                value={formData.designation}
-                onChange={handleChange}
-                error={errors.designation}
-                required
-                disabled={loadingDesignations}
-                options={[
-                  { value: '', label: loadingDesignations ? 'Loading roles...' : 'Select a role' },
-                  ...designations.map(d => ({ value: d.name, label: d.name }))
-                ]}
-                helperText="Select the role for this employee"
-              />
-            </div>
-
-            <div style={{ marginBottom: '32px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#374151'
-              }}>
-                Salary (Optional)
+            <div className="space-y-4">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-2 flex items-center gap-3">
+                Operational Role <span className="w-8 h-[1px] bg-slate-100"></span>
               </label>
-              <div style={{ position: 'relative' }}>
-                <span style={{
-                  position: 'absolute',
-                  left: '16px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#64748b',
-                  pointerEvents: 'none',
-                  zIndex: 1
-                }}>
+              <div className="relative">
+                <Input
+                  type="select"
+                  name="designation"
+                  value={formData.designation}
+                  onChange={handleChange}
+                  error={errors.designation}
+                  required
+                  disabled={loadingDesignations}
+                  options={[
+                    { value: '', label: loadingDesignations ? 'Decrypting Roles...' : 'Identify Base Designation' },
+                    ...designations.map(d => ({ value: d.name, label: d.name }))
+                  ]}
+                  className="w-full px-8 py-5 bg-slate-50 border-b-4 border-slate-100 rounded-[24px] text-slate-700 font-bold outline-none appearance-none focus:bg-white focus:border-indigo-500 transition-all shadow-inner border-t-0 border-l-0 border-r-0"
+                  noLabel
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-2 flex items-center gap-3">
+                Compensation / Cycle <span className="w-8 h-[1px] bg-slate-100"></span>
+              </label>
+              <div className="relative group/salary">
+                <span className="absolute left-6 top-1/2 -translate-y-1/2 text-xl font-black text-slate-300 group-focus-within/salary:text-indigo-500 transition-colors pointer-events-none z-10 italic">
                   {getCurrencySymbol(companyCurrency)}
                 </span>
                 <input
@@ -350,143 +290,69 @@ const AddEmployee = () => {
                   name="salary"
                   value={formData.salary}
                   onChange={handleChange}
-                  placeholder="0"
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px 12px 40px',
-                    border: `1px solid ${errors.salary ? '#ef4444' : '#e2e8f0'}`,
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                    transition: 'all 0.2s ease',
-                    outline: 'none',
-                    backgroundColor: '#ffffff',
-                    color: '#1e293b',
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                  }}
-                  onFocus={(e) => {
-                    if (!errors.salary) {
-                      e.target.style.borderColor = '#667eea';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
-                    }
-                  }}
-                  onBlur={(e) => {
-                    if (!errors.salary) {
-                      e.target.style.borderColor = '#e2e8f0';
-                      e.target.style.boxShadow = 'none';
-                    }
-                  }}
+                  placeholder="0.00"
+                  className={`w-full py-5 pl-14 pr-8 bg-slate-50 border-b-4 ${errors.salary ? 'border-rose-400 focus:border-rose-500' : 'border-slate-100 focus:border-indigo-500'} rounded-[24px] text-slate-800 font-black outline-none focus:bg-white transition-all shadow-inner`}
                 />
               </div>
-              {errors.salary && (
-                <div style={{
-                  marginTop: '6px',
-                  fontSize: '13px',
-                  color: '#ef4444'
-                }}>
-                  {errors.salary}
-                </div>
-              )}
-              {!errors.salary && (
-                <div style={{
-                  marginTop: '6px',
-                  fontSize: '13px',
-                  color: '#64748b'
-                }}>
-                  Enter the employee's salary (leave blank for 0)
-                </div>
-              )}
+              {errors.salary && <p className="text-xs font-black text-rose-500 uppercase tracking-widest ml-2">{errors.salary}</p>}
+              {!errors.salary && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2 opacity-60 italic">Define financial resource allocation (Null allowed)</p>}
             </div>
 
-            {/* Info Box */}
-            <div style={{
-              padding: '16px',
-              background: '#eff6ff',
-              border: '1px solid #bfdbfe',
-              borderRadius: '10px',
-              marginBottom: '32px'
-            }}>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '2px' }}>
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="16" x2="12" y2="12"></line>
-                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                </svg>
-                <div style={{ fontSize: '14px', color: '#1e40af', lineHeight: '1.6' }}>
-                  <strong>How it works:</strong>
-                  <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
-                    <li>If the user is registered, they'll receive a notification immediately</li>
-                    <li>If not registered, they can sign up using this email</li>
-                    <li>After registration/login, they'll see the invitation in their notifications</li>
-                    <li>They can accept or reject the invitation</li>
-                    <li>Upon acceptance, they'll get access to the company with the assigned role</li>
+            {/* Protocol Summary Card */}
+            <div className="p-10 bg-slate-900 rounded-[40px] border border-slate-800 relative overflow-hidden group shadow-2xl">
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl"></div>
+              <div className="flex gap-6 relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 border border-indigo-500/30">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
+                </div>
+                <div className="space-y-6">
+                  <p className="text-sm font-black text-white uppercase tracking-[0.2em] italic underline decoration-indigo-500 underline-offset-8">Uplink Protocol Documentation</p>
+                  <ul className="space-y-4">
+                    {[
+                      "Registered entities receive instant notification pulse",
+                      "Unregistered subjects receive induction link via SMTP",
+                      "Identity validation required at sign-up terminal",
+                      "Full company access granted upon protocol acceptance"
+                    ].map((step, idx) => (
+                      <li key={idx} className="flex items-center gap-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest group/li">
+                        <span className="w-5 h-5 rounded-lg bg-slate-800 flex items-center justify-center text-indigo-500 font-black group-hover/li:bg-indigo-600 group-hover/li:text-white transition-colors">{idx + 1}</span>
+                        {step}
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <div className="flex flex-col sm:flex-row gap-6 justify-end pt-10">
               <button
                 type="button"
                 onClick={() => navigate('/overview')}
                 disabled={loading}
-                style={{
-                  padding: '12px 28px',
-                  background: 'white',
-                  color: '#64748b',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '10px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  fontWeight: '600',
-                  fontSize: '15px',
-                  transition: 'all 0.2s',
-                  opacity: loading ? 0.5 : 1
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading) {
-                    e.target.style.background = '#f8fafc';
-                    e.target.style.borderColor = '#cbd5e1';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!loading) {
-                    e.target.style.background = 'white';
-                    e.target.style.borderColor = '#e2e8f0';
-                  }
-                }}
+                className="px-10 py-5 bg-white text-slate-400 border-2 border-slate-100 rounded-[24px] font-black text-xs uppercase tracking-widest hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600 transition-all active:scale-95 disabled:grayscale"
               >
-                Cancel
+                Abort
               </button>
               <button
                 type="submit"
                 disabled={loading || loadingDesignations}
-                style={{
-                  padding: '12px 28px',
-                  background: loading ? '#94a3b8' : 'linear-gradient(135deg, #667eea, #764ba2)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '10px',
-                  cursor: loading || loadingDesignations ? 'not-allowed' : 'pointer',
-                  fontWeight: '600',
-                  fontSize: '15px',
-                  boxShadow: loading ? 'none' : '0 4px 12px rgba(102, 126, 234, 0.3)',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading && !loadingDesignations) {
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!loading && !loadingDesignations) {
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
-                  }
-                }}
+                className={`px-12 py-5 rounded-[24px] font-black text-xs uppercase tracking-widest text-white shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-4 min-w-[240px] ${loading || loadingDesignations ? 'bg-slate-300 text-slate-500 grayscale' : 'bg-slate-900 shadow-slate-200 hover:bg-indigo-600 hover:shadow-indigo-100'}`}
               >
-                {loading ? 'Sending Invitation...' : 'Send Invitation'}
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Broadcasting...
+                  </>
+                ) : (
+                  <>
+                    Initiate Uplink
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -497,4 +363,3 @@ const AddEmployee = () => {
 };
 
 export default AddEmployee;
-

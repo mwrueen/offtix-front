@@ -6,421 +6,169 @@ const Hero = () => {
   const navigate = useNavigate();
 
   return (
-    <section style={{
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      color: '#ffffff',
-      position: 'relative',
-      overflow: 'hidden',
-      paddingTop: '70px'
-    }}>
-      {/* Animated background elements */}
-      <div style={{
-        position: 'absolute',
-        top: '10%',
-        right: '5%',
-        width: '300px',
-        height: '300px',
-        background: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: '50%',
-        filter: 'blur(60px)',
-        animation: 'float 6s ease-in-out infinite',
-        zIndex: 0
-      }} />
+    <section className="relative min-h-screen flex items-center bg-gradient-to-br from-indigo-700 via-indigo-800 to-purple-900 pt-20 overflow-hidden text-white">
+      {/* Dynamic Background Elements */}
+      <div className="absolute top-[10%] -right-20 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px] animate-pulse"></div>
+      <div className="absolute -bottom-[10%] -left-20 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px] animate-pulse delay-1000"></div>
 
-      <div style={{
-        position: 'absolute',
-        bottom: '10%',
-        left: '5%',
-        width: '250px',
-        height: '250px',
-        background: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: '50%',
-        filter: 'blur(60px)',
-        animation: 'float 8s ease-in-out infinite',
-        animationDelay: '2s',
-        zIndex: 0
-      }} />
+      {/* Decorative Floating Mesh */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
 
-      {/* Gantt Chart Representation - Enhanced */}
-      <div className="floating-card" style={{
-        position: 'absolute',
-        top: '15%',
-        right: '8%',
-        width: '200px',
-        height: '140px',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-        borderRadius: '12px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-        backdropFilter: 'blur(10px)',
-        zIndex: 1,
-        padding: '16px',
-        animation: 'slideInRight 1s ease-out'
-      }}>
-        <div style={{ fontSize: '12px', fontWeight: '600', color: '#667eea', marginBottom: '12px' }}>Project Timeline</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ width: '85%', height: '10px', backgroundColor: '#667eea', borderRadius: '5px', boxShadow: '0 2px 4px rgba(102, 126, 234, 0.3)' }} />
-          <div style={{ width: '65%', height: '10px', backgroundColor: '#10b981', borderRadius: '5px', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)' }} />
-          <div style={{ width: '95%', height: '10px', backgroundColor: '#f59e0b', borderRadius: '5px', boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)' }} />
-          <div style={{ width: '50%', height: '10px', backgroundColor: '#ef4444', borderRadius: '5px', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)' }} />
-        </div>
-      </div>
+      <div className="container mx-auto px-6 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
-      {/* Board View Representation - Enhanced */}
-      <div className="floating-card" style={{
-        position: 'absolute',
-        top: '55%',
-        left: '5%',
-        width: '160px',
-        height: '180px',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-        borderRadius: '12px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-        backdropFilter: 'blur(10px)',
-        zIndex: 1,
-        padding: '14px',
-        animation: 'slideInLeft 1s ease-out'
-      }}>
-        <div style={{ fontSize: '12px', fontWeight: '600', color: '#667eea', marginBottom: '10px' }}>Task Board</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', height: 'calc(100% - 30px)' }}>
-          <div style={{ backgroundColor: '#fef3c7', borderRadius: '6px', padding: '6px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)' }}>
-            <div style={{ width: '100%', height: '14px', backgroundColor: '#f59e0b', borderRadius: '3px', marginBottom: '4px' }} />
-            <div style={{ width: '80%', height: '10px', backgroundColor: '#f59e0b', borderRadius: '3px', opacity: 0.6 }} />
-          </div>
-          <div style={{ backgroundColor: '#dbeafe', borderRadius: '6px', padding: '6px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)' }}>
-            <div style={{ width: '100%', height: '14px', backgroundColor: '#3b82f6', borderRadius: '3px', marginBottom: '4px' }} />
-            <div style={{ width: '90%', height: '10px', backgroundColor: '#3b82f6', borderRadius: '3px', opacity: 0.6 }} />
-          </div>
-          <div style={{ backgroundColor: '#d1fae5', borderRadius: '6px', padding: '6px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)' }}>
-            <div style={{ width: '100%', height: '14px', backgroundColor: '#10b981', borderRadius: '3px', marginBottom: '4px' }} />
-          </div>
-        </div>
-      </div>
-
-      {/* List View Representation - Enhanced */}
-      <div className="floating-card" style={{
-        position: 'absolute',
-        bottom: '25%',
-        right: '15%',
-        width: '180px',
-        height: '120px',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-        borderRadius: '12px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-        backdropFilter: 'blur(10px)',
-        zIndex: 1,
-        padding: '14px',
-        animation: 'fadeIn 1.5s ease-out'
-      }}>
-        <div style={{ fontSize: '12px', fontWeight: '600', color: '#667eea', marginBottom: '10px' }}>Task List</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '14px', height: '14px', backgroundColor: '#667eea', borderRadius: '50%', boxShadow: '0 2px 4px rgba(102, 126, 234, 0.3)' }} />
-            <div style={{ width: '80%', height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px' }} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '14px', height: '14px', backgroundColor: '#10b981', borderRadius: '50%', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)' }} />
-            <div style={{ width: '70%', height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px' }} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '14px', height: '14px', backgroundColor: '#f59e0b', borderRadius: '50%', boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)' }} />
-            <div style={{ width: '85%', height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px' }} />
-          </div>
-        </div>
-      </div>
-
-      {/* Analytics/Calculation Representation - Enhanced */}
-      <div className="floating-card" style={{
-        position: 'absolute',
-        bottom: '15%',
-        left: '35%',
-        width: '140px',
-        height: '100px',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-        borderRadius: '12px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-        backdropFilter: 'blur(10px)',
-        zIndex: 1,
-        padding: '14px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        animation: 'fadeIn 2s ease-out'
-      }}>
-        <div style={{ fontSize: '12px', fontWeight: '600', color: '#667eea', marginBottom: '8px' }}>Analytics</div>
-        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'flex-end' }}>
-          <div style={{ width: '12px', height: '24px', backgroundColor: '#667eea', borderRadius: '3px', boxShadow: '0 2px 4px rgba(102, 126, 234, 0.3)' }} />
-          <div style={{ width: '12px', height: '18px', backgroundColor: '#10b981', borderRadius: '3px', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)' }} />
-          <div style={{ width: '12px', height: '30px', backgroundColor: '#f59e0b', borderRadius: '3px', boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)' }} />
-        </div>
-      </div>
-      <div className="hero-grid" style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '0 24px',
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '60px',
-        alignItems: 'center',
-        position: 'relative',
-        zIndex: 2
-      }}>
-        <div style={{ animation: 'fadeInUp 1s ease-out' }}>
-          <div className="hero-badge" style={{
-            display: 'inline-block',
-            padding: '8px 16px',
-            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: '20px',
-            marginBottom: '20px',
-            fontSize: '14px',
-            fontWeight: '500',
-            backdropFilter: 'blur(10px)'
-          }}>
-            ✨ Professional Project Management
-          </div>
-
-          <h1 className="hero-title" style={{
-            fontSize: '3.5rem',
-            fontWeight: '800',
-            marginBottom: '24px',
-            lineHeight: '1.1',
-            color: '#ffffff',
-            textShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
-          }}>
-            Manage Projects
-            <span style={{ display: 'block', color: '#fbbf24' }}>Like a Pro</span>
-          </h1>
-
-          <p className="hero-description" style={{
-            fontSize: '1.25rem',
-            marginBottom: '40px',
-            lineHeight: '1.8',
-            color: 'rgba(255, 255, 255, 0.9)'
-          }}>
-            Streamline your workflow with Offtix's professional project management platform.
-            Track tasks, manage teams, and deliver projects on time with powerful tools and insights.
-          </p>
-
-          <div className="hero-buttons" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => navigate('/signup')}
-              style={{
-                padding: '18px 36px',
-                backgroundColor: '#ffffff',
-                color: '#667eea',
-                border: 'none',
-                borderRadius: '12px',
-                fontSize: '16px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15)',
-                transition: 'all 0.3s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 12px 28px rgba(0, 0, 0, 0.2)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.15)';
-              }}
-            >
-              Get Started Free
-              <span style={{ fontSize: '18px' }}>→</span>
-            </button>
-
-            <button
-              onClick={() => navigate('/signin')}
-              style={{
-                padding: '18px 36px',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                color: '#ffffff',
-                border: '2px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '12px',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                backdropFilter: 'blur(10px)',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-                e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)';
-                e.target.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                e.target.style.transform = 'translateY(0)';
-              }}
-            >
-              Sign In
-            </button>
-          </div>
-
-          <div style={{
-            marginTop: '40px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '24px',
-            flexWrap: 'wrap'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '20px' }}>✓</span>
-              <span style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)' }}>Free forever plan</span>
+          {/* Left Content Column */}
+          <div className="animate-in fade-in slide-in-from-left-10 duration-1000">
+            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 mb-8 border-l-4 border-l-amber-400">
+              <span className="flex h-2 w-2 rounded-full bg-amber-400 animate-ping"></span>
+              <span className="text-xs font-black uppercase tracking-[0.2em]">Next-Gen Orchestration</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '20px' }}>✓</span>
-              <span style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)' }}>No credit card required</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '20px' }}>✓</span>
-              <span style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)' }}>Setup in minutes</span>
-            </div>
-          </div>
-        </div>
 
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          position: 'relative',
-          animation: 'fadeInRight 1s ease-out'
-        }}>
-          {/* Main Dashboard Mockup */}
-          <div className="hero-mockup" style={{
-            width: '500px',
-            height: '350px',
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            borderRadius: '20px',
-            padding: '20px',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-            backdropFilter: 'blur(10px)',
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            {/* Mockup Header */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '20px',
-              paddingBottom: '15px',
-              borderBottom: '2px solid #e2e8f0'
-            }}>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <div style={{ width: '12px', height: '12px', backgroundColor: '#ef4444', borderRadius: '50%' }} />
-                <div style={{ width: '12px', height: '12px', backgroundColor: '#f59e0b', borderRadius: '50%' }} />
-                <div style={{ width: '12px', height: '12px', backgroundColor: '#10b981', borderRadius: '50%' }} />
+            <h1 className="text-5xl lg:text-7xl font-black leading-[1.05] tracking-tight mb-8">
+              Engineer <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-200 to-amber-400">
+                Peak Output
+              </span>
+            </h1>
+
+            <p className="text-lg lg:text-xl text-indigo-100/80 leading-relaxed mb-12 max-w-xl font-medium">
+              Offtix redefines project management with a high-fidelity interface designed for architectural precision. Track, analyze, and deploy objectives with surgical accuracy.
+            </p>
+
+            <div className="flex flex-wrap gap-6 items-center">
+              <button
+                onClick={() => navigate('/signup')}
+                className="group relative px-10 py-5 bg-white text-indigo-900 rounded-2xl font-black text-sm uppercase tracking-widest shadow-24 hover:hover:shadow-indigo-500/20 active:scale-95 transition-all overflow-hidden"
+              >
+                <span className="relative z-10 flex items-center gap-3">
+                  Initiate Deployment
+                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-100 to-white opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              </button>
+
+              <button
+                onClick={() => navigate('/signin')}
+                className="px-10 py-5 bg-indigo-900/30 backdrop-blur-md border-2 border-white/10 hover:border-white/30 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95"
+              >
+                Access Portal
+              </button>
+            </div>
+
+            <div className="mt-16 flex flex-wrap gap-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-700">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"></path></svg></div>
+                <span className="text-[10px] font-black uppercase tracking-widest">Enterprise Encrypted</span>
               </div>
-              <div style={{ fontSize: '14px', fontWeight: '600', color: '#667eea' }}>Dashboard</div>
-            </div>
-
-            {/* Mockup Content */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              {/* Stats Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                <div style={{
-                  backgroundColor: '#ede9fe',
-                  padding: '12px',
-                  borderRadius: '10px',
-                  border: '1px solid #c4b5fd'
-                }}>
-                  <div style={{ fontSize: '10px', color: '#667eea', marginBottom: '4px' }}>Projects</div>
-                  <div style={{ fontSize: '20px', fontWeight: '700', color: '#667eea' }}>24</div>
-                </div>
-                <div style={{
-                  backgroundColor: '#d1fae5',
-                  padding: '12px',
-                  borderRadius: '10px',
-                  border: '1px solid #6ee7b7'
-                }}>
-                  <div style={{ fontSize: '10px', color: '#10b981', marginBottom: '4px' }}>Tasks</div>
-                  <div style={{ fontSize: '20px', fontWeight: '700', color: '#10b981' }}>156</div>
-                </div>
-                <div style={{
-                  backgroundColor: '#fef3c7',
-                  padding: '12px',
-                  borderRadius: '10px',
-                  border: '1px solid #fcd34d'
-                }}>
-                  <div style={{ fontSize: '10px', color: '#f59e0b', marginBottom: '4px' }}>Team</div>
-                  <div style={{ fontSize: '20px', fontWeight: '700', color: '#f59e0b' }}>12</div>
-                </div>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"></path></svg></div>
+                <span className="text-[10px] font-black uppercase tracking-widest">Multi-Node Sync</span>
               </div>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"></path></svg></div>
+                <span className="text-[10px] font-black uppercase tracking-widest">Zero Latency</span>
+              </div>
+            </div>
+          </div>
 
-              {/* Progress Bars */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
-                <div>
-                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px', fontWeight: '500' }}>Website Redesign</div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: '75%', height: '100%', backgroundColor: '#667eea', borderRadius: '4px' }} />
+          {/* Right Visual Column */}
+          <div className="relative group animate-in fade-in zoom-in duration-1000 delay-200">
+            {/* Background Glows */}
+            <div className="absolute -inset-10 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+
+            {/* Dashboard Mockup Container */}
+            <div className="relative bg-slate-900/40 backdrop-blur-3xl border border-white/10 p-2 rounded-[40px] shadow-2xl scale-110 lg:scale-100 origin-center transition-transform duration-700 group-hover:scale-105">
+              <div className="bg-white rounded-[38px] overflow-hidden shadow-inner">
+                {/* Mockup Top Bar */}
+                <div className="px-8 py-5 border-b-4 border-slate-50 flex justify-between items-center bg-slate-50/50">
+                  <div className="flex gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
                   </div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 italic">Project_Architecture_v1.0</div>
                 </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px', fontWeight: '500' }}>Mobile App</div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: '45%', height: '100%', backgroundColor: '#10b981', borderRadius: '4px' }} />
+
+                {/* Mockup Content Grid */}
+                <div className="p-8">
+                  <div className="grid grid-cols-3 gap-6 mb-10">
+                    <div className="p-5 bg-indigo-50 rounded-[28px] border-b-4 border-indigo-100">
+                      <div className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Velocity</div>
+                      <div className="text-2xl font-black text-indigo-600 tracking-tighter">142%</div>
+                    </div>
+                    <div className="p-5 bg-emerald-50 rounded-[28px] border-b-4 border-emerald-100">
+                      <div className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Uptime</div>
+                      <div className="text-2xl font-black text-emerald-600 tracking-tighter">99.9</div>
+                    </div>
+                    <div className="p-5 bg-amber-50 rounded-[28px] border-b-4 border-amber-100">
+                      <div className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">Health</div>
+                      <div className="text-2xl font-black text-amber-600 tracking-tighter">Optimal</div>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px', fontWeight: '500' }}>Marketing Campaign</div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: '90%', height: '100%', backgroundColor: '#f59e0b', borderRadius: '4px' }} />
+
+                  <div className="space-y-6">
+                    <div className="animate-in slide-in-from-right duration-500 delay-300">
+                      <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        <span>Core Engine Refactor</span>
+                        <span className="text-indigo-600 font-black">88%</span>
+                      </div>
+                      <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full w-[88%] shadow-lg shadow-indigo-100"></div>
+                      </div>
+                    </div>
+                    <div className="animate-in slide-in-from-right duration-500 delay-500">
+                      <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                        <span>Market Intel Sync</span>
+                        <span className="text-amber-600 font-black">42%</span>
+                      </div>
+                      <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full w-[42%] shadow-lg shadow-amber-100"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-12 p-6 bg-slate-900 rounded-[32px] text-white flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-900/50">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v20M2 12h20"></path></svg>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-0.5">Active Project</div>
+                        <div className="text-sm font-black tracking-tight">Nexus Prime</div>
+                      </div>
+                    </div>
+                    <div className="px-4 py-2 bg-indigo-500/20 text-indigo-300 rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-500/30">
+                      Deploying
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Decorative gradient overlay */}
-            <div style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: '60px',
-              background: 'linear-gradient(to top, rgba(102, 126, 234, 0.1), transparent)',
-              pointerEvents: 'none'
-            }} />
+            {/* Floating Satellite Cards */}
+            <div className="absolute -top-12 -left-12 p-6 bg-white/95 backdrop-blur-xl rounded-[32px] shadow-2xl shadow-indigo-500/20 border border-white animate-bounce-slow max-w-[180px]">
+              <div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span className="w-4 h-[2px] bg-indigo-600"></span> Alert Flux
+              </div>
+              <div className="text-xs font-bold text-slate-600 leading-relaxed">System bottleneck detected in node 04-A. Auto-rerouting...</div>
+            </div>
+
+            <div className="absolute -bottom-8 -right-8 p-6 bg-slate-900 rounded-[32px] shadow-2xl border border-white/10 animate-float">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full border-2 border-indigo-500 p-0.5">
+                    <div className="w-full h-full bg-slate-800 rounded-full flex items-center justify-center text-xl">👤</div>
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-slate-900 rounded-full"></div>
+                </div>
+                <div>
+                  <div className="text-xs font-bold">Protocol Lead</div>
+                  <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mt-0.5">Connected</div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Floating elements around the main visual */}
-          <div style={{
-            position: 'absolute',
-            top: '-20px',
-            right: '-20px',
-            width: '80px',
-            height: '80px',
-            background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-            borderRadius: '50%',
-            opacity: 0.3,
-            filter: 'blur(20px)',
-            animation: 'pulse 3s ease-in-out infinite'
-          }} />
-
-          <div style={{
-            position: 'absolute',
-            bottom: '-30px',
-            left: '-30px',
-            width: '100px',
-            height: '100px',
-            background: 'linear-gradient(135deg, #10b981, #059669)',
-            borderRadius: '50%',
-            opacity: 0.3,
-            filter: 'blur(20px)',
-            animation: 'pulse 4s ease-in-out infinite'
-          }} />
         </div>
       </div>
     </section>

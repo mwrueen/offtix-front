@@ -10,19 +10,16 @@ const SidebarHeader = ({
 }) => {
   return (
     <div
-      className="sidebar-header"
-      style={{
-        padding: sidebarCollapsed ? '20px 12px' : '24px 20px',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        display: 'flex',
-        alignItems: sidebarCollapsed ? 'center' : 'flex-start',
-        justifyContent: 'space-between',
-        background: isDropdownOpen
-          ? 'rgba(59, 130, 246, 0.08)'
-          : 'rgba(255, 255, 255, 0.02)',
-        position: 'relative',
-        transition: 'background 0.2s ease'
-      }}>
+      className={`sidebar-header border-b border-white/10 flex relative transition-colors duration-200 ${
+        sidebarCollapsed 
+          ? 'p-5 px-3 items-center justify-between' 
+          : 'p-6 px-5 items-start justify-between'
+      } ${
+        isDropdownOpen 
+          ? 'bg-blue-500/8' 
+          : 'bg-white/2'
+      }`}
+    >
       {sidebarCollapsed ? (
         <CollapsedLogo
           selectedCompany={selectedCompany}
@@ -42,34 +39,11 @@ const SidebarHeader = ({
       {/* Toggle Button */}
       <button
         onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-        style={{
-          position: 'absolute',
-          right: sidebarCollapsed ? '50%' : '20px',
-          top: sidebarCollapsed ? 'auto' : '24px',
-          bottom: sidebarCollapsed ? '-16px' : 'auto',
-          transform: sidebarCollapsed ? 'translateX(50%)' : 'none',
-          width: '32px',
-          height: '32px',
-          borderRadius: '8px',
-          background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-          border: '2px solid #0f172a',
-          color: 'white',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.3s ease',
-          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-          zIndex: 10
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)';
-          e.currentTarget.style.transform = sidebarCollapsed ? 'translateX(50%) scale(1.05)' : 'scale(1.05)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
-          e.currentTarget.style.transform = sidebarCollapsed ? 'translateX(50%)' : 'none';
-        }}
+        className={`absolute w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 border-2 border-slate-900 text-white cursor-pointer flex items-center justify-center transition-all duration-300 shadow-lg shadow-blue-500/30 z-10 hover:from-blue-600 hover:to-blue-700 hover:scale-105 ${
+          sidebarCollapsed 
+            ? 'right-1/2 -bottom-4 translate-x-1/2' 
+            : 'right-5 top-6'
+        }`}
       >
         <svg
           width="16"
@@ -80,10 +54,9 @@ const SidebarHeader = ({
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{
-            transform: sidebarCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
-            transition: 'transform 0.3s ease'
-          }}
+          className={`transition-transform duration-300 ${
+            sidebarCollapsed ? 'rotate-0' : 'rotate-180'
+          }`}
         >
           <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
@@ -98,58 +71,23 @@ const CollapsedLogo = ({ selectedCompany, companyData, onClick }) => {
   return (
     <div
       onClick={onClick}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-        cursor: 'pointer'
-      }}
+      className="flex items-center justify-center w-full cursor-pointer"
     >
-      <div style={{
-        width: '36px',
-        height: '36px',
-        borderRadius: '8px',
-        background: isPersonal
-          ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)'
-          : 'linear-gradient(135deg, #3b82f6, #2563eb)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '16px',
-        fontWeight: '700',
-        color: 'white',
-        boxShadow: isPersonal
-          ? '0 4px 12px rgba(139, 92, 246, 0.4)'
-          : '0 4px 12px rgba(59, 130, 246, 0.4)',
-        overflow: 'hidden',
-        transition: 'transform 0.2s ease',
-      }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
-        }}
-      >
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold text-white overflow-hidden transition-transform duration-200 hover:scale-105 ${
+        isPersonal 
+          ? 'bg-gradient-to-br from-violet-500 to-violet-600 shadow-lg shadow-violet-500/40' 
+          : 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/40'
+      }`}>
         {isPersonal ? (
           <PersonalIcon size={18} />
         ) : companyData?.logo ? (
           <img
             src={companyData.logo}
             alt={selectedCompany?.name || 'Company'}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover'
-            }}
+            className="w-full h-full object-cover"
           />
         ) : (
-          <div style={{
-            fontSize: '16px',
-            fontWeight: '700',
-            color: 'white'
-          }}>
+          <div className="text-base font-bold text-white">
             {selectedCompany?.name?.charAt(0)?.toUpperCase() || 'T'}
           </div>
         )}
@@ -164,23 +102,9 @@ const ExpandedHeader = ({ selectedCompany, companyData, setSidebarCollapsed, onC
   return (
     <div
       onClick={onClick}
-      style={{
-        flex: 1,
-        marginRight: '12px',
-        cursor: 'pointer',
-        borderRadius: '8px',
-        padding: '4px',
-        margin: '-4px',
-        transition: 'background 0.2s ease'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'transparent';
-      }}
+      className="flex-1 mr-3 cursor-pointer rounded-lg p-1 -m-1 transition-colors duration-200 hover:bg-white/5"
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+      <div className="flex items-center gap-3 mb-4">
         <CompanyLogo
           isPersonal={isPersonal}
           logo={companyData?.logo}
@@ -200,13 +124,9 @@ const ExpandedHeader = ({ selectedCompany, companyData, setSidebarCollapsed, onC
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{
-            transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-            opacity: 0.7,
-            flexShrink: 0,
-            marginLeft: 'auto'
-          }}
+          className={`transition-transform duration-300 ease-out opacity-70 flex-shrink-0 ml-auto ${
+            isDropdownOpen ? 'rotate-180' : 'rotate-0'
+          }`}
         >
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
@@ -217,42 +137,21 @@ const ExpandedHeader = ({ selectedCompany, companyData, setSidebarCollapsed, onC
 
 const CompanyLogo = ({ isPersonal, logo, companyName }) => {
   return (
-    <div style={{
-      width: '40px',
-      height: '40px',
-      borderRadius: '10px',
-      background: isPersonal
-        ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)'
-        : 'linear-gradient(135deg, #3b82f6, #2563eb)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '18px',
-      fontWeight: '700',
-      color: 'white',
-      boxShadow: isPersonal
-        ? '0 4px 12px rgba(139, 92, 246, 0.4)'
-        : '0 4px 12px rgba(59, 130, 246, 0.4)',
-      overflow: 'hidden'
-    }}>
+    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold text-white overflow-hidden ${
+      isPersonal 
+        ? 'bg-gradient-to-br from-violet-500 to-violet-600 shadow-lg shadow-violet-500/40' 
+        : 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/40'
+    }`}>
       {isPersonal ? (
         <PersonalIcon size={20} />
       ) : logo ? (
         <img
           src={logo}
           alt={companyName || 'Company'}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover'
-          }}
+          className="w-full h-full object-cover"
         />
       ) : (
-        <div style={{
-          fontSize: '18px',
-          fontWeight: '700',
-          color: 'white'
-        }}>
+        <div className="text-lg font-bold text-white">
           {companyName?.charAt(0)?.toUpperCase() || 'T'}
         </div>
       )}
@@ -262,25 +161,11 @@ const CompanyLogo = ({ isPersonal, logo, companyName }) => {
 
 const CompanyInfo = ({ companyName, isPersonal }) => {
   return (
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <h2 style={{
-        margin: 0,
-        color: '#ffffff',
-        fontSize: '20px',
-        fontWeight: '700',
-        letterSpacing: '-0.3px',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis'
-      }}>
+    <div className="flex-1 min-w-0">
+      <h2 className="m-0 text-white text-xl font-bold tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
         {companyName || 'Offtix'}
       </h2>
-      <p style={{
-        margin: 0,
-        fontSize: '11px',
-        color: '#94a3b8',
-        fontWeight: '500'
-      }}>
+      <p className="m-0 text-xs text-slate-400 font-medium">
         {isPersonal ? 'Personal Workspace' : 'Project Management'}
       </p>
     </div>

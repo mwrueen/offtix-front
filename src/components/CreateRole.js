@@ -185,28 +185,14 @@ const CreateRole = () => {
   if (!selectedCompany || selectedCompany.id === 'personal') {
     return (
       <Layout>
-        <div style={{
-          background: 'white',
-          padding: '50px',
-          borderRadius: '12px',
-          textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h2 style={{ color: '#1e293b', marginBottom: '16px' }}>No Company Selected</h2>
-          <p style={{ color: '#64748b', marginBottom: '24px' }}>
+        <div className="bg-white p-12 rounded-xl text-center shadow-sm">
+          <h2 className="text-slate-800 mb-4">No Company Selected</h2>
+          <p className="text-slate-500 mb-6">
             Please select a company to create roles
           </p>
           <button
             onClick={() => navigate('/overview')}
-            style={{
-              padding: '12px 24px',
-              background: 'linear-gradient(135deg, #667eea, #764ba2)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '600'
-            }}
+            className="px-6 py-3 bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-0 rounded-lg cursor-pointer font-semibold"
           >
             Go to Overview
           </button>
@@ -218,8 +204,8 @@ const CreateRole = () => {
   if (permLoading) {
     return (
       <Layout>
-        <div style={{ textAlign: 'center', padding: '50px' }}>
-          <div style={{ fontSize: '18px', color: '#64748b' }}>Checking permissions...</div>
+        <div className="text-center p-12">
+          <div className="text-lg text-slate-500">Checking permissions...</div>
         </div>
       </Layout>
     );
@@ -228,29 +214,15 @@ const CreateRole = () => {
   if (!hasPermission(PERMISSIONS.CREATE_DESIGNATION)) {
     return (
       <Layout>
-        <div style={{
-          background: 'white',
-          padding: '50px',
-          borderRadius: '12px',
-          textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔒</div>
-          <h2 style={{ color: '#1e293b', marginBottom: '16px' }}>Access Denied</h2>
-          <p style={{ color: '#64748b', marginBottom: '24px' }}>
+        <div className="bg-white p-12 rounded-xl text-center shadow-sm">
+          <div className="text-5xl mb-5">🔒</div>
+          <h2 className="text-slate-800 mb-4">Access Denied</h2>
+          <p className="text-slate-500 mb-6">
             You don't have permission to create roles
           </p>
           <button
             onClick={() => navigate('/overview')}
-            style={{
-              padding: '12px 24px',
-              background: 'linear-gradient(135deg, #667eea, #764ba2)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '600'
-            }}
+            className="px-6 py-3 bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-0 rounded-lg cursor-pointer font-semibold"
           >
             Go to Overview
           </button>
@@ -261,28 +233,11 @@ const CreateRole = () => {
 
   return (
     <Layout>
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div style={{
-          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          padding: '40px',
-          borderRadius: '16px',
-          marginBottom: '30px',
-          boxShadow: '0 10px 40px rgba(16, 185, 129, 0.2)',
-          color: 'white'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
-            <div style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '14px',
-              background: 'rgba(255, 255, 255, 0.2)',
-              backdropFilter: 'blur(10px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '2px solid rgba(255, 255, 255, 0.3)'
-            }}>
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-10 rounded-2xl mb-8 shadow-2xl shadow-emerald-500/20 text-white">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/30">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                 <circle cx="8.5" cy="7" r="4"></circle>
@@ -290,10 +245,10 @@ const CreateRole = () => {
               </svg>
             </div>
             <div>
-              <h1 style={{ margin: '0 0 4px 0', fontSize: '28px', fontWeight: '700' }}>
+              <h1 className="m-0 mb-1 text-3xl font-bold">
                 Create New Role
               </h1>
-              <p style={{ margin: 0, fontSize: '15px', opacity: 0.9 }}>
+              <p className="m-0 text-base opacity-90">
                 Define a new role with custom permissions for {selectedCompany.name}
               </p>
             </div>
@@ -301,21 +256,15 @@ const CreateRole = () => {
         </div>
 
         {/* Form Card */}
-        <div style={{
-          background: 'white',
-          padding: '40px',
-          borderRadius: '16px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
+        <div className="bg-white p-10 rounded-2xl shadow-sm border border-slate-200">
           <form onSubmit={handleSubmit}>
             {/* Basic Information */}
-            <div style={{ marginBottom: '32px' }}>
-              <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '700', color: '#1e293b' }}>
+            <div className="mb-8">
+              <h3 className="m-0 mb-5 text-lg font-bold text-slate-800">
                 Basic Information
               </h3>
 
-              <div style={{ marginBottom: '20px' }}>
+              <div className="mb-5">
                 <Input
                   label="Role Name"
                   type="text"
@@ -342,73 +291,38 @@ const CreateRole = () => {
             </div>
 
             {/* Permissions */}
-            <div style={{ marginBottom: '32px' }}>
-              <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '700', color: '#1e293b' }}>
+            <div className="mb-8">
+              <h3 className="m-0 mb-5 text-lg font-bold text-slate-800">
                 Permissions
               </h3>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div className="flex flex-col gap-6">
                 {permissionGroups.map((group, index) => (
-                  <div key={index} style={{
-                    padding: '24px',
-                    background: '#f8fafc',
-                    borderRadius: '12px',
-                    border: '1px solid #e2e8f0'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      marginBottom: '16px',
-                      color: '#475569'
-                    }}>
+                  <div key={index} className="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                    <div className="flex items-center gap-2.5 mb-4 text-slate-600">
                       {group.icon}
-                      <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>
+                      <h4 className="m-0 text-base font-semibold">
                         {group.title}
                       </h4>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className="flex flex-col gap-3">
                       {group.permissions.map((perm) => (
                         <label
                           key={perm.key}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: '12px',
-                            cursor: 'pointer',
-                            padding: '12px',
-                            background: 'white',
-                            borderRadius: '8px',
-                            border: '1px solid #e2e8f0',
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = '#cbd5e1';
-                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = '#e2e8f0';
-                            e.currentTarget.style.boxShadow = 'none';
-                          }}
+                          className="flex items-start gap-3 cursor-pointer p-3 bg-white rounded-lg border border-slate-200 transition-all duration-200 hover:border-slate-300 hover:shadow-sm"
                         >
                           <input
                             type="checkbox"
                             checked={permissions[perm.key]}
                             onChange={() => handlePermissionChange(perm.key)}
-                            style={{
-                              width: '18px',
-                              height: '18px',
-                              marginTop: '2px',
-                              cursor: 'pointer',
-                              accentColor: '#10b981'
-                            }}
+                            className="w-4.5 h-4.5 mt-0.5 cursor-pointer accent-emerald-500"
                           />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: '600', color: '#1e293b', marginBottom: '4px' }}>
+                          <div className="flex-1">
+                            <div className="font-semibold text-slate-800 mb-1">
                               {perm.label}
                             </div>
-                            <div style={{ fontSize: '13px', color: '#64748b' }}>
+                            <div className="text-xs text-slate-500">
                               {perm.description}
                             </div>
                           </div>
@@ -421,41 +335,25 @@ const CreateRole = () => {
             </div>
 
             {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}>
+            <div className="flex gap-3 justify-end pt-5 border-t border-slate-200">
               <button
                 type="button"
                 onClick={() => navigate('/manage-roles')}
                 disabled={loading}
-                style={{
-                  padding: '12px 28px',
-                  background: 'white',
-                  color: '#64748b',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '10px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  fontWeight: '600',
-                  fontSize: '15px',
-                  transition: 'all 0.2s',
-                  opacity: loading ? 0.5 : 1
-                }}
+                className={`px-7 py-3 bg-white text-slate-500 border border-slate-200 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                  loading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-slate-50'
+                }`}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                style={{
-                  padding: '12px 28px',
-                  background: loading ? '#94a3b8' : 'linear-gradient(135deg, #10b981, #059669)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '10px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  fontWeight: '600',
-                  fontSize: '15px',
-                  boxShadow: loading ? 'none' : '0 4px 12px rgba(16, 185, 129, 0.3)',
-                  transition: 'all 0.2s'
-                }}
+                className={`px-7 py-3 text-white border-0 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                  loading 
+                    ? 'bg-slate-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-br from-emerald-500 to-emerald-600 cursor-pointer shadow-lg shadow-emerald-500/30 hover:shadow-xl'
+                }`}
               >
                 {loading ? 'Creating Role...' : 'Create Role'}
               </button>

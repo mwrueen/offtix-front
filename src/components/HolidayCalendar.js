@@ -305,7 +305,7 @@ const HolidayCalendar = () => {
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(<div key={`empty-${i}`} style={{ padding: '8px' }}></div>);
+      days.push(<div key={`empty-${i}`} className="p-2"></div>);
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
@@ -322,24 +322,25 @@ const HolidayCalendar = () => {
           onMouseEnter={() => handleMouseEnter(day)}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
-          style={{
-            padding: '8px',
-            minHeight: '80px',
-            border: inDragRange ? '2px solid #3b82f6' : '1px solid #e2e8f0',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            background: inDragRange ? '#dbeafe' : (isToday ? '#eff6ff' : isWeekend ? '#f8fafc' : 'white'),
-            position: 'relative',
-            userSelect: 'none'
-          }}
+          className={`p-2 min-h-20 rounded-lg cursor-pointer relative select-none ${
+            inDragRange 
+              ? 'border-2 border-blue-500 bg-blue-50' 
+              : 'border border-slate-200'
+          } ${
+            isToday 
+              ? 'bg-blue-50' 
+              : isWeekend 
+                ? 'bg-slate-50' 
+                : 'bg-white'
+          }`}
         >
-          <div style={{ fontSize: '14px', fontWeight: isToday ? '700' : '600', color: isToday ? '#3b82f6' : '#1e293b' }}>
+          <div className={`text-sm ${isToday ? 'font-bold text-blue-500' : 'font-semibold text-slate-800'}`}>
             {day}
           </div>
           {dayHolidays.map((holiday, idx) => (
             <div
               key={idx}
-              style={{ fontSize: '11px', padding: '4px 6px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', borderRadius: '4px', marginTop: '4px', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              className="text-xs px-1.5 py-1 bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded mt-1 font-semibold overflow-hidden text-ellipsis whitespace-nowrap"
               title={holiday.name}
             >
               🎉 {holiday.name}
@@ -351,14 +352,14 @@ const HolidayCalendar = () => {
 
     return (
       <div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', marginBottom: '8px' }}>
+        <div className="grid grid-cols-7 gap-2 mb-2">
           {weekDays.map((day, index) => (
-            <div key={day} style={{ padding: '12px 8px', textAlign: 'center', fontWeight: '700', fontSize: '13px', color: companySettings.weekends.includes(index) ? '#dc2626' : '#64748b' }}>
+            <div key={day} className={`py-3 px-2 text-center font-bold text-xs ${companySettings.weekends.includes(index) ? 'text-red-600' : 'text-slate-500'}`}>
               {day}
             </div>
           ))}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
+        <div className="grid grid-cols-7 gap-2">
           {days}
         </div>
       </div>
@@ -374,8 +375,8 @@ const HolidayCalendar = () => {
   if (loading) {
     return (
       <Layout>
-        <div style={{ padding: '40px', textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', color: '#64748b' }}>Loading calendar...</div>
+        <div className="p-10 text-center">
+          <div className="text-lg text-slate-500">Loading calendar...</div>
         </div>
       </Layout>
     );
@@ -396,27 +397,43 @@ const HolidayCalendar = () => {
         }
       />
 
-      <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', marginBottom: '24px' }}>
-        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '700' }}>🏖️ Weekend & Working Days Configuration</h3>
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
+      <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
+        <h3 className="m-0 mb-5 text-lg font-bold">🏖️ Weekend & Working Days Configuration</h3>
+        <div className="mb-5">
+          <div className="grid grid-cols-7 gap-2">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
-              <div key={index} onClick={() => handleWeekendToggle(index)} style={{ padding: '12px 8px', border: `2px solid ${companySettings.weekends.includes(index) ? '#ef4444' : '#e2e8f0'}`, borderRadius: '8px', textAlign: 'center', cursor: 'pointer', background: companySettings.weekends.includes(index) ? '#fee2e2' : 'white', fontSize: '13px', fontWeight: '600', color: companySettings.weekends.includes(index) ? '#dc2626' : '#64748b' }}>
+              <div 
+                key={index} 
+                onClick={() => handleWeekendToggle(index)} 
+                className={`py-3 px-2 border-2 rounded-lg text-center cursor-pointer text-xs font-semibold ${
+                  companySettings.weekends.includes(index) 
+                    ? 'border-red-500 bg-red-50 text-red-600' 
+                    : 'border-slate-200 bg-white text-slate-500'
+                }`}
+              >
                 {day}
               </div>
             ))}
           </div>
         </div>
-        <button onClick={saveWeekendSettings} disabled={savingSettings} style={{ padding: '10px 20px', background: savingSettings ? '#94a3b8' : 'linear-gradient(135deg, #3b82f6, #2563eb)', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white' }}>
+        <button 
+          onClick={saveWeekendSettings} 
+          disabled={savingSettings} 
+          className={`px-5 py-2.5 border-0 rounded-lg cursor-pointer text-white ${
+            savingSettings 
+              ? 'bg-slate-400' 
+              : 'bg-gradient-to-br from-blue-500 to-blue-600'
+          }`}
+        >
           {savingSettings ? 'Saving...' : 'Save Settings'}
         </button>
       </div>
 
-      <div style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <button onClick={() => changeMonth(-1)} style={{ padding: '10px 20px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>← Previous</button>
-          <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '700' }}>{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
-          <button onClick={() => changeMonth(1)} style={{ padding: '10px 20px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Next →</button>
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <div className="flex justify-between items-center mb-6">
+          <button onClick={() => changeMonth(-1)} className="px-5 py-2.5 bg-slate-100 border-0 rounded-lg cursor-pointer hover:bg-slate-200">← Previous</button>
+          <h3 className="m-0 text-2xl font-bold">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
+          <button onClick={() => changeMonth(1)} className="px-5 py-2.5 bg-slate-100 border-0 rounded-lg cursor-pointer hover:bg-slate-200">Next →</button>
         </div>
         {renderCalendar()}
       </div>

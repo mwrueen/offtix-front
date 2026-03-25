@@ -15,16 +15,16 @@ const currencySymbols = {
 };
 
 const typeConfig = {
-  task_ready: { icon: '✅', color: '#10b981', bg: '#f0fdf4', label: 'Task Ready' },
-  task_send_back: { icon: '↩️', color: '#f59e0b', bg: '#fffbeb', label: 'Sent Back' },
-  task_role_handoff: { icon: '🔄', color: '#3b82f6', bg: '#eff6ff', label: 'Role Handoff' },
-  task_role_assignment: { icon: '🎯', color: '#8b5cf6', bg: '#faf5ff', label: 'Role Assigned' },
-  task_role_completed: { icon: '🏁', color: '#10b981', bg: '#f0fdf4', label: 'Role Completed' },
-  project_assignment: { icon: '📁', color: '#06b6d4', bg: '#ecfeff', label: 'Project' },
-  salary_update: { icon: '💰', color: '#22c55e', bg: '#f0fdf4', label: 'Salary Update' },
-  role_change: { icon: '👤', color: '#6366f1', bg: '#eef2ff', label: 'Role Change' },
-  general: { icon: '🔔', color: '#64748b', bg: '#f8fafc', label: 'General' },
-  invitation: { icon: '✉️', color: '#3b82f6', bg: '#eff6ff', label: 'Invitation' },
+  task_ready: { icon: '✅', color: 'text-emerald-500', bg: 'bg-emerald-50', label: 'Task Ready' },
+  task_send_back: { icon: '↩️', color: 'text-amber-500', bg: 'bg-amber-50', label: 'Sent Back' },
+  task_role_handoff: { icon: '🔄', color: 'text-blue-500', bg: 'bg-blue-50', label: 'Role Handoff' },
+  task_role_assignment: { icon: '🎯', color: 'text-violet-500', bg: 'bg-violet-50', label: 'Role Assigned' },
+  task_role_completed: { icon: '🏁', color: 'text-emerald-500', bg: 'bg-emerald-50', label: 'Role Completed' },
+  project_assignment: { icon: '📁', color: 'text-cyan-500', bg: 'bg-cyan-50', label: 'Project' },
+  salary_update: { icon: '💰', color: 'text-green-500', bg: 'bg-green-50', label: 'Salary Update' },
+  role_change: { icon: '👤', color: 'text-indigo-500', bg: 'bg-indigo-50', label: 'Role Change' },
+  general: { icon: '🔔', color: 'text-slate-500', bg: 'bg-slate-50', label: 'General' },
+  invitation: { icon: '✉️', color: 'text-blue-500', bg: 'bg-blue-50', label: 'Invitation' },
 };
 
 const getConfig = (type) => typeConfig[type] || typeConfig.general;
@@ -155,19 +155,19 @@ const Notifications = () => {
   if (loading) {
     return (
       <Layout>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <div className="max-w-4xl mx-auto px-4 py-8">
           {/* Skeleton header */}
-          <div style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', padding: '40px', borderRadius: '16px', marginBottom: '30px' }}>
-            <div style={{ width: '200px', height: '32px', background: 'rgba(255,255,255,0.2)', borderRadius: '8px', marginBottom: '8px' }} />
-            <div style={{ width: '120px', height: '18px', background: 'rgba(255,255,255,0.15)', borderRadius: '6px' }} />
+          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-10 rounded-2xl mb-8 animate-pulse">
+            <div className="w-48 h-8 bg-white/20 rounded-lg mb-2" />
+            <div className="w-32 h-4 bg-white/10 rounded-md" />
           </div>
           {[1, 2, 3].map(i => (
-            <div key={i} style={{ background: 'white', borderRadius: '12px', padding: '24px', marginBottom: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#f1f5f9' }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ width: '60%', height: '16px', background: '#f1f5f9', borderRadius: '4px', marginBottom: '8px' }} />
-                  <div style={{ width: '85%', height: '13px', background: '#f1f5f9', borderRadius: '4px' }} />
+            <div key={i} className="bg-white rounded-xl p-6 mb-4 shadow-sm border border-slate-100 animate-pulse">
+              <div className="flex gap-4 items-center">
+                <div className="w-12 h-12 rounded-xl bg-slate-50" />
+                <div className="flex-1">
+                  <div className="w-3/5 h-4 bg-slate-50 rounded mb-2" />
+                  <div className="w-4/5 h-3 bg-slate-50 rounded" />
                 </div>
               </div>
             </div>
@@ -181,33 +181,21 @@ const Notifications = () => {
 
   return (
     <Layout>
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <div className="max-w-4xl mx-auto px-4 py-8">
 
         {/* ── Header ── */}
-        <div style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          padding: '40px',
-          borderRadius: '16px',
-          marginBottom: '30px',
-          boxShadow: '0 10px 40px rgba(102, 126, 234, 0.2)',
-          color: 'white'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{
-                width: '56px', height: '56px', borderRadius: '14px',
-                background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '2px solid rgba(255,255,255,0.3)'
-              }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-10 rounded-2xl mb-8 shadow-xl shadow-indigo-200/50 text-white">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center border-2 border-white/30">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
               </div>
               <div>
-                <h1 style={{ margin: '0 0 4px 0', fontSize: '28px', fontWeight: '700' }}>Notifications</h1>
-                <p style={{ margin: 0, fontSize: '15px', opacity: 0.9 }}>
+                <h1 className="m-0 text-3xl font-bold">Notifications</h1>
+                <p className="m-0 text-indigo-50/80">
                   {totalItems === 0 ? 'All caught up!' : `${totalItems} item${totalItems !== 1 ? 's' : ''}`}
                   {unreadNotifications > 0 && ` · ${unreadNotifications} unread`}
                 </p>
@@ -217,14 +205,7 @@ const Notifications = () => {
             {unreadNotifications > 0 && (
               <button
                 onClick={markAllAsRead}
-                style={{
-                  background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)',
-                  color: 'white', borderRadius: '10px', padding: '10px 20px',
-                  cursor: 'pointer', fontSize: '14px', fontWeight: '600', backdropFilter: 'blur(10px)',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                className="bg-white/20 border border-white/30 text-white rounded-xl px-5 py-2.5 cursor-pointer text-sm font-semibold backdrop-blur-md hover:bg-white/30 transition-all active:scale-95"
               >
                 ✓ Mark all as read
               </button>
@@ -234,72 +215,55 @@ const Notifications = () => {
 
         {/* ── Company Invitations ── */}
         {invitations.length > 0 && (
-          <div style={{ marginBottom: '30px' }}>
-            <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '700', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="mb-8">
+            <h2 className="m-0 mb-4 text-xl font-bold text-slate-800 flex items-center gap-2.5">
               ✉️ Company Invitations
-              <span style={{ background: '#3b82f6', color: 'white', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', fontWeight: '700' }}>
+              <span className="bg-blue-500 text-white rounded-full px-2.5 py-0.5 text-xs font-bold">
                 {invitations.length}
               </span>
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="flex flex-col gap-4">
               {invitations.map(inv => (
-                <div key={inv._id} style={{
-                  background: 'white', padding: '24px', borderRadius: '12px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: '700', color: '#1e293b' }}>
+                <div key={inv._id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                  <div className="flex justify-between items-start mb-4 flex-wrap gap-3">
+                    <div className="flex-1">
+                      <h3 className="m-0 mb-1.5 text-xl font-bold text-slate-800">
                         {inv.company?.name}
                       </h3>
                       {inv.company?.description && (
-                        <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>
+                        <p className="m-0 mb-3 text-sm text-slate-500 leading-relaxed">
                           {inv.company.description}
                         </p>
                       )}
-                      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '13px', color: '#64748b' }}>
-                          🎭 Role: <strong style={{ color: '#1e293b' }}>{inv.designation}</strong>
+                      <div className="flex gap-4 flex-wrap text-sm text-slate-500">
+                        <span>
+                          🎭 Role: <strong className="text-slate-800">{inv.designation}</strong>
                         </span>
                         {inv.salary > 0 && (
-                          <span style={{ fontSize: '13px', color: '#64748b' }}>
-                            💰 Salary: <strong style={{ color: '#10b981' }}>
+                          <span>
+                            💰 Salary: <strong className="text-emerald-500">
                               {currencySymbols[inv.company?.currency || 'USD']}{inv.salary.toLocaleString()}
                             </strong>
                           </span>
                         )}
-                        <span style={{ fontSize: '13px', color: '#64748b' }}>
-                          👤 Invited by: <strong style={{ color: '#1e293b' }}>{inv.invitedBy?.name}</strong>
+                        <span>
+                          👤 Invited by: <strong className="text-slate-800">{inv.invitedBy?.name}</strong>
                         </span>
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '12px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
+                  <div className="flex gap-3 pt-4 border-t border-slate-100">
                     <button
                       onClick={() => handleAcceptInvitation(inv._id)}
                       disabled={processingInvitation === inv._id}
-                      style={{
-                        flex: 1, padding: '12px',
-                        background: processingInvitation === inv._id ? '#94a3b8' : 'linear-gradient(135deg, #10b981, #059669)',
-                        color: 'white', border: 'none', borderRadius: '10px',
-                        cursor: processingInvitation === inv._id ? 'not-allowed' : 'pointer',
-                        fontWeight: '600', fontSize: '14px',
-                        boxShadow: processingInvitation === inv._id ? 'none' : '0 4px 12px rgba(16,185,129,0.3)',
-                        transition: 'all 0.2s'
-                      }}
+                      className={`flex-1 py-3 bg-gradient-to-br from-emerald-400 to-emerald-600 text-white border-none rounded-xl font-semibold text-sm shadow-lg shadow-emerald-100 transition-all ${processingInvitation === inv._id ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:shadow-emerald-200 cursor-pointer active:scale-95'}`}
                     >
                       {processingInvitation === inv._id ? 'Processing...' : 'Accept Invitation'}
                     </button>
                     <button
                       onClick={() => handleRejectInvitation(inv._id)}
                       disabled={processingInvitation === inv._id}
-                      style={{
-                        flex: 1, padding: '12px', background: 'white', color: '#64748b',
-                        border: '1px solid #e2e8f0', borderRadius: '10px',
-                        cursor: processingInvitation === inv._id ? 'not-allowed' : 'pointer',
-                        fontWeight: '600', fontSize: '14px', transition: 'all 0.2s',
-                        opacity: processingInvitation === inv._id ? 0.5 : 1
-                      }}
+                      className={`flex-1 py-3 bg-white text-slate-600 border border-slate-200 rounded-xl font-semibold text-sm shadow-sm transition-all ${processingInvitation === inv._id ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50 hover:border-slate-300 cursor-pointer active:scale-95'}`}
                     >
                       Decline
                     </button>
@@ -312,17 +276,17 @@ const Notifications = () => {
 
         {/* ── Task & System Notifications ── */}
         {notifications.length > 0 && (
-          <div style={{ marginBottom: '30px' }}>
-            <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '700', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="mb-8">
+            <h2 className="m-0 mb-4 text-xl font-bold text-slate-800 flex items-center gap-2.5">
               🔔 Notifications
               {unreadNotifications > 0 && (
-                <span style={{ background: '#ef4444', color: 'white', borderRadius: '20px', padding: '2px 10px', fontSize: '12px', fontWeight: '700' }}>
+                <span className="bg-red-500 text-white rounded-full px-2.5 py-0.5 text-xs font-bold">
                   {unreadNotifications} new
                 </span>
               )}
             </h2>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div className="flex flex-col gap-2.5">
               {notifications.map(notif => {
                 const cfg = getConfig(notif.type);
                 const isTask = notif.relatedModel === 'Task' || notif.type?.startsWith('task_');
@@ -330,83 +294,48 @@ const Notifications = () => {
                   <div
                     key={notif._id}
                     onClick={() => handleNotifClick(notif)}
-                    style={{
-                      background: notif.isRead ? 'white' : cfg.bg,
-                      padding: '18px 20px',
-                      borderRadius: '12px',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                      border: notif.isRead ? '1px solid #e2e8f0' : `1px solid ${cfg.color}30`,
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '14px',
-                      cursor: isTask ? 'pointer' : 'default',
-                      transition: 'all 0.2s',
-                      position: 'relative'
-                    }}
-                    onMouseEnter={e => { if (isTask) e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)'; }}
-                    onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)'}
+                    className={`${notif.isRead ? 'bg-white border-slate-200' : `${cfg.bg} border-current/20 shadow-sm`} p-5 rounded-2xl shadow-sm border flex items-start gap-4 transition-all relative ${isTask ? 'cursor-pointer hover:shadow-md hover:border-slate-300' : 'cursor-default'}`}
                   >
                     {/* Unread dot */}
                     {!notif.isRead && (
-                      <div style={{
-                        position: 'absolute', top: '18px', right: '18px',
-                        width: '8px', height: '8px', borderRadius: '50%',
-                        background: cfg.color, boxShadow: `0 0 6px ${cfg.color}`
-                      }} />
+                      <div className={`absolute top-5 right-5 w-2 h-2 rounded-full ${cfg.bg.replace('bg-', 'bg-') || 'bg-blue-500'} ${cfg.color} shadow-lg`} style={{ boxShadow: `0 0 10px currentColor` }} />
                     )}
 
                     {/* Icon */}
-                    <div style={{
-                      width: '46px', height: '46px', borderRadius: '12px',
-                      background: cfg.bg, border: `1px solid ${cfg.color}30`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '22px', flexShrink: 0
-                    }}>
+                    <div className={`${cfg.bg} border border-current/10 w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 transition-transform group-hover:scale-110`}>
                       {cfg.icon}
                     </div>
 
                     {/* Body */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                        <span style={{
-                          fontSize: '11px', fontWeight: '700', textTransform: 'uppercase',
-                          letterSpacing: '0.5px', color: cfg.color
-                        }}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${cfg.color}`}>
                           {cfg.label}
                         </span>
-                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                        <span className="text-xs text-slate-400">
                           {timeAgo(notif.createdAt)}
                         </span>
                       </div>
-                      <div style={{
-                        fontSize: '15px', fontWeight: notif.isRead ? '500' : '700',
-                        color: '#1e293b', marginBottom: '4px'
-                      }}>
+                      <div className={`text-base font-bold text-slate-800 mb-1 ${notif.isRead ? 'font-semibold' : 'font-bold'}`}>
                         {notif.title}
                       </div>
-                      <div style={{ fontSize: '13px', color: '#64748b', lineHeight: '1.5' }}>
+                      <div className="text-sm text-slate-500 leading-relaxed">
                         {notif.message}
                       </div>
                       {isTask && (
-                        <div style={{ fontSize: '12px', color: cfg.color, fontWeight: '600', marginTop: '6px' }}>
-                          Click to view task →
+                        <div className={`text-xs ${cfg.color} font-bold mt-2 hover:underline inline-flex items-center gap-1`}>
+                          View task details <span className="text-[14px]">→</span>
                         </div>
                       )}
                     </div>
 
                     {/* Actions */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                    <div className="flex flex-col gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
                       {!notif.isRead && (
                         <button
                           onClick={() => markAsRead(notif._id)}
                           title="Mark as read"
-                          style={{
-                            background: 'none', border: '1px solid #e2e8f0', borderRadius: '6px',
-                            padding: '4px 8px', cursor: 'pointer', fontSize: '11px',
-                            color: '#64748b', fontWeight: '500', transition: 'all 0.2s', whiteSpace: 'nowrap'
-                          }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = cfg.color; e.currentTarget.style.color = cfg.color; }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; }}
+                          className={`bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 cursor-pointer text-[10px] text-slate-500 font-bold transition-all hover:bg-slate-50 hover:border-slate-300 hover:${cfg.color} active:scale-95 whitespace-nowrap`}
                         >
                           ✓ Read
                         </button>
@@ -415,14 +344,7 @@ const Notifications = () => {
                         onClick={() => deleteNotification(notif._id)}
                         disabled={deletingId === notif._id}
                         title="Delete"
-                        style={{
-                          background: 'none', border: '1px solid #fecaca', borderRadius: '6px',
-                          padding: '4px 8px', cursor: deletingId === notif._id ? 'not-allowed' : 'pointer',
-                          fontSize: '11px', color: '#ef4444', fontWeight: '500',
-                          transition: 'all 0.2s', opacity: deletingId === notif._id ? 0.5 : 1
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+                        className={`bg-white border border-red-100 rounded-lg px-2.5 py-1.5 cursor-pointer text-xs text-red-500 font-bold transition-all hover:bg-red-50 hover:border-red-200 active:scale-95 ${deletingId === notif._id ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         {deletingId === notif._id ? '…' : '🗑'}
                       </button>
@@ -436,16 +358,12 @@ const Notifications = () => {
 
         {/* ── Empty State ── */}
         {totalItems === 0 && (
-          <div style={{
-            background: 'white', padding: '60px', borderRadius: '16px',
-            textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <div style={{ fontSize: '64px', marginBottom: '20px' }}>🎉</div>
-            <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>
+          <div className="bg-white p-16 rounded-3xl text-center shadow-sm border border-slate-100">
+            <div className="text-7xl mb-6 grayscale opacity-80">🎉</div>
+            <h3 className="m-0 mb-3 text-2xl font-bold text-slate-800">
               All Caught Up!
             </h3>
-            <p style={{ margin: 0, fontSize: '15px', color: '#64748b' }}>
+            <p className="m-0 text-base text-slate-500">
               You have no new notifications at this time.
             </p>
           </div>

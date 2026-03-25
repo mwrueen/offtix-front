@@ -56,132 +56,101 @@ const UserList = () => {
 
   return (
     <Layout>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '30px',
-        borderRadius: '12px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-          <h2 style={{ margin: 0, color: '#1e293b' }}>User Management</h2>
+      <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100 mb-10 transition-all hover:shadow-md">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+          <div>
+            <h1 className="text-4xl font-black text-slate-800 tracking-tight flex items-center gap-4">
+              <span className="p-3 bg-indigo-50 rounded-2xl text-2xl">👥</span> Identity Hub
+            </h1>
+            <p className="text-slate-500 font-medium mt-2 max-w-md">
+              Orchestrate user access and cryptographic credentials across the network.
+            </p>
+          </div>
           <button
             onClick={() => setShowForm(true)}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
+            className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all active:scale-95 shadow-xl shadow-slate-200 flex items-center gap-3"
           >
-            Add New User
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14" /></svg>
+            Provision User
           </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        <div className="space-y-4">
           {loading ? (
             Array(3).fill(0).map((_, index) => (
-              <div key={index} style={{
-                padding: '20px',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div>
-                  <div style={{ width: '120px', height: '16px', backgroundColor: '#f1f5f9', borderRadius: '4px', marginBottom: '8px' }}></div>
-                  <div style={{ width: '180px', height: '14px', backgroundColor: '#f1f5f9', borderRadius: '4px', marginBottom: '8px' }}></div>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <div style={{ width: '50px', height: '20px', backgroundColor: '#f1f5f9', borderRadius: '10px' }}></div>
-                  </div>
+              <div key={index} className="p-8 border border-slate-100 rounded-[32px] flex flex-col md:flex-row justify-between items-start md:items-center gap-6 animate-pulse bg-slate-50/50">
+                <div className="flex-1 space-y-3">
+                  <div className="h-6 bg-slate-200 rounded-lg w-1/4"></div>
+                  <div className="h-4 bg-slate-100 rounded-lg w-1/3"></div>
+                  <div className="h-5 bg-slate-200 rounded-full w-20"></div>
                 </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <div style={{ width: '50px', height: '32px', backgroundColor: '#f1f5f9', borderRadius: '6px' }}></div>
-                  <div style={{ width: '60px', height: '32px', backgroundColor: '#f1f5f9', borderRadius: '6px' }}></div>
+                <div className="flex gap-4">
+                  <div className="h-10 bg-slate-200 rounded-xl w-24"></div>
+                  <div className="h-10 bg-slate-200 rounded-xl w-24"></div>
                 </div>
               </div>
             ))
           ) : users.length > 0 ? (
-            users.map((user) => (
-              <div key={user._id} style={{
-                padding: '20px',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div>
-                  <div style={{ fontWeight: 'bold', color: '#1e293b' }}>{user.name}</div>
-                  <div style={{ fontSize: '14px', color: '#64748b' }}>{user.email}</div>
-                  <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-                    <span style={{
-                      padding: '2px 8px',
-                      borderRadius: '10px',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      backgroundColor: user.role === 'superadmin' ? '#ef444415' : user.role === 'admin' ? '#3b82f615' : '#10b98115',
-                      color: user.role === 'superadmin' ? '#ef4444' : user.role === 'admin' ? '#3b82f6' : '#10b981'
-                    }}>
-                      {user.role}
-                    </span>
+            <div className="grid grid-cols-1 gap-6">
+              {users.map((user) => (
+                <div key={user._id} className="group p-8 border border-slate-100 rounded-[32px] flex flex-col md:flex-row justify-between items-start md:items-center gap-6 hover:shadow-2xl hover:shadow-slate-100 hover:border-indigo-100 transition-all duration-500 bg-white relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-1.5 h-full bg-slate-50 group-hover:bg-indigo-500 transition-colors"></div>
+
+                  <div className="flex items-center gap-6 flex-1 min-w-0">
+                    <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center text-2xl font-black text-slate-400 group-hover:bg-indigo-600 group-hover:text-white group-hover:rotate-12 transition-all duration-500 shrink-0">
+                      {user.name?.charAt(0)?.toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xl font-black text-slate-800 tracking-tight truncate group-hover:text-indigo-600 transition-colors">{user.name}</div>
+                      <div className="text-sm font-medium text-slate-500 truncate mb-3">{user.email}</div>
+                      <span className={`inline-block px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${user.role === 'superadmin' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                          user.role === 'admin' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+                            'bg-emerald-50 text-emerald-600 border-emerald-100'
+                        }`}>
+                        {user.role}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3 relative z-10">
+                    <button
+                      onClick={() => navigate(`/users/${user._id}`)}
+                      className="px-6 py-3 bg-white border border-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 hover:border-slate-200 transition-all active:scale-95 flex items-center gap-2"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                      Inspect
+                    </button>
+                    <button
+                      onClick={() => handleEditUser(user)}
+                      className="px-6 py-3 bg-white border border-slate-100 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-50 hover:border-indigo-100 transition-all active:scale-95 flex items-center gap-2"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                      Modify
+                    </button>
+                    {state.user?.role === 'superadmin' && user._id !== state.user.id && (
+                      <button
+                        onClick={() => setShowDeleteModal(user)}
+                        className="px-6 py-3 bg-white border border-slate-100 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 hover:border-rose-100 transition-all active:scale-95 flex items-center gap-2"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" /></svg>
+                        Purge
+                      </button>
+                    )}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button
-                    onClick={() => navigate(`/users/${user._id}`)}
-                    style={{
-                      padding: '8px 12px',
-                      backgroundColor: '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
-                  >
-                    View
-                  </button>
-                  <button
-                    onClick={() => handleEditUser(user)}
-                    style={{
-                      padding: '8px 12px',
-                      backgroundColor: '#3b82f6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
-                  >
-                    Edit
-                  </button>
-                  {state.user?.role === 'superadmin' && user._id !== state.user.id && (
-                    <button
-                      onClick={() => setShowDeleteModal(user)}
-                      style={{
-                        padding: '8px 12px',
-                        backgroundColor: '#ef4444',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '12px'
-                      }}
-                    >
-                      Delete
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>👥</div>
-              <p>No users found.</p>
+            <div className="bg-slate-50 p-24 rounded-[56px] border-4 border-dashed border-slate-200 text-center animate-in zoom-in duration-700">
+              <div className="text-8xl mb-6 opacity-20 grayscale">👥</div>
+              <h3 className="text-2xl font-black text-slate-800">Identity Void</h3>
+              <p className="text-slate-500 font-medium max-w-sm mx-auto mt-2 italic">The central directory is currently devoid of registered subjects.</p>
+              <button
+                onClick={() => setShowForm(true)}
+                className="mt-10 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100"
+              >
+                Create Initial Node
+              </button>
             </div>
           )}
         </div>
@@ -206,8 +175,8 @@ const UserList = () => {
         isOpen={!!showDeleteModal}
         onClose={() => setShowDeleteModal(null)}
         onConfirm={() => handleDeleteUser(showDeleteModal._id)}
-        title="Delete User"
-        message="Are you sure you want to delete this user? This action cannot be undone."
+        title="Access Revocation"
+        message="Propagating purge request. This user's cryptographic identity will be permanently excised from the network. Proceed with caution."
         itemName={showDeleteModal?.name}
       />
     </Layout>

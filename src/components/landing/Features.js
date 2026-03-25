@@ -36,138 +36,42 @@ const Features = () => {
   ];
 
   return (
-    <section id="features" style={{
-      padding: '100px 24px',
-      backgroundColor: '#ffffff',
-      position: 'relative'
-    }}>
+    <section id="features" className="py-24 px-6 bg-white relative">
       {/* Background decoration */}
-      <div style={{
-        position: 'absolute',
-        top: '10%',
-        left: '0',
-        width: '300px',
-        height: '300px',
-        background: 'linear-gradient(135deg, #667eea, #764ba2)',
-        borderRadius: '50%',
-        filter: 'blur(100px)',
-        opacity: 0.1,
-        zIndex: 0
-      }} />
+      <div className="absolute top-[10%] left-0 w-80 h-80 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full blur-[100px] opacity-10 z-0" />
 
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        position: 'relative',
-        zIndex: 1
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-          <div style={{
-            display: 'inline-block',
-            padding: '8px 20px',
-            backgroundColor: '#ede9fe',
-            borderRadius: '20px',
-            marginBottom: '20px',
-            fontSize: '14px',
-            fontWeight: '600',
-            color: '#667eea'
-          }}>
+      <div className="max-w-6xl mx-auto relative z-10">
+        <div className="text-center mb-20">
+          <div className="inline-block py-2 px-5 bg-violet-100 rounded-full mb-5 text-sm font-semibold text-indigo-500">
             FEATURES
           </div>
 
-          <h2 className="section-title" style={{
-            fontSize: '2.75rem',
-            fontWeight: '800',
-            color: '#1e293b',
-            marginBottom: '20px',
-            lineHeight: '1.2'
-          }}>
+          <h2 className="section-title text-5xl font-extrabold text-slate-800 mb-5 leading-tight">
             Everything you need to
-            <span style={{ display: 'block', color: '#667eea' }}>manage projects</span>
+            <span className="block text-indigo-500">manage projects</span>
           </h2>
-          <p style={{
-            fontSize: '1.25rem',
-            color: '#64748b',
-            maxWidth: '700px',
-            margin: '0 auto',
-            lineHeight: '1.8'
-          }}>
+          <p className="text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed">
             Powerful features designed to help teams collaborate effectively and deliver projects on time.
           </p>
         </div>
 
-        <div className="features-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '32px'
-        }}>
+        <div className="features-grid grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-8">
           {features.map((feature, index) => (
             <div
               key={index}
-              style={{
-                backgroundColor: 'white',
-                padding: '36px',
-                borderRadius: '16px',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-                border: '1px solid #e2e8f0',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.boxShadow = '0 12px 40px rgba(102, 126, 234, 0.15)';
-                e.currentTarget.style.borderColor = '#667eea';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.08)';
-                e.currentTarget.style.borderColor = '#e2e8f0';
-              }}
+              className="bg-white p-9 rounded-2xl shadow-lg border border-slate-200 transition-all duration-300 cursor-pointer relative overflow-hidden hover:-translate-y-2 hover:shadow-2xl hover:shadow-indigo-500/15 hover:border-indigo-500 group"
             >
               {/* Gradient overlay on hover */}
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: 'linear-gradient(90deg, #667eea, #764ba2)',
-                opacity: 0,
-                transition: 'opacity 0.3s ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-              />
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-600 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-              <div style={{
-                width: '64px',
-                height: '64px',
-                backgroundColor: '#ede9fe',
-                borderRadius: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '2rem',
-                marginBottom: '20px',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.1)'
-              }}>
+              <div className="w-16 h-16 bg-violet-100 rounded-2xl flex items-center justify-center text-3xl mb-5 shadow-lg shadow-indigo-500/10">
                 {feature.icon}
               </div>
 
-              <h3 style={{
-                fontSize: '1.375rem',
-                fontWeight: '700',
-                color: '#1e293b',
-                marginBottom: '12px'
-              }}>
+              <h3 className="text-xl font-bold text-slate-800 mb-3">
                 {feature.title}
               </h3>
-              <p style={{
-                color: '#64748b',
-                lineHeight: '1.7',
-                fontSize: '15px'
-              }}>
+              <p className="text-slate-500 leading-relaxed text-sm">
                 {feature.description}
               </p>
             </div>

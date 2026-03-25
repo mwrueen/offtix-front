@@ -8,111 +8,34 @@ const Header = () => {
   const { state } = useAuth();
 
   return (
-    <header style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      backdropFilter: 'blur(10px)',
-      borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
-      zIndex: 1000
-    }}>
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '0 24px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        height: '70px'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#667eea',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 'bold'
-          }}>
+    <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-black/10 z-[1000]">
+      <div className="max-w-6xl mx-auto px-6 flex justify-between items-center h-[70px]">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white font-bold">
             T
           </div>
-          <span style={{
-            fontSize: '1.5rem',
-            fontWeight: '700',
-            color: '#1e293b'
-          }}>
+          <span className="text-2xl font-bold text-slate-800">
             Offtix
           </span>
         </div>
 
-        <nav className="header-nav" style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '32px'
-        }}>
-          <a href="#features" style={{
-            color: '#64748b',
-            textDecoration: 'none',
-            fontWeight: '500',
-            transition: 'color 0.2s ease'
-          }}>
+        <nav className="header-nav flex items-center gap-8">
+          <a href="#features" className="text-slate-500 no-underline font-medium transition-colors duration-200 hover:text-slate-800">
             Features
           </a>
-          <a href="#pricing" style={{
-            color: '#64748b',
-            textDecoration: 'none',
-            fontWeight: '500',
-            transition: 'color 0.2s ease'
-          }}>
+          <a href="#pricing" className="text-slate-500 no-underline font-medium transition-colors duration-200 hover:text-slate-800">
             Pricing
           </a>
-          <a href="#about" style={{
-            color: '#64748b',
-            textDecoration: 'none',
-            fontWeight: '500',
-            transition: 'color 0.2s ease'
-          }}>
+          <a href="#about" className="text-slate-500 no-underline font-medium transition-colors duration-200 hover:text-slate-800">
             About
           </a>
         </nav>
 
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
+        <div className="flex items-center gap-3">
           {state.isAuthenticated ? (
             <button
               onClick={() => navigate('/dashboard')}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#667eea',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#5568d3';
-                e.target.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#667eea';
-                e.target.style.transform = 'translateY(0)';
-              }}
+              className="px-5 py-2.5 bg-indigo-500 text-white border-0 rounded-md text-sm font-semibold cursor-pointer shadow-lg shadow-indigo-500/30 transition-all duration-200 hover:bg-indigo-600 hover:-translate-y-0.5"
             >
               Go to Dashboard
             </button>
@@ -120,43 +43,13 @@ const Header = () => {
             <>
               <button
                 onClick={() => navigate('/signin')}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: 'transparent',
-                  color: '#64748b',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'color 0.2s ease'
-                }}
-                onMouseEnter={(e) => e.target.style.color = '#1e293b'}
-                onMouseLeave={(e) => e.target.style.color = '#64748b'}
+                className="px-4 py-2 bg-transparent text-slate-500 border-0 rounded-md text-sm font-medium cursor-pointer transition-colors duration-200 hover:text-slate-800"
               >
                 Sign In
               </button>
               <button
                 onClick={() => navigate('/signup')}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#667eea',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#5568d3';
-                  e.target.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#667eea';
-                  e.target.style.transform = 'translateY(0)';
-                }}
+                className="px-4 py-2 bg-indigo-500 text-white border-0 rounded-md text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-indigo-600 hover:-translate-y-0.5"
               >
                 Get Started
               </button>

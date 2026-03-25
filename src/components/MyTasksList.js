@@ -117,19 +117,19 @@ const MyTasksList = () => {
     }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusClasses = (status) => {
     const statusMap = {
-      pending: '#94a3b8',
-      active: '#10b981',
-      in_progress: '#3b82f6',
-      paused: '#f59e0b',
-      completed: '#10b981',
-      skipped: '#f59e0b',
-      needs_changes: '#ef4444',
-      blocked: '#64748b',
-      assigned: '#6b7280'
+      pending: 'bg-slate-100 text-slate-500 border-slate-200',
+      active: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+      in_progress: 'bg-blue-50 text-blue-600 border-blue-100',
+      paused: 'bg-amber-50 text-amber-600 border-amber-100',
+      completed: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+      skipped: 'bg-amber-50 text-amber-600 border-amber-100',
+      needs_changes: 'bg-red-50 text-red-600 border-red-100',
+      blocked: 'bg-slate-100 text-slate-600 border-slate-200',
+      assigned: 'bg-slate-100 text-slate-500 border-slate-200'
     };
-    return statusMap[status] || '#94a3b8';
+    return statusMap[status] || 'bg-slate-100 text-slate-500 border-slate-200';
   };
 
   const getStatusLabel = (status) => {
@@ -176,37 +176,20 @@ const MyTasksList = () => {
 
     if (taskStatus === 'pending' || taskStatus === 'active') {
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+        <div className="flex flex-col items-end gap-1.5">
           <button
             onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }}
             disabled={isLoading || !canStartTask}
-            style={{
-              padding: '8px 20px',
-              backgroundColor: canStartTask ? '#10b981' : '#94a3b8',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: (isLoading || !canStartTask) ? 'not-allowed' : 'pointer',
-              opacity: (isLoading || !canStartTask) ? 0.6 : 1,
-              transition: 'all 0.2s',
-              minWidth: '100px'
-            }}
-            onMouseEnter={(e) => canStartTask && !isLoading && (e.target.style.backgroundColor = '#059669')}
-            onMouseLeave={(e) => canStartTask && !isLoading && (e.target.style.backgroundColor = '#10b981')}
+            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 min-w-[100px] ${canStartTask
+              ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-100'
+              : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+              } ${isLoading ? 'opacity-70 cursor-wait' : ''}`}
             title={!canStartTask ? 'Complete or pause your current task first' : ''}
           >
             {isLoading === 'starting' ? 'Starting...' : '▶️ Start'}
           </button>
           {!canStartTask && (
-            <span style={{
-              fontSize: '11px',
-              color: '#ef4444',
-              fontWeight: '500',
-              textAlign: 'right',
-              maxWidth: '150px'
-            }}>
+            <span className="text-[10px] text-red-500 font-bold uppercase tracking-tight text-right max-w-[150px]">
               Complete current task first
             </span>
           )}
@@ -216,26 +199,12 @@ const MyTasksList = () => {
 
     if (taskStatus === 'in_progress') {
       return (
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="flex gap-2.5">
           {task.workflowType === 'sequential' && (
             <button
               onClick={(e) => { e.stopPropagation(); handlePause(task._id); }}
               disabled={isLoading}
-              style={{
-                padding: '8px 20px',
-                backgroundColor: '#f59e0b',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                opacity: isLoading ? 0.6 : 1,
-                transition: 'all 0.2s',
-                minWidth: '100px'
-              }}
-              onMouseEnter={(e) => !isLoading && (e.target.style.backgroundColor = '#d97706')}
-              onMouseLeave={(e) => !isLoading && (e.target.style.backgroundColor = '#f59e0b')}
+              className={`px-5 py-2 bg-amber-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-amber-100 hover:bg-amber-600 transition-all active:scale-95 min-w-[100px] ${isLoading ? 'opacity-70 cursor-wait' : ''}`}
             >
               {isLoading === 'pausing' ? 'Pausing...' : '⏸️ Pause'}
             </button>
@@ -243,21 +212,7 @@ const MyTasksList = () => {
           <button
             onClick={(e) => handleCompleteClick(e, task)}
             disabled={isLoading}
-            style={{
-              padding: '8px 20px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              opacity: isLoading ? 0.6 : 1,
-              transition: 'all 0.2s',
-              minWidth: '100px'
-            }}
-            onMouseEnter={(e) => !isLoading && (e.target.style.backgroundColor = '#2563eb')}
-            onMouseLeave={(e) => !isLoading && (e.target.style.backgroundColor = '#3b82f6')}
+            className={`px-5 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 min-w-[110px] ${isLoading ? 'opacity-70 cursor-wait' : ''}`}
           >
             {isLoading === 'completing' ? 'Completing...' : '✅ Complete'}
           </button>
@@ -265,21 +220,7 @@ const MyTasksList = () => {
             <button
               onClick={(e) => handleSendBackClick(e, task)}
               disabled={isLoading}
-              style={{
-                padding: '8px 20px',
-                backgroundColor: '#ef4444',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                opacity: isLoading ? 0.6 : 1,
-                transition: 'all 0.2s',
-                minWidth: '100px'
-              }}
-              onMouseEnter={(e) => !isLoading && (e.target.style.backgroundColor = '#dc2626')}
-              onMouseLeave={(e) => !isLoading && (e.target.style.backgroundColor = '#ef4444')}
+              className={`px-5 py-2 bg-white text-red-600 border border-red-200 rounded-xl text-sm font-bold hover:bg-red-50 transition-all active:scale-95 min-w-[110px] ${isLoading ? 'opacity-70 cursor-wait' : ''}`}
             >
               {isLoading === 'sendingBack' ? 'Sending Back...' : '↩️ Send Back'}
             </button>
@@ -290,37 +231,20 @@ const MyTasksList = () => {
 
     if (taskStatus === 'paused') {
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+        <div className="flex flex-col items-end gap-1.5">
           <button
             onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }}
             disabled={isLoading || !canStartTask}
-            style={{
-              padding: '8px 20px',
-              backgroundColor: canStartTask ? '#10b981' : '#94a3b8',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: (isLoading || !canStartTask) ? 'not-allowed' : 'pointer',
-              opacity: (isLoading || !canStartTask) ? 0.6 : 1,
-              transition: 'all 0.2s',
-              minWidth: '100px'
-            }}
-            onMouseEnter={(e) => canStartTask && !isLoading && (e.target.style.backgroundColor = '#059669')}
-            onMouseLeave={(e) => canStartTask && !isLoading && (e.target.style.backgroundColor = '#10b981')}
+            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 min-w-[100px] ${canStartTask
+              ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-100'
+              : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+              } ${isLoading ? 'opacity-70 cursor-wait' : ''}`}
             title={!canStartTask ? 'Complete or pause your current task first' : ''}
           >
             {isLoading === 'starting' ? 'Resuming...' : '▶️ Resume'}
           </button>
           {!canStartTask && (
-            <span style={{
-              fontSize: '11px',
-              color: '#ef4444',
-              fontWeight: '500',
-              textAlign: 'right',
-              maxWidth: '150px'
-            }}>
+            <span className="text-[10px] text-red-500 font-bold uppercase tracking-tight text-right max-w-[150px]">
               Complete current task first
             </span>
           )}
@@ -334,7 +258,10 @@ const MyTasksList = () => {
   if (loading) {
     return (
       <Layout>
-        <div style={{ textAlign: 'center', padding: '50px' }}>Loading tasks...</div>
+        <div className="flex flex-col items-center justify-center p-24 text-center">
+          <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+          <p className="text-slate-500 text-base font-semibold">Fetching your assigned missions...</p>
+        </div>
       </Layout>
     );
   }
@@ -342,8 +269,15 @@ const MyTasksList = () => {
   if (error) {
     return (
       <Layout>
-        <div style={{ color: '#ef4444', textAlign: 'center', padding: '50px' }}>
-          Error: {error}
+        <div className="bg-red-50 border border-red-100 p-8 rounded-2xl text-center text-red-800 max-w-2xl mx-auto my-12 shadow-sm">
+          <p className="m-0 font-bold text-lg mb-2">Access Error</p>
+          <p className="m-0 opacity-80">{error}</p>
+          <button
+            onClick={fetchTasks}
+            className="mt-6 px-6 py-2 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-all"
+          >
+            Retry Sync
+          </button>
         </div>
       </Layout>
     );
@@ -353,117 +287,53 @@ const MyTasksList = () => {
     <Layout>
       <PageHeader
         title="My Tasks"
-        subtitle={`${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'} assigned to you`}
+        subtitle={`${tasks.length} ${tasks.length === 1 ? 'mission' : 'missions'} currently on your radar`}
         icon={
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
             <rect x="9" y="3" width="6" height="4" rx="1"></rect>
           </svg>
         }
         stats={[
-          { label: 'Pending', value: tasks.filter(t => getTaskStatus(t) === 'pending' || getTaskStatus(t) === 'active').length },
-          { label: 'In Progress', value: tasks.filter(t => getTaskStatus(t) === 'in_progress').length }
+          { label: 'Assigned', value: tasks.filter(t => getTaskStatus(t) === 'pending' || getTaskStatus(t) === 'active').length, color: 'slate' },
+          { label: 'Active', value: tasks.filter(t => getTaskStatus(t) === 'in_progress').length, color: 'blue' }
         ]}
       />
 
       {/* Tasks List */}
       {tasks.length === 0 ? (
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          padding: '60px 32px',
-          textAlign: 'center',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-          border: '1px solid #e5e7eb'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
-          <h3 style={{
-            fontSize: '18px',
-            fontWeight: '600',
-            color: '#1e293b',
-            margin: '0 0 8px 0'
-          }}>
-            No tasks assigned
-          </h3>
-          <p style={{
-            fontSize: '14px',
-            color: '#64748b',
-            margin: 0
-          }}>
-            You don't have any tasks assigned to you yet.
+        <div className="bg-white rounded-3xl p-24 text-center shadow-sm border border-slate-200 border-dashed max-w-4xl mx-auto">
+          <div className="text-7xl mb-6 grayscale opacity-40">📋</div>
+          <h3 className="text-2xl font-bold text-slate-800 mb-3">All Caught Up!</h3>
+          <p className="text-slate-500 max-w-md mx-auto leading-relaxed">
+            You don't have any tasks assigned to you right now. Use this time to recharge or check the team board.
           </p>
         </div>
       ) : (
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-          border: '1px solid #e5e7eb',
-          overflow: 'hidden'
-        }}>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           {tasks.map((task, index) => (
             <div
               key={task._id}
-              style={{
-                padding: '20px 24px',
-                borderBottom: index < tasks.length - 1 ? '1px solid #e5e7eb' : 'none',
-                transition: 'background-color 0.2s',
-                cursor: 'pointer'
-              }}
+              className={`p-6 border-b ${index === tasks.length - 1 ? 'border-none' : 'border-slate-100'} hover:bg-slate-50 transition-all cursor-pointer group`}
               onClick={() => navigate(`/my-tasks/${task._id}`)}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
             >
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '20px'
-              }}>
+              <div className="flex items-center justify-between gap-6">
                 {/* Left: Task Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h3 style={{
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    color: '#1e293b',
-                    margin: '0 0 8px 0',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-bold text-slate-800 mb-2 truncate group-hover:text-indigo-600 transition-colors tracking-tight">
                     {task.title}
                   </h3>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    flexWrap: 'wrap'
-                  }}>
+                  <div className="flex items-center gap-4 flex-wrap">
                     {task.project && (
-                      <span style={{
-                        fontSize: '13px',
-                        color: '#64748b',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        📁 {task.project.title}
+                      <span className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg">
+                        <span className="opacity-60">📁</span> {task.project.title}
                       </span>
                     )}
                     {task.priority && (
-                      <span style={{
-                        fontSize: '12px',
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        backgroundColor: task.priority === 'urgent' ? '#fee2e2' :
-                          task.priority === 'high' ? '#fef3c7' :
-                            task.priority === 'medium' ? '#dbeafe' : '#f0fdf4',
-                        color: task.priority === 'urgent' ? '#dc2626' :
-                          task.priority === 'high' ? '#d97706' :
-                            task.priority === 'medium' ? '#2563eb' : '#16a34a',
-                        fontWeight: '600',
-                        textTransform: 'uppercase'
-                      }}>
+                      <span className={`text-[10px] px-2.5 py-1 rounded-lg font-black uppercase tracking-wider shadow-sm ${task.priority === 'urgent' ? 'bg-red-50 text-red-600' :
+                        task.priority === 'high' ? 'bg-amber-50 text-amber-600' :
+                          task.priority === 'medium' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'
+                        }`}>
                         {task.priority}
                       </span>
                     )}
@@ -471,40 +341,24 @@ const MyTasksList = () => {
                 </div>
 
                 {/* Middle: Status */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
+                <div className="flex items-center gap-3">
                   {task.status && (
-                    <span style={{
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      backgroundColor: task.status.color ? `${task.status.color}20` : '#f1f5f9',
+                    <span className="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border" style={{
+                      backgroundColor: task.status.color ? `${task.status.color}10` : '#f1f5f9',
                       color: task.status.color || '#64748b',
-                      whiteSpace: 'nowrap'
+                      borderColor: task.status.color ? `${task.status.color}20` : '#e2e8f0',
                     }}>
                       {task.status.name}
                     </span>
                   )}
-                  <span style={{
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    backgroundColor: `${getStatusColor(getTaskStatus(task))}20`,
-                    color: getStatusColor(getTaskStatus(task)),
-                    whiteSpace: 'nowrap'
-                  }}>
+                  <span className={`px-3 py-1.5 rounded-full text-xs font-black whitespace-nowrap border uppercase tracking-wider ${getStatusClasses(getTaskStatus(task))}`}>
                     {getStatusLabel(getTaskStatus(task))}
                   </span>
                 </div>
 
                 {/* Right: Action Buttons */}
                 <div
-                  style={{ minWidth: '120px', display: 'flex', justifyContent: 'flex-end' }}
+                  className="min-w-[120px] flex justify-end"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {renderActionButtons(task)}
@@ -516,43 +370,11 @@ const MyTasksList = () => {
       )}
 
       {actionModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.6)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '20px'
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            width: '100%',
-            maxWidth: '650px',
-            maxHeight: '90vh',
-            display: 'flex',
-            flexDirection: 'column',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-            overflow: 'hidden'
-          }}>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-4 transition-all duration-300">
+          <div className="bg-white rounded-3xl w-full max-w-[650px] max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
             {/* Modal Header */}
-            <div style={{
-              padding: '20px 24px',
-              borderBottom: '1px solid #e2e8f0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: '#f8fafc'
-            }}>
-              <h2 style={{
-                margin: 0,
-                fontSize: '18px',
-                fontWeight: '600',
-                color: '#0f172a'
-              }}>
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h2 className="m-0 text-xl font-bold text-slate-800 tracking-tight">
                 {actionModal === 'complete' ? 'Complete Task' : 'Send Back to Previous'}
               </h2>
               <button
@@ -560,198 +382,90 @@ const MyTasksList = () => {
                   setActionModal(null);
                   setActiveTask(null);
                 }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '20px',
-                  color: '#64748b',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '6px',
-                  transition: 'background-color 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                className="bg-transparent border-none text-2xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1 flex items-center justify-center rounded-xl transition-all h-10 w-10 active:scale-95"
               >
                 &times;
               </button>
             </div>
 
             {/* Modal Body */}
-            <div style={{ padding: '24px', overflowY: 'auto' }}>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  fontWeight: '500',
-                  fontSize: '14px',
-                  color: '#334155'
-                }}>
-                  Note <span style={{ color: '#94a3b8', fontWeight: 'normal', fontSize: '13px' }}>(Editor)</span>
+            <div className="p-8 overflow-y-auto custom-scrollbar">
+              <div className="mb-6">
+                <label className="block mb-2 text-sm font-bold text-slate-700">
+                  Note Check <span className="text-slate-400 font-normal ml-2">(Rich Text Editor)</span>
                 </label>
-                <div style={{ borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: 'white' }}>
+                <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-inner bg-white">
                   <ReactQuill
                     value={formData.note}
                     onChange={(value) => setFormData({ ...formData, note: value })}
-                    style={{ height: '150px', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px' }}
+                    className="h-36 mb-12"
                     theme="snow"
                   />
                 </div>
-                {/* Spacer for ReactQuill's absolute positioning / height footprint */}
-                <div style={{ height: '45px' }}></div>
               </div>
 
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  fontWeight: '500',
-                  fontSize: '14px',
-                  color: '#334155'
-                }}>
+              <div className="mb-6">
+                <label className="block mb-2 text-sm font-bold text-slate-700">
                   Message
                 </label>
                 <textarea
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    minHeight: '100px',
-                    fontSize: '14px',
-                    color: '#0f172a',
-                    resize: 'vertical',
-                    boxSizing: 'border-box',
-                    fontFamily: 'inherit',
-                    outline: 'none',
-                    transition: 'border-color 0.2s'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                  onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                  placeholder="Enter a professional message..."
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all min-h-[100px] resize-y"
+                  placeholder="Tell your team about the progress..."
                 />
               </div>
 
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  fontWeight: '500',
-                  fontSize: '14px',
-                  color: '#334155'
-                }}>
-                  Link
+              <div className="mb-6">
+                <label className="block mb-2 text-sm font-bold text-slate-700">
+                  Results Link
                 </label>
                 <input
                   type="text"
                   value={formData.link}
                   onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '14px',
-                    color: '#0f172a',
-                    boxSizing: 'border-box',
-                    outline: 'none',
-                    transition: 'border-color 0.2s'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                  onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
-                  placeholder="https://..."
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all"
+                  placeholder="https://cloud.storage.com/your-result"
                 />
               </div>
 
-              <div style={{ marginBottom: '8px' }}>
-                <label style={{
-                  display: 'block',
-                  marginBottom: '8px',
-                  fontWeight: '500',
-                  fontSize: '14px',
-                  color: '#334155'
-                }}>
+              <div className="mb-2">
+                <label className="block mb-2 text-sm font-bold text-slate-700">
                   Attachments
                 </label>
-                <div style={{
-                  border: '1px dashed #cbd5e1',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  backgroundColor: '#f8fafc',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}>
+                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 bg-slate-50 flex flex-col items-center justify-center gap-3 hover:border-indigo-400 hover:bg-slate-100/50 transition-all cursor-pointer group">
+                  <div className="text-3xl grayscale opacity-30 group-hover:grayscale-0 group-hover:opacity-100 transition-all">📎</div>
                   <input
                     type="file"
                     multiple
                     onChange={handleFileChange}
-                    style={{
-                      width: '100%',
-                      fontSize: '14px',
-                      color: '#64748b',
-                    }}
+                    className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
                   />
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2 px-6 text-center">
+                    Drag & drop or click to upload relevant assets
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div style={{
-              padding: '20px 24px',
-              borderTop: '1px solid #e2e8f0',
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '12px',
-              backgroundColor: '#f8fafc'
-            }}>
+            <div className="px-8 py-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
               <button
                 onClick={() => {
                   setActionModal(null);
                   setActiveTask(null);
                 }}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '8px',
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: 'white',
-                  cursor: 'pointer',
-                  fontWeight: '500',
-                  fontSize: '14px',
-                  color: '#475569',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = '#475569'; }}
+                className="px-6 py-2.5 rounded-xl border border-slate-200 bg-white font-bold text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-all active:scale-95 shadow-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={handleModalSubmit}
                 disabled={activeTask && actionLoading[activeTask._id]}
-                style={{
-                  padding: '10px 24px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: actionModal === 'complete' ? '#10b981' : '#ef4444',
-                  color: 'white',
-                  cursor: (activeTask && actionLoading[activeTask._id]) ? 'not-allowed' : 'pointer',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  transition: 'background-color 0.2s',
-                  opacity: (activeTask && actionLoading[activeTask._id]) ? 0.7 : 1,
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                }}
-                onMouseEnter={(e) => { if (!(activeTask && actionLoading[activeTask._id])) e.currentTarget.style.backgroundColor = actionModal === 'complete' ? '#059669' : '#dc2626'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = actionModal === 'complete' ? '#10b981' : '#ef4444'; }}
+                className={`px-8 py-2.5 rounded-xl font-black text-sm text-white transition-all active:scale-95 shadow-lg ${actionModal === 'complete'
+                  ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200'
+                  : 'bg-red-500 hover:bg-red-600 shadow-red-200'
+                  } ${activeTask && actionLoading[activeTask._id] ? 'opacity-70 cursor-wait' : ''}`}
               >
                 {(activeTask && actionLoading[activeTask._id]) ? 'Processing...' : (actionModal === 'complete' ? '✓ Complete Task' : 'Send Back')}
               </button>

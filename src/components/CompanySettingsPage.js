@@ -83,14 +83,7 @@ const CompanySettingsPage = () => {
   if (loading) {
     return (
       <Layout>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '400px',
-          fontSize: '16px',
-          color: '#64748b'
-        }}>
+        <div className="flex justify-center items-center min-h-[400px] text-base text-slate-500">
           Loading company settings...
         </div>
       </Layout>
@@ -103,45 +96,19 @@ const CompanySettingsPage = () => {
 
   return (
     <Layout>
-      <div style={{
-        padding: '32px',
-        maxWidth: '1400px',
-        margin: '0 auto'
-      }}>
+      <div className="p-8 max-w-7xl mx-auto">
         {/* Header */}
-        <div style={{
-          marginBottom: '32px',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          borderRadius: '16px',
-          padding: '32px',
-          color: 'white',
-          boxShadow: '0 10px 40px rgba(102, 126, 234, 0.3)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            marginBottom: '12px'
-          }}>
+        <div className="mb-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-8 text-white shadow-2xl shadow-indigo-500/30">
+          <div className="flex items-center gap-4 mb-3">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"></circle>
               <path d="M12 1v6m0 6v6m5.66-13.66l-4.24 4.24m0 6l-4.24 4.24M23 12h-6m-6 0H1m18.66 5.66l-4.24-4.24m0-6l-4.24-4.24"></path>
             </svg>
-            <h1 style={{
-              margin: 0,
-              fontSize: '32px',
-              fontWeight: '700',
-              letterSpacing: '-0.5px'
-            }}>
+            <h1 className="m-0 text-3xl font-bold tracking-tight">
               Company Settings
             </h1>
           </div>
-          <p style={{
-            margin: 0,
-            fontSize: '16px',
-            opacity: 0.95,
-            fontWeight: '400'
-          }}>
+          <p className="m-0 text-base opacity-95 font-normal">
             Manage company-wide settings for {company.name}
           </p>
         </div>

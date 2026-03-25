@@ -82,18 +82,7 @@ const SignIn = () => {
       subtitle="Sign in to your account to continue"
     >
       {error && (
-        <div style={{
-          backgroundColor: '#fef2f2',
-          border: '1px solid #fecaca',
-          color: '#dc2626',
-          padding: '12px 16px',
-          borderRadius: '8px',
-          marginBottom: '24px',
-          fontSize: '14px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm flex items-center gap-2">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
@@ -105,27 +94,15 @@ const SignIn = () => {
       <SocialLoginButtons />
 
       {/* Divider */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        margin: '24px 0',
-        color: '#6b7280',
-        fontSize: '14px'
-      }}>
-        <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }}></div>
-        <span style={{ padding: '0 16px' }}>or continue with email</span>
-        <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }}></div>
+      <div className="flex items-center my-6 text-gray-500 text-sm">
+        <div className="flex-1 h-px bg-gray-200"></div>
+        <span className="px-4">or continue with email</span>
+        <div className="flex-1 h-px bg-gray-200"></div>
       </div>
       
-      <form onSubmit={handleSubmit} style={{ marginBottom: '24px' }}>
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '6px',
-            fontSize: '14px',
-            fontWeight: '600',
-            color: '#374151'
-          }}>
+      <form onSubmit={handleSubmit} className="mb-6">
+        <div className="mb-5">
+          <label className="block mb-1.5 text-sm font-semibold text-gray-700">
             Email address
           </label>
           <input
@@ -134,82 +111,35 @@ const SignIn = () => {
             value={formData.email}
             onChange={handleChange}
             required
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              border: '1px solid #d1d5db',
-              borderRadius: '8px',
-              fontSize: '16px',
-              outline: 'none',
-              transition: 'border-color 0.2s',
-              boxSizing: 'border-box'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#667eea'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base outline-none transition-colors duration-200 focus:border-indigo-500"
           />
         </div>
         
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <label style={{
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#374151'
-            }}>
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-1.5">
+            <label className="text-sm font-semibold text-gray-700">
               Password
             </label>
             <Link 
               to="/forgot-password" 
-              style={{
-                color: '#667eea',
-                textDecoration: 'none',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
+              className="text-indigo-500 no-underline text-sm font-medium hover:text-indigo-600"
             >
               Forgot password?
             </Link>
           </div>
-          <div style={{ position: 'relative' }}>
+          <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
               name="password"
               value={formData.password}
               onChange={handleChange}
               required
-              style={{
-                width: '100%',
-                padding: '12px 44px 12px 16px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '16px',
-                outline: 'none',
-                transition: 'border-color 0.2s',
-                boxSizing: 'border-box'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#667eea'}
-              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+              className="w-full py-3 pr-11 pl-4 border border-gray-300 rounded-lg text-base outline-none transition-colors duration-200 focus:border-indigo-500"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              style={{
-                position: 'absolute',
-                right: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#6b7280',
-                transition: 'color 0.2s'
-              }}
-              onMouseEnter={(e) => e.target.style.color = '#374151'}
-              onMouseLeave={(e) => e.target.style.color = '#6b7280'}
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-0 cursor-pointer p-1 flex items-center justify-center text-gray-500 transition-colors duration-200 hover:text-gray-700"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? (
@@ -230,22 +160,11 @@ const SignIn = () => {
         <button
           type="submit"
           disabled={isLoading}
-          style={{
-            width: '100%',
-            padding: '12px 16px',
-            backgroundColor: isLoading ? '#9ca3af' : '#667eea',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '16px',
-            fontWeight: '600',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            transition: 'background-color 0.2s',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px'
-          }}
+          className={`w-full px-4 py-3 text-white border-0 rounded-lg text-base font-semibold transition-colors duration-200 flex items-center justify-center gap-2 ${
+            isLoading 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-indigo-500 cursor-pointer hover:bg-indigo-600'
+          }`}
         >
           {isLoading && (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -259,18 +178,13 @@ const SignIn = () => {
         </button>
       </form>
       
-      <div style={{ textAlign: 'center' }}>
-        <span style={{ color: '#6b7280', fontSize: '14px' }}>
+      <div className="text-center">
+        <span className="text-gray-500 text-sm">
           Don't have an account?{' '}
         </span>
         <Link 
           to="/signup" 
-          style={{
-            color: '#667eea',
-            textDecoration: 'none',
-            fontWeight: '600',
-            fontSize: '14px'
-          }}
+          className="text-indigo-500 no-underline font-semibold text-sm hover:text-indigo-600"
         >
           Sign up
         </Link>

@@ -155,51 +155,27 @@ const TaskWorkflow = ({ task, projectId, onTaskUpdate }) => {
   };
 
   return (
-    <div style={{ marginTop: '24px' }}>
-      <div style={{ 
-        fontSize: '12px', 
-        fontWeight: '600', 
-        color: '#5e6c84', 
-        marginBottom: '12px',
-        textTransform: 'uppercase'
-      }}>
+    <div className="mt-6">
+      <div className="text-xs font-semibold text-secondary-600 mb-3 uppercase">
         🔄 Workflow Roles
       </div>
 
       {!isWorkflowStarted && (
-        <div style={{ marginBottom: '16px' }}>
+        <div className="mb-4">
           <button
             onClick={handleStartWorkflow}
-            style={{
-              padding: '10px 16px',
-              backgroundColor: '#0052cc',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              width: '100%'
-            }}
+            className="w-full px-4 py-2.5 rounded bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
           >
             Start Workflow
           </button>
-          <p style={{ fontSize: '12px', color: '#5e6c84', marginTop: '8px', margin: 0 }}>
+          <p className="text-xs text-secondary-600 mt-2">
             Starting the workflow will notify assignees of the first role.
           </p>
         </div>
       )}
 
       {isWorkflowComplete && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: '#e3fcef',
-          border: '1px solid #36b37e',
-          borderRadius: '4px',
-          color: '#006644',
-          fontSize: '14px',
-          marginBottom: '16px'
-        }}>
+        <div className="p-3 bg-emerald-50 border border-emerald-300 rounded text-emerald-700 text-sm mb-4">
           ✓ All roles completed!
         </div>
       )}
@@ -207,38 +183,20 @@ const TaskWorkflow = ({ task, projectId, onTaskUpdate }) => {
 
       {/* Handoff Modal */}
       {showHandoffModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 2000
-        }}
-        onClick={() => !uploading && setShowHandoffModal(false)}
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[2000]"
+          onClick={() => !uploading && setShowHandoffModal(false)}
         >
           <div
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '8px',
-              padding: '24px',
-              width: '90%',
-              maxWidth: '600px',
-              maxHeight: '90vh',
-              overflow: 'auto'
-            }}
+            className="bg-white rounded-lg p-6 w-[90%] max-w-[600px] max-h-[90vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
+            <h3 className="mb-5 text-lg font-semibold text-secondary-800">
               Complete Role & Handoff to Next
             </h3>
 
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#5e6c84' }}>
+            <div className="mb-4">
+              <label className="block mb-1.5 text-[13px] font-semibold text-secondary-600">
                 Comment / Notes
               </label>
               <textarea
@@ -246,20 +204,12 @@ const TaskWorkflow = ({ task, projectId, onTaskUpdate }) => {
                 onChange={(e) => setHandoffData({ ...handoffData, comment: e.target.value })}
                 placeholder="Add comments, notes, or instructions for the next role..."
                 rows="4"
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '4px',
-                  fontSize: '14px',
-                  fontFamily: 'inherit',
-                  resize: 'vertical'
-                }}
+                className="w-full p-2 border border-secondary-300 rounded text-sm resize-y focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
 
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#5e6c84' }}>
+            <div className="mb-4">
+              <label className="block mb-1.5 text-[13px] font-semibold text-secondary-600">
                 Files
               </label>
               <input
@@ -267,50 +217,27 @@ const TaskWorkflow = ({ task, projectId, onTaskUpdate }) => {
                 type="file"
                 multiple
                 onChange={handleFileChange}
-                style={{ display: 'none' }}
+                className="hidden"
               />
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                style={{
-                  padding: '8px 12px',
-                  backgroundColor: '#f4f5f7',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '4px',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  marginBottom: '8px'
-                }}
+                className="px-3 py-2 bg-secondary-100 border border-secondary-300 rounded text-xs cursor-pointer mb-2 hover:bg-secondary-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 + Add Files
               </button>
               {handoffData.files.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div className="flex flex-col gap-1">
                   {handoffData.files.map((file, index) => (
                     <div
                       key={index}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '6px 8px',
-                        backgroundColor: '#f4f5f7',
-                        borderRadius: '3px',
-                        fontSize: '12px'
-                      }}
+                      className="flex items-center justify-between px-2 py-1.5 bg-secondary-100 rounded text-xs"
                     >
                       <span>{file.name}</span>
                       <button
                         type="button"
                         onClick={() => removeFile(index)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#de350b',
-                          cursor: 'pointer',
-                          fontSize: '16px',
-                          padding: '0 4px'
-                        }}
+                        className="bg-transparent border-0 text-red-600 hover:text-red-700 cursor-pointer text-base px-1"
                       >
                         ×
                       </button>
@@ -320,67 +247,40 @@ const TaskWorkflow = ({ task, projectId, onTaskUpdate }) => {
               )}
             </div>
 
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: '600', color: '#5e6c84' }}>
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[13px] font-semibold text-secondary-600">
                   URLs / Links
                 </label>
                 <button
                   type="button"
                   onClick={addUrl}
-                  style={{
-                    padding: '4px 8px',
-                    backgroundColor: '#f4f5f7',
-                    border: '1px solid #dfe1e6',
-                    borderRadius: '3px',
-                    fontSize: '12px',
-                    cursor: 'pointer'
-                  }}
+                  className="px-2 py-1 bg-secondary-100 border border-secondary-300 rounded text-xs cursor-pointer hover:bg-secondary-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   + Add URL
                 </button>
               </div>
               {handoffData.urls.map((urlItem, index) => (
-                <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                <div key={index} className="flex gap-2 mb-2">
                   <input
                     type="text"
                     placeholder="Title"
                     value={urlItem.title}
                     onChange={(e) => updateUrl(index, 'title', e.target.value)}
-                    style={{
-                      flex: 1,
-                      padding: '6px 8px',
-                      border: '1px solid #dfe1e6',
-                      borderRadius: '4px',
-                      fontSize: '13px'
-                    }}
+                    className="flex-1 px-2 py-1.5 border border-secondary-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                   <input
                     type="url"
                     placeholder="URL"
                     value={urlItem.url}
                     onChange={(e) => updateUrl(index, 'url', e.target.value)}
-                    style={{
-                      flex: 2,
-                      padding: '6px 8px',
-                      border: '1px solid #dfe1e6',
-                      borderRadius: '4px',
-                      fontSize: '13px'
-                    }}
+                    className="flex-[2] px-2 py-1.5 border border-secondary-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                   {handoffData.urls.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeUrl(index)}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: '#ffebe6',
-                        border: '1px solid #ff8f73',
-                        borderRadius: '4px',
-                        color: '#de350b',
-                        cursor: 'pointer',
-                        fontSize: '13px'
-                      }}
+                      className="px-3 py-1.5 bg-red-50 border border-red-300 rounded text-red-600 text-sm hover:bg-red-100"
                     >
                       Remove
                     </button>
@@ -389,7 +289,7 @@ const TaskWorkflow = ({ task, projectId, onTaskUpdate }) => {
               ))}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '20px' }}>
+            <div className="flex justify-end gap-2 mt-5">
               <button
                 type="button"
                 onClick={() => {
@@ -397,15 +297,7 @@ const TaskWorkflow = ({ task, projectId, onTaskUpdate }) => {
                   setHandoffData({ comment: '', urls: [{ title: '', url: '' }], files: [] });
                 }}
                 disabled={uploading}
-                style={{
-                  padding: '10px 16px',
-                  backgroundColor: 'white',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '4px',
-                  fontSize: '14px',
-                  cursor: uploading ? 'not-allowed' : 'pointer',
-                  color: '#5e6c84'
-                }}
+                className="px-4 py-2.5 bg-white border border-secondary-300 rounded text-secondary-600 text-sm hover:bg-secondary-50 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
@@ -413,16 +305,7 @@ const TaskWorkflow = ({ task, projectId, onTaskUpdate }) => {
                 type="button"
                 onClick={handleCompleteRole}
                 disabled={uploading}
-                style={{
-                  padding: '10px 16px',
-                  backgroundColor: uploading ? '#c1c7d0' : '#36b37e',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: uploading ? 'not-allowed' : 'pointer',
-                  color: 'white'
-                }}
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {uploading ? 'Completing...' : 'Complete & Handoff'}
               </button>

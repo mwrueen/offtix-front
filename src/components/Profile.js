@@ -267,357 +267,195 @@ const Profile = () => {
     });
   };
 
-  if (loading) return <Layout><div style={{ textAlign: 'center', padding: '50px' }}>Loading profile...</div></Layout>;
-
-  const inputStyle = {
-    width: '100%',
-    padding: '14px 16px',
-    border: '2px solid #e2e8f0',
-    borderRadius: '10px',
-    fontSize: '14px',
-    boxSizing: 'border-box',
-    transition: 'all 0.2s',
-    fontFamily: 'inherit'
-  };
-
-  const labelStyle = {
-    marginBottom: '10px',
-    fontSize: '14px',
-    fontWeight: '700',
-    color: '#1e293b',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px'
-  };
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center p-24 text-center">
+          <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+          <p className="text-slate-500 text-base font-semibold tracking-tight italic">Gathering your digital footprint...</p>
+        </div>
+      </Layout>
+    );
+  }
 
   const sections = [
     {
       id: 'basic',
-      label: 'Basic Info',
-      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      label: 'Core Specs',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
     },
     {
       id: 'experience',
-      label: 'Experience',
-      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+      label: 'Trajectory',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
     },
     {
       id: 'education',
-      label: 'Education',
-      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+      label: 'Foundations',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
     },
     {
       id: 'projects',
-      label: 'Projects',
-      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M2 12h20"></path><circle cx="12" cy="12" r="10"></circle></svg>
+      label: 'Directives',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v20M2 12h20"></path><circle cx="12" cy="12" r="10"></circle></svg>
     },
     {
       id: 'skills',
-      label: 'Skills',
-      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+      label: 'Capabilities',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
     }
   ];
 
   const renderBasicInfo = () => (
-    <div>
-      {/* Account Information Card */}
-      <div style={{
-        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-        borderRadius: '12px',
-        padding: '20px',
-        marginBottom: '24px',
-        border: '1px solid #cbd5e1'
-      }}>
-        <h3 style={{
-          margin: '0 0 16px 0',
-          fontSize: '16px',
-          fontWeight: '700',
-          color: '#1e293b',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      {/* Account Info Stats Card */}
+      <div className="bg-slate-900 rounded-[32px] p-8 text-white relative overflow-hidden shadow-2xl shadow-slate-200">
+        <div className="absolute top-0 right-0 p-12 opacity-10 scale-150 rotate-12">
+          <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
             <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path>
-            <path d="M12 6v6l4 2"></path>
+            <circle cx="12" cy="12" r="3"></circle>
           </svg>
-          Account Information
+        </div>
+        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-indigo-400 mb-8 flex items-center gap-3">
+          <span className="w-8 h-[2px] bg-indigo-500"></span> System Credentials
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          <div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', fontWeight: '600' }}>Email Address</div>
-            <div style={{ fontSize: '14px', color: '#1e293b', fontWeight: '500' }}>{profile.email}</div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 relative z-10">
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Interface ID</p>
+            <p className="text-sm font-bold truncate pr-4">{profile.email}</p>
           </div>
-          <div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', fontWeight: '600' }}>Account Type</div>
-            <div style={{
-              fontSize: '14px',
-              color: '#1e293b',
-              fontWeight: '500',
-              textTransform: 'capitalize'
-            }}>
-              {profile.role}
-            </div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Access Tier</p>
+            <p className="text-sm font-bold capitalize text-indigo-300">{profile.role}</p>
           </div>
-          <div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', fontWeight: '600' }}>Member Since</div>
-            <div style={{ fontSize: '14px', color: '#1e293b', fontWeight: '500' }}>
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Enrolled Since</p>
+            <p className="text-sm font-bold">
               {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', {
                 year: 'numeric',
-                month: 'long',
+                month: 'short',
                 day: 'numeric'
               }) : 'N/A'}
-            </div>
+            </p>
           </div>
-          {companyState.companies.length > 0 && (
-            <div>
-              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', fontWeight: '600' }}>Companies</div>
-              <div style={{ fontSize: '14px', color: '#1e293b', fontWeight: '500' }}>
-                {companyState.companies.map(c => c.name).join(', ')}
-              </div>
-            </div>
-          )}
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Affiliations</p>
+            <p className="text-sm font-bold truncate">
+              {companyState.companies.length > 0 ? companyState.companies.map(c => c.name).join(', ') : 'Independent'}
+            </p>
+          </div>
         </div>
       </div>
 
-      <div style={{ position: 'relative', marginBottom: '60px' }}>
-        <div style={{
-          width: '100%',
-          height: '240px',
-          borderRadius: '16px',
-          backgroundColor: '#f8fafc',
-          backgroundImage: (localImages.coverPhoto || profile.profile.coverPhoto) ? `url(${getImageUrl(localImages.coverPhoto || profile.profile.coverPhoto)})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          position: 'relative',
-          overflow: 'hidden',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-        }}>
-          {!(localImages.coverPhoto || profile.profile.coverPhoto) && (
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'rgba(255,255,255,0.9)',
-              fontSize: '16px',
-              fontWeight: '600'
-            }}>
-              Click to add cover photo
-            </div>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleFileUpload(e, 'cover')}
-            style={{ display: 'none' }}
-            id="cover-upload"
-          />
-          <label
-            htmlFor="cover-upload"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'flex-end',
-              justifyContent: 'flex-end',
-              padding: '16px'
-            }}
-          >
-            <div style={{
-              backgroundColor: 'rgba(0,0,0,0.75)',
-              color: 'white',
-              borderRadius: '10px',
-              padding: '10px 16px',
-              fontSize: '13px',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255,255,255,0.1)'
-            }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                <circle cx="12" cy="13" r="4"></circle>
-              </svg>
-              Change Cover
-            </div>
-          </label>
+      {/* Visual Identity Area */}
+      <div className="relative group/cover">
+        <div
+          className="w-full h-72 rounded-[40px] bg-slate-100 border-4 border-white shadow-xl overflow-hidden relative transition-transform duration-700 hover:scale-[1.01]"
+          style={{
+            backgroundImage: (localImages.coverPhoto || profile.profile.coverPhoto)
+              ? `url(${getImageUrl(localImages.coverPhoto || profile.profile.coverPhoto)})`
+              : 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }}
+        >
+          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/cover:opacity-100 transition-opacity duration-500 flex items-center justify-center backdrop-blur-[2px]">
+            <label htmlFor="cover-upload" className="bg-white/90 text-slate-900 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest cursor-pointer hover:bg-white transition-all shadow-2xl active:scale-95">
+              Refactor Cover Environment
+            </label>
+          </div>
+          <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'cover')} className="hidden" id="cover-upload" />
         </div>
-        
-        <div style={{
-          position: 'absolute',
-          bottom: '-40px',
-          left: '32px',
-          zIndex: 2
-        }}>
-          <div style={{ position: 'relative' }}>
-            <div style={{
-              width: '140px',
-              height: '140px',
-              borderRadius: '50%',
-              backgroundColor: '#ffffff',
-              backgroundImage: (localImages.profilePicture || profile.profile.profilePicture) ? `url(${getImageUrl(localImages.profilePicture || profile.profile.profilePicture)})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              border: '5px solid white',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '48px',
-              color: 'white',
-              fontWeight: '700'
-            }}>
-              {!(localImages.profilePicture || profile.profile.profilePicture) && (profile.name.charAt(0).toUpperCase() || 'U')}
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFileUpload(e, 'profile')}
-              style={{ display: 'none' }}
-              id="profile-upload"
-            />
-            <label
-              htmlFor="profile-upload"
+
+        {/* Avatar Position */}
+        <div className="absolute -bottom-16 left-12 group/avatar">
+          <div className="relative">
+            <div
+              className="w-44 h-44 rounded-full border-8 border-white shadow-2xl overflow-hidden bg-slate-200 transition-transform duration-500 group-hover/avatar:rotate-3"
               style={{
-                position: 'absolute',
-                bottom: '8px',
-                right: '8px',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                borderRadius: '50%',
-                width: '40px',
-                height: '40px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                border: '3px solid white',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
+                backgroundImage: (localImages.profilePicture || profile.profile.profilePicture)
+                  ? `url(${getImageUrl(localImages.profilePicture || profile.profile.profilePicture)})`
+                  : 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
               }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {!(localImages.profilePicture || profile.profile.profilePicture) && (
+                <div className="w-full h-full flex items-center justify-center text-white text-5xl font-black">
+                  {profile.name.charAt(0).toUpperCase() || 'U'}
+                </div>
+              )}
+            </div>
+            <label htmlFor="profile-upload" className="absolute bottom-2 right-2 bg-indigo-600 border-4 border-white text-white p-3 rounded-full shadow-lg cursor-pointer hover:bg-indigo-700 hover:scale-110 active:scale-90 transition-all">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                 <circle cx="12" cy="13" r="4"></circle>
               </svg>
             </label>
+            <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'profile')} className="hidden" id="profile-upload" />
           </div>
         </div>
       </div>
-      
-      <div style={{ display: 'grid', gap: '24px', marginTop: '20px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-          <div>
-            <label style={labelStyle}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-              Full Name
-            </label>
-            <input
-              type="text"
-              placeholder="Enter your full name"
-              value={profile.name}
-              onChange={(e) => setProfile({...profile, name: e.target.value})}
-              style={inputStyle}
-              onFocus={(e) => e.target.style.borderColor = '#667eea'}
-              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-            />
-          </div>
-          <div>
-            <label style={labelStyle}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-              </svg>
-              Phone
-            </label>
-            <input
-              type="tel"
-              placeholder="+1 (555) 123-4567"
-              value={profile.profile.phone}
-              onChange={(e) => setProfile({...profile, profile: {...profile.profile, phone: e.target.value}})}
-              style={inputStyle}
-              onFocus={(e) => e.target.style.borderColor = '#667eea'}
-              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-            />
-          </div>
-        </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-          <div>
-            <label style={labelStyle}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                <circle cx="12" cy="10" r="3"></circle>
-              </svg>
-              Location
-            </label>
-            <input
-              type="text"
-              placeholder="City, Country"
-              value={profile.profile.location}
-              onChange={(e) => setProfile({...profile, profile: {...profile.profile, location: e.target.value}})}
-              style={inputStyle}
-              onFocus={(e) => e.target.style.borderColor = '#667eea'}
-              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-            />
-          </div>
-          <div>
-            <label style={labelStyle}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-              </svg>
-              Job Title
-            </label>
-            <input
-              type="text"
-              placeholder="Software Engineer, Designer, etc."
-              value={profile.profile.title}
-              onChange={(e) => setProfile({...profile, profile: {...profile.profile, title: e.target.value}})}
-              style={inputStyle}
-              onFocus={(e) => e.target.style.borderColor = '#667eea'}
-              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-            />
-          </div>
+      <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+        <div className="space-y-2">
+          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+            Full Identity Name
+          </label>
+          <input
+            type="text"
+            placeholder="Identity Label"
+            value={profile.name}
+            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+            className="w-full px-6 py-4 bg-white border border-slate-200 rounded-3xl text-sm font-bold text-slate-800 focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all shadow-sm"
+          />
         </div>
-
-        <div>
-          <label style={labelStyle}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-            Professional Summary
+        <div className="space-y-2">
+          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+            Secure Contact Link
+          </label>
+          <input
+            type="tel"
+            placeholder="+0 (000) 000-0000"
+            value={profile.profile.phone}
+            onChange={(e) => setProfile({ ...profile, profile: { ...profile.profile, phone: e.target.value } })}
+            className="w-full px-6 py-4 bg-white border border-slate-200 rounded-3xl text-sm font-bold text-slate-800 focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all shadow-sm"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+            Geographic Coordinates
+          </label>
+          <input
+            type="text"
+            placeholder="City, System"
+            value={profile.profile.location}
+            onChange={(e) => setProfile({ ...profile, profile: { ...profile.profile, location: e.target.value } })}
+            className="w-full px-6 py-4 bg-white border border-slate-200 rounded-3xl text-sm font-bold text-slate-800 focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all shadow-sm"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+            Designatory Role
+          </label>
+          <input
+            type="text"
+            placeholder="Operation Title"
+            value={profile.profile.title}
+            onChange={(e) => setProfile({ ...profile, profile: { ...profile.profile, title: e.target.value } })}
+            className="w-full px-6 py-4 bg-white border border-slate-200 rounded-3xl text-sm font-bold text-slate-800 focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all shadow-sm"
+          />
+        </div>
+        <div className="md:col-span-2 space-y-2">
+          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+            Operational Summary & Objectives
           </label>
           <textarea
-            placeholder="Tell us about yourself, your experience, and what makes you unique..."
+            placeholder="Tell us about your primary directives..."
             value={profile.profile.summary}
-            onChange={(e) => setProfile({...profile, profile: {...profile.profile, summary: e.target.value}})}
-            rows="5"
-            style={{
-              ...inputStyle,
-              resize: 'vertical',
-              minHeight: '120px'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#667eea'}
-            onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+            onChange={(e) => setProfile({ ...profile, profile: { ...profile.profile, summary: e.target.value } })}
+            rows="6"
+            className="w-full px-6 py-4 bg-white border border-slate-200 rounded-3xl text-sm font-bold text-slate-800 focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all shadow-sm resize-none min-h-[160px]"
           />
         </div>
       </div>
@@ -625,822 +463,454 @@ const Profile = () => {
   );
 
   const renderExperience = () => (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>Work Experience</h3>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h3 className="text-lg font-black text-slate-800">Operational History</h3>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Timeline of engagements</p>
+        </div>
         <button
           type="button"
           onClick={addExperience}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}
+          className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg active:scale-95 flex items-center gap-2"
         >
-          + Add Experience
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14"></path></svg>
+          New Engagement
         </button>
       </div>
-      
-      {profile.profile.experience.map((exp, index) => (
-        <div key={index} style={{
-          padding: '20px',
-          backgroundColor: '#f8fafc',
-          borderRadius: '8px',
-          marginBottom: '16px',
-          border: '1px solid #e2e8f0'
-        }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-            <input
-              type="text"
-              placeholder="Company Name"
-              value={exp.company}
-              onChange={(e) => updateItem('experience', index, 'company', e.target.value)}
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px'
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Job Title"
-              value={exp.position}
-              onChange={(e) => updateItem('experience', index, 'position', e.target.value)}
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px'
-              }}
-            />
-          </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto auto', gap: '16px', marginBottom: '16px' }}>
-            <input
-              type="date"
-              value={exp.startDate}
-              onChange={(e) => updateItem('experience', index, 'startDate', e.target.value)}
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px'
-              }}
-            />
-            <input
-              type="date"
-              value={exp.endDate}
-              onChange={(e) => updateItem('experience', index, 'endDate', e.target.value)}
-              disabled={exp.current}
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                opacity: exp.current ? 0.5 : 1
-              }}
-            />
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-              <input
-                type="checkbox"
-                checked={exp.current}
-                onChange={(e) => updateItem('experience', index, 'current', e.target.checked)}
-              />
-              Current
-            </label>
+
+      <div className="space-y-6">
+        {profile.profile.experience.map((exp, index) => (
+          <div key={index} className="group bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all relative">
             <button
               type="button"
               onClick={() => removeItem('experience', index)}
-              style={{
-                padding: '8px',
-                backgroundColor: '#ef4444',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
+              className="absolute top-6 right-6 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
             >
-              Remove
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             </button>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company / Organization</label>
+                <input
+                  type="text"
+                  placeholder="Acme Corp"
+                  value={exp.company}
+                  onChange={(e) => updateItem('experience', index, 'company', e.target.value)}
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rank / Position</label>
+                <input
+                  type="text"
+                  placeholder="Lead Specialist"
+                  value={exp.position}
+                  onChange={(e) => updateItem('experience', index, 'position', e.target.value)}
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-center mb-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Genesis</label>
+                <input
+                  type="date"
+                  value={exp.startDate}
+                  onChange={(e) => updateItem('experience', index, 'startDate', e.target.value)}
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-400 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Terminus</label>
+                <input
+                  type="date"
+                  value={exp.endDate}
+                  onChange={(e) => updateItem('experience', index, 'endDate', e.target.value)}
+                  disabled={exp.current}
+                  className={`w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-400 transition-all ${exp.current ? 'opacity-30 cursor-not-allowed' : ''}`}
+                />
+              </div>
+              <div className="pt-6 flex items-center">
+                <label className="flex items-center gap-3 cursor-pointer group/check">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={exp.current}
+                      onChange={(e) => updateItem('experience', index, 'current', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-12 h-6 bg-slate-200 rounded-full peer peer-checked:bg-emerald-500 transition-all duration-300"></div>
+                    <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full peer-checked:translate-x-6 transition-transform duration-300 shadow-sm"></div>
+                  </div>
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Active</span>
+                </label>
+              </div>
+            </div>
+
+            <textarea
+              placeholder="Primary responsibilities and key deliverables..."
+              value={exp.description}
+              onChange={(e) => updateItem('experience', index, 'description', e.target.value)}
+              rows="4"
+              className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:bg-white focus:border-indigo-400 transition-all resize-none"
+            />
           </div>
-          
-          <textarea
-            placeholder="Describe your responsibilities and achievements..."
-            value={exp.description}
-            onChange={(e) => updateItem('experience', index, 'description', e.target.value)}
-            rows="3"
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '14px',
-              boxSizing: 'border-box',
-              resize: 'vertical',
-              fontFamily: 'inherit'
-            }}
-          />
-        </div>
-      ))}
-      
+        ))}
+      </div>
+
       {profile.profile.experience.length === 0 && (
-        <div style={{
-          textAlign: 'center',
-          padding: '40px',
-          color: '#64748b',
-          backgroundColor: '#f8fafc',
-          borderRadius: '8px',
-          border: '2px dashed #cbd5e1'
-        }}>
-          No work experience added yet. Click "Add Experience" to get started.
+        <div className="bg-slate-50 rounded-[40px] border-4 border-dashed border-slate-200 p-20 text-center group hover:border-indigo-200 transition-all">
+          <div className="text-6xl mb-6 opacity-20 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500">🚀</div>
+          <h4 className="text-xl font-black text-slate-400 group-hover:text-slate-600 transition-colors">Orbit Inactive</h4>
+          <p className="text-slate-400 font-medium max-w-xs mx-auto mt-2">Initialize your trajectory data to improve your profile authority.</p>
         </div>
       )}
     </div>
   );
 
   const renderEducation = () => (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>Education</h3>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h3 className="text-lg font-black text-slate-800">Academic Foundations</h3>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Foundational roots</p>
+        </div>
         <button
           type="button"
           onClick={addEducation}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}
+          className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg active:scale-95 flex items-center gap-2"
         >
-          + Add Education
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14"></path></svg>
+          New Root
         </button>
       </div>
-      
-      {profile.profile.education.map((edu, index) => (
-        <div key={index} style={{
-          padding: '20px',
-          backgroundColor: '#f8fafc',
-          borderRadius: '8px',
-          marginBottom: '16px',
-          border: '1px solid #e2e8f0'
-        }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-            <input
-              type="text"
-              placeholder="Institution Name"
-              value={edu.institution}
-              onChange={(e) => updateItem('education', index, 'institution', e.target.value)}
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px'
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Degree"
-              value={edu.degree}
-              onChange={(e) => updateItem('education', index, 'degree', e.target.value)}
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px'
-              }}
-            />
-          </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto auto', gap: '16px' }}>
-            <input
-              type="text"
-              placeholder="Field of Study"
-              value={edu.field}
-              onChange={(e) => updateItem('education', index, 'field', e.target.value)}
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px'
-              }}
-            />
-            <input
-              type="date"
-              value={edu.startDate}
-              onChange={(e) => updateItem('education', index, 'startDate', e.target.value)}
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px'
-              }}
-            />
-            <input
-              type="date"
-              value={edu.endDate}
-              onChange={(e) => updateItem('education', index, 'endDate', e.target.value)}
-              disabled={edu.current}
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                opacity: edu.current ? 0.5 : 1
-              }}
-            />
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-              <input
-                type="checkbox"
-                checked={edu.current}
-                onChange={(e) => updateItem('education', index, 'current', e.target.checked)}
-              />
-              Current
-            </label>
+
+      <div className="space-y-6">
+        {profile.profile.education.map((edu, index) => (
+          <div key={index} className="group bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all relative">
             <button
               type="button"
               onClick={() => removeItem('education', index)}
-              style={{
-                padding: '8px',
-                backgroundColor: '#ef4444',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
+              className="absolute top-6 right-6 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
             >
-              Remove
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             </button>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Institution</label>
+                <input
+                  type="text"
+                  placeholder="Education Center"
+                  value={edu.institution}
+                  onChange={(e) => updateItem('education', index, 'institution', e.target.value)}
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-400 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Degree / Certification</label>
+                <input
+                  type="text"
+                  placeholder="Master's in Structural Logic"
+                  value={edu.degree}
+                  onChange={(e) => updateItem('education', index, 'degree', e.target.value)}
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-400 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Field of Synthesis</label>
+                <input
+                  type="text"
+                  placeholder="Computational Engineering"
+                  value={edu.field}
+                  onChange={(e) => updateItem('education', index, 'field', e.target.value)}
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-400 transition-all"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-6">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Start Cycle</label>
+                  <input
+                    type="date"
+                    value={edu.startDate}
+                    onChange={(e) => updateItem('education', index, 'startDate', e.target.value)}
+                    className="w-full px-4 py-2 text-xs bg-slate-50 border border-slate-100 rounded-xl font-bold text-slate-600 outline-none focus:bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">End Cycle</label>
+                  <input
+                    type="date"
+                    value={edu.endDate}
+                    onChange={(e) => updateItem('education', index, 'endDate', e.target.value)}
+                    disabled={edu.current}
+                    className={`w-full px-4 py-2 text-xs bg-slate-50 border border-slate-100 rounded-xl font-bold text-slate-600 outline-none focus:bg-white ${edu.current ? 'opacity-30' : ''}`}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={edu.current}
+                    onChange={(e) => updateItem('education', index, 'current', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-purple-500 transition-all duration-300"></div>
+                  <div className="absolute left-[2px] top-[2px] w-4 h-4 bg-white rounded-full peer-checked:translate-x-5 transition-transform duration-300 shadow-sm"></div>
+                </div>
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">In Progress</span>
+              </label>
+            </div>
           </div>
-        </div>
-      ))}
-      
+        ))}
+      </div>
+
       {profile.profile.education.length === 0 && (
-        <div style={{
-          textAlign: 'center',
-          padding: '40px',
-          color: '#64748b',
-          backgroundColor: '#f8fafc',
-          borderRadius: '8px',
-          border: '2px dashed #cbd5e1'
-        }}>
-          No education added yet. Click "Add Education" to get started.
+        <div className="bg-slate-50 rounded-[40px] border-4 border-dashed border-slate-200 p-20 text-center group hover:border-purple-200 transition-all">
+          <div className="text-6xl mb-6 opacity-20 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500">🎓</div>
+          <h4 className="text-xl font-black text-slate-400 group-hover:text-slate-600 transition-colors">No Education Data</h4>
+          <p className="text-slate-400 font-medium max-w-xs mx-auto mt-2">Log your academic milestones to showcase your fundamental expertise.</p>
         </div>
       )}
     </div>
   );
 
   const renderProjects = () => (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>Projects</h3>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h3 className="text-lg font-black text-slate-800">Operational Directives</h3>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Specific execution artifacts</p>
+        </div>
         <button
           type="button"
           onClick={addProject}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}
+          className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg active:scale-95 flex items-center gap-2"
         >
-          + Add Project
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14"></path></svg>
+          New Directive
         </button>
       </div>
-      
-      {profile.profile.projects.map((project, index) => (
-        <div key={index} style={{
-          padding: '20px',
-          backgroundColor: '#f8fafc',
-          borderRadius: '8px',
-          marginBottom: '16px',
-          border: '1px solid #e2e8f0'
-        }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-            <input
-              type="text"
-              placeholder="Project Name"
-              value={project.name}
-              onChange={(e) => updateItem('projects', index, 'name', e.target.value)}
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px'
-              }}
-            />
-            <input
-              type="url"
-              placeholder="Project URL (optional)"
-              value={project.url}
-              onChange={(e) => updateItem('projects', index, 'url', e.target.value)}
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px'
-              }}
-            />
-          </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '16px', marginBottom: '16px' }}>
-            <input
-              type="date"
-              value={project.startDate}
-              onChange={(e) => updateItem('projects', index, 'startDate', e.target.value)}
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px'
-              }}
-            />
-            <input
-              type="date"
-              value={project.endDate}
-              onChange={(e) => updateItem('projects', index, 'endDate', e.target.value)}
-              style={{
-                padding: '10px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px'
-              }}
-            />
+
+      <div className="space-y-6">
+        {profile.profile.projects.map((proj, index) => (
+          <div key={index} className="group bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-2 h-full bg-indigo-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
             <button
               type="button"
               onClick={() => removeItem('projects', index)}
-              style={{
-                padding: '8px',
-                backgroundColor: '#ef4444',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
+              className="absolute top-6 right-6 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
             >
-              Remove
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             </button>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Directive Label</label>
+                <input
+                  type="text"
+                  placeholder="Project Identity"
+                  value={proj.name}
+                  onChange={(e) => updateItem('projects', index, 'name', e.target.value)}
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-400 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Resource Link / Domain</label>
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">URL</div>
+                  <input
+                    type="url"
+                    placeholder="https://opus.sh"
+                    value={proj.url}
+                    onChange={(e) => updateItem('projects', index, 'url', e.target.value)}
+                    className="w-full pl-12 pr-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-400 transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2 mb-6">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Technical Stack Spec</label>
+              <input
+                type="text"
+                placeholder="React, Tailwind, Node (comma separated)"
+                value={Array.isArray(proj.technologies) ? proj.technologies.join(', ') : ''}
+                onChange={(e) => updateItem('projects', index, 'technologies', e.target.value.split(',').map(s => s.trim()))}
+                className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-indigo-600 outline-none focus:bg-white focus:border-indigo-400 transition-all"
+              />
+            </div>
+
+            <textarea
+              placeholder="Primary objectives, execution strategy, and final outcome..."
+              value={proj.description}
+              onChange={(e) => updateItem('projects', index, 'description', e.target.value)}
+              rows="4"
+              className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:bg-white focus:border-indigo-400 transition-all resize-none shadow-inner"
+            />
           </div>
-          
-          <textarea
-            placeholder="Describe the project, your role, and key achievements..."
-            value={project.description}
-            onChange={(e) => updateItem('projects', index, 'description', e.target.value)}
-            rows="3"
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '14px',
-              boxSizing: 'border-box',
-              resize: 'vertical',
-              fontFamily: 'inherit',
-              marginBottom: '12px'
-            }}
-          />
-          
-          <input
-            type="text"
-            placeholder="Technologies used (comma separated)"
-            value={project.technologies.join(', ')}
-            onChange={(e) => updateItem('projects', index, 'technologies', e.target.value.split(',').map(t => t.trim()).filter(t => t))}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '14px',
-              boxSizing: 'border-box'
-            }}
-          />
-        </div>
-      ))}
-      
+        ))}
+      </div>
+
       {profile.profile.projects.length === 0 && (
-        <div style={{
-          textAlign: 'center',
-          padding: '40px',
-          color: '#64748b',
-          backgroundColor: '#f8fafc',
-          borderRadius: '8px',
-          border: '2px dashed #cbd5e1'
-        }}>
-          No projects added yet. Click "Add Project" to showcase your work.
+        <div className="bg-slate-50 rounded-[40px] border-4 border-dashed border-slate-200 p-20 text-center group hover:border-indigo-200 transition-all">
+          <div className="text-6xl mb-6 opacity-20 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500">⚛️</div>
+          <h4 className="text-xl font-black text-slate-400 group-hover:text-slate-600 transition-colors">No Projects</h4>
+          <p className="text-slate-400 font-medium max-w-xs mx-auto mt-2">Demonstrate your execution prowess by adding your most impactful project directives.</p>
         </div>
       )}
     </div>
   );
 
   const renderSkills = () => (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>Skills & Technologies</h3>
-        <div style={{ fontSize: '14px', color: '#64748b' }}>
-          Press Enter or click Add to include a skill
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h3 className="text-lg font-black text-slate-800">Capability Matrix</h3>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">High-frequency skill nodes</p>
         </div>
       </div>
-      
-      <div style={{
-        padding: '20px',
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        border: '1px solid #e2e8f0'
-      }}>
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-          marginBottom: '16px'
-        }}>
-          <input
-            type="text"
-            placeholder="Enter a skill (e.g., JavaScript, React)"
-            value={skillInput}
-            onChange={(e) => setSkillInput(e.target.value)}
-            onKeyPress={handleSkillKeyPress}
-            style={{
-              flex: 1,
-              padding: '8px 12px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '14px'
-            }}
-          />
-          <button
-            type="button"
-            onClick={() => addSkill()}
-            disabled={!skillInput.trim()}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: skillInput.trim() ? '#3b82f6' : '#9ca3af',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: skillInput.trim() ? 'pointer' : 'not-allowed',
-              fontSize: '14px'
-            }}
-          >
-            Add
-          </button>
-        </div>
-        
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '8px',
-          minHeight: '60px'
-        }}>
-        {profile.profile.skills.length === 0 ? (
-          <div style={{
-            width: '100%',
-            textAlign: 'center',
-            color: '#64748b',
-            fontSize: '14px',
-            padding: '20px 0'
-          }}>
-            No skills added yet. Use the input above to add your technical expertise.
-          </div>
-        ) : (
-          profile.profile.skills.map((skill, index) => (
-            <span
-              key={index}
-              style={{
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                padding: '8px 16px',
-                borderRadius: '20px',
-                fontSize: '14px',
-                fontWeight: '500',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              {skill}
+
+      <div className="bg-white p-10 rounded-[40px] border border-slate-200 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-[100px] opacity-50 -z-10"></div>
+
+        <div className="flex flex-wrap gap-4 mb-10 min-h-[100px] items-center justify-center p-4 border-2 border-dashed border-slate-100 rounded-[32px] bg-slate-50/30">
+          {profile.profile.skills.map((skill, index) => (
+            <div key={index} className="group bg-white pl-5 pr-3 py-3 rounded-2xl flex items-center gap-3 border border-slate-200 shadow-sm hover:border-indigo-300 hover:shadow-md transition-all animate-in zoom-in duration-300">
+              <span className="text-sm font-black text-slate-700">{skill}</span>
               <button
                 type="button"
                 onClick={() => removeItem('skills', index)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'white',
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                  padding: '0',
-                  lineHeight: 1
-                }}
+                className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all font-bold"
               >
-                ×
+                &times;
               </button>
-            </span>
-          ))
-        )}
+            </div>
+          ))}
+          {profile.profile.skills.length === 0 && (
+            <p className="text-slate-400 font-bold text-sm italic py-4">Capability matrix offline. Add nodes below.</p>
+          )}
+        </div>
+
+        <div className="max-w-md mx-auto relative group/input">
+          <div className="absolute inset-x-0 -bottom-2 h-1 bg-indigo-600/10 rounded-full blur-lg opacity-0 group-focus-within/input:opacity-100 transition-all"></div>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              placeholder="Input new capability node..."
+              value={skillInput}
+              onChange={(e) => setSkillInput(e.target.value)}
+              onKeyPress={handleSkillKeyPress}
+              className="flex-1 px-8 py-4 bg-slate-50 border border-slate-200 rounded-[24px] text-sm font-black text-slate-800 outline-none focus:bg-white focus:border-indigo-500 focus:ring-8 focus:ring-indigo-50 transition-all"
+            />
+            <button
+              type="button"
+              onClick={() => addSkill()}
+              className="px-8 py-3 bg-slate-900 text-white rounded-[24px] font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-xl"
+            >
+              Inject
+            </button>
+          </div>
+          <p className="text-center mt-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-relaxed">
+            Press ENTER to rapidly inject multiple nodes <br /> into the capability matrix
+          </p>
         </div>
       </div>
     </div>
   );
 
-  const renderActiveSection = () => {
-    switch (activeSection) {
-      case 'basic': return renderBasicInfo();
-      case 'experience': return renderExperience();
-      case 'education': return renderEducation();
-      case 'projects': return renderProjects();
-      case 'skills': return renderSkills();
-      default: return renderBasicInfo();
-    }
-  };
-
   return (
     <Layout>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        {/* Professional Header */}
-        <div style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          borderRadius: '16px',
-          padding: '32px',
-          marginBottom: '24px',
-          boxShadow: '0 10px 40px rgba(102, 126, 234, 0.2)',
-          color: 'white'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              backgroundImage: (localImages.profilePicture || profile.profile.profilePicture) ? `url(${getImageUrl(localImages.profilePicture || profile.profile.profilePicture)})` : 'none',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              border: '3px solid rgba(255, 255, 255, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '32px',
-              fontWeight: '700',
-              backdropFilter: 'blur(10px)'
-            }}>
-              {!(localImages.profilePicture || profile.profile.profilePicture) && (profile.name.charAt(0).toUpperCase() || 'U')}
+      <div className="max-w-[1240px] mx-auto px-6 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          {/* Sidebar Navigation */}
+          <div className="lg:col-span-3">
+            <div className="sticky top-28 space-y-4 bg-white/50 backdrop-blur-md p-4 rounded-[40px] border border-slate-100 shadow-sm">
+              <h2 className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-[0.3em] mb-2 leading-tight">
+                Identity <br /> Protocol
+              </h2>
+              {sections.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  className={`w-full flex items-center gap-4 px-6 py-4 rounded-[28px] text-sm font-black transition-all duration-300 relative group overflow-hidden ${activeSection === section.id
+                      ? 'bg-slate-900 text-white shadow-2xl shadow-slate-300 scale-[1.05] z-10'
+                      : 'text-slate-500 hover:bg-white hover:text-slate-900 hover:translate-x-1'
+                    }`}
+                >
+                  <span className={`transition-transform duration-500 ${activeSection === section.id ? 'scale-110 rotate-3' : 'group-hover:rotate-12'}`}>
+                    {section.icon}
+                  </span>
+                  <span className="relative z-10">{section.label}</span>
+                  {activeSection === section.id && (
+                    <div className="absolute right-4 w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></div>
+                  )}
+                </button>
+              ))}
+
+              <div className="pt-12 px-6">
+                <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-relaxed">
+                  Privacy Protected <br /> v.2024.0.1
+                </p>
+              </div>
             </div>
-            <div style={{ flex: 1 }}>
-              <h1 style={{ margin: '0 0 8px 0', fontSize: '32px', fontWeight: '700' }}>
-                {profile.name || 'Your Name'}
-              </h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', fontSize: '15px', opacity: 0.95 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                  </svg>
-                  {profile.email}
+          </div>
+
+          {/* Main Content Area */}
+          <div className="lg:col-span-9">
+            <form onSubmit={handleSubmit} className="space-y-12">
+              <div className="bg-slate-50/50 backdrop-blur-xl p-6 lg:p-12 rounded-[56px] min-h-[800px] border border-white shadow-inner relative overflow-hidden">
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-100/30 rounded-full blur-[100px] -z-10"></div>
+                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-purple-100/30 rounded-full blur-[100px] -z-10"></div>
+
+                {/* Active Section Content */}
+                <div className="relative z-10">
+                  {activeSection === 'basic' && renderBasicInfo()}
+                  {activeSection === 'experience' && renderExperience()}
+                  {activeSection === 'education' && renderEducation()}
+                  {activeSection === 'projects' && renderProjects()}
+                  {activeSection === 'skills' && renderSkills()}
                 </div>
-                {profile.profile.title && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                    </svg>
-                    {profile.profile.title}
-                  </div>
-                )}
-                {profile.profile.location && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                      <circle cx="12" cy="10" r="3"></circle>
-                    </svg>
-                    {profile.profile.location}
-                  </div>
-                )}
               </div>
-            </div>
-          </div>
 
-          {/* Statistics Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: '12px',
-              padding: '16px',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}>
-              <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>Experience</div>
-              <div style={{ fontSize: '28px', fontWeight: '700' }}>{profile.profile.experience.length}</div>
-              <div style={{ fontSize: '12px', opacity: 0.8 }}>Positions</div>
-            </div>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: '12px',
-              padding: '16px',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}>
-              <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>Education</div>
-              <div style={{ fontSize: '28px', fontWeight: '700' }}>{profile.profile.education.length}</div>
-              <div style={{ fontSize: '12px', opacity: 0.8 }}>Degrees</div>
-            </div>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: '12px',
-              padding: '16px',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}>
-              <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>Projects</div>
-              <div style={{ fontSize: '28px', fontWeight: '700' }}>{profile.profile.projects.length}</div>
-              <div style={{ fontSize: '12px', opacity: 0.8 }}>Completed</div>
-            </div>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: '12px',
-              padding: '16px',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}>
-              <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>Skills</div>
-              <div style={{ fontSize: '28px', fontWeight: '700' }}>{profile.profile.skills.length}</div>
-              <div style={{ fontSize: '12px', opacity: 0.8 }}>Technologies</div>
-            </div>
-            {companyState.companies.length > 0 && (
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(10px)',
-                borderRadius: '12px',
-                padding: '16px',
-                border: '1px solid rgba(255, 255, 255, 0.2)'
-              }}>
-                <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>Companies</div>
-                <div style={{ fontSize: '28px', fontWeight: '700' }}>{companyState.companies.length}</div>
-                <div style={{ fontSize: '12px', opacity: 0.8 }}>Affiliated</div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '24px' }}>
-          <div style={{
-            width: '260px',
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-            border: '1px solid #e2e8f0',
-            padding: '24px',
-            height: 'fit-content'
-          }}>
-            <h3 style={{
-              margin: '0 0 20px 0',
-              fontSize: '18px',
-              fontWeight: '700',
-              color: '#1e293b',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="8" y1="6" x2="21" y2="6"></line>
-                <line x1="8" y1="12" x2="21" y2="12"></line>
-                <line x1="8" y1="18" x2="21" y2="18"></line>
-                <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                <line x1="3" y1="18" x2="3.01" y2="18"></line>
-              </svg>
-              Profile Sections
-            </h3>
-            {sections.map((section) => (
-              <div
-                key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                style={{
-                  padding: '14px 16px',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  marginBottom: '6px',
-                  background: activeSection === section.id
-                    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                    : 'transparent',
-                  color: activeSection === section.id ? 'white' : '#475569',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  fontSize: '15px',
-                  fontWeight: activeSection === section.id ? '600' : '500',
-                  transition: 'all 0.2s',
-                  boxShadow: activeSection === section.id ? '0 4px 12px rgba(102, 126, 234, 0.3)' : 'none'
-                }}
-                onMouseEnter={(e) => {
-                  if (activeSection !== section.id) {
-                    e.currentTarget.style.backgroundColor = '#f8fafc';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (activeSection !== section.id) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  {section.icon}
+              {/* Deployment Action Bar */}
+              <div className="flex items-center justify-between bg-white/80 backdrop-blur-md p-6 rounded-[40px] border border-slate-200 shadow-2xl sticky bottom-8 z-50 animate-in slide-in-from-bottom-10 duration-700">
+                <div className="flex items-center gap-4 px-4 overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 animate-pulse">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest leading-none">Security: Enabled</p>
+                    <p className="text-xs font-bold text-slate-500 mt-1">Updates require deployment sync</p>
+                  </div>
                 </div>
-                {section.label}
-              </div>
-            ))}
-          </div>
 
-          <div style={{ flex: 1 }}>
-            <style>
-              {`
-                @keyframes spin {
-                  from { transform: rotate(0deg); }
-                  to { transform: rotate(360deg); }
-                }
-              `}
-            </style>
-            <form onSubmit={handleSubmit}>
-              <div style={{
-                backgroundColor: 'white',
-                borderRadius: '16px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                border: '1px solid #e2e8f0',
-                padding: '36px',
-                marginBottom: '24px'
-              }}>
-                {renderActiveSection()}
-              </div>
-
-              <div style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '12px'
-              }}>
                 <button
                   type="submit"
                   disabled={saving}
-                  style={{
-                    padding: '14px 32px',
-                    background: saving ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '12px',
-                    cursor: saving ? 'not-allowed' : 'pointer',
-                    fontWeight: '700',
-                    fontSize: '15px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    boxShadow: saving ? 'none' : '0 4px 12px rgba(102, 126, 234, 0.4)',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!saving) {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.5)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!saving) {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
-                    }
-                  }}
+                  className={`relative group px-12 py-5 rounded-[28px] font-black text-xs uppercase tracking-[0.2em] text-white shadow-2xl transition-all active:scale-95 disabled:grayscale disabled:cursor-wait overflow-hidden ${saving ? 'bg-slate-400' : 'bg-slate-900 hover:bg-indigo-600 hover:shadow-indigo-200'
+                    }`}
                 >
-                  {saving ? (
-                    <>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
-                        <line x1="12" y1="2" x2="12" y2="6"></line>
-                        <line x1="12" y1="18" x2="12" y2="22"></line>
-                        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
-                        <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
-                        <line x1="2" y1="12" x2="6" y2="12"></line>
-                        <line x1="18" y1="12" x2="22" y2="12"></line>
-                        <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
-                        <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
-                      </svg>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                        <polyline points="7 3 7 8 15 8"></polyline>
-                      </svg>
-                      Save Profile
-                    </>
-                  )}
+                  <span className="relative z-10 flex items-center gap-4">
+                    {saving ? (
+                      <>
+                        <div className="w-5 h-5 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                        Commit Updates
+                      </>
+                    )}
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 </button>
               </div>
             </form>

@@ -203,42 +203,19 @@ const ProjectDetails = () => {
   if (error) {
     return (
       <Layout>
-        <div style={{
-          padding: '40px',
-          textAlign: 'center',
-          maxWidth: '600px',
-          margin: '0 auto'
-        }}>
-          <div style={{
-            fontSize: '48px',
-            marginBottom: '20px'
-          }}>
+        <div className="p-10 text-center max-w-2xl mx-auto">
+          <div className="text-5xl mb-5">
             {error.type === 'access_denied' ? '🔒' : '❌'}
           </div>
-          <h2 style={{
-            marginBottom: '10px',
-            color: '#333'
-          }}>
+          <h2 className="mb-2.5 text-gray-800">
             {error.type === 'access_denied' ? 'Access Denied' : error.type === 'not_found' ? 'Project Not Found' : 'Error'}
           </h2>
-          <p style={{
-            color: '#666',
-            marginBottom: '30px',
-            lineHeight: '1.6'
-          }}>
+          <p className="text-gray-600 mb-8 leading-relaxed">
             {error.message}
           </p>
           <button
             onClick={() => navigate('/projects')}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
+            className="px-5 py-2.5 bg-blue-600 text-white border-0 rounded cursor-pointer text-sm hover:bg-blue-700"
           >
             Go to Projects
           </button>
@@ -269,7 +246,10 @@ const ProjectDetails = () => {
     <Layout>
       <ProjectSidebar projectId={id} project={project} onWidthChange={handleSidebarWidthChange} />
 
-      <div style={{ marginRight: `${sidebarWidth}px`, transition: 'margin-right 0.3s ease', padding: '24px' }}>
+      <div 
+        className="p-6 transition-[margin-right] duration-300 ease-in-out"
+        style={{ marginRight: `${sidebarWidth}px` }}
+      >
         <Breadcrumb
           onNavigateToProjects={() => navigate('/projects')}
           projectTitle={project.title}
@@ -283,19 +263,7 @@ const ProjectDetails = () => {
         />
 
         {/* Premium Tab Bar */}
-        <div style={{
-          display: 'flex',
-          overflowX: 'auto',
-          gap: '8px',
-          padding: '8px',
-          backgroundColor: '#ffffff',
-          borderRadius: '16px',
-          marginBottom: '24px',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
-        }}>
+        <div className="flex overflow-x-auto gap-2 p-2 bg-white rounded-2xl mb-6 border border-slate-200 shadow-sm scrollbar-none">
           {projectTabs.map((tab) => {
             if (tab.permission === false) return null;
             const isActive = activeTab === tab.id;
@@ -303,48 +271,16 @@ const ProjectDetails = () => {
               <button
                 key={tab.id}
                 onClick={() => navigate(`/projects/${id}?tab=${tab.id}`)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '12px 20px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  backgroundColor: isActive ? '#eff6ff' : 'transparent',
-                  color: isActive ? '#2563eb' : '#64748b',
-                  fontSize: '14px',
-                  fontWeight: isActive ? '700' : '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  whiteSpace: 'nowrap',
-                  position: 'relative'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.backgroundColor = '#f8fafc';
-                    e.currentTarget.style.color = '#334155';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = '#64748b';
-                  }
-                }}
+                className={`flex items-center gap-2 px-5 py-3 rounded-xl border-0 text-sm cursor-pointer transition-all duration-200 ease-out whitespace-nowrap relative ${
+                  isActive 
+                    ? 'bg-blue-50 text-blue-600 font-bold' 
+                    : 'bg-transparent text-slate-500 font-medium hover:bg-slate-50 hover:text-slate-700'
+                }`}
               >
-                <span style={{ fontSize: '16px' }}>{tab.icon}</span>
+                <span className="text-base">{tab.icon}</span>
                 {tab.label}
                 {isActive && (
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '6px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '12px',
-                    height: '2px',
-                    backgroundColor: '#2563eb',
-                    borderRadius: '2px'
-                  }} />
+                  <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-0.5 bg-blue-600 rounded-sm" />
                 )}
               </button>
             );
@@ -352,14 +288,7 @@ const ProjectDetails = () => {
         </div>
 
         {/* Tab Content Container */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '24px',
-          padding: '32px',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.04)',
-          minHeight: '600px'
-        }}>
+        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-lg shadow-black/4 min-h-[600px]">
           {activeTab === 'overview' && (
             <ProjectOverview
               project={project}

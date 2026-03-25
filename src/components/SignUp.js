@@ -18,9 +18,9 @@ const SignUp = () => {
   const { state, dispatch } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const from = location.state?.from?.pathname || '/dashboard';
-  
+
   useEffect(() => {
     if (state.isAuthenticated) {
       navigate(from, { replace: true });
@@ -52,30 +52,30 @@ const SignUp = () => {
       ...formData,
       [name]: value
     });
-    
+
     if (name === 'password') {
       setPasswordStrength(calculatePasswordStrength(value));
     }
-    
+
     setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-    
+
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters long');
       return;
     }
-    
+
     setIsLoading(true);
     dispatch({ type: 'SET_LOADING', payload: true });
-    
+
     try {
       const { confirmPassword, ...signupData } = formData;
       const response = await authAPI.signup(signupData);
@@ -89,262 +89,145 @@ const SignUp = () => {
   };
 
   const getPasswordStrengthColor = () => {
-    if (passwordStrength <= 2) return '#ef4444';
-    if (passwordStrength <= 3) return '#f59e0b';
-    return '#10b981';
+    if (passwordStrength <= 2) return 'bg-rose-500';
+    if (passwordStrength <= 3) return 'bg-amber-500';
+    return 'bg-emerald-500';
+  };
+
+  const getPasswordStrengthTextColor = () => {
+    if (passwordStrength <= 2) return 'text-rose-500';
+    if (passwordStrength <= 3) return 'text-amber-500';
+    return 'text-emerald-500';
   };
 
   const getPasswordStrengthText = () => {
-    if (passwordStrength <= 2) return 'Weak';
-    if (passwordStrength <= 3) return 'Medium';
-    return 'Strong';
+    if (passwordStrength <= 2) return 'Fragile';
+    if (passwordStrength <= 3) return 'Standard';
+    return 'Fortress';
   };
 
   return (
-    <AuthLayout 
-      title="Create your account" 
-      subtitle="Start managing your projects today"
+    <AuthLayout
+      title="Initiate Presence"
+      subtitle="Register your node in the global orchestration network"
     >
       {error && (
-        <div style={{
-          backgroundColor: '#fef2f2',
-          border: '1px solid #fecaca',
-          color: '#dc2626',
-          padding: '12px 16px',
-          borderRadius: '8px',
-          marginBottom: '24px',
-          fontSize: '14px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-          </svg>
-          {error}
+        <div className="bg-rose-50 border border-rose-100 text-rose-600 p-5 rounded-2xl mb-8 flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center shrink-0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12" /></svg>
+          </div>
+          <span className="text-xs font-black uppercase tracking-widest">{error}</span>
         </div>
       )}
 
       {/* Social Login Buttons */}
-      <SocialLoginButtons />
+      <div className="mb-10">
+        <SocialLoginButtons />
+      </div>
 
       {/* Divider */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        margin: '24px 0',
-        color: '#6b7280',
-        fontSize: '14px'
-      }}>
-        <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }}></div>
-        <span style={{ padding: '0 16px' }}>or continue with email</span>
-        <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }}></div>
+      <div className="flex items-center gap-6 mb-10 group">
+        <div className="flex-1 h-[2px] bg-slate-50 group-hover:bg-slate-100 transition-colors"></div>
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Encryption Link</span>
+        <div className="flex-1 h-[2px] bg-slate-50 group-hover:bg-slate-100 transition-colors"></div>
       </div>
-      
-      <form onSubmit={handleSubmit} style={{ marginBottom: '24px' }}>
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '6px',
-            fontSize: '14px',
-            fontWeight: '600',
-            color: '#374151'
-          }}>
-            Full name
-          </label>
+
+      <form onSubmit={handleSubmit} className="space-y-8 mb-10">
+        <div className="space-y-3">
+          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
           <input
             type="text"
             name="name"
             value={formData.name}
             onChange={handleChange}
             required
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              border: '1px solid #d1d5db',
-              borderRadius: '8px',
-              fontSize: '16px',
-              outline: 'none',
-              transition: 'border-color 0.2s',
-              boxSizing: 'border-box'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#667eea'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+            className="w-full px-6 py-4 bg-slate-50 border-b-4 border-slate-100 rounded-2xl text-slate-700 font-bold outline-none focus:bg-white focus:border-indigo-500 transition-all shadow-inner"
+            placeholder="John Wick"
           />
         </div>
-        
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '6px',
-            fontSize: '14px',
-            fontWeight: '600',
-            color: '#374151'
-          }}>
-            Email address
-          </label>
+
+        <div className="space-y-3">
+          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Interface</label>
           <input
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
             required
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              border: '1px solid #d1d5db',
-              borderRadius: '8px',
-              fontSize: '16px',
-              outline: 'none',
-              transition: 'border-color 0.2s',
-              boxSizing: 'border-box'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#667eea'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+            className="w-full px-6 py-4 bg-slate-50 border-b-4 border-slate-100 rounded-2xl text-slate-700 font-bold outline-none focus:bg-white focus:border-indigo-500 transition-all shadow-inner"
+            placeholder="node@offtix.io"
           />
         </div>
-        
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '6px',
-            fontSize: '14px',
-            fontWeight: '600',
-            color: '#374151'
-          }}>
-            Password
-          </label>
+
+        <div className="space-y-3">
+          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Cryptographic Key</label>
           <input
             type="password"
             name="password"
             value={formData.password}
             onChange={handleChange}
             required
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              border: '1px solid #d1d5db',
-              borderRadius: '8px',
-              fontSize: '16px',
-              outline: 'none',
-              transition: 'border-color 0.2s',
-              boxSizing: 'border-box'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#667eea'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+            className="w-full px-6 py-4 bg-slate-50 border-b-4 border-slate-100 rounded-2xl text-slate-700 font-bold outline-none focus:bg-white focus:border-indigo-500 transition-all shadow-inner"
+            placeholder="••••••••"
           />
           {formData.password && (
-            <div style={{ marginTop: '8px' }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '4px'
-              }}>
-                <span style={{ fontSize: '12px', color: '#6b7280' }}>Password strength</span>
-                <span style={{ 
-                  fontSize: '12px', 
-                  color: getPasswordStrengthColor(),
-                  fontWeight: '500'
-                }}>
+            <div className="pt-4 px-2">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Signal Integrity</span>
+                <span className={`text-[10px] font-black uppercase tracking-widest ${getPasswordStrengthTextColor()}`}>
                   {getPasswordStrengthText()}
                 </span>
               </div>
-              <div style={{
-                width: '100%',
-                height: '4px',
-                backgroundColor: '#e5e7eb',
-                borderRadius: '2px',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  width: `${(passwordStrength / 5) * 100}%`,
-                  height: '100%',
-                  backgroundColor: getPasswordStrengthColor(),
-                  transition: 'all 0.3s'
-                }}></div>
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner flex gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className={`flex-1 h-full rounded-full transition-all duration-500 ${i < passwordStrength ? getPasswordStrengthColor() : 'bg-transparent opacity-20'}`}></div>
+                ))}
               </div>
             </div>
           )}
         </div>
 
-        <div style={{ marginBottom: '24px' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '6px',
-            fontSize: '14px',
-            fontWeight: '600',
-            color: '#374151'
-          }}>
-            Confirm password
-          </label>
+        <div className="space-y-3">
+          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Key Verification</label>
           <input
             type="password"
             name="confirmPassword"
             value={formData.confirmPassword}
             onChange={handleChange}
             required
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              border: '1px solid #d1d5db',
-              borderRadius: '8px',
-              fontSize: '16px',
-              outline: 'none',
-              transition: 'border-color 0.2s',
-              boxSizing: 'border-box'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#667eea'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+            className="w-full px-6 py-4 bg-slate-50 border-b-4 border-slate-100 rounded-2xl text-slate-700 font-bold outline-none focus:bg-white focus:border-indigo-500 transition-all shadow-inner"
+            placeholder="••••••••"
           />
         </div>
-        
+
         <button
           type="submit"
           disabled={isLoading}
-          style={{
-            width: '100%',
-            padding: '12px 16px',
-            backgroundColor: isLoading ? '#9ca3af' : '#667eea',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '16px',
-            fontWeight: '600',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            transition: 'background-color 0.2s',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px'
-          }}
+          className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-2xl transition-all active:scale-95 disabled:grayscale disabled:opacity-50 flex items-center justify-center gap-4 ${isLoading ? 'bg-slate-400' : 'bg-slate-900 shadow-slate-200 hover:bg-indigo-600 hover:shadow-indigo-100'}`}
         >
-          {isLoading && (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="31.416" strokeDashoffset="31.416">
-                <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
-                <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
-              </circle>
+          {isLoading ? (
+            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
+          ) : (
+            <>
+              Deploy Presence
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+            </>
           )}
-          {isLoading ? 'Creating account...' : 'Create account'}
         </button>
       </form>
-      
-      <div style={{ textAlign: 'center' }}>
-        <span style={{ color: '#6b7280', fontSize: '14px' }}>
-          Already have an account?{' '}
+
+      <div className="text-center bg-slate-50 p-6 rounded-[32px] border border-slate-100 group">
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          Existing Identity Found?{' '}
         </span>
-        <Link 
-          to="/signin" 
-          style={{
-            color: '#667eea',
-            textDecoration: 'none',
-            fontWeight: '600',
-            fontSize: '14px'
-          }}
+        <Link
+          to="/signin"
+          className="text-[10px] font-black text-indigo-500 uppercase tracking-widest hover:text-indigo-600 hover:underline decoration-2 underline-offset-4"
         >
-          Sign in
+          Access Vault
         </Link>
       </div>
     </AuthLayout>

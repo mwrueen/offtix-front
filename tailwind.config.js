@@ -6,6 +6,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        indigo: {
+          950: '#1e1b4b',
+        },
+        slate: {
+          950: '#020617',
+        },
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',
@@ -31,10 +37,29 @@ module.exports = {
           900: '#0f172a',
         }
       },
+      spacing: {
+        '25': '6.25rem',
+        '75': '18.75rem',
+      },
+      boxShadow: {
+        '24': '0 24px 48px -12px rgba(0, 0, 0, 0.25)',
+      },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
+      animation: {
+        'bounce-slow': 'bounce 3s infinite',
+        'float': 'float 6s ease-in-out infinite',
+      },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-20px)' },
+        }
+      }
     },
   },
-  plugins: [],
+  plugins: [
+    require('tailwindcss-animate'),
+  ],
 }
