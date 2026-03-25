@@ -135,7 +135,7 @@ const LeaveManagement = () => {
     }[leave.status.toLowerCase()] || { bg: 'bg-slate-100 text-slate-500', label: 'Unknown', icon: '❓' };
 
     return (
-      <div key={leave._id} className="group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col lg:flex-row shadow-slate-200/50 animate-in slide-in-from-bottom-4" style={{ animationDelay: `${index * 50}ms` }}>
+      <div key={leave._id} className={`group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col lg:flex-row shadow-slate-200/50 animate-in slide-in-from-bottom-4`} style={{ animationDelay: `${index * 50}ms` }}>
         <div className="flex flex-col items-center shrink-0 w-48 text-center space-y-4">
           <div className="w-24 h-24 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-4xl font-bold shadow-md">
             {leave.employee?.name?.charAt(0).toUpperCase()}

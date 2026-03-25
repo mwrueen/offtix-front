@@ -34,8 +34,7 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
     <div className="font-sans">
       <div
         onClick={() => onEdit(task)}
-        style={{ marginLeft: `${indent}px` }}
-        className={`group bg-white rounded-[2rem] mb-4 border-2 transition-all duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 relative
+        className={`ml-[${indent}px] group bg-white rounded-[2rem] mb-4 border-2 transition-all duration-500 cursor-pointer overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 relative
           ${isActiveTurn ? 'border-indigo-600 ring-8 ring-indigo-50/50' : 'border-slate-50 hover:border-indigo-100'}`}
       >
         <div className={`absolute top-0 left-0 w-1.5 h-full transition-all duration-500 ${isActiveTurn ? 'bg-indigo-600 w-3' : 'bg-slate-200 group-hover:bg-indigo-400'}`} />
@@ -111,7 +110,7 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
 
       {/* Sequential Workflow Indicator */}
       {task.useSequentialWorkflow && task.sequentialAssignees?.length > 0 && (
-        <div style={{ marginLeft: `${indent + 48}px` }} className="mb-6 flex items-center gap-4 p-4 bg-slate-50 rounded-3xl border border-slate-100 animate-in slide-in-from-left-4 duration-700">
+        <div className={`ml-[${indent + 48}px] mb-6 flex items-center gap-4 p-4 bg-slate-50 rounded-3xl border border-slate-100 animate-in slide-in-from-left-4 duration-700`}>
           <span className="text-xl">🔄</span>
           <div className="flex flex-wrap items-center gap-3">
             {task.sequentialAssignees.map((sa, idx) => {

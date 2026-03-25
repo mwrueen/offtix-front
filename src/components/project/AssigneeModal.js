@@ -271,9 +271,9 @@ const AssigneeModal = ({ task, projectId, users = [], taskRoles = [], onClose, o
                 })
               ) : (
                 <div className="text-center py-15 px-5 text-gray-500">
-                  <div style={{ fontSize: '32px', marginBottom: '12px' }}>�</div>
-                  <div style={{ fontSize: '14px' }}>No members assigned yet.</div>
-                  <div style={{ fontSize: '12px', marginTop: '4px' }}>Pick a role and add members from the lists.</div>
+                  <div className="text-[32px] mb-3">�</div>
+                  <div className="text-sm">No members assigned yet.</div>
+                  <div className="text-xs mt-1">Pick a role and add members from the lists.</div>
                 </div>
               )}
             </div>
