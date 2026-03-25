@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { phaseAPI } from '../../services/api';
 import { useCompany } from '../../context/CompanyContext';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
+import { Button, Badge } from '../ui';
 
 const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefresh }) => {
   const { state: companyState } = useCompany();
@@ -124,15 +125,13 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
           </p>
         </div>
         {isProjectOwner && (
-          <button
-            onClick={() => {
-              if (showForm) resetForm();
-              else setShowForm(true);
-            }}
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 ${showForm ? 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+          <Button
+            variant={showForm ? 'secondary' : 'primary'}
+            size="sm"
+            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
           >
             {showForm ? 'Cancel' : '+ Add New Phase'}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -253,19 +252,8 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
             </div>
 
             <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={resetForm}
-                className="px-8 py-2.5 bg-white text-slate-500 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all font-sans"
-              >
-                Discard
-              </button>
-              <button
-                type="submit"
-                className="px-10 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition-all"
-              >
-                {editingPhase ? 'Update Phase' : 'Create Phase'}
-              </button>
+              <Button type="button" variant="secondary" onClick={resetForm}>Discard</Button>
+              <Button type="submit" variant="primary">{editingPhase ? 'Update Phase' : 'Create Phase'}</Button>
             </div>
           </form>
         </div>
@@ -282,13 +270,15 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
                     <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-lg border border-slate-100">📁</div>
                     <div>
                       <h3 className="font-bold text-slate-900 line-clamp-1 uppercase tracking-tight">{phase.name}</h3>
-                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase mt-1 inline-block ${getStatusBadge(phase.status)}`}>{phase.status}</span>
+                      <div className="mt-1">
+                        <Badge variant={phase.status === 'completed' ? 'success' : phase.status === 'active' ? 'primary' : phase.status === 'planning' ? 'warning' : 'default'} size="sm">{phase.status}</Badge>
+                      </div>
                     </div>
                   </div>
                   {isProjectOwner && (
                     <div className="flex gap-1">
-                      <button onClick={() => handleEdit(phase)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">✎</button>
-                      <button onClick={() => handleDelete(phase._id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">✕</button>
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(phase)} className="!text-slate-400 hover:!text-indigo-600 !p-2">✎</Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(phase._id)} className="!text-slate-400 hover:!text-rose-600 !p-2">✕</Button>
                     </div>
                   )}
                 </div>
@@ -314,12 +304,13 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
                   </div>
                 </div>
 
-                <button
+                <Button
+                  variant="ghost"
                   onClick={() => setViewingPhase(phase)}
-                  className="mt-6 w-full py-2.5 bg-slate-50 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
+                  className="mt-6 w-full !bg-slate-50 hover:!bg-indigo-50 !text-slate-500 hover:!text-indigo-600 !rounded-xl !text-[10px] uppercase tracking-widest"
                 >
                   Phase Details
-                </button>
+                </Button>
               </div>
             );
           })}
@@ -329,12 +320,7 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
               <div className="text-4xl mb-4">🔍</div>
               <h3 className="text-lg font-bold text-slate-900">No phases found</h3>
               <p className="text-sm text-slate-400 mt-1">Try adjusting your filters or create a new phase.</p>
-              <button
-                onClick={() => { setSearchTerm(''); setFilterStatus('all'); }}
-                className="mt-4 text-xs font-bold text-indigo-600 hover:text-indigo-800 underline uppercase tracking-widest"
-              >
-                Clear all filters
-              </button>
+              <Button variant="ghost" size="sm" onClick={() => { setSearchTerm(''); setFilterStatus('all'); }} className="mt-4 !text-indigo-600 hover:underline">Clear all filters</Button>
             </div>
           )}
         </div>
@@ -349,10 +335,12 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
                 <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-3xl border border-slate-100">📁</div>
                 <div>
                   <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">{viewingPhase.name}</h2>
-                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase mt-2 inline-block ${getStatusBadge(viewingPhase.status)}`}>{viewingPhase.status}</span>
+                  <div className="mt-2">
+                    <Badge variant={viewingPhase.status === 'completed' ? 'success' : viewingPhase.status === 'active' ? 'primary' : viewingPhase.status === 'planning' ? 'warning' : 'default'} size="sm">{viewingPhase.status}</Badge>
+                  </div>
                 </div>
               </div>
-              <button onClick={() => setViewingPhase(null)} className="p-2 text-slate-400 hover:text-slate-900 text-2xl">✕</button>
+              <Button variant="ghost" size="sm" onClick={() => setViewingPhase(null)} className="!text-slate-400 hover:!text-slate-900 !text-2xl !p-2">✕</Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">

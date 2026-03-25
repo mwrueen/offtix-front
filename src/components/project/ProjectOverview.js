@@ -3,6 +3,7 @@ import { projectAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useCompany } from '../../context/CompanyContext';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
+import { Button, Card, Badge, Modal } from '../ui';
 
 const ProjectOverview = ({ project, users, isProjectOwner }) => {
   const { showToast } = useToast();
@@ -23,14 +24,14 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
   const budget = project.budget || { amount: 0, currency: 'USD' };
   const actualCost = project.actualCost || { amount: 0, currency: 'USD' };
 
-  const getMilestoneStatusColor = (status) => {
+  const getMilestoneStatusVariant = (status) => {
     const map = {
-      'pending': 'bg-slate-100 text-slate-600 border-slate-200',
-      'in-progress': 'bg-indigo-50 text-indigo-600 border-indigo-100',
-      'completed': 'bg-emerald-50 text-emerald-600 border-emerald-100',
-      'delayed': 'bg-rose-50 text-rose-600 border-rose-100'
+      'pending': 'default',
+      'in-progress': 'primary',
+      'completed': 'success',
+      'delayed': 'danger'
     };
-    return map[status] || map.pending;
+    return map[status] || 'default';
   };
 
   const budgetUtilization = budget.amount > 0 ? Math.round((actualCost.amount / budget.amount) * 100) : 0;
@@ -115,12 +116,9 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
               <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest opacity-70">Categorization & Labels</p>
             </div>
             {isProjectOwner && (
-              <button
-                onClick={() => setShowTagModal(true)}
-                className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-slate-900 hover:text-white border border-slate-200 transition-all font-bold text-xl"
-              >
+              <Button variant="outline" size="sm" onClick={() => setShowTagModal(true)}>
                 +
-              </button>
+              </Button>
             )}
           </div>
           <div className="flex flex-wrap gap-2.5">
@@ -147,12 +145,9 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
               <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest opacity-75">Key delivery targets and completion logs</p>
             </div>
             {isProjectOwner && (
-              <button
-                onClick={() => setShowMilestoneModal(true)}
-                className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg hover:bg-slate-950 transition-all active:scale-95 italic"
-              >
+              <Button variant="primary" size="sm" onClick={() => setShowMilestoneModal(true)}>
                 + Add Milestone
-              </button>
+              </Button>
             )}
           </div>
 
@@ -166,9 +161,9 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
                 <div className={`flex-1 p-6 rounded-[2rem] border transition-all ${m.status === 'completed' ? 'bg-emerald-50/20 border-emerald-100' : 'bg-slate-50/50 border-slate-100 hover:bg-white hover:shadow-md hover:border-indigo-100'}`}>
                   <div className="flex justify-between items-start mb-3">
                     <h4 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase italic tracking-tight">{m.title}</h4>
-                    <span className={`px-4 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest border ${getMilestoneStatusColor(m.status)}`}>
+                    <Badge variant={getMilestoneStatusVariant(m.status)} size="sm">
                       {m.status}
-                    </span>
+                    </Badge>
                   </div>
                   <p className="text-xs text-slate-500 leading-relaxed italic">{m.description}</p>
                   <div className="mt-6 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
@@ -244,40 +239,28 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
         </div>
       </div>
 
-      {/* Tag Injection Modal */}
-      {showTagModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[3000] flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-sm shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-500 font-sans">
-            <div className="p-8 bg-slate-900 text-white">
-              <h3 className="text-lg font-bold uppercase italic tracking-tight">Add Project Tag</h3>
-              <p className="text-[10px] text-indigo-400 mt-1 uppercase tracking-widest font-bold opacity-70">Assign professional labels to this mission.</p>
-            </div>
-            <div className="p-8 space-y-8">
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Label Identifier</label>
-                <input
-                  autoFocus
-                  placeholder="e.g. Infrastructure, UI Refactor..."
-                  value={tagInput}
-                  onChange={e => setTagInput(e.target.value)}
-                  onKeyPress={e => e.key === 'Enter' && handleAddTag()}
-                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:bg-white focus:border-indigo-400 transition-all shadow-inner uppercase tracking-tight italic"
-                />
-              </div>
-              <div className="flex gap-4 pt-4 border-t border-slate-100 italic">
-                <button onClick={() => setShowTagModal(false)} className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest hover:text-slate-900 transition-all">Cancel</button>
-                <button
-                  onClick={handleAddTag}
-                  disabled={loading || !tagInput.trim()}
-                  className="flex-1 py-4 bg-indigo-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg hover:bg-slate-950 transition-all font-sans"
-                >
-                  Save Label
-                </button>
-              </div>
-            </div>
+      {/* Tag Modal */}
+      <Modal isOpen={showTagModal} onClose={() => setShowTagModal(false)} title="Add Project Tag" size="sm">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-700">Label</label>
+            <input
+              autoFocus
+              placeholder="e.g. Infrastructure, UI Refactor..."
+              value={tagInput}
+              onChange={e => setTagInput(e.target.value)}
+              onKeyPress={e => e.key === 'Enter' && handleAddTag()}
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:bg-white focus:border-primary-400 transition-all"
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <Button variant="outline" onClick={() => setShowTagModal(false)} className="flex-1">Cancel</Button>
+            <Button variant="primary" onClick={handleAddTag} disabled={loading || !tagInput.trim()} className="flex-1">
+              Save Label
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 };

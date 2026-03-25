@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { sprintAPI } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
+import { Button, Badge } from '../ui';
 
 const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOwner, onRefresh }) => {
   const [showForm, setShowForm] = useState(false);
@@ -133,15 +134,13 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
           </p>
         </div>
         {isProjectOwner && (
-          <button
-            onClick={() => {
-              if (showForm) resetForm();
-              else setShowForm(true);
-            }}
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 ${showForm ? 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+          <Button
+            variant={showForm ? 'secondary' : 'primary'}
+            size="sm"
+            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
           >
             {showForm ? 'Cancel' : '+ Add New Sprint'}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -277,19 +276,8 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
             </div>
 
             <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={resetForm}
-                className="px-8 py-2.5 bg-white text-slate-500 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
-              >
-                Discard
-              </button>
-              <button
-                type="submit"
-                className="px-10 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition-all"
-              >
-                {editingSprint ? 'Update Sprint' : 'Create Sprint'}
-              </button>
+              <Button type="button" variant="secondary" onClick={resetForm}>Discard</Button>
+              <Button type="submit" variant="primary">{editingSprint ? 'Update Sprint' : 'Create Sprint'}</Button>
             </div>
           </form>
         </div>
@@ -304,16 +292,16 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
                   <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-lg border border-slate-100 shadow-inner">🏃</div>
                   <div>
                     <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{sprint.name}</h3>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase ${getStatusBadge(sprint.status)}`}>{sprint.status}</span>
-                      {sprint.phase && <span className="text-[9px] font-bold px-2 py-0.5 rounded border border-slate-100 bg-slate-50 text-slate-400 uppercase">{sprint.phase.name}</span>}
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <Badge variant={sprint.status === 'completed' ? 'success' : sprint.status === 'active' ? 'primary' : sprint.status === 'planning' ? 'warning' : sprint.status === 'cancelled' ? 'danger' : 'default'} size="sm">{sprint.status}</Badge>
+                      {sprint.phase && <Badge variant="default" size="sm">{sprint.phase.name}</Badge>}
                     </div>
                   </div>
                 </div>
                 {isProjectOwner && (
                   <div className="flex gap-1">
-                    <button onClick={() => handleEdit(sprint)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">✎</button>
-                    <button onClick={() => handleDelete(sprint._id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">✕</button>
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(sprint)} className="!text-slate-400 hover:!text-indigo-600 !p-2">✎</Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(sprint._id)} className="!text-slate-400 hover:!text-rose-600 !p-2">✕</Button>
                   </div>
                 )}
               </div>
@@ -325,12 +313,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
                   </div>
                   <div className="text-[9px] text-slate-400 mt-0.5 font-medium">({calculateDuration(sprint.startDate, sprint.endDate)} days)</div>
                 </div>
-                <button
-                  onClick={() => setViewingSprint(sprint)}
-                  className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest hover:underline"
-                >
-                  View Details ⮕
-                </button>
+                <Button variant="ghost" size="sm" onClick={() => setViewingSprint(sprint)} className="!text-indigo-600 hover:underline uppercase tracking-widest !text-[10px]">View Details ⮕</Button>
               </div>
             </div>
           ))}
@@ -340,12 +323,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
               <div className="text-4xl mb-4">🔍</div>
               <h3 className="text-lg font-bold text-slate-900">No sprints found</h3>
               <p className="text-sm text-slate-400 mt-1">Try adjusting your filters or create a new sprint.</p>
-              <button
-                onClick={() => { setSearchTerm(''); setFilterStatus('all'); setFilterPhase('all'); }}
-                className="mt-4 text-xs font-bold text-indigo-600 hover:text-indigo-800 underline uppercase tracking-widest"
-              >
-                Clear all filters
-              </button>
+              <Button variant="ghost" size="sm" onClick={() => { setSearchTerm(''); setFilterStatus('all'); setFilterPhase('all'); }} className="mt-4 !text-indigo-600 hover:underline">Clear all filters</Button>
             </div>
           )}
         </div>
@@ -359,13 +337,13 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
                 <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-3xl shadow-inner border border-slate-100">🏃</div>
                 <div>
                   <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">{viewingSprint.name}</h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase ${getStatusBadge(viewingSprint.status)}`}>{viewingSprint.status}</span>
-                    {viewingSprint.phase && <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg border border-slate-100 bg-slate-50 text-slate-400 uppercase">{viewingSprint.phase.name}</span>}
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <Badge variant={viewingSprint.status === 'completed' ? 'success' : viewingSprint.status === 'active' ? 'primary' : viewingSprint.status === 'planning' ? 'warning' : viewingSprint.status === 'cancelled' ? 'danger' : 'default'} size="sm">{viewingSprint.status}</Badge>
+                    {viewingSprint.phase && <Badge variant="default" size="sm">{viewingSprint.phase.name}</Badge>}
                   </div>
                 </div>
               </div>
-              <button onClick={() => setViewingSprint(null)} className="p-2 text-slate-400 hover:text-slate-900 transition-colors text-2xl">✕</button>
+              <Button variant="ghost" size="sm" onClick={() => setViewingSprint(null)} className="!text-slate-400 hover:!text-slate-900 !text-2xl !p-2">✕</Button>
             </div>
 
             <div className="space-y-8">
@@ -410,18 +388,8 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
 
             {isProjectOwner && (
               <div className="mt-10 pt-8 border-t border-slate-100 flex gap-4">
-                <button
-                  onClick={() => { handleEdit(viewingSprint); setViewingSprint(null); }}
-                  className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-all uppercase tracking-widest"
-                >
-                  Edit Sprint
-                </button>
-                <button
-                  onClick={() => { setViewingSprint(null); handleDelete(viewingSprint._id); }}
-                  className="flex-1 py-3 bg-slate-50 text-rose-500 border border-slate-200 rounded-xl text-xs font-bold hover:bg-rose-50 hover:border-rose-100 hover:text-rose-600 transition-all uppercase tracking-widest"
-                >
-                  Delete
-                </button>
+                <Button variant="primary" onClick={() => { handleEdit(viewingSprint); setViewingSprint(null); }} className="flex-1">Edit Sprint</Button>
+                <Button variant="danger" onClick={() => { setViewingSprint(null); handleDelete(viewingSprint._id); }} className="flex-1">Delete</Button>
               </div>
             )}
           </div>

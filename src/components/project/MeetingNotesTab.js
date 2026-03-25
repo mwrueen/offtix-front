@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { meetingNoteAPI } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
+import { Button, Badge } from '../ui';
 
 const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isProjectOwner, onRefresh }) => {
   const [showForm, setShowForm] = useState(false);
@@ -125,15 +126,13 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
           </p>
         </div>
         {isProjectOwner && (
-          <button
-            onClick={() => {
-              if (showForm) resetForm();
-              else setShowForm(true);
-            }}
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 ${showForm ? 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+          <Button
+            variant={showForm ? 'secondary' : 'primary'}
+            size="sm"
+            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
           >
             {showForm ? 'Cancel' : '+ New Meeting Note'}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -273,19 +272,8 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
             </div>
 
             <div className="flex justify-end gap-3 pt-8 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={resetForm}
-                className="px-6 py-2 bg-white text-slate-500 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-8 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition-all"
-              >
-                {editingMeeting ? 'Update Meeting' : 'Save Meeting Note'}
-              </button>
+              <Button type="button" variant="secondary" onClick={resetForm}>Cancel</Button>
+              <Button type="submit" variant="primary">{editingMeeting ? 'Update Meeting' : 'Save Meeting Note'}</Button>
             </div>
           </form>
         </div>
@@ -300,13 +288,13 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
               onClick={() => setViewingMeeting(meeting)}
             >
               <div className="flex justify-between items-start mb-4">
-                <div className={`px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase border tracking-wider ${getTypeBadge(meeting.meetingType)}`}>
+                <Badge variant={meeting.meetingType === 'standup' ? 'success' : meeting.meetingType === 'review' ? 'warning' : meeting.meetingType === 'retrospective' || meeting.meetingType === 'stakeholder' ? 'info' : meeting.meetingType === 'planning' ? 'primary' : 'default'} size="sm">
                   {meeting.meetingType}
-                </div>
+                </Badge>
                 {isProjectOwner && (
                   <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => handleEdit(meeting)} className="p-1 px-2 text-slate-400 hover:text-indigo-600 transition-colors text-xs">✎</button>
-                    <button onClick={() => handleDelete(meeting._id)} className="p-1 px-2 text-slate-400 hover:text-rose-600 transition-colors text-xs">✕</button>
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(meeting)} className="!text-slate-400 hover:!text-indigo-600 !p-1.5">✎</Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(meeting._id)} className="!text-slate-400 hover:!text-rose-600 !p-1.5">✕</Button>
                   </div>
                 )}
               </div>
@@ -328,12 +316,7 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
               <div className="text-4xl mb-4">📝</div>
               <h3 className="text-lg font-bold text-slate-900">No meeting notes found</h3>
               <p className="text-sm text-slate-500 mt-1">Try adjusting your filters or record a new meeting.</p>
-              <button
-                onClick={() => { setSearchTerm(''); setFilterType('all'); }}
-                className="mt-6 text-xs font-bold text-indigo-600 hover:underline uppercase tracking-widest"
-              >
-                Clear Filters
-              </button>
+              <Button variant="ghost" size="sm" onClick={() => { setSearchTerm(''); setFilterType('all'); }} className="mt-6 !text-indigo-600 hover:underline">Clear Filters</Button>
             </div>
           )}
         </div>
@@ -348,12 +331,12 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900 leading-none">{viewingMeeting.title}</h2>
                   <div className="flex items-center gap-3 mt-3">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border uppercase ${getTypeBadge(viewingMeeting.meetingType)}`}>{viewingMeeting.meetingType}</span>
+                    <Badge variant={viewingMeeting.meetingType === 'standup' ? 'success' : viewingMeeting.meetingType === 'review' ? 'warning' : viewingMeeting.meetingType === 'retrospective' || viewingMeeting.meetingType === 'stakeholder' ? 'info' : viewingMeeting.meetingType === 'planning' ? 'primary' : 'default'} size="sm">{viewingMeeting.meetingType}</Badge>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date: {new Date(viewingMeeting.meetingDate).toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
-              <button onClick={() => setViewingMeeting(null)} className="p-2 text-slate-400 hover:text-slate-900 text-2xl leading-none">✕</button>
+              <Button variant="ghost" size="sm" onClick={() => setViewingMeeting(null)} className="!text-slate-400 hover:!text-slate-900 !text-2xl !leading-none !p-2">✕</Button>
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin space-y-8">
@@ -393,8 +376,8 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
 
             {isProjectOwner && (
               <div className="mt-10 pt-8 border-t border-slate-100 flex gap-4 flex-shrink-0">
-                <button onClick={() => { handleEdit(viewingMeeting); }} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-all uppercase tracking-widest">Edit Note</button>
-                <button onClick={() => { setViewingMeeting(null); handleDelete(viewingMeeting._id); }} className="flex-1 py-3 bg-slate-50 text-rose-500 border border-slate-200 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all uppercase tracking-widest">Delete Note</button>
+                <Button variant="primary" onClick={() => { handleEdit(viewingMeeting); }} className="flex-1">Edit Note</Button>
+                <Button variant="danger" onClick={() => { setViewingMeeting(null); handleDelete(viewingMeeting._id); }} className="flex-1">Delete Note</Button>
               </div>
             )}
           </div>

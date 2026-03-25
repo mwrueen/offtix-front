@@ -4,6 +4,7 @@ import { projectAPI, companyAPI, taskRoleAPI } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 import { useToast } from '../../context/ToastContext';
+import { Button, Badge } from '../ui';
 
 const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, onRefresh }) => {
   const { hasPermission } = usePermissions();
@@ -136,12 +137,9 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
             <p className="text-sm text-slate-500 mt-1">Define specialization and workflow roles for project tasks</p>
           </div>
           {canManageRoles && (
-            <button
-              onClick={() => setShowAddRole(true)}
-              className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-sm"
-            >
+            <Button variant="primary" size="sm" onClick={() => setShowAddRole(true)}>
               + Create Role
-            </button>
+            </Button>
           )}
         </div>
 
@@ -176,14 +174,10 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-50">
-              <button onClick={() => setShowAddRole(false)} className="px-6 py-2 text-xs font-bold text-slate-500 hover:text-rose-600 transition-all">Cancel</button>
-              <button
-                onClick={handleCreateRole}
-                disabled={loading}
-                className="bg-indigo-600 text-white px-8 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-all"
-              >
+              <Button variant="ghost" size="sm" onClick={() => setShowAddRole(false)}>Cancel</Button>
+              <Button variant="primary" size="sm" onClick={handleCreateRole} disabled={loading} loading={loading}>
                 Create Role
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -197,9 +191,7 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
                   🎖️
                 </div>
                 {canManageRoles && (
-                  <button onClick={() => setRoleToRemove(role)} className="text-slate-300 hover:text-rose-500 transition-colors">
-                    <span className="text-xl">×</span>
-                  </button>
+                  <Button variant="ghost" size="sm" onClick={() => setRoleToRemove(role)} className="text-slate-300 hover:text-rose-500 !p-1">×</Button>
                 )}
               </div>
               <h4 className="text-base font-bold text-slate-900 mb-1">{role.name}</h4>
@@ -217,12 +209,9 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
             <p className="text-sm text-slate-500 mt-1">Manage personnel and their specific roles within this project</p>
           </div>
           {canAddMembers && (
-            <button
-              onClick={() => setShowAddMember(true)}
-              className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-sm"
-            >
+            <Button variant="primary" size="sm" onClick={() => setShowAddMember(true)}>
               + Add Member
-            </button>
+            </Button>
           )}
         </div>
 
@@ -240,14 +229,10 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-6 border-t border-slate-50">
-              <button onClick={() => setShowAddMember(false)} className="px-6 py-2 text-xs font-bold text-slate-500 hover:text-rose-600 transition-all">Cancel</button>
-              <button
-                onClick={handleAddMember}
-                disabled={loading || !selectedUserOption}
-                className="bg-indigo-600 text-white px-8 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-all"
-              >
+              <Button variant="ghost" size="sm" onClick={() => setShowAddMember(false)}>Cancel</Button>
+              <Button variant="primary" size="sm" onClick={handleAddMember} disabled={loading || !selectedUserOption} loading={loading}>
                 Add Member
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -283,20 +268,20 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
                     <p className="text-xs text-slate-400 font-medium mt-0.5">{member.user?.email}</p>
                     <div className="flex flex-wrap gap-2 mt-3">
                       {member.role?.split(',').map((r, idx) => (
-                        <span key={idx} className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
-                          {r.trim()}
-                        </span>
+                        <Badge key={idx} variant="primary" size="sm">{r.trim()}</Badge>
                       ))}
                     </div>
                   </div>
                 </div>
                 {canRemoveMembers && (
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setMemberToRemove(member)}
-                    className="px-4 py-2 text-rose-500 hover:bg-rose-50 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all opacity-0 group-hover:opacity-100"
+                    className="text-rose-500 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    Remove Member
-                  </button>
+                    Remove
+                  </Button>
                 )}
               </div>
             ))}

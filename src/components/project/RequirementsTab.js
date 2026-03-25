@@ -3,6 +3,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { requirementAPI } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
+import { Button, Badge } from '../ui';
 
 const RequirementsTab = ({ projectId, requirements, setRequirements, users, isProjectOwner, onRefresh }) => {
   const [showForm, setShowForm] = useState(false);
@@ -189,15 +190,13 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
           </p>
         </div>
         {isProjectOwner && (
-          <button
-            onClick={() => {
-              if (showForm) resetForm();
-              else setShowForm(true);
-            }}
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 ${showForm ? 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+          <Button
+            variant={showForm ? 'secondary' : 'primary'}
+            size="sm"
+            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
           >
             {showForm ? 'Cancel' : '+ Add Requirement'}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -348,7 +347,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                           <span className="text-[10px] text-slate-400 font-medium">{formatFileSize(file.size)}</span>
                         </div>
                       </div>
-                      <button type="button" onClick={() => removePendingFile(index)} className="text-rose-500 hover:text-rose-700 font-bold p-1">✕</button>
+                      <Button variant="ghost" size="sm" onClick={() => removePendingFile(index)} className="!text-rose-500 hover:!text-rose-700 !p-1">✕</Button>
                     </div>
                   ))}
                 </div>
@@ -356,14 +355,10 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
             </div>
 
             <div className="flex justify-end gap-3 pt-8 border-t border-slate-100">
-              <button type="button" onClick={resetForm} className="px-6 py-2.5 bg-white text-slate-500 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all">Cancel</button>
-              <button
-                type="submit"
-                disabled={uploadingFiles}
-                className="px-8 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition-all disabled:opacity-50"
-              >
+              <Button type="button" variant="secondary" onClick={resetForm}>Cancel</Button>
+              <Button type="submit" variant="primary" disabled={uploadingFiles} loading={uploadingFiles}>
                 {uploadingFiles ? 'Saving...' : editingRequirement ? 'Update Requirement' : 'Save Requirement'}
-              </button>
+              </Button>
             </div>
           </form>
         </div>
@@ -382,17 +377,17 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                   <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-lg shadow-inner ring-1 ring-slate-100 italic">RQ</div>
                   <div>
                     <h3 className="font-bold text-slate-900 line-clamp-1 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{req.title}</h3>
-                    <div className="flex gap-2 mt-1">
-                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase ${getStatusBadge(req.status)}`}>{req.status}</span>
-                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase ${getPriorityBadge(req.priority)}`}>{req.priority}</span>
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded border border-slate-100 bg-slate-50 text-slate-400 uppercase tracking-tighter">{req.type}</span>
+                    <div className="flex gap-2 mt-1 flex-wrap">
+                      <Badge variant={req.status === 'completed' ? 'success' : req.status === 'approved' ? 'primary' : req.status === 'in-progress' ? 'warning' : req.status === 'rejected' ? 'danger' : 'default'} size="sm">{req.status}</Badge>
+                      <Badge variant={req.priority === 'critical' ? 'danger' : req.priority === 'high' ? 'warning' : req.priority === 'medium' ? 'info' : 'default'} size="sm">{req.priority}</Badge>
+                      <Badge variant="default" size="sm">{req.type}</Badge>
                     </div>
                   </div>
                 </div>
                 {isProjectOwner && (
                   <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => handleEdit(req)} className="p-1 px-2 text-slate-400 hover:text-indigo-600 transition-colors text-xs">✎</button>
-                    <button onClick={() => handleDelete(req._id)} className="p-1 px-2 text-slate-400 hover:text-rose-600 transition-colors text-xs">✕</button>
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(req)} className="!text-slate-400 hover:!text-indigo-600 !p-1.5">✎</Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(req._id)} className="!text-slate-400 hover:!text-rose-600 !p-1.5">✕</Button>
                   </div>
                 )}
               </div>
@@ -413,7 +408,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
               <div className="text-4xl mb-4">📋</div>
               <h3 className="text-lg font-bold text-slate-900">No requirements found</h3>
               <p className="text-sm text-slate-500 mt-1">Adjust filters or create a new requirement.</p>
-              <button onClick={() => { setSearchTerm(''); setFilterStatus('all'); setFilterPriority('all'); setFilterType('all'); }} className="mt-6 text-xs font-bold text-indigo-600 hover:underline uppercase tracking-widest">Clear Filters</button>
+              <Button variant="ghost" size="sm" onClick={() => { setSearchTerm(''); setFilterStatus('all'); setFilterPriority('all'); setFilterType('all'); }} className="mt-6 !text-indigo-600 hover:underline">Clear Filters</Button>
             </div>
           )}
         </div>
@@ -428,12 +423,12 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900 leading-none">{viewingRequirement.title}</h2>
                   <div className="flex items-center gap-3 mt-4">
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase ${getStatusBadge(viewingRequirement.status)}`}>{viewingRequirement.status}</span>
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase ${getPriorityBadge(viewingRequirement.priority)}`}>{viewingRequirement.priority}</span>
+                    <Badge variant={viewingRequirement.status === 'completed' ? 'success' : viewingRequirement.status === 'approved' ? 'primary' : viewingRequirement.status === 'in-progress' ? 'warning' : viewingRequirement.status === 'rejected' ? 'danger' : 'default'} size="sm">{viewingRequirement.status}</Badge>
+                    <Badge variant={viewingRequirement.priority === 'critical' ? 'danger' : viewingRequirement.priority === 'high' ? 'warning' : viewingRequirement.priority === 'medium' ? 'info' : 'default'} size="sm">{viewingRequirement.priority}</Badge>
                   </div>
                 </div>
               </div>
-              <button onClick={() => setViewingRequirement(null)} className="p-2 text-slate-400 hover:text-slate-900 text-2xl leading-none">✕</button>
+              <Button variant="ghost" size="sm" onClick={() => setViewingRequirement(null)} className="!text-slate-400 hover:!text-slate-900 !text-2xl !leading-none !p-2">✕</Button>
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin space-y-10">
@@ -475,8 +470,8 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
 
             {isProjectOwner && (
               <div className="mt-10 pt-8 border-t border-slate-100 flex gap-4 flex-shrink-0">
-                <button onClick={() => { handleEdit(viewingRequirement); }} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-all uppercase tracking-widest">Edit Requirement</button>
-                <button onClick={() => { setViewingRequirement(null); handleDelete(viewingRequirement._id); }} className="flex-1 py-3 bg-slate-50 text-rose-500 border border-slate-200 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all uppercase tracking-widest">Delete</button>
+                <Button variant="primary" onClick={() => { handleEdit(viewingRequirement); }} className="flex-1">Edit Requirement</Button>
+                <Button variant="danger" onClick={() => { setViewingRequirement(null); handleDelete(viewingRequirement._id); }} className="flex-1">Delete</Button>
               </div>
             )}
           </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { projectAPI } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
+import { Button, Badge } from '../ui';
 
 const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
   const [showForm, setShowForm] = useState(false);
@@ -119,15 +120,13 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
           </p>
         </div>
         {isProjectOwner && (
-          <button
-            onClick={() => {
-              if (showForm) resetForm();
-              else setShowForm(true);
-            }}
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 ${showForm ? 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+          <Button
+            variant={showForm ? 'secondary' : 'primary'}
+            size="sm"
+            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
           >
             {showForm ? 'Cancel' : '+ New Dependency'}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -255,13 +254,8 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
             </div>
 
             <div className="flex justify-end gap-3 pt-8 border-t border-slate-100">
-              <button type="button" onClick={resetForm} className="px-6 py-2.5 bg-white text-slate-500 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all">Cancel</button>
-              <button
-                type="submit"
-                className="px-10 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition-all uppercase tracking-widest text-[11px]"
-              >
-                {editingDependency ? 'Update Dependency' : 'Save Dependency'}
-              </button>
+              <Button type="button" variant="secondary" onClick={resetForm}>Cancel</Button>
+              <Button type="submit" variant="primary">{editingDependency ? 'Update Dependency' : 'Save Dependency'}</Button>
             </div>
           </form>
         </div>
@@ -280,16 +274,16 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
                   <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-lg italic font-black shadow-inner ring-1 ring-slate-100 italic">D</div>
                   <div>
                     <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight line-clamp-1">{dep.title}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-lg border uppercase ${getTypeBadge(dep.type)}`}>{dep.type}</span>
-                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-lg border uppercase ${getStatusBadge(dep.status)}`}>{dep.status}</span>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <Badge variant={dep.type === 'internal' ? 'primary' : dep.type === 'external' ? 'info' : dep.type === 'resource' ? 'warning' : dep.type === 'business' ? 'success' : 'default'} size="sm">{dep.type}</Badge>
+                      <Badge variant={dep.status === 'resolved' ? 'success' : dep.status === 'blocked' ? 'danger' : dep.status === 'in-progress' ? 'primary' : 'warning'} size="sm">{dep.status}</Badge>
                     </div>
                   </div>
                 </div>
                 {isProjectOwner && (
                   <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => handleEdit(dep)} className="p-1 px-2 text-slate-400 hover:text-indigo-600 transition-colors text-xs">✎</button>
-                    <button onClick={() => handleDelete(dep._id)} className="p-1 px-2 text-slate-400 hover:text-rose-600 transition-colors text-xs">✕</button>
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(dep)} className="!text-slate-400 hover:!text-indigo-600 !p-1.5">✎</Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(dep._id)} className="!text-slate-400 hover:!text-rose-600 !p-1.5">✕</Button>
                   </div>
                 )}
               </div>
@@ -310,7 +304,7 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
               <div className="text-4xl mb-4">🔗</div>
               <h3 className="text-lg font-bold text-slate-900">No dependencies found</h3>
               <p className="text-sm text-slate-500 mt-1">Excellent! No blockers are currently tracked.</p>
-              <button onClick={() => { setSearchTerm(''); setFilterType('all'); setFilterStatus('all'); }} className="mt-6 text-xs font-bold text-indigo-600 hover:underline uppercase tracking-widest">Clear Filters</button>
+              <Button variant="ghost" size="sm" onClick={() => { setSearchTerm(''); setFilterType('all'); setFilterStatus('all'); }} className="mt-6 !text-indigo-600 hover:underline">Clear Filters</Button>
             </div>
           )}
         </div>
@@ -324,13 +318,13 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
                 <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-2xl border border-slate-100 font-black italic">D</div>
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900 leading-none">{viewingDependency.title}</h2>
-                  <div className="flex items-center gap-3 mt-4">
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase ${getTypeBadge(viewingDependency.type)}`}>{viewingDependency.type}</span>
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase ${getStatusBadge(viewingDependency.status)}`}>{viewingDependency.status}</span>
+                  <div className="flex items-center gap-3 mt-4 flex-wrap">
+                    <Badge variant={viewingDependency.type === 'internal' ? 'primary' : viewingDependency.type === 'external' ? 'info' : viewingDependency.type === 'resource' ? 'warning' : viewingDependency.type === 'business' ? 'success' : 'default'} size="sm">{viewingDependency.type}</Badge>
+                    <Badge variant={viewingDependency.status === 'resolved' ? 'success' : viewingDependency.status === 'blocked' ? 'danger' : viewingDependency.status === 'in-progress' ? 'primary' : 'warning'} size="sm">{viewingDependency.status}</Badge>
                   </div>
                 </div>
               </div>
-              <button onClick={() => setViewingDependency(null)} className="p-2 text-slate-400 hover:text-slate-900 text-2xl leading-none">✕</button>
+              <Button variant="ghost" size="sm" onClick={() => setViewingDependency(null)} className="!text-slate-400 hover:!text-slate-900 !text-2xl !leading-none !p-2">✕</Button>
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin space-y-10">
@@ -359,8 +353,8 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
 
             {isProjectOwner && (
               <div className="mt-10 pt-8 border-t border-slate-100 flex gap-4 flex-shrink-0">
-                <button onClick={() => { handleEdit(viewingDependency); }} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-all uppercase tracking-widest">Edit Dependency</button>
-                <button onClick={() => { setViewingDependency(null); handleDelete(viewingDependency._id); }} className="flex-1 py-3 bg-slate-50 text-rose-500 border border-slate-200 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all uppercase tracking-widest">Delete</button>
+                <Button variant="primary" onClick={() => { handleEdit(viewingDependency); }} className="flex-1">Edit Dependency</Button>
+                <Button variant="danger" onClick={() => { setViewingDependency(null); handleDelete(viewingDependency._id); }} className="flex-1">Delete</Button>
               </div>
             )}
           </div>

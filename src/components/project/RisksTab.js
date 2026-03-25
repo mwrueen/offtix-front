@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { projectAPI } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
+import { Button, Badge } from '../ui';
 
 const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
   const [showForm, setShowForm] = useState(false);
@@ -132,15 +133,13 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
           </p>
         </div>
         {isProjectOwner && (
-          <button
-            onClick={() => {
-              if (showForm) resetForm();
-              else setShowForm(true);
-            }}
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 ${showForm ? 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+          <Button
+            variant={showForm ? 'secondary' : 'primary'}
+            size="sm"
+            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
           >
             {showForm ? 'Cancel' : '+ Create Risk'}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -289,19 +288,8 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
             </div>
 
             <div className="flex justify-end gap-3 pt-8 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={resetForm}
-                className="px-6 py-2 bg-white text-slate-500 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-8 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition-all"
-              >
-                {editingRisk ? 'Update Risk' : 'Save Risk'}
-              </button>
+              <Button type="button" variant="secondary" onClick={resetForm}>Cancel</Button>
+              <Button type="submit" variant="primary">{editingRisk ? 'Update Risk' : 'Save Risk'}</Button>
             </div>
           </form>
         </div>
@@ -316,18 +304,14 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
               onClick={() => setViewingRisk(risk)}
             >
               <div className="flex justify-between items-start mb-4">
-                <div className="flex gap-2">
-                  <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase border tracking-wider ${getSeverityBadge(risk.severity)}`}>
-                    {risk.severity} Impact
-                  </span>
-                  <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase border tracking-wider ${getProbabilityBadge(risk.probability)}`}>
-                    {risk.probability} Likely
-                  </span>
+                <div className="flex gap-2 flex-wrap">
+                  <Badge variant={risk.severity === 'critical' ? 'danger' : risk.severity === 'high' ? 'warning' : risk.severity === 'medium' ? 'warning' : 'success'} size="sm">{risk.severity} Impact</Badge>
+                  <Badge variant={risk.probability === 'high' ? 'warning' : risk.probability === 'medium' ? 'primary' : 'default'} size="sm">{risk.probability} Likely</Badge>
                 </div>
                 {isProjectOwner && (
                   <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => handleEdit(risk)} className="p-1 px-2 text-slate-400 hover:text-indigo-600 transition-colors text-xs">✎</button>
-                    <button onClick={() => handleDelete(risk._id)} className="p-1 px-2 text-slate-400 hover:text-rose-600 transition-colors text-xs">✕</button>
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(risk)} className="!text-slate-400 hover:!text-indigo-600 !p-1.5">✎</Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(risk._id)} className="!text-slate-400 hover:!text-rose-600 !p-1.5">✕</Button>
                   </div>
                 )}
               </div>
@@ -336,9 +320,7 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
               <p className="text-xs text-slate-500 mb-6 line-clamp-2 h-8">{risk.description || 'No summary provided.'}</p>
 
               <div className="mt-auto flex justify-between items-center pt-4 border-t border-slate-50">
-                <div className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${getStatusBadge(risk.status)}`}>
-                  {risk.status}
-                </div>
+                <Badge variant={risk.status === 'mitigated' ? 'success' : risk.status === 'occurred' ? 'danger' : risk.status === 'monitoring' ? 'primary' : 'default'} size="sm">{risk.status}</Badge>
                 <div className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">See Details ⮕</div>
               </div>
             </div>
@@ -349,12 +331,7 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
               <div className="text-4xl mb-4">🛡️</div>
               <h3 className="text-lg font-bold text-slate-900">No risks identified</h3>
               <p className="text-sm text-slate-500 mt-1">Excellent! No threats currently match your filters.</p>
-              <button
-                onClick={() => { setSearchTerm(''); setFilterSeverity('all'); setFilterProbability('all'); setFilterStatus('all'); }}
-                className="mt-6 text-xs font-bold text-indigo-600 hover:underline uppercase tracking-widest"
-              >
-                Clear Filters
-              </button>
+              <Button variant="ghost" size="sm" onClick={() => { setSearchTerm(''); setFilterSeverity('all'); setFilterProbability('all'); setFilterStatus('all'); }} className="mt-6 !text-indigo-600 hover:underline">Clear Filters</Button>
             </div>
           )}
         </div>
@@ -368,14 +345,14 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
                 <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-2xl border border-rose-100 italic font-black text-rose-500">!</div>
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900 leading-none">{viewingRisk.title}</h2>
-                  <div className="flex items-center gap-3 mt-4">
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-widest ${getSeverityBadge(viewingRisk.severity)}`}>{viewingRisk.severity} Severity</span>
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-widest ${getProbabilityBadge(viewingRisk.probability)}`}>{viewingRisk.probability} Likelihood</span>
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-widest ${getStatusBadge(viewingRisk.status)}`}>{viewingRisk.status}</span>
+                  <div className="flex items-center gap-3 mt-4 flex-wrap">
+                    <Badge variant={viewingRisk.severity === 'critical' ? 'danger' : viewingRisk.severity === 'high' ? 'warning' : viewingRisk.severity === 'medium' ? 'warning' : 'success'} size="sm">{viewingRisk.severity} Severity</Badge>
+                    <Badge variant={viewingRisk.probability === 'high' ? 'warning' : viewingRisk.probability === 'medium' ? 'primary' : 'default'} size="sm">{viewingRisk.probability} Likelihood</Badge>
+                    <Badge variant={viewingRisk.status === 'mitigated' ? 'success' : viewingRisk.status === 'occurred' ? 'danger' : viewingRisk.status === 'monitoring' ? 'primary' : 'default'} size="sm">{viewingRisk.status}</Badge>
                   </div>
                 </div>
               </div>
-              <button onClick={() => setViewingRisk(null)} className="p-2 text-slate-400 hover:text-slate-900 text-2xl leading-none">✕</button>
+              <Button variant="ghost" size="sm" onClick={() => setViewingRisk(null)} className="!text-slate-400 hover:!text-slate-900 !text-2xl !leading-none !p-2">✕</Button>
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin space-y-10">
@@ -396,8 +373,8 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
 
             {isProjectOwner && (
               <div className="mt-10 pt-8 border-t border-slate-100 flex gap-4 flex-shrink-0">
-                <button onClick={() => { handleEdit(viewingRisk); }} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-all uppercase tracking-widest">Edit Risk</button>
-                <button onClick={() => { setViewingRisk(null); handleDelete(viewingRisk._id); }} className="flex-1 py-3 bg-slate-50 text-rose-500 border border-slate-200 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all uppercase tracking-widest">Delete Risk</button>
+                <Button variant="primary" onClick={() => { handleEdit(viewingRisk); }} className="flex-1">Edit Risk</Button>
+                <Button variant="danger" onClick={() => { setViewingRisk(null); handleDelete(viewingRisk._id); }} className="flex-1">Delete Risk</Button>
               </div>
             )}
           </div>
