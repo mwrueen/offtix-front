@@ -96,32 +96,7 @@ const InlineTaskCreator = ({ isOpen, onClose, onCreate, taskStatuses, users, spr
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-500 ml-1">Duration</label>
-              <input
-                type="number"
-                step="0.5"
-                value={duration}
-                onChange={e => setDuration(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-500"
-                placeholder="0.0"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-500 ml-1">Unit</label>
-              <select
-                value={durationUnit}
-                onChange={e => setDurationUnit(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none cursor-pointer"
-              >
-                <option value="minutes">Minutes</option>
-                <option value="hours">Hours</option>
-                <option value="days">Days</option>
-                <option value="weeks">Weeks</option>
-              </select>
-            </div>
-          </div>
+       
 
           <div className="flex gap-3 pt-4">
             <button
