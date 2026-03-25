@@ -15,15 +15,15 @@ const iconFor = (type) => {
     return map[type] || '🔔';
 };
 
-const colorFor = (type) => {
+const configFor = (type) => {
     const map = {
-        task_ready: { bg: '#f0fdf4', border: '#86efac', title: '#15803d' },
-        task_send_back: { bg: '#fff7ed', border: '#fdba74', title: '#c2410c' },
-        task_role_handoff: { bg: '#eff6ff', border: '#93c5fd', title: '#1d4ed8' },
-        task_assigned: { bg: '#faf5ff', border: '#c4b5fd', title: '#6d28d9' },
-        task_role_assignment: { bg: '#faf5ff', border: '#c4b5fd', title: '#6d28d9' },
+        task_ready: { bg: 'bg-emerald-50', border: 'border-emerald-200', title: 'text-emerald-900', iconBg: 'bg-emerald-100', progress: 'bg-emerald-500' },
+        task_send_back: { bg: 'bg-amber-50', border: 'border-amber-200', title: 'text-amber-900', iconBg: 'bg-amber-100', progress: 'bg-amber-500' },
+        task_role_handoff: { bg: 'bg-indigo-50', border: 'border-indigo-200', title: 'text-indigo-900', iconBg: 'bg-indigo-100', progress: 'bg-indigo-500' },
+        task_assigned: { bg: 'bg-purple-50', border: 'border-purple-200', title: 'text-purple-900', iconBg: 'bg-purple-100', progress: 'bg-purple-500' },
+        task_role_assignment: { bg: 'bg-violet-50', border: 'border-violet-200', title: 'text-violet-900', iconBg: 'bg-violet-100', progress: 'bg-violet-500' },
     };
-    return map[type] || { bg: '#f8fafc', border: '#94a3b8', title: '#334155' };
+    return map[type] || { bg: 'bg-slate-50', border: 'border-slate-200', title: 'text-slate-900', iconBg: 'bg-slate-100', progress: 'bg-slate-500' };
 };
 
 // Single toast item
@@ -54,96 +54,44 @@ const ToastItem = ({ notification, index, onDismiss }) => {
         handleDismiss();
     };
 
-    const colors = colorFor(notification.type);
+    const cfg = configFor(notification.type);
 
     return (
         <div
-            style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '12px',
-                padding: '14px 16px',
-                background: colors.bg,
-                border: `1px solid ${colors.border}`,
-                borderRadius: '12px',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                cursor: 'pointer',
-                maxWidth: '360px',
-                width: '100%',
-                transition: 'all 0.3s ease',
-                opacity: visible ? 1 : 0,
-                transform: visible ? 'translateX(0)' : 'translateX(100%)',
-                position: 'relative',
-            }}
+            className={`flex items-start gap-4 p-4 ${cfg.bg} border ${cfg.border} rounded-2xl shadow-xl shadow-slate-200/50 cursor-pointer max-w-sm w-full transition-all duration-300 relative overflow-hidden group
+                ${visible ? 'opacity-100 translate-x-0 outline outline-2 outline-white' : 'opacity-0 translate-x-full'}`}
             onClick={handleClick}
         >
             {/* icon */}
-            <div style={{
-                fontSize: '22px',
-                flexShrink: 0,
-                marginTop: '2px',
-                lineHeight: 1
-            }}>
+            <div className={`w-12 h-12 rounded-xl ${cfg.iconBg} flex items-center justify-center text-2xl flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
                 {iconFor(notification.type)}
             </div>
 
             {/* body */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    color: colors.title,
-                    marginBottom: '2px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                }}>
+            <div className="flex-1 min-w-0 py-1">
+                <div className={`text-sm font-black tracking-tight ${cfg.title} mb-1 truncate uppercase tracking-widest`}>
                     {notification.title}
                 </div>
-                <div style={{
-                    fontSize: '12px',
-                    color: '#475569',
-                    lineHeight: 1.4,
-                    overflow: 'hidden',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                }}>
+                <div className="text-xs font-bold text-slate-500 leading-relaxed line-clamp-2 italic">
                     {notification.message}
                 </div>
-                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
-                    Tap to view →
+                <div className="text-[10px] font-black text-slate-400 mt-2 uppercase tracking-[0.2em] opacity-60 flex items-center gap-2">
+                    Access Intel <span className="text-lg leading-none">→</span>
                 </div>
             </div>
 
             {/* close button */}
             <button
                 onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
-                style={{
-                    background: 'none',
-                    border: 'none',
-                    fontSize: '16px',
-                    color: '#94a3b8',
-                    cursor: 'pointer',
-                    padding: '0',
-                    flexShrink: 0,
-                    lineHeight: 1,
-                    marginTop: '1px',
-                }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-black/5 hover:text-slate-900 transition-all flex-shrink-0"
             >
-                ×
+                ✕
             </button>
 
             {/* progress bar */}
-            <div style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                height: '3px',
-                borderRadius: '0 0 0 12px',
-                background: colors.border,
-                animation: 'shrink 6s linear forwards',
-            }} />
+            <div
+                className={`absolute bottom-0 left-0 h-1 ${cfg.progress} rounded-full animate-[shrink_6s_linear_forwards] shadow-[0_0_8px_rgba(0,0,0,0.1)]`}
+            />
         </div>
     );
 };
@@ -160,18 +108,9 @@ const RealTimeNotifications = () => {
           to   { width: 0%; }
         }
       `}</style>
-            <div style={{
-                position: 'fixed',
-                bottom: '24px',
-                right: '24px',
-                zIndex: 9999,
-                display: 'flex',
-                flexDirection: 'column-reverse',
-                gap: '10px',
-                pointerEvents: 'none',
-            }}>
+            <div className="fixed bottom-8 right-8 z-[9999] flex flex-col-reverse gap-4 pointer-events-none">
                 {notifications.map((n, i) => (
-                    <div key={i} style={{ pointerEvents: 'all' }}>
+                    <div key={i} className="pointer-events-auto">
                         <ToastItem
                             notification={n}
                             index={i}
@@ -185,3 +124,4 @@ const RealTimeNotifications = () => {
 };
 
 export default RealTimeNotifications;
+

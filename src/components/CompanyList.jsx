@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Layout from './Layout';
+import { BASE_SERVER_URL } from '../services/api';
 
 const CompanyList = () => {
     const { state } = useAuth();
@@ -26,7 +27,7 @@ const CompanyList = () => {
 
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:5000/api/admin/companies', {
+            const response = await fetch(`${BASE_SERVER_URL}/api/admin/companies`, {
                 headers: {
                     'Authorization': `Bearer ${state.token}`
                 }

@@ -1,271 +1,90 @@
 import React, { useState } from 'react';
-import {
-  DndContext,
-  DragOverlay,
-  closestCorners,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
+import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0px rgba(16, 185, 129, 0.4); }
-    70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-    100% { box-shadow: 0 0 0 0px rgba(16, 185, 129, 0); }
-  }
-`;
-if (!document.head.querySelector('style[data-boardview-animations]')) {
-  style.setAttribute('data-boardview-animations', 'true');
-  document.head.appendChild(style);
-}
 
 const BoardView = ({ tasks, taskStatuses, onEditTask, onDeleteTask, onAddSubtask, onUpdateTaskStatus, teamActivity = [] }) => {
   const [activeTask, setActiveTask] = useState(null);
-
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Build task hierarchy and filter only parent tasks for board view
   const buildTaskHierarchy = (tasks) => {
     const taskMap = new Map();
     const parentTasks = [];
-
-    // Create map of all tasks
-    tasks.forEach(task => {
-      taskMap.set(task._id, { ...task, children: [] });
-    });
-
-    // Build hierarchy
+    tasks.forEach(task => taskMap.set(task._id, { ...task, children: [] }));
     tasks.forEach(task => {
       if (task.parent) {
         const parentId = typeof task.parent === 'object' ? task.parent._id : task.parent;
         const parent = taskMap.get(parentId);
-        if (parent) {
-          parent.children.push(taskMap.get(task._id));
-        } else {
-          parentTasks.push(taskMap.get(task._id));
-        }
-      } else {
-        parentTasks.push(taskMap.get(task._id));
-      }
+        if (parent) parent.children.push(taskMap.get(task._id));
+        else parentTasks.push(taskMap.get(task._id));
+      } else parentTasks.push(taskMap.get(task._id));
     });
-
     return parentTasks;
   };
 
   const hierarchicalTasks = buildTaskHierarchy(tasks);
-
-  const getTasksByStatus = (statusId) => {
-    return hierarchicalTasks.filter(task => task.status?._id === statusId);
-  };
-
-  const getUnassignedTasks = () => {
-    return hierarchicalTasks.filter(task => !task.status);
-  };
-
-  const handleDragStart = (event) => {
-    const { active } = event;
-    const task = tasks.find(t => t._id === active.id);
-    setActiveTask(task);
-  };
+  const getTasksByStatus = (statusId) => hierarchicalTasks.filter(task => task.status?._id === statusId);
+  const getUnassignedTasks = () => hierarchicalTasks.filter(task => !task.status);
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
     setActiveTask(null);
-
     if (!over) return;
-
-    const taskId = active.id;
-    const overId = over.id;
-
-    // Check if dropped over a status column
-    const targetStatus = taskStatuses.find(s => s._id === overId);
-
-    if (targetStatus) {
-      // Update task status
-      if (onUpdateTaskStatus) {
-        onUpdateTaskStatus(taskId, targetStatus._id);
-      }
-    } else if (overId === 'unassigned') {
-      // Remove status
-      if (onUpdateTaskStatus) {
-        onUpdateTaskStatus(taskId, null);
-      }
-    }
+    const targetStatus = taskStatuses.find(s => s._id === over.id);
+    if (targetStatus && onUpdateTaskStatus) onUpdateTaskStatus(active.id, targetStatus._id);
+    else if (over.id === 'unassigned' && onUpdateTaskStatus) onUpdateTaskStatus(active.id, null);
   };
-
-  const handleDragCancel = () => {
-    setActiveTask(null);
-  };
-
-  // Create containers for all statuses
-  const containers = [
-    'unassigned',
-    ...taskStatuses.map(s => s._id)
-  ];
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      <div style={{
-        backgroundColor: '#ffffff',
-        padding: '20px',
-        borderRadius: '3px',
-        minHeight: 'calc(100vh - 200px)',
-        height: 'calc(100vh - 200px)',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          overflowX: 'auto',
-          height: '100%',
-          paddingBottom: '8px'
-        }}>
-          {/* Unassigned Column */}
-          <StatusColumn
-            id="unassigned"
-            title="Backlog"
-            tasks={getUnassignedTasks()}
-            color="#6b7280"
-            onEditTask={onEditTask}
-            onDeleteTask={onDeleteTask}
-            onAddSubtask={onAddSubtask}
-            teamActivity={teamActivity}
-          />
-
-          {/* Status Columns */}
+    <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={e => setActiveTask(tasks.find(t => t._id === e.active.id))} onDragEnd={handleDragEnd} onDragCancel={() => setActiveTask(null)}>
+      <div className="p-6 h-[calc(100vh-320px)] overflow-x-auto scrollbar-none">
+        <div className="flex gap-6 h-full min-w-max pb-4">
+          <StatusColumn id="unassigned" title="Backlog" tasks={getUnassignedTasks()} color="#94a3b8" onEditTask={onEditTask} />
           {taskStatuses.map(status => (
-            <StatusColumn
-              key={status._id}
-              id={status._id}
-              title={status.name}
-              tasks={getTasksByStatus(status._id)}
-              color={status.color || '#6b7280'}
-              onEditTask={onEditTask}
-              onDeleteTask={onDeleteTask}
-              onAddSubtask={onAddSubtask}
-              teamActivity={teamActivity}
-            />
+            <StatusColumn key={status._id} id={status._id} title={status.name} tasks={getTasksByStatus(status._id)} color={status.color || '#6366f1'} onEditTask={onEditTask} />
           ))}
         </div>
       </div>
-
       <DragOverlay>
-        {activeTask ? (
-          <div style={{ opacity: 0.9, transform: 'rotate(3deg)' }}>
-            <TaskCard task={activeTask} isDragging />
+        {activeTask && (
+          <div className="rotate-2 scale-105 opacity-90 cursor-grabbing">
+            <TaskCard task={activeTask} />
           </div>
-        ) : null}
+        )}
       </DragOverlay>
     </DndContext>
   );
 };
 
-const StatusColumn = ({ id, title, tasks, color, onEditTask, onDeleteTask, onAddSubtask, teamActivity }) => {
-  const { setNodeRef, isOver } = useSortable({
-    id: id,
-    data: {
-      type: 'column',
-    },
-  });
+const StatusColumn = ({ id, title, tasks, color, onEditTask }) => {
+  const { setNodeRef, isOver } = useSortable({ id, data: { type: 'column' } });
 
   return (
     <div
       ref={setNodeRef}
-      style={{
-        backgroundColor: isOver ? '#f0f6ff' : '#f4f5f7',
-        borderRadius: '3px',
-        minWidth: '300px',
-        maxWidth: '300px',
-        border: isOver ? '2px dashed #0052cc' : '2px solid transparent',
-        transition: 'all 0.2s ease',
-        display: 'flex',
-        flexDirection: 'column',
-        maxHeight: 'calc(100vh - 200px)'
-      }}
+      className={`flex flex-col w-80 rounded-2xl border transition-all duration-200 overflow-hidden ${isOver ? 'bg-slate-100 border-indigo-300 shadow-md ring-2 ring-indigo-100' : 'bg-slate-50 border-slate-200'}`}
     >
-      <div style={{
-        padding: '14px 12px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        flexShrink: 0
-      }}>
-        <span style={{
-          fontSize: '12px',
-          fontWeight: '700',
-          color: '#5e6c84',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-          flex: 1
-        }}>
-          {title}
-        </span>
-        <span style={{
-          fontSize: '11px',
-          color: '#5e6c84',
-          backgroundColor: '#dfe1e6',
-          padding: '3px 8px',
-          borderRadius: '12px',
-          fontWeight: '700'
-        }}>
-          {tasks.length}
-        </span>
+      <div className="p-4 flex items-center justify-between shrink-0 border-b border-slate-200 bg-white/50">
+        <div className="flex items-center gap-2.5">
+          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide">{title}</h3>
+        </div>
+        <span className="bg-white border border-slate-200 px-2.5 py-1 rounded-lg text-[10px] font-bold text-slate-500 shadow-sm">{tasks.length}</span>
       </div>
 
-      <SortableContext
-        items={tasks.map(t => t._id)}
-        strategy={verticalListSortingStrategy}
-      >
-        <div style={{
-          padding: '0 8px 8px 8px',
-          overflowY: 'auto',
-          flex: 1
-        }}>
+      <SortableContext items={tasks.map(t => t._id)} strategy={verticalListSortingStrategy}>
+        <div className="p-3 flex-1 overflow-y-auto space-y-3 min-h-[100px]">
           {tasks.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '32px 16px',
-              color: '#a8b1bd',
-              fontSize: '12px',
-              fontStyle: 'italic'
-            }}>
-              Drop issues here
+            <div className="h-full flex flex-col items-center justify-center opacity-40 py-12">
+              <div className="text-3xl mb-2">📥</div>
+              <p className="text-[10px] font-bold uppercase text-slate-400">Empty</p>
             </div>
           ) : (
             tasks.map(task => (
-              <SortableTaskCard
-                key={task._id}
-                task={task}
-                onEdit={onEditTask}
-                onDelete={onDeleteTask}
-                onAddSubtask={onAddSubtask}
-                teamActivity={teamActivity}
-              />
+              <SortableTaskCard key={task._id} task={task} onEdit={onEditTask} />
             ))
           )}
         </div>
@@ -274,425 +93,63 @@ const StatusColumn = ({ id, title, tasks, color, onEditTask, onDeleteTask, onAdd
   );
 };
 
-const SortableTaskCard = ({ task, onEdit, onDelete, onAddSubtask, teamActivity }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: task._id,
-    data: {
-      type: 'task',
-      task,
-    },
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
+const SortableTaskCard = ({ task, onEdit }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task._id, data: { type: 'task', task } });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : 1 };
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskCard
-        task={task}
-        onEdit={onEdit}
-        onDelete={onDelete}
-        onAddSubtask={onAddSubtask}
-        isDragging={isDragging}
-        teamActivity={teamActivity}
-      />
+      <TaskCard task={task} onEdit={onEdit} isDragging={isDragging} />
     </div>
   );
 };
 
-const TaskCard = ({ task, onEdit, onDelete, onAddSubtask, isDragging, teamActivity }) => {
-  const getPriorityColor = (priority) => {
-    const colors = {
-      urgent: '#de350b',
-      high: '#ff8b00',
-      medium: '#ffab00',
-      low: '#36b37e'
-    };
-    return colors[priority] || '#6b7280';
-  };
-
-  const getIssueTypeIcon = (type) => {
-    const types = {
-      task: { icon: '✓', color: '#0052cc', bg: '#deebff' },
-      bug: { icon: '🐛', color: '#de350b', bg: '#ffebe6' },
-      story: { icon: '📖', color: '#00875a', bg: '#e3fcef' },
-      epic: { icon: '⚡', color: '#6554c0', bg: '#eae6ff' }
-    };
-    return types[type] || types.task;
-  };
-
-  const getInitials = (name) => {
-    if (!name) return '?';
-    const parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
-
-  const getAvatarColor = (name) => {
-    const colors = [
-      '#0052cc', '#5243aa', '#ff5630', '#ff8b00',
-      '#36b37e', '#00b8d9', '#6554c0', '#ff991f'
-    ];
-    const index = name ? name.charCodeAt(0) % colors.length : 0;
-    return colors[index];
-  };
-
-  const issueType = getIssueTypeIcon(task.issueType || 'task');
-  const hasSubtasks = task.children && task.children.length > 0;
-  const completedSubtasks = hasSubtasks ? task.children.filter(child => child.status?.name?.toLowerCase() === 'done').length : 0;
+const TaskCard = ({ task, onEdit, isDragging }) => {
+  const priorityColor = { urgent: 'bg-rose-500', high: 'bg-orange-500', medium: 'bg-amber-400', low: 'bg-emerald-500' }[task.priority] || 'bg-slate-300';
+  const hasSubtasks = task.children?.length > 0;
+  const completed = hasSubtasks ? task.children.filter(c => c.status?.name?.toLowerCase() === 'done' || c.status?.name?.toLowerCase() === 'completed').length : 0;
 
   return (
     <div
-      onClick={() => onEdit(task)}
-      style={{
-        backgroundColor: '#ffffff',
-        border: '1px solid #dfe1e6',
-        borderRadius: '3px',
-        padding: '10px 12px',
-        marginBottom: '8px',
-        cursor: isDragging ? 'grabbing' : 'pointer',
-        boxShadow: isDragging ? '0 8px 16px rgba(9, 30, 66, 0.25)' : '0 1px 2px rgba(9, 30, 66, 0.08)',
-        transition: 'all 0.2s ease',
-        position: 'relative'
-      }}
-      onMouseEnter={(e) => {
-        if (!isDragging) {
-          e.currentTarget.style.boxShadow = '0 4px 8px rgba(9, 30, 66, 0.15)';
-          e.currentTarget.style.transform = 'translateY(-2px)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!isDragging) {
-          e.currentTarget.style.boxShadow = '0 1px 2px rgba(9, 30, 66, 0.08)';
-          e.currentTarget.style.transform = 'translateY(0)';
-        }
-      }}
+      onClick={() => onEdit?.(task)}
+      className={`bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer relative group ${isDragging ? 'shadow-lg ring-2 ring-indigo-500' : ''}`}
     >
-      {/* Issue Type Icon + Title */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: '8px',
-        marginBottom: '8px'
-      }}>
-        <div style={{
-          width: '20px',
-          height: '20px',
-          backgroundColor: issueType.bg,
-          borderRadius: '3px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '11px',
-          flexShrink: 0,
-          marginTop: '2px'
-        }}>
-          {issueType.icon}
+      <div className={`absolute top-0 left-0 w-1 h-full rounded-l-xl ${priorityColor}`} />
+
+      <div className="flex justify-between items-start gap-4 mb-3 pl-1">
+        <div className="min-w-0">
+          <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase leading-tight">{task.title}</h4>
+          <p className="text-[10px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">{task.description}</p>
         </div>
-
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            fontSize: '14px',
-            fontWeight: '500',
-            color: '#172b4d',
-            lineHeight: '1.4',
-            marginBottom: '4px'
-          }}>
-            {task.title}
-          </div>
-
-          {task.description && (
-            <div style={{
-              fontSize: '12px',
-              color: '#5e6c84',
-              lineHeight: '1.4',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical'
-            }}>
-              {task.description}
-            </div>
-          )}
-        </div>
-
-        {/* Priority Indicator */}
-        {task.priority && (
-          <div style={{
-            width: '6px',
-            height: '6px',
-            borderRadius: '50%',
-            backgroundColor: getPriorityColor(task.priority),
-            flexShrink: 0,
-            marginTop: '6px',
-            boxShadow: `0 0 0 2px ${getPriorityColor(task.priority)}20`
-          }} />
-        )}
+        <div className={`shrink-0 w-2 h-2 rounded-full ${priorityColor}`} />
       </div>
 
-      {/* Subtasks Progress */}
       {hasSubtasks && (
-        <div style={{
-          marginTop: '10px',
-          marginBottom: '10px',
-          padding: '6px 8px',
-          backgroundColor: '#f4f5f7',
-          borderRadius: '3px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <div style={{
-            fontSize: '11px',
-            color: '#5e6c84',
-            fontWeight: '600',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}>
-            <span>↳</span>
-            <span>{completedSubtasks}/{task.children.length}</span>
+        <div className="mt-4 space-y-1.5 pl-1">
+          <div className="flex justify-between text-[9px] font-bold text-slate-400 uppercase">
+            <span>Progress</span>
+            <span>{completed}/{task.children.length}</span>
           </div>
-          <div style={{
-            flex: 1,
-            height: '4px',
-            backgroundColor: '#dfe1e6',
-            borderRadius: '2px',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: `${task.children.length > 0 ? (completedSubtasks / task.children.length) * 100 : 0}%`,
-              height: '100%',
-              backgroundColor: '#36b37e',
-              transition: 'width 0.3s ease'
-            }} />
+          <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${(completed / task.children.length) * 100}%` }} />
           </div>
         </div>
       )}
 
-      {/* Footer: Due Date + Assignees */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: '10px',
-        paddingTop: '10px',
-        borderTop: '1px solid #f4f5f7'
-      }}>
-        {/* Due Date */}
-        <div style={{ fontSize: '11px', color: '#5e6c84', display: 'flex', alignItems: 'center', gap: '4px' }}>
-          {task.dueDate ? (
-            <>
-              <span>📅</span>
-              <span>{new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-            </>
-          ) : (
-            <span style={{ opacity: 0.5 }}>No due date</span>
-          )}
+      <div className="flex justify-between items-center mt-5 pt-3 border-t border-slate-50 pl-1">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs">📅</span>
+          <span className="text-[10px] font-medium text-slate-500">{task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date'}</span>
         </div>
-
-        {/* Assignees */}
-        {((task.assignees && task.assignees.length > 0) || (task.roleAssignments && task.roleAssignments.length > 0)) && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '-4px'
-          }}>
-            {(() => {
-              const flattenedAssignments = [];
-              if (task.roleAssignments && task.roleAssignments.length > 0) {
-                task.roleAssignments.forEach(ra => {
-                  const roleName = ra.role?.name || ra.roleName;
-                  if (ra.assignees && ra.assignees.length > 0) {
-                    ra.assignees.forEach(assignee => {
-                      flattenedAssignments.push({ user: assignee, roleName });
-                    });
-                  }
-                });
-              } else if (task.assignees && task.assignees.length > 0) {
-                task.assignees.forEach(user => flattenedAssignments.push({ user }));
-              }
-
-              return (
-                <>
-                  {flattenedAssignments.slice(0, 3).map((assignment, index) => {
-                    const assignee = assignment.user;
-                    const isActive = teamActivity && teamActivity.some(m =>
-                      m.currentTask?._id === task._id &&
-                      (m.user?._id === (assignee._id || assignee) || m.user === (assignee._id || assignee))
-                    );
-                    return (
-                      <div key={`${assignee._id || index}-${assignment.roleName || ''}`} style={{ marginLeft: index > 0 ? '-6px' : '0' }}>
-                        <AssigneeAvatar assignee={assignee} roleName={assignment.roleName} isActive={isActive} />
-                      </div>
-                    );
-                  })}
-                  {flattenedAssignments.length > 3 && (
-                    <div style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      backgroundColor: '#f4f5f7',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '9px',
-                      fontWeight: '700',
-                      color: '#5e6c84',
-                      border: '2px solid white',
-                      marginLeft: '-6px',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                    }}>
-                      +{flattenedAssignments.length - 3}
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </div>
-        )}
+        <div className="flex -space-x-1.5">
+          {task.assignees?.slice(0, 3).map((a, i) => (
+            <div key={i} className="w-6 h-6 rounded-md border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-700 shrink-0 shadow-sm overflow-hidden" title={a.name}>
+              {a.avatar ? <img src={a.avatar} alt="" className="w-full h-full object-cover" /> : a.name?.charAt(0)}
+            </div>
+          ))}
+          {task.assignees?.length > 3 && <div className="w-6 h-6 rounded-md border-2 border-white bg-slate-900 text-white flex items-center justify-center text-[8px] font-bold shrink-0">+{task.assignees.length - 3}</div>}
+        </div>
       </div>
-    </div>
-  );
-};
-
-const AssigneeAvatar = ({ assignee, roleName, isActive }) => {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const profilePicture = assignee.profile?.profilePicture;
-
-  const getInitials = (name) => {
-    if (!name) return '?';
-    const parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
-
-  const getAvatarColor = (name) => {
-    const colors = [
-      '#0052cc', '#5243aa', '#ff5630', '#ff8b00',
-      '#36b37e', '#00b8d9', '#6554c0', '#ff991f'
-    ];
-    const index = name ? name.charCodeAt(0) % colors.length : 0;
-    return colors[index];
-  };
-
-  return (
-    <div
-      style={{ position: 'relative', display: 'inline-block' }}
-      onMouseEnter={() => setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
-    >
-      {profilePicture ? (
-        <img
-          src={profilePicture}
-          alt={assignee.name}
-          style={{
-            width: '28px',
-            height: '28px',
-            borderRadius: '50%',
-            objectFit: 'cover',
-            border: '2px solid white',
-            cursor: 'pointer',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-            backgroundColor: 'white',
-            display: 'block'
-          }}
-        />
-      ) : (
-        <div style={{
-          width: '28px',
-          height: '28px',
-          borderRadius: '50%',
-          backgroundColor: getAvatarColor(assignee.name),
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          fontSize: '11px',
-          fontWeight: '600',
-          border: '2px solid white',
-          cursor: 'pointer',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-        }}>
-          {getInitials(assignee.name)}
-        </div>
-      )}
-
-      {isActive && (
-        <div style={{
-          position: 'absolute',
-          bottom: '-2px',
-          right: '-2px',
-          width: '10px',
-          height: '10px',
-          backgroundColor: '#10b981',
-          borderRadius: '50%',
-          border: '2px solid white',
-          boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
-          zIndex: 2,
-          animation: 'pulse 1.5s infinite'
-        }} />
-      )}
-
-      {showTooltip && (
-        <div style={{
-          position: 'absolute',
-          bottom: '100%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          marginBottom: '8px',
-          backgroundColor: '#172b4d',
-          color: 'white',
-          padding: '8px 12px',
-          borderRadius: '4px',
-          fontSize: '12px',
-          whiteSpace: 'nowrap',
-          zIndex: 1000,
-          boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-          pointerEvents: 'none'
-        }}>
-          <div style={{ fontWeight: '600', marginBottom: '2px' }}>
-            {assignee.name}
-          </div>
-          {roleName && (
-            <div style={{ fontSize: '11px', color: '#00dcff', fontWeight: '700', textTransform: 'uppercase', marginBottom: '2px' }}>
-              {roleName}
-            </div>
-          )}
-          {assignee.email && (
-            <div style={{ fontSize: '11px', opacity: 0.9 }}>
-              {assignee.email}
-            </div>
-          )}
-          {/* Tooltip arrow */}
-          <div style={{
-            position: 'absolute',
-            top: '100%',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 0,
-            height: 0,
-            borderLeft: '6px solid transparent',
-            borderRight: '6px solid transparent',
-            borderTop: '6px solid #172b4d'
-          }} />
-        </div>
-      )}
     </div>
   );
 };

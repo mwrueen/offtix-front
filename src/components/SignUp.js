@@ -6,12 +6,7 @@ import AuthLayout from './auth/AuthLayout';
 import SocialLoginButtons from './auth/SocialLoginButtons';
 
 const SignUp = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
@@ -22,212 +17,172 @@ const SignUp = () => {
   const from = location.state?.from?.pathname || '/dashboard';
 
   useEffect(() => {
-    if (state.isAuthenticated) {
-      navigate(from, { replace: true });
-    }
+    if (state.isAuthenticated) navigate(from, { replace: true });
   }, [state.isAuthenticated, navigate, from]);
 
-  // Handle URL parameters for social login errors
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const errorParam = urlParams.get('error');
-    if (errorParam) {
-      setError(decodeURIComponent(errorParam));
-    }
+    if (errorParam) setError(decodeURIComponent(errorParam));
   }, [location.search]);
 
   const calculatePasswordStrength = (password) => {
-    let strength = 0;
-    if (password.length >= 8) strength += 1;
-    if (/[a-z]/.test(password)) strength += 1;
-    if (/[A-Z]/.test(password)) strength += 1;
-    if (/[0-9]/.test(password)) strength += 1;
-    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
-    return strength;
+    let s = 0;
+    if (password.length >= 8) s += 1;
+    if (/[a-z]/.test(password)) s += 1;
+    if (/[A-Z]/.test(password)) s += 1;
+    if (/[0-9]/.test(password)) s += 1;
+    if (/[^A-Za-z0-9]/.test(password)) s += 1;
+    return s;
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-
-    if (name === 'password') {
-      setPasswordStrength(calculatePasswordStrength(value));
-    }
-
+    setFormData({ ...formData, [name]: value });
+    if (name === 'password') setPasswordStrength(calculatePasswordStrength(value));
     setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return;
-    }
-
+    if (formData.password !== formData.confirmPassword) { setError('Keyphrase mismatch detected'); return; }
+    if (formData.password.length < 6) { setError('Encryption key insufficient length'); return; }
     setIsLoading(true);
     dispatch({ type: 'SET_LOADING', payload: true });
-
     try {
       const { confirmPassword, ...signupData } = formData;
       const response = await authAPI.signup(signupData);
       dispatch({ type: 'LOGIN_SUCCESS', payload: response.data });
       navigate(from, { replace: true });
     } catch (error) {
-      setError(error.response?.data?.error || 'Sign up failed');
+      setError(error.response?.data?.error || 'Initialization protocol failed');
       dispatch({ type: 'SET_LOADING', payload: false });
       setIsLoading(false);
     }
   };
 
-  const getPasswordStrengthColor = () => {
-    if (passwordStrength <= 2) return 'bg-rose-500';
-    if (passwordStrength <= 3) return 'bg-amber-500';
-    return 'bg-emerald-500';
+  const getSColor = () => {
+    if (passwordStrength <= 2) return 'bg-rose-500 shadow-rose-500/50';
+    if (passwordStrength <= 3) return 'bg-amber-500 shadow-amber-500/50';
+    return 'bg-emerald-500 shadow-emerald-500/50';
   };
 
-  const getPasswordStrengthTextColor = () => {
-    if (passwordStrength <= 2) return 'text-rose-500';
-    if (passwordStrength <= 3) return 'text-amber-500';
-    return 'text-emerald-500';
-  };
-
-  const getPasswordStrengthText = () => {
-    if (passwordStrength <= 2) return 'Fragile';
-    if (passwordStrength <= 3) return 'Standard';
-    return 'Fortress';
+  const getSText = () => {
+    if (passwordStrength <= 2) return 'FRAGILE_NODE';
+    if (passwordStrength <= 3) return 'SYSTEM_STANDARD';
+    return 'FORTRESS_LEVEL_9';
   };
 
   return (
     <AuthLayout
-      title="Initiate Presence"
-      subtitle="Register your node in the global orchestration network"
+      title="IDENTITY_NEXUS"
+      subtitle="Initialize your authority node in the orchestration registry."
     >
       {error && (
-        <div className="bg-rose-50 border border-rose-100 text-rose-600 p-5 rounded-2xl mb-8 flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center shrink-0">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12" /></svg>
-          </div>
-          <span className="text-xs font-black uppercase tracking-widest">{error}</span>
+        <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 px-10 py-6 rounded-[2.5rem] mb-12 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-6 animate-in slide-in-from-top-6 duration-700 italic shadow-24 shadow-rose-500/5">
+          <span className="text-2xl">⚠️</span>
+          {error}
         </div>
       )}
 
-      {/* Social Login Buttons */}
-      <div className="mb-10">
-        <SocialLoginButtons />
+      <SocialLoginButtons />
+
+      <div className="relative flex items-center my-16 opacity-30">
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent to-white/20"></div>
+        <span className="px-10 text-[9px] font-black text-white uppercase tracking-[0.5em] italic whitespace-nowrap">INIT_PHASE_01_ENCRYPTION_LINK</span>
+        <div className="flex-1 h-px bg-gradient-to-l from-transparent to-white/20"></div>
       </div>
 
-      {/* Divider */}
-      <div className="flex items-center gap-6 mb-10 group">
-        <div className="flex-1 h-[2px] bg-slate-50 group-hover:bg-slate-100 transition-colors"></div>
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Encryption Link</span>
-        <div className="flex-1 h-[2px] bg-slate-50 group-hover:bg-slate-100 transition-colors"></div>
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-10 group/form">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-4">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic ml-4">DISPLAY_IDENTITY</label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              placeholder="FULL_IDENTITY_NAME"
+              className="w-full px-12 py-7 bg-white/5 border border-white/10 rounded-[3rem] text-sm font-black text-white uppercase tracking-wider outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/5 shadow-inner"
+            />
+          </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8 mb-10">
-        <div className="space-y-3">
-          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-            className="w-full px-6 py-4 bg-slate-50 border-b-4 border-slate-100 rounded-2xl text-slate-700 font-bold outline-none focus:bg-white focus:border-indigo-500 transition-all shadow-inner"
-            placeholder="John Wick"
-          />
+          <div className="space-y-4">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic ml-4">ACCESS_MAILBOX</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              placeholder="NODE@DOMAIN.SYS"
+              className="w-full px-12 py-7 bg-white/5 border border-white/10 rounded-[3rem] text-sm font-black text-white uppercase tracking-wider outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/5 shadow-inner"
+            />
+          </div>
         </div>
 
-        <div className="space-y-3">
-          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Interface</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            className="w-full px-6 py-4 bg-slate-50 border-b-4 border-slate-100 rounded-2xl text-slate-700 font-bold outline-none focus:bg-white focus:border-indigo-500 transition-all shadow-inner"
-            placeholder="node@offtix.io"
-          />
-        </div>
-
-        <div className="space-y-3">
-          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Cryptographic Key</label>
+        <div className="space-y-4">
+          <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic ml-4">MASTER_PRIV_KEY</label>
           <input
             type="password"
             name="password"
             value={formData.password}
             onChange={handleChange}
             required
-            className="w-full px-6 py-4 bg-slate-50 border-b-4 border-slate-100 rounded-2xl text-slate-700 font-bold outline-none focus:bg-white focus:border-indigo-500 transition-all shadow-inner"
-            placeholder="••••••••"
+            placeholder="••••••••••••••••••••"
+            className="w-full px-12 py-7 bg-white/5 border border-white/10 rounded-[3rem] text-sm font-black text-indigo-400 uppercase tracking-[0.5em] outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/5 shadow-inner"
           />
           {formData.password && (
-            <div className="pt-4 px-2">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Signal Integrity</span>
-                <span className={`text-[10px] font-black uppercase tracking-widest ${getPasswordStrengthTextColor()}`}>
-                  {getPasswordStrengthText()}
+            <div className="pt-6 px-10">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.4em] italic">SIGNAL_STRENGTH_INDEX</span>
+                <span className={`text-[9px] font-black uppercase tracking-[0.3em] italic ${passwordStrength <= 2 ? 'text-rose-500' : passwordStrength <= 3 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                  {getSText()}
                 </span>
               </div>
-              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner flex gap-1">
+              <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden flex gap-1.5 p-[2px]">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className={`flex-1 h-full rounded-full transition-all duration-500 ${i < passwordStrength ? getPasswordStrengthColor() : 'bg-transparent opacity-20'}`}></div>
+                  <div key={i} className={`flex-1 h-full rounded-full transition-all duration-1000 ${i < passwordStrength ? getSColor() : 'bg-transparent opacity-0'}`}></div>
                 ))}
               </div>
             </div>
           )}
         </div>
 
-        <div className="space-y-3">
-          <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Key Verification</label>
+        <div className="space-y-4 pb-4">
+          <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic ml-4">CONFIRM_AUTHORITY</label>
           <input
             type="password"
             name="confirmPassword"
             value={formData.confirmPassword}
             onChange={handleChange}
             required
-            className="w-full px-6 py-4 bg-slate-50 border-b-4 border-slate-100 rounded-2xl text-slate-700 font-bold outline-none focus:bg-white focus:border-indigo-500 transition-all shadow-inner"
-            placeholder="••••••••"
+            placeholder="••••••••••••••••••••"
+            className="w-full px-12 py-7 bg-white/5 border border-white/10 rounded-[3rem] text-sm font-black text-indigo-400 uppercase tracking-[0.5em] outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/5 shadow-inner"
           />
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-2xl transition-all active:scale-95 disabled:grayscale disabled:opacity-50 flex items-center justify-center gap-4 ${isLoading ? 'bg-slate-400' : 'bg-slate-900 shadow-slate-200 hover:bg-indigo-600 hover:shadow-indigo-100'}`}
+          className={`w-full py-8 bg-indigo-600 text-white rounded-[3.5rem] font-black text-[10px] uppercase tracking-[0.6em] shadow-24 active:scale-95 group overflow-hidden relative transition-all duration-1000 italic ${isLoading ? 'grayscale opacity-50 cursor-not-allowed border border-white/5' : 'hover:bg-indigo-700 hover:scale-[1.02] shadow-indigo-600/30'}`}
         >
-          {isLoading ? (
-            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          ) : (
-            <>
-              Deploy Presence
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-            </>
-          )}
+          <span className="relative z-10">{isLoading ? 'DEPLOYING_NODE_01...' : 'FORGE_USER_IDENTITY'}</span>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-[shimmer_3s_infinite] -z-0" />
+          {!isLoading && <span className="absolute right-12 top-1/2 -translate-y-1/2 text-2xl group-hover:translate-x-6 transition-transform duration-1000 opacity-60">➜</span>}
         </button>
       </form>
 
-      <div className="text-center bg-slate-50 p-6 rounded-[32px] border border-slate-100 group">
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-          Existing Identity Found?{' '}
-        </span>
+      <div className="text-center pt-12 space-y-4">
+        <p className="text-slate-500 text-[9px] font-black uppercase tracking-[0.4em] italic opacity-60">
+          EXISTING_AUTHORITY_VAULT?
+        </p>
         <Link
           to="/signin"
-          className="text-[10px] font-black text-indigo-500 uppercase tracking-widest hover:text-indigo-600 hover:underline decoration-2 underline-offset-4"
+          className="inline-block text-white no-underline font-black text-[10px] uppercase tracking-[0.5em] hover:text-indigo-400 transition-all italic border-b-2 border-white/10 hover:border-indigo-500 pb-2"
         >
-          Access Vault
+          SYNCHRONIZE_EXISTING_VAULT
         </Link>
       </div>
     </AuthLayout>

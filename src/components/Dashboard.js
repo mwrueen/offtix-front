@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useCompany } from '../context/CompanyContext';
 import { useCompanyFilter } from '../hooks/useCompanyFilter';
 import { useNavigate } from 'react-router-dom';
-import { projectAPI, taskAPI, myTasksAPI, holidayAPI } from '../services/api';
+import { holidayAPI, myTasksAPI } from '../services/api';
 import apiService from '../services/apiService';
 import Layout from './Layout';
 
@@ -12,649 +11,256 @@ const Dashboard = () => {
   const { selectedCompany, companyFilter } = useCompanyFilter();
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
-  const [stats, setStats] = useState({
-    activeProjects: 0,
-    completedTasks: 0,
-    totalTasks: 0,
-    pendingTasks: 0
-  });
-  const [adminStats, setAdminStats] = useState({
-    totalCompanies: 0,
-    totalUsers: 0,
-    activeUsers: 0,
-    adminUsers: 0
-  });
-  const [myTasks, setMyTasks] = useState({
-    completed: [],
-    upcoming: []
-  });
+  const [stats, setStats] = useState({ activeProjects: 0, completedTasks: 0, totalTasks: 0, pendingTasks: 0 });
+  const [adminStats, setAdminStats] = useState({ totalCompanies: 0, totalUsers: 0, activeUsers: 0, adminUsers: 0 });
+  const [myTasks, setMyTasks] = useState({ completed: [], upcoming: [] });
   const [upcomingHolidays, setUpcomingHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (selectedCompany) {
-      fetchDashboardData();
-    }
-    // Fetch admin stats if user is superadmin
-    if (state.user?.role === 'superadmin') {
-      fetchAdminStats();
-    }
+    if (selectedCompany) fetchDashboardData();
+    if (state.user?.role === 'superadmin') fetchAdminStats();
   }, [selectedCompany, state.user?.role]);
 
   const fetchDashboardData = async () => {
     if (!state.token) return;
-
     setLoading(true);
     try {
-      // Use the new API service with company filtering
-      const projectsData = await apiService.getProjects(
-        state.token,
-        companyFilter.companyId
-      );
+      const projectsData = await apiService.getProjects(state.token, companyFilter.companyId);
       setProjects(projectsData);
 
-      let totalTasks = 0;
-      let completedTasks = 0;
-      let pendingTasks = 0;
-
-      // Fetch tasks for each project with company filtering
+      let totalTasks = 0, completedTasks = 0, pendingTasks = 0;
       for (const project of projectsData) {
         try {
-          const tasks = await apiService.getTasks(
-            state.token,
-            companyFilter.companyId,
-            { projectId: project._id }
-          );
+          const tasks = await apiService.getTasks(state.token, companyFilter.companyId, { projectId: project._id });
           totalTasks += tasks.length;
-          completedTasks += tasks.filter(task =>
-            task.status?.name?.toLowerCase().includes('done') ||
-            task.status?.name?.toLowerCase().includes('complete')
-          ).length;
-          pendingTasks += tasks.filter(task =>
-            !task.status?.name?.toLowerCase().includes('done') &&
-            !task.status?.name?.toLowerCase().includes('complete')
-          ).length;
-        } catch (error) {
-          console.log(`No tasks for project ${project.name}`);
-        }
+          completedTasks += tasks.filter(t => t.status?.name?.toLowerCase().includes('done') || t.status?.name?.toLowerCase().includes('complete')).length;
+          pendingTasks += tasks.filter(t => !t.status?.name?.toLowerCase().includes('done') && !t.status?.name?.toLowerCase().includes('complete')).length;
+        } catch (e) { }
       }
 
-      setStats({
-        activeProjects: projectsData.filter(p => p.status === 'active').length,
-        completedTasks,
-        totalTasks,
-        pendingTasks
-      });
+      setStats({ activeProjects: projectsData.filter(p => p.status === 'running' || p.status === 'active').length, completedTasks, totalTasks, pendingTasks });
 
-      // Fetch My Tasks
-      try {
-        const tasksResponse = await myTasksAPI.getAll();
-        const allMyTasks = tasksResponse.data || [];
+      const tasksRes = await myTasksAPI.getAll();
+      const allMyTasks = tasksRes.data || [];
+      const upcoming = allMyTasks.filter(t => t.userStep?.status !== 'completed' && !t.status?.name?.toLowerCase().includes('done'));
+      const completed = allMyTasks.filter(t => !upcoming.includes(t));
 
-        const completed = allMyTasks.filter(task => {
-          const taskStatus = task.workflowType === 'sequential'
-            ? task.userAssignee?.status
-            : task.workflowType === 'role' ? task.userStep?.status : task.userStep?.status;
-          return taskStatus === 'completed' || task.status?.name?.toLowerCase().includes('done') || task.status?.name?.toLowerCase().includes('complete');
-        });
+      setMyTasks({ completed: completed.slice(0, 5), upcoming: upcoming.slice(0, 5) });
 
-        const upcoming = allMyTasks.filter(task => {
-          const taskStatus = task.workflowType === 'sequential'
-            ? task.userAssignee?.status
-            : task.workflowType === 'role' ? task.userStep?.status : task.userStep?.status;
-          return taskStatus !== 'completed' && !task.status?.name?.toLowerCase().includes('done') && !task.status?.name?.toLowerCase().includes('complete');
-        });
-
-        setMyTasks({
-          completed: completed.slice(0, 2),
-          upcoming: upcoming.slice(0, 3)
-        });
-      } catch (err) {
-        console.error('Error fetching my tasks:', err);
+      if (companyFilter.companyId && companyFilter.companyId !== 'personal') {
+        const hRes = await holidayAPI.getUpcoming(companyFilter.companyId, 3);
+        setUpcomingHolidays(hRes.data?.holidays || hRes.data || []);
       }
-
-      // Fetch Upcoming Holidays
-      try {
-        if (companyFilter.companyId && companyFilter.companyId !== 'personal') {
-          const holidaysResponse = await holidayAPI.getUpcoming(companyFilter.companyId, 3);
-          setUpcomingHolidays(holidaysResponse.data?.holidays || holidaysResponse.data || []);
-        }
-      } catch (err) {
-        console.error('Error fetching upcoming holidays:', err);
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { console.error('Dashboard fetch error', error); }
+    finally { setLoading(false); }
   };
 
   const fetchAdminStats = async () => {
-    if (!state.token) return;
-
     try {
-      const response = await fetch('http://localhost:5000/api/admin/stats', {
-        headers: {
-          'Authorization': `Bearer ${state.token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setAdminStats(data);
-      } else {
-        console.error('Failed to fetch admin stats:', response.statusText);
-      }
-    } catch (error) {
-      console.error('Error fetching admin stats:', error);
-    }
+      const stats = await apiService.getAdminStats(state.token);
+      setAdminStats(stats);
+    } catch (e) { console.error('Admin stats fetch error', e); }
   };
 
-  const statsData = [
-    { title: 'Active Projects', value: stats.activeProjects, icon: '📊', color: '#3b82f6' },
-    { title: 'Completed Tasks', value: stats.completedTasks, icon: '✅', color: '#10b981' },
-    { title: 'Total Tasks', value: stats.totalTasks, icon: '📋', color: '#8b5cf6' },
-    { title: 'Pending Tasks', value: stats.pendingTasks, icon: '⏳', color: '#f59e0b' },
+  const overviewStats = [
+    { title: 'Active Projects', value: stats.activeProjects, icon: '📁', color: 'indigo' },
+    { title: 'Completed Tasks', value: stats.completedTasks, icon: '✅', color: 'emerald' },
+    { title: 'Total Tasks', value: stats.totalTasks, icon: '📋', color: 'slate' },
+    { title: 'Pending Tasks', value: stats.pendingTasks, icon: '⏳', color: 'amber' },
   ];
-
-  const recentProjects = projects.slice(0, 5).map(project => ({
-    ...project,
-    progress: Math.floor(Math.random() * 100)
-  }));
 
   return (
     <Layout>
-      {/* Welcome Section */}
-      <div style={{
-        backgroundColor: 'white',
-        padding: '30px',
-        borderRadius: '12px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        marginBottom: '30px'
-      }}>
-        <h2 style={{ margin: '0 0 10px 0', color: '#1e293b', fontSize: '28px' }}>
-          Welcome back, {state.user?.name}! 👋
-        </h2>
-        <p style={{ margin: '0 0 8px 0', color: '#64748b', fontSize: '16px' }}>
-          Here's what's happening with your projects today.
-        </p>
-
-      </div>
-
-      {/* Stats Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: '20px',
-        marginBottom: '30px'
-      }}>
-        {loading ? (
-          Array(4).fill(0).map((_, index) => (
-            <div key={index} style={{
-              backgroundColor: 'white',
-              padding: '25px',
-              borderRadius: '12px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '15px'
-            }}>
-              <div style={{
-                width: '50px',
-                height: '50px',
-                backgroundColor: '#f1f5f9',
-                borderRadius: '10px'
-              }}></div>
-              <div>
-                <div style={{ width: '40px', height: '20px', backgroundColor: '#f1f5f9', borderRadius: '4px', marginBottom: '8px' }}></div>
-                <div style={{ width: '80px', height: '14px', backgroundColor: '#f1f5f9', borderRadius: '4px' }}></div>
-              </div>
-            </div>
-          ))
-        ) : (
-          statsData.map((stat, index) => (
-            <div key={index} style={{
-              backgroundColor: 'white',
-              padding: '25px',
-              borderRadius: '12px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '15px'
-            }}>
-              <div style={{
-                width: '50px',
-                height: '50px',
-                backgroundColor: `${stat.color}15`,
-                borderRadius: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '20px'
-              }}>
-                {stat.icon}
-              </div>
-              <div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1e293b' }}>
-                  {stat.value}
-                </div>
-                <div style={{ fontSize: '14px', color: '#64748b' }}>
-                  {stat.title}
-                </div>
-              </div>
-            </div>
-          )))}
-      </div>
-
-      {/* Admin Stats */}
-      {(state.user?.role === 'admin' || state.user?.role === 'superadmin') && (
-        <div style={{
-          backgroundColor: 'white',
-          padding: '25px',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          marginBottom: '30px'
-        }}>
-          <h3 style={{ margin: '0 0 20px 0', color: '#1e293b' }}>
-            {state.user?.role === 'superadmin' ? 'System Overview' : 'User Management'}
-          </h3>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '15px'
-          }}>
-            {state.user?.role === 'superadmin' && (
-              <div style={{
-                padding: '15px',
-                backgroundColor: '#f8fafc',
-                borderRadius: '8px',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#f59e0b' }}>{adminStats.totalCompanies}</div>
-                <div style={{ fontSize: '12px', color: '#64748b' }}>Total Companies</div>
-              </div>
-            )}
-            <div style={{
-              padding: '15px',
-              backgroundColor: '#f8fafc',
-              borderRadius: '8px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#3b82f6' }}>{adminStats.totalUsers}</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>Total Users</div>
-            </div>
-            <div style={{
-              padding: '15px',
-              backgroundColor: '#f8fafc',
-              borderRadius: '8px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#10b981' }}>{adminStats.activeUsers}</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>Active Users</div>
-            </div>
-            <div style={{
-              padding: '15px',
-              backgroundColor: '#f8fafc',
-              borderRadius: '8px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#8b5cf6' }}>{adminStats.adminUsers}</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>Admins</div>
+      <div className="space-y-8 pb-12">
+        {/* Header Section */}
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="flex items-center gap-6">
+            <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-3xl shadow-inner border border-indigo-100">👋</div>
+            <div>
+              <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Welcome, {state.user?.name}</h1>
+              <p className="text-slate-500 font-medium">Viewing overview for <span className="text-indigo-600 underline underline-offset-4 decoration-indigo-200">{selectedCompany?.name || 'All Organizations'}</span></p>
             </div>
           </div>
+          <button
+            onClick={() => navigate('/projects')}
+            className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200 flex items-center gap-2"
+          >
+            <span className="text-xl">+</span> New Project
+          </button>
         </div>
-      )}
 
-      {/* Main Content Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1.5fr) minmax(0, 1fr)',
-        gap: '30px'
-      }}>
-        {/* Recent Projects */}
-        <div style={{
-          backgroundColor: 'white',
-          padding: '25px',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ margin: 0, color: '#1e293b' }}>Recent Projects</h3>
-            <button
-              onClick={() => navigate('/projects')}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
-            >
-              View All
-            </button>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {overviewStats.map((stat, i) => (
+            <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow group">
+              <div className="flex justify-between items-start">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{stat.title}</p>
+                <span className="text-xl group-hover:scale-125 transition-transform duration-300">{stat.icon}</span>
+              </div>
+              <p className="text-4xl font-bold text-slate-800 mt-2 tracking-tighter">
+                {loading ? <span className="text-slate-200 animate-pulse">---</span> : stat.value}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* System Administration (SuperAdmin Only) */}
+        {state.user?.role === 'superadmin' && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-bold text-slate-800 px-1 flex items-center gap-2">
+              <span className="w-1.5 h-6 bg-rose-500 rounded-full" />
+              System Administration
+            </h2>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { label: 'Total Companies', value: adminStats.totalCompanies, icon: '🏢' },
+                { label: 'Total Users', value: adminStats.totalUsers, icon: '👥' },
+                { label: 'Active Users', value: adminStats.activeUsers, icon: '🟢' },
+                { label: 'Administrators', value: adminStats.adminUsers, icon: '🛡️' }
+              ].map((as, i) => (
+                <div key={i} className="p-5 bg-slate-50 rounded-2xl border border-slate-200 shadow-sm group hover:bg-white transition-colors">
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{as.label}</p>
+                    <span className="text-xs grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all">{as.icon}</span>
+                  </div>
+                  <p className="text-3xl font-bold text-slate-800 tracking-tight">{as.value}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            {loading ? (
-              Array(3).fill(0).map((_, index) => (
-                <div key={index} style={{
-                  padding: '15px',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <div style={{ width: '120px', height: '16px', backgroundColor: '#f1f5f9', borderRadius: '4px' }}></div>
-                    <div style={{ width: '60px', height: '20px', backgroundColor: '#f1f5f9', borderRadius: '12px' }}></div>
-                  </div>
-                  <div style={{ width: '100%', backgroundColor: '#f1f5f9', borderRadius: '4px', height: '6px' }}></div>
-                </div>
-              ))
-            ) : recentProjects.length > 0 ? (
-              recentProjects.map((project, index) => (
-                <div key={project._id || index} style={{
-                  padding: '15px',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }} onClick={() => navigate(`/projects/${project._id}`)}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <span style={{ fontWeight: '500', color: '#1e293b' }}>{project.title}</span>
-                    <span style={{
-                      padding: '4px 8px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      backgroundColor: project.status === 'active' ? '#10b98115' :
-                        project.status === 'completed' ? '#3b82f615' : '#f59e0b15',
-                      color: project.status === 'active' ? '#10b981' :
-                        project.status === 'completed' ? '#3b82f6' : '#f59e0b'
-                    }}>
-                      {project.status}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px' }}>
-                    {project.description}
-                  </div>
-                  <div style={{ width: '100%', backgroundColor: '#f1f5f9', borderRadius: '4px', height: '6px' }}>
-                    <div style={{
-                      width: `${project.progress}%`,
-                      backgroundColor: '#3b82f6',
-                      height: '100%',
-                      borderRadius: '4px'
-                    }}></div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px' }}>📁</div>
-                <p>No projects yet. Create your first project to get started!</p>
-                <button
-                  onClick={() => navigate('/projects')}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#3b82f6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    marginTop: '8px'
-                  }}
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Recent Projects Card */}
+          <div className="lg:col-span-1 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-800">Recent Projects</h3>
+              <button onClick={() => navigate('/projects')} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-4 decoration-indigo-100">View All</button>
+            </div>
+            <div className="space-y-3">
+              {projects.slice(0, 5).map((p) => (
+                <div
+                  key={p._id}
+                  onClick={() => navigate(`/projects/${p._id}`)}
+                  className="p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-400 hover:bg-white cursor-pointer transition-all group"
                 >
-                  Create Project
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* My Tasks Summary */}
-        <div style={{
-          backgroundColor: 'white',
-          padding: '25px',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ margin: 0, color: '#1e293b' }}>My Tasks</h3>
-            <button
-              onClick={() => navigate('/my-tasks')}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
-            >
-              View All
-            </button>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            {loading ? (
-              Array(4).fill(0).map((_, index) => (
-                <div key={index} style={{
-                  padding: '15px',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px'
-                }}>
-                  <div style={{ width: '120px', height: '16px', backgroundColor: '#f1f5f9', borderRadius: '4px', marginBottom: '8px' }}></div>
-                  <div style={{ width: '80px', height: '12px', backgroundColor: '#f1f5f9', borderRadius: '4px' }}></div>
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="font-bold text-slate-800 truncate text-sm group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{p.title}</p>
+                    <span className="text-[10px] bg-white px-2 py-0.5 rounded-lg border border-slate-200 text-slate-500 font-bold uppercase">{p.status}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-600 rounded-full transition-all duration-1000" style={{ width: '60%' }} />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500">60%</span>
+                  </div>
                 </div>
-              ))
-            ) : (myTasks.upcoming.length > 0 || myTasks.completed.length > 0) ? (
-              <>
-                {myTasks.upcoming.length > 0 && (
-                  <div style={{ marginBottom: myTasks.completed.length > 0 ? '10px' : '0' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Running & Upcoming</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {myTasks.upcoming.map(task => (
-                        <div key={task._id} style={{
-                          padding: '12px',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          backgroundColor: '#f8fafc'
-                        }} onClick={() => navigate(`/my-tasks/${task._id}`)}>
-                          <div style={{ fontWeight: '500', color: '#1e293b', marginBottom: '4px', fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {task.title}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>{task.project?.title || 'No Project'}</span>
-                            <span style={{
-                              color: task.priority === 'urgent' ? '#dc2626' : task.priority === 'high' ? '#d97706' : '#2563eb',
-                              fontWeight: '600',
-                              textTransform: 'uppercase',
-                              fontSize: '10px'
-                            }}>{task.priority || 'NORMAL'}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {myTasks.completed.length > 0 && (
-                  <div>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Completed</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {myTasks.completed.map(task => (
-                        <div key={task._id} style={{
-                          padding: '12px',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          backgroundColor: '#f0fdf4'
-                        }} onClick={() => navigate(`/my-tasks/${task._id}`)}>
-                          <div style={{ fontWeight: '500', color: '#1e293b', marginBottom: '4px', fontSize: '14px', textDecoration: 'line-through', opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {task.title}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#64748b', opacity: 0.8 }}>
-                            ✅ Completed
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
-                <div style={{ fontSize: '32px', marginBottom: '12px' }}>✅</div>
-                <p style={{ margin: 0, fontSize: '14px' }}>All caught up!<br />No tasks on your plate.</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right Column: Quick Actions & Holidays */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-          {/* Quick Actions / User Management */}
-          <div style={{
-            backgroundColor: 'white',
-            padding: '25px',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-          }}>
-            <h3 style={{ margin: '0 0 20px 0', color: '#1e293b' }}>
-              {(state.user?.role === 'admin' || state.user?.role === 'superadmin') ? 'Admin Actions' : 'Quick Actions'}
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button
-                onClick={() => navigate('/projects')}
-                style={{
-                  padding: '12px 16px',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  fontWeight: '500'
-                }}
-              >
-                📁 Create New Project
-              </button>
-              {(state.user?.role === 'admin' || state.user?.role === 'superadmin') && (
-                <button
-                  onClick={() => navigate('/users')}
-                  style={{
-                    padding: '12px 16px',
-                    backgroundColor: '#8b5cf6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    fontWeight: '500'
-                  }}
-                >
-                  👥 Manage Users
-                </button>
+              ))}
+              {projects.length === 0 && !loading && (
+                <div className="py-12 text-center text-slate-400 font-medium text-sm">
+                  <div className="text-4xl mb-3 opacity-30">📁</div>
+                  No active projects found.
+                </div>
               )}
-              <button style={{
-                padding: '12px 16px',
-                backgroundColor: '#10b981',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontWeight: '500'
-              }}>
-                ✅ Add Task
-              </button>
             </div>
           </div>
 
-          {/* Upcoming Holidays */}
-          <div style={{
-            backgroundColor: 'white',
-            padding: '25px',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ margin: 0, color: '#1e293b' }}>Upcoming Holidays</h3>
-              <button
-                onClick={() => navigate('/holidays')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#3b82f6',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  padding: 0
-                }}
-              >
-                View Calendar
-              </button>
+          {/* My Tasks Card */}
+          <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-800">My Priority Tasks</h3>
+              <button onClick={() => navigate('/my-tasks')} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-4 decoration-indigo-100">View All Tasks</button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              {loading ? (
-                Array(2).fill(0).map((_, index) => (
-                  <div key={index} style={{
-                    padding: '15px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px'
-                  }}>
-                    <div style={{ width: '100px', height: '16px', backgroundColor: '#f1f5f9', borderRadius: '4px', marginBottom: '8px' }}></div>
-                    <div style={{ width: '60px', height: '12px', backgroundColor: '#f1f5f9', borderRadius: '4px' }}></div>
-                  </div>
-                ))
-              ) : upcomingHolidays.length > 0 ? (
-                upcomingHolidays.map((holiday, index) => {
-                  const isRange = holiday.isRange;
-                  const startDate = isRange ? new Date(holiday.startDate) : new Date(holiday.date);
-                  const endDate = isRange ? new Date(holiday.endDate) : null;
-
-                  const formatOptions = { month: 'short', day: 'numeric' };
-                  const dateStr = isRange
-                    ? `${startDate.toLocaleDateString(undefined, formatOptions)} - ${endDate.toLocaleDateString(undefined, formatOptions)}`
-                    : startDate.toLocaleDateString(undefined, formatOptions);
-
-                  return (
-                    <div key={holiday._id || index} style={{
-                      padding: '12px',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      backgroundColor: '#fffbeb',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px'
-                    }}>
-                      <div style={{
-                        fontSize: '24px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '40px',
-                        height: '40px',
-                        backgroundColor: '#fef3c7',
-                        borderRadius: '8px'
-                      }}>🎉</div>
-                      <div>
-                        <div style={{ fontWeight: '600', color: '#1e293b', fontSize: '14px', marginBottom: '4px' }}>{holiday.name}</div>
-                        <div style={{ fontSize: '12px', color: '#d97706', fontWeight: '500' }}>{dateStr}</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Upcoming Tasks Column */}
+              <div className="space-y-4">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">To Do</p>
+                <div className="space-y-3">
+                  {myTasks.upcoming.map((t) => (
+                    <div
+                      key={t._id}
+                      onClick={() => navigate(`/my-tasks/${t._id}`)}
+                      className="p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-400 hover:bg-white cursor-pointer transition-all flex items-center justify-between group"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-slate-800 truncate text-sm group-hover:text-indigo-600 mb-0.5">{t.title}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase truncate">{t.project?.title || 'Personal'}</p>
                       </div>
+                      <span className={`ml-3 px-2 py-1 rounded-lg text-[9px] font-bold uppercase border ${t.priority === 'urgent' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                          t.priority === 'high' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                            'bg-indigo-50 text-indigo-600 border-indigo-100'
+                        }`}>
+                        {t.priority}
+                      </span>
                     </div>
-                  );
-                })
-              ) : (
-                <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
-                  <p style={{ margin: 0, fontSize: '14px' }}>No upcoming holidays</p>
+                  ))}
+                  {myTasks.upcoming.length === 0 && <p className="text-center py-12 text-slate-300 font-medium text-sm italic">You're all caught up! ✨</p>}
                 </div>
-              )}
+              </div>
+
+              {/* Completed Tasks Column */}
+              <div className="space-y-4">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Recently Completed</p>
+                <div className="space-y-3">
+                  {myTasks.completed.map((t) => (
+                    <div key={t._id} className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center gap-3 opacity-60">
+                      <div className="w-5 h-5 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px] font-bold shadow-sm">✓</div>
+                      <p className="text-xs font-bold text-slate-700 truncate line-through">{t.title}</p>
+                    </div>
+                  ))}
+                  {myTasks.completed.length === 0 && <p className="text-center py-12 text-slate-300 font-medium text-sm italic">No recent activity.</p>}
+                </div>
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Holidays Section */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-slate-800">Upcoming Holidays & Events</h3>
+            <button onClick={() => navigate('/holidays')} className="text-xs font-bold text-indigo-600 underline underline-offset-4 decoration-indigo-100">Full Calendar</button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {upcomingHolidays.map((h, i) => (
+              <div key={i} className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4 hover:bg-white transition-colors cursor-default">
+                <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-2xl">📅</div>
+                <div>
+                  <p className="font-bold text-slate-800 tracking-tight leading-tight">{h.name}</p>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-0.5">
+                    {new Date(h.date || h.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {upcomingHolidays.length === 0 && (
+              <div className="col-span-full py-12 text-center text-slate-400 font-medium text-sm">
+                <div className="text-4xl mb-3 opacity-30">🎈</div>
+                No upcoming events found.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Global Navigation Hub */}
+        <div className="flex flex-wrap gap-3 pt-6 border-t border-slate-200">
+          {[
+            { label: 'Role Management', path: '/manage-roles', icon: '🛡️' },
+            { label: 'Organization Units', path: '/organogram', icon: '📁' },
+            { label: 'Audit Logs', path: '/profile', icon: '📜' },
+            { label: 'Company Settings', path: '/company-settings', icon: '⚙️' }
+          ].map((nav, i) => (
+            <button
+              key={i}
+              onClick={() => navigate(nav.path)}
+              className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-3 border border-slate-200"
+            >
+              <span>{nav.icon}</span>
+              {nav.label}
+            </button>
+          ))}
         </div>
       </div>
     </Layout>

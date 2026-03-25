@@ -3,7 +3,6 @@ import { useAuth } from '../context/AuthContext';
 import { useCompany } from '../context/CompanyContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getCookie } from '../utils/cookies';
-import { companyAPI } from '../services/api';
 import SidebarHeader from './SidebarHeader';
 import { useSocket } from '../context/SocketContext';
 import { useChat } from '../context/ChatContext';
@@ -14,7 +13,7 @@ const Layout = ({ children }) => {
   const { state, dispatch } = useAuth();
   const { state: companyState, selectCompany } = useCompany();
   const { unreadCount, clearUnreadCount, fetchUnreadCount } = useSocket();
-  const { hasPermission, companyData, isOwner, isSuperAdmin } = usePermissions();
+  const { hasPermission, companyData } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -25,65 +24,43 @@ const Layout = ({ children }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const { unreadCounts } = useChat();
 
-  // Derive sidebar permission flags from unified context
   const canManageSettings = hasPermission(PERMISSIONS.MANAGE_COMPANY_SETTINGS);
   const canViewDesignations = hasPermission(PERMISSIONS.VIEW_DESIGNATIONS);
   const canViewEmployees = hasPermission(PERMISSIONS.VIEW_EMPLOYEE_LIST);
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isCompanyDropdownOpen && !event.target.closest('.workspace-modal') && !event.target.closest('.sidebar-header')) {
-        setIsCompanyDropdownOpen(false);
-      }
-      if (isNotifDropdownOpen && !event.target.closest('.notif-dropdown-container')) {
-        setIsNotifDropdownOpen(false);
-      }
+    const mu = (e) => {
+      if (isCompanyDropdownOpen && !e.target.closest('.workspace-modal') && !e.target.closest('.sidebar-header')) setIsCompanyDropdownOpen(false);
+      if (isNotifDropdownOpen && !e.target.closest('.notif-dropdown-container')) setIsNotifDropdownOpen(false);
     };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', mu);
+    return () => document.removeEventListener('mousedown', mu);
   }, [isCompanyDropdownOpen, isNotifDropdownOpen]);
 
-  // Fetch recent notifications for dropdown
   const fetchRecentNotifications = async () => {
     setNotifLoading(true);
     try {
       const token = getCookie('authToken');
-      const [notifRes, invRes] = await Promise.all([
+      const [nr, ir] = await Promise.all([
         fetch('/api/notifications', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/invitations/my-invitations', { headers: { Authorization: `Bearer ${token}` } })
       ]);
       let combined = [];
-      if (notifRes.ok) {
-        const data = await notifRes.json();
-        combined = (data.notifications || []).slice(0, 8);
-      }
-      if (invRes.ok) {
-        const invData = await invRes.json();
-        const invNotifs = (Array.isArray(invData) ? invData : []).map(inv => ({
-          _id: `inv_${inv._id}`,
-          type: 'invitation',
-          title: `Invitation: ${inv.company?.name}`,
-          message: `Invited as ${inv.designation} by ${inv.invitedBy?.name}`,
-          isRead: false,
-          createdAt: inv.createdAt,
-          _invitationId: inv._id
-        }));
-        combined = [...invNotifs, ...combined].slice(0, 8);
+      if (nr.ok) combined = ((await nr.json()).notifications || []).slice(0, 8);
+      if (ir.ok) {
+        const invs = (await ir.json());
+        const ins = (Array.isArray(invs) ? invs : []).map(i => ({ _id: `inv_${i._id}`, type: 'invitation', title: `Invitation: ${i.company?.name}`, message: `Invited as ${i.designation} by ${i.invitedBy?.name}`, isRead: false, createdAt: i.createdAt, _invitationId: i._id }));
+        combined = [...ins, ...combined].slice(0, 8);
       }
       setRecentNotifications(combined);
-    } catch (err) {
-      console.error('Error fetching notifications:', err);
-    } finally {
-      setNotifLoading(false);
-    }
+    } catch (err) { console.error('Notification_Error', err); }
+    finally { setNotifLoading(false); }
   };
 
   const toggleNotifDropdown = () => {
-    const next = !isNotifDropdownOpen;
-    setIsNotifDropdownOpen(next);
-    if (next) fetchRecentNotifications();
+    const nextState = !isNotifDropdownOpen;
+    setIsNotifDropdownOpen(nextState);
+    if (nextState) fetchRecentNotifications();
   };
 
   const markNotifAsRead = async (id) => {
@@ -95,276 +72,65 @@ const Layout = ({ children }) => {
     } catch { }
   };
 
-  const notifTypeConfig = {
-    task_ready: { icon: '✅', color: '#10b981' },
-    task_send_back: { icon: '↩️', color: '#f59e0b' },
-    task_role_handoff: { icon: '🔄', color: '#3b82f6' },
-    task_role_assignment: { icon: '🎯', color: '#8b5cf6' },
-    task_role_completed: { icon: '🏁', color: '#10b981' },
-    project_assignment: { icon: '📁', color: '#06b6d4' },
-    salary_update: { icon: '💰', color: '#22c55e' },
-    invitation: { icon: '✉️', color: '#3b82f6' },
-    general: { icon: '🔔', color: '#64748b' },
-  };
+  useEffect(() => { if (location.pathname === '/notifications') clearUnreadCount(); }, [location.pathname]);
+  useEffect(() => { fetchUnreadCount(); }, [fetchUnreadCount]);
 
-  const getNotifConfig = (type) => notifTypeConfig[type] || notifTypeConfig.general;
-
-  const timeAgo = (dateStr) => {
-    if (!dateStr) return '';
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.floor(hours / 24)}d ago`;
-  };
-
-  // Sync notification count when visiting /notifications
-  useEffect(() => {
-    if (location.pathname === '/notifications') {
-      clearUnreadCount();
-    }
-  }, [location.pathname, clearUnreadCount]);
-
-  // Re-fetch count on mount so it is accurate after page refresh
-  useEffect(() => {
-    fetchUnreadCount();
-  }, [fetchUnreadCount]);
-
-
-  const handleLogout = () => {
-    dispatch({ type: 'LOGOUT' });
-    navigate('/');
-  };
-
-  // SVG Icon Components
-  const DashboardIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7"></rect>
-      <rect x="14" y="3" width="7" height="7"></rect>
-      <rect x="14" y="14" width="7" height="7"></rect>
-      <rect x="3" y="14" width="7" height="7"></rect>
-    </svg>
-  );
-
-  const ProjectsIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-    </svg>
-  );
-
-  const OverviewIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="1" x2="12" y2="23"></line>
-      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-    </svg>
-  );
-
-  const UsersIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-      <circle cx="9" cy="7" r="4"></circle>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-    </svg>
-  );
-
-  const CompanyIcon = ({ size = 20 }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="9" rx="1"></rect>
-      <rect x="14" y="3" width="7" height="5" rx="1"></rect>
-      <rect x="14" y="12" width="7" height="9" rx="1"></rect>
-      <rect x="3" y="16" width="7" height="5" rx="1"></rect>
-    </svg>
-  );
-
-  const SettingsIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3"></circle>
-      <path d="M12 1v6m0 6v6m5.66-13.66l-4.24 4.24m0 6l-4.24 4.24M23 12h-6m-6 0H1m18.66 5.66l-4.24-4.24m0-6l-4.24-4.24"></path>
-    </svg>
-  );
-
-  const EmployeesIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-      <circle cx="8.5" cy="7" r="4"></circle>
-      <line x1="20" y1="8" x2="20" y2="14"></line>
-      <line x1="23" y1="11" x2="17" y2="11"></line>
-    </svg>
-  );
-
-  const HolidaysIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-      <line x1="16" y1="2" x2="16" y2="6"></line>
-      <line x1="8" y1="2" x2="8" y2="6"></line>
-      <line x1="3" y1="10" x2="21" y2="10"></line>
-    </svg>
-  );
-
-  const LeavesIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-      <circle cx="12" cy="7" r="4"></circle>
-      <path d="M22 11h-4"></path>
-    </svg>
-  );
-
-  const WorkforceIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-      <circle cx="9" cy="7" r="4"></circle>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-      <rect x="18" y="8" width="4" height="4" rx="1"></rect>
-    </svg>
-  );
-
-  const OrganogramIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="9" y="2" width="6" height="4" rx="1"></rect>
-      <rect x="3" y="10" width="6" height="4" rx="1"></rect>
-      <rect x="15" y="10" width="6" height="4" rx="1"></rect>
-      <rect x="3" y="18" width="6" height="4" rx="1"></rect>
-      <rect x="15" y="18" width="6" height="4" rx="1"></rect>
-      <line x1="12" y1="6" x2="12" y2="10"></line>
-      <line x1="6" y1="10" x2="6" y2="10"></line>
-      <line x1="18" y1="10" x2="18" y2="10"></line>
-      <line x1="6" y1="14" x2="6" y2="18"></line>
-      <line x1="18" y1="14" x2="18" y2="18"></line>
-      <path d="M6 10h12"></path>
-    </svg>
-  );
-
-  const ManageRolesIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-      <path d="M2 17l10 5 10-5"></path>
-      <path d="M2 12l10 5 10-5"></path>
-    </svg>
-  );
-
-  const MyTasksIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
-      <rect x="9" y="3" width="6" height="4" rx="1"></rect>
-      <path d="M9 12l2 2 4-4"></path>
-    </svg>
-  );
-
-  const TeamActivityIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-      <circle cx="9" cy="7" r="4"></circle>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-    </svg>
-  );
+  const handleLogout = () => { dispatch({ type: 'LOGOUT' }); navigate('/'); };
 
   const menuItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: DashboardIcon, category: 'main' },
-    { path: '/projects', label: 'Projects', icon: ProjectsIcon, category: 'main' },
+    { path: '/dashboard', label: 'Dashboard', icon: '📊', category: 'Main' },
+    { path: '/projects', label: 'Projects', icon: '📁', category: 'Main' },
     ...(state.user?.role !== 'superadmin' ? [
-      { path: '/my-tasks', label: 'My Tasks', icon: MyTasksIcon, category: 'main' },
-      { path: '/team-activity', label: 'Team Activity', icon: TeamActivityIcon, category: 'main' }
+      { path: '/my-tasks', label: 'My Tasks', icon: '✅', category: 'Main' },
+      { path: '/team-activity', label: 'Team Activity', icon: '📡', category: 'Main' }
     ] : []),
     ...(companyState.selectedCompany?.id !== 'personal' ? [
-      { path: '/overview', label: 'Overview', icon: OverviewIcon, category: 'main' }
-    ] : []),
-    ...(companyState.selectedCompany?.id !== 'personal' && canViewEmployees ? [
-      { path: '/employees', label: 'Employees', icon: EmployeesIcon, category: 'company' },
-      { path: '/organogram', label: 'Org Chart', icon: OrganogramIcon, category: 'company' }
-    ] : []),
-    ...(companyState.selectedCompany?.id !== 'personal' && canViewDesignations ? [
-      { path: '/manage-roles', label: 'Manage Roles', icon: ManageRolesIcon, category: 'company' }
-    ] : []),
-    ...(companyState.selectedCompany?.id !== 'personal' ? [
-      { path: '/leaves', label: 'Leaves', icon: LeavesIcon, category: 'company' },
-      { path: '/holidays', label: 'Holidays', icon: HolidaysIcon, category: 'company' }
-    ] : []),
-    ...(canManageSettings && companyState.selectedCompany?.id !== 'personal' ? [
-      { path: '/workforce', label: 'Workforce', icon: WorkforceIcon, category: 'company' }
+      { path: '/overview', label: 'Overview', icon: '🌍', category: 'Management' },
+      ...(canViewEmployees ? [
+        { path: '/employees', label: 'Employees', icon: '👥', category: 'Management' },
+        { path: '/organogram', label: 'Organogram', icon: '📐', category: 'Management' }
+      ] : []),
+      ...(canViewDesignations ? [{ path: '/manage-roles', label: 'Roles & Access', icon: '🛡️', category: 'Management' }] : []),
+      { path: '/leaves', label: 'Leaves', icon: '🗓️', category: 'Management' },
+      { path: '/holidays', label: 'Holidays', icon: '🎁', category: 'Management' }
     ] : []),
     ...(state.user?.role === 'admin' || state.user?.role === 'superadmin' ? [
-      { path: '/users', label: 'Users', icon: UsersIcon, category: 'admin' },
-      { path: '/companies', label: 'Companies', icon: CompanyIcon, category: 'admin' }
+      { path: '/users', label: 'Users', icon: '🆔', category: 'Administration' },
+      { path: '/companies', label: 'Companies', icon: '🏭', category: 'Administration' }
     ] : []),
     ...(canManageSettings && companyState.selectedCompany?.id !== 'personal' ? [
-      { path: '/company-settings', label: 'Settings', icon: SettingsIcon, category: 'company' }
+      { path: '/company-settings', label: 'Settings', icon: '⚙️', category: 'System' }
     ] : [])
   ];
 
-  const handleCompanySelect = async (company) => {
-    if (company === 'Personal') {
-      selectCompany({ id: 'personal', name: 'Personal' });
-    } else if (company === 'Create Company') {
-      navigate('/create-company');
-    } else {
-      selectCompany(company);
-    }
+  const handleCompanySelect = (c) => {
+    if (c === 'Personal') selectCompany({ id: 'personal', name: 'Personal' });
+    else if (c === 'Create Company') navigate('/create-company');
+    else selectCompany(c);
     setIsCompanyDropdownOpen(false);
   };
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isCompanyDropdownOpen && !event.target.closest('.company-dropdown')) {
-        setIsCompanyDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isCompanyDropdownOpen]);
 
   const getPageTitle = () => {
     const titles = {
       '/dashboard': 'Dashboard',
       '/projects': 'Projects',
       '/overview': 'Overview',
-      '/users': 'Users',
+      '/users': 'User Management',
       '/employees': 'Employees',
-      '/leaves': 'Leave Management',
+      '/leaves': 'Leaves',
       '/holidays': 'Holidays',
-      '/profile': 'My Profile',
-      '/workforce': 'Workforce'
+      '/profile': 'Profile Settings'
     };
-
-    // Handle dynamic routes
-    if (location.pathname.startsWith('/employees/')) {
-      return 'Employee Details';
-    }
-
+    if (location.pathname.startsWith('/employees/')) return 'Employee Details';
     return titles[location.pathname] || 'Offtix';
   };
 
-  const sidebarWidth = sidebarCollapsed ? '80px' : '280px';
+  const timeAgo = (d) => { if (!d) return ''; const df = Date.now() - new Date(d).getTime(); const m = Math.floor(df / 60000); if (m < 1) return 'Just now'; if (m < 60) return `${m}m ago`; const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`; return `${Math.floor(h / 24)}d ago`; };
 
   return (
-    <div style={{
-      display: 'flex',
-      minHeight: '100vh',
-      backgroundColor: '#f8fafc',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-    }}>
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden">
       {/* Sidebar */}
-      <div style={{
-        width: sidebarWidth,
-        height: '100vh',
-        background: '#0f172a',
-        color: '#f1f5f9',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'fixed',
-        left: 0,
-        top: 0,
-        transition: 'width 0.3s ease',
-        boxShadow: '4px 0 24px rgba(0, 0, 0, 0.12)',
-        zIndex: 1000
-      }}>
-        {/* Logo & Toggle */}
+      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-72'} h-screen bg-slate-900 text-slate-100 flex flex-col fixed left-0 top-0 transition-all duration-300 ease-in-out shadow-lg z-[1000]`}>
         <SidebarHeader
           sidebarCollapsed={sidebarCollapsed}
           setSidebarCollapsed={setSidebarCollapsed}
@@ -374,876 +140,131 @@ const Layout = ({ children }) => {
           isDropdownOpen={isCompanyDropdownOpen}
         />
 
-        {/* Workspace Switcher Modal */}
+        {/* Workspace Dropdown */}
         {isCompanyDropdownOpen && (
-          <div
-            className="workspace-modal"
-            style={{
-              position: 'absolute',
-              top: sidebarCollapsed ? '80px' : '120px',
-              left: sidebarCollapsed ? '80px' : '20px',
-              right: sidebarCollapsed ? 'auto' : '20px',
-              width: sidebarCollapsed ? '320px' : 'auto',
-              background: 'linear-gradient(to bottom, #1e293b, #1a2332)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              borderRadius: '12px',
-              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05)',
-              zIndex: 1001,
-              maxHeight: '400px',
-              overflowY: 'auto',
-              scrollbarWidth: 'thin',
-              scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
-              animation: 'slideDown 0.2s ease-out'
-            }}>
-            {/* Header */}
-            {companyState.companies.length > 0 && (
-              <div style={{
-                padding: '14px 16px 10px',
-                fontSize: '10px',
-                fontWeight: '700',
-                color: '#64748b',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
-              }}>
-                YOUR WORKSPACES
-              </div>
-            )}
-
-            {/* Company List */}
-            <div style={{ padding: '6px' }}>
-              {companyState.companies.map((company) => (
-                <div
-                  key={company.id}
-                  onClick={() => handleCompanySelect(company)}
-                  style={{
-                    padding: '12px 14px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    color: '#f1f5f9',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '14px',
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    marginBottom: '4px',
-                    background: companyState.selectedCompany?.id === company.id
-                      ? 'rgba(59, 130, 246, 0.18)'
-                      : 'transparent',
-                    border: companyState.selectedCompany?.id === company.id
-                      ? '1px solid rgba(59, 130, 246, 0.3)'
-                      : '1px solid transparent'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = companyState.selectedCompany?.id === company.id
-                      ? 'rgba(59, 130, 246, 0.25)'
-                      : 'rgba(255, 255, 255, 0.1)';
-                    e.currentTarget.style.transform = 'translateX(3px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = companyState.selectedCompany?.id === company.id
-                      ? 'rgba(59, 130, 246, 0.18)'
-                      : 'transparent';
-                    e.currentTarget.style.transform = 'translateX(0)';
-                  }}
-                >
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    boxShadow: '0 2px 6px rgba(59, 130, 246, 0.3)',
-                    overflow: 'hidden'
-                  }}>
-                    {company.logo ? (
-                      <img
-                        src={company.logo}
-                        alt={company.name}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover'
-                        }}
-                      />
-                    ) : (
-                      <div style={{
-                        fontSize: '14px',
-                        fontWeight: '700',
-                        color: 'white'
-                      }}>
-                        {company.name?.charAt(0)?.toUpperCase() || 'C'}
-                      </div>
-                    )}
-                  </div>
-                  <span style={{
-                    flex: 1,
-                    fontWeight: '600',
-                    letterSpacing: '-0.2px'
-                  }}>
-                    {company.name}
-                  </span>
-                  {companyState.selectedCompany?.id === company.id && (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                  )}
+          <div className={`workspace-modal absolute ${sidebarCollapsed ? 'top-16 left-20 w-80' : 'top-20 left-4 right-4'} bg-white border border-slate-200 rounded-xl shadow-2xl z-[1001] max-h-[400px] overflow-y-auto scrollbar-none animate-in fade-in slide-in-from-top-2`}>
+            <div className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">Workspaces</div>
+            <div className="p-2 space-y-1">
+              {companyState.companies.map((c) => (
+                <div key={c.id} onClick={() => handleCompanySelect(c)} className={`flex items-center gap-3 p-3 cursor-pointer rounded-lg transition-colors ${companyState.selectedCompany?.id === c.id ? 'bg-indigo-50 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-600'}`}>
+                  <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center flex-shrink-0 text-sm">{c.logo ? <img src={c.logo} alt="" className="w-full h-full object-cover rounded-md" /> : c.name.charAt(0)}</div>
+                  <span className="flex-1 truncate text-sm">{c.name}</span>
                 </div>
               ))}
-            </div>
-
-            {/* Separator */}
-            <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '6px 14px' }} />
-
-            {/* Personal Option */}
-            <div style={{ padding: '6px' }}>
-              <div
-                onClick={() => handleCompanySelect('Personal')}
-                style={{
-                  padding: '12px 14px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  color: '#f1f5f9',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '14px',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  background: companyState.selectedCompany?.id === 'personal'
-                    ? 'rgba(139, 92, 246, 0.18)'
-                    : 'transparent',
-                  border: companyState.selectedCompany?.id === 'personal'
-                    ? '1px solid rgba(139, 92, 246, 0.3)'
-                    : '1px solid transparent'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = companyState.selectedCompany?.id === 'personal'
-                    ? 'rgba(139, 92, 246, 0.25)'
-                    : 'rgba(255, 255, 255, 0.1)';
-                  e.currentTarget.style.transform = 'translateX(3px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = companyState.selectedCompany?.id === 'personal'
-                    ? 'rgba(139, 92, 246, 0.18)'
-                    : 'transparent';
-                  e.currentTarget.style.transform = 'translateX(0)';
-                }}
-              >
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  boxShadow: '0 2px 6px rgba(139, 92, 246, 0.3)'
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                </div>
-                <span style={{
-                  flex: 1,
-                  fontWeight: '600',
-                  letterSpacing: '-0.2px'
-                }}>
-                  Personal
-                </span>
-                {companyState.selectedCompany?.id === 'personal' && (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                )}
+              <div onClick={() => handleCompanySelect('Personal')} className={`flex items-center gap-3 p-3 cursor-pointer rounded-lg transition-colors ${companyState.selectedCompany?.id === 'personal' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-600'}`}>
+                <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center text-sm">👤</div>
+                <span className="flex-1 text-sm font-medium">Personal Account</span>
               </div>
             </div>
-
-            {/* Separator */}
-            <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '6px 14px' }} />
-
-            {/* Create Company Option */}
-            <div style={{ padding: '6px' }}>
-              <div
-                onClick={() => handleCompanySelect('Create Company')}
-                style={{
-                  padding: '14px 16px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                  color: 'white',
-                  boxShadow: '0 4px 14px rgba(59, 130, 246, 0.35)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  letterSpacing: '-0.2px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.45)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(59, 130, 246, 0.35)';
-                }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                <span>Create New Workspace</span>
-              </div>
+            <div className="p-3 border-t border-slate-100">
+              <button onClick={() => handleCompanySelect('Create Company')} className="w-full py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors"> + Add Company </button>
             </div>
           </div>
         )}
 
-        {/* Add CSS animation */}
-        <style>{`
-          @keyframes slideDown {
-            from {
-              opacity: 0;
-              transform: translateY(-10px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-        `}</style>
-
-
-
-        {/* Navigation */}
-        <nav style={{
-          flex: 1,
-          padding: sidebarCollapsed ? '16px 12px' : '20px 16px',
-          overflowY: 'auto',
-          scrollbarWidth: 'thin',
-          scrollbarColor: 'rgba(255, 255, 255, 0.1) transparent'
-        }}>
-          {/* Main Navigation Label */}
-          {!sidebarCollapsed && (
-            <div style={{
-              fontSize: '11px',
-              fontWeight: '600',
-              color: '#64748b',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginBottom: '12px',
-              paddingLeft: '12px'
-            }}>
-              Main Menu
-            </div>
-          )}
-
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path ||
-              (item.path === '/employees' && location.pathname.startsWith('/employees/'));
-            const IconComponent = item.icon;
-
+        <nav className={`flex-1 overflow-y-auto scrollbar-none py-6 space-y-1 ${sidebarCollapsed ? 'px-2' : 'px-4'}`}>
+          {menuItems.map((item, idx) => {
+            const active = location.pathname === item.path || (item.path === '/employees' && location.pathname.startsWith('/employees/'));
+            const showCat = !sidebarCollapsed && (idx === 0 || menuItems[idx - 1].category !== item.category);
             return (
-              <div
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                style={{
-                  padding: sidebarCollapsed ? '12px' : '12px 16px',
-                  margin: '4px 0',
-                  cursor: 'pointer',
-                  background: isActive
-                    ? 'linear-gradient(135deg, #3b82f6, #2563eb)'
-                    : 'transparent',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: sidebarCollapsed ? '0' : '12px',
-                  justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                  transition: 'all 0.2s ease',
-                  position: 'relative',
-                  color: isActive ? '#ffffff' : '#94a3b8',
-                  boxShadow: isActive ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                    e.currentTarget.style.color = '#f1f5f9';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = '#94a3b8';
-                  }
-                }}
-              >
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  opacity: isActive ? 1 : 0.8
-                }}>
-                  <IconComponent />
+              <React.Fragment key={item.path}>
+                {showCat && <div className="px-3 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{item.category}</div>}
+                <div onClick={() => navigate(item.path)} className={`group flex items-center gap-4 cursor-pointer rounded-lg transition-all ${sidebarCollapsed ? 'p-3 justify-center' : 'p-3 px-4'} ${active ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                  <span className="text-xl">{item.icon}</span>
+                  {!sidebarCollapsed && <span className="flex-1 text-sm font-medium">{item.label}</span>}
                 </div>
-                {!sidebarCollapsed && (
-                  <span style={{
-                    fontWeight: isActive ? '600' : '500',
-                    fontSize: '14px',
-                    flex: 1
-                  }}>
-                    {item.label}
-                  </span>
-                )}
-                {!sidebarCollapsed && isActive && (
-                  <div style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    background: '#ffffff',
-                    boxShadow: '0 0 8px rgba(255, 255, 255, 0.5)'
-                  }} />
-                )}
-              </div>
+              </React.Fragment>
             );
           })}
         </nav>
 
-        {/* User Profile Section */}
-        <div style={{
-          padding: sidebarCollapsed ? '16px 12px' : '16px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          background: 'rgba(0, 0, 0, 0.2)'
-        }}>
+        {/* User Footer */}
+        <div className="p-4 bg-slate-950 border-t border-slate-800">
           {!sidebarCollapsed ? (
-            <div>
-              <div
-                onClick={() => navigate('/profile')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  background: location.pathname === '/profile'
-                    ? 'rgba(59, 130, 246, 0.15)'
-                    : 'rgba(255, 255, 255, 0.03)',
-                  border: `1px solid ${location.pathname === '/profile' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(255, 255, 255, 0.05)'}`,
-                  transition: 'all 0.2s',
-                  marginBottom: '12px'
-                }}
-                onMouseEnter={(e) => {
-                  if (location.pathname !== '/profile') {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (location.pathname !== '/profile') {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                  }
-                }}
-              >
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '16px',
-                  fontWeight: '700',
-                  color: 'white',
-                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
-                }}>
-                  {state.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    color: '#f1f5f9',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}>
-                    {state.user?.name}
-                  </div>
-                  <div style={{
-                    fontSize: '12px',
-                    color: '#94a3b8',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}>
-                    {state.user?.email}
-                  </div>
+            <div className="space-y-4">
+              <div onClick={() => navigate('/profile')} className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-slate-800 transition-colors">
+                <div className="w-10 h-10 rounded-lg bg-slate-800 text-white flex items-center justify-center font-bold text-lg">{state.user?.name?.charAt(0)}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm text-white truncate">{state.user?.name}</p>
+                  <p className="text-[10px] text-slate-500 uppercase font-bold">{state.user?.role}</p>
                 </div>
               </div>
-
-              <button
-                onClick={handleLogout}
-                style={{
-                  width: '100%',
-                  padding: '10px 16px',
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  color: '#f87171',
-                  border: '1px solid rgba(239, 68, 68, 0.2)',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(239, 68, 68, 0.15)';
-                  e.target.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(239, 68, 68, 0.1)';
-                  e.target.style.borderColor = 'rgba(239, 68, 68, 0.2)';
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                  <polyline points="16 17 21 12 16 7"></polyline>
-                  <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-                Sign Out
-              </button>
+              <button onClick={handleLogout} className="w-full py-2 bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white rounded-lg text-xs font-bold transition-colors"> Logout </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-              <div
-                onClick={() => navigate('/profile')}
-                style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '18px',
-                  fontWeight: '700',
-                  color: 'white',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
-                }}
-              >
-                {state.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-              </div>
-              <button
-                onClick={handleLogout}
-                style={{
-                  width: '44px',
-                  height: '44px',
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  color: '#f87171',
-                  border: '1px solid rgba(239, 68, 68, 0.2)',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(239, 68, 68, 0.15)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(239, 68, 68, 0.1)';
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                  <polyline points="16 17 21 12 16 7"></polyline>
-                  <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-              </button>
+            <div className="flex flex-col items-center gap-4">
+              <div onClick={() => navigate('/profile')} className="w-10 h-10 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-lg cursor-pointer">{state.user?.name?.charAt(0)}</div>
+              <button onClick={handleLogout} className="text-xl text-slate-600 hover:text-rose-500 transition-colors">🔒</button>
             </div>
           )}
         </div>
-      </div>
+      </aside>
 
-      {/* Main Content */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        marginLeft: sidebarWidth,
-        transition: 'margin-left 0.3s ease'
-      }}>
-        {/* Header */}
-        <header style={{
-          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-          padding: '24px 32px',
-          borderBottom: '1px solid #e2e8f0',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1)',
-          backdropFilter: 'blur(10px)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <h1 style={{
-                margin: 0,
-                color: '#1e293b',
-                fontSize: '28px',
-                fontWeight: '700',
-                letterSpacing: '-0.5px'
-              }}>
-                {getPageTitle()}
-              </h1>
-              <p style={{
-                margin: '4px 0 0 0',
-                color: '#64748b',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}>
-                Welcome back, {state.user?.name}
-              </p>
+      {/* Main Content Area */}
+      <main className={`flex flex-col flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-72'} transition-all duration-300 ease-in-out h-screen overflow-hidden`}>
+        <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between shadow-sm">
+          <div>
+            <h1 className="text-xl font-bold text-slate-800"> {getPageTitle()} </h1>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* Chat Icon */}
+            <div onClick={() => setIsChatOpen(!isChatOpen)} className="relative w-10 h-10 flex items-center justify-center rounded-lg cursor-pointer hover:bg-slate-50 transition-colors border border-slate-100 text-xl shadow-sm">
+              💬
+              {unreadCounts.total > 0 && <div className="absolute -top-1 -right-1 bg-rose-600 text-white font-bold text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">{unreadCounts.total > 99 ? '99' : unreadCounts.total}</div>}
             </div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px'
-            }}>
-              {/* Global Chat Toggle */}
-              <div
-                onClick={() => setIsChatOpen(!isChatOpen)}
-                style={{
-                  position: 'relative',
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '12px',
-                  background: isChatOpen ? '#eff6ff' : 'white',
-                  border: `1px solid ${isChatOpen ? '#93c5fd' : '#e2e8f0'}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
-                }}
-                title="Global Chat"
-              >
-                <div style={{ fontSize: '20px' }}>💬</div>
-                {unreadCounts.total > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '-6px',
-                    right: '-6px',
-                    backgroundColor: '#ef4444',
-                    color: 'white',
-                    fontSize: '10px',
-                    fontWeight: '700',
-                    minWidth: '18px',
-                    height: '18px',
-                    borderRadius: '9px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '0 4px',
-                    border: '2px solid white',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}>
-                    {unreadCounts.total > 99 ? '99+' : unreadCounts.total}
-                  </div>
-                )}
+
+            {/* Notification Icon */}
+            <div className="notif-dropdown-container relative">
+              <div onClick={toggleNotifDropdown} className={`w-10 h-10 flex items-center justify-center rounded-lg cursor-pointer transition-colors border shadow-sm text-xl ${isNotifDropdownOpen ? 'bg-slate-100 border-slate-200' : 'bg-white border-slate-100 hover:bg-slate-50'}`}>
+                🔔
+                {unreadCount > 0 && <div className="absolute -top-1 -right-1 bg-amber-500 text-white font-bold text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white animate-pulse">{unreadCount}</div>}
               </div>
-
-              {/* Notification Bell + Dropdown */}
-              <div
-                className="notif-dropdown-container"
-                style={{ position: 'relative' }}
-              >
-                {/* Bell Button */}
-                <div
-                  onClick={toggleNotifDropdown}
-                  style={{
-                    position: 'relative',
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '12px',
-                    background: isNotifDropdownOpen ? '#eff6ff' : 'white',
-                    border: `1px solid ${isNotifDropdownOpen ? '#93c5fd' : '#e2e8f0'}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)';
-                  }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isNotifDropdownOpen ? '#3b82f6' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  </svg>
-                  {unreadCount > 0 && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '-4px',
-                      right: '-4px',
-                      minWidth: '20px',
-                      height: '20px',
-                      borderRadius: '10px',
-                      background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                      color: 'white',
-                      fontSize: '11px',
-                      fontWeight: '700',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '0 6px',
-                      boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)',
-                      border: '2px solid white'
-                    }}>
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </div>
-                  )}
-                </div>
-
-                {/* Dropdown Panel */}
-                {isNotifDropdownOpen && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 12px)',
-                    right: 0,
-                    width: '380px',
-                    maxHeight: '520px',
-                    backgroundColor: 'white',
-                    borderRadius: '16px',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.08)',
-                    border: '1px solid #e2e8f0',
-                    zIndex: 999,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden',
-                    animation: 'notifSlideDown 0.2s ease-out'
-                  }}>
-                    <style>{`
-                      @keyframes notifSlideDown {
-                        from { opacity: 0; transform: translateY(-8px); }
-                        to   { opacity: 1; transform: translateY(0); }
-                      }
-                    `}</style>
-
-                    {/* Dropdown Header */}
-                    <div style={{
-                      padding: '16px 20px',
-                      borderBottom: '1px solid #f1f5f9',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)'
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>Notifications</div>
-                        {unreadCount > 0 && (
-                          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-                            {unreadCount} unread
-                          </div>
-                        )}
+              {isNotifDropdownOpen && (
+                <div className="absolute top-full mt-2 right-0 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-[1000] animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                  <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <h4 className="font-bold text-slate-800">Notifications</h4>
+                    <button onClick={() => { setIsNotifDropdownOpen(false); navigate('/notifications'); }} className="text-[10px] font-bold text-indigo-600 hover:underline">View All</button>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto divide-y divide-slate-50">
+                    {notifLoading ? (
+                      <div className="p-8 text-center text-slate-400 text-sm animate-pulse">Loading updates...</div>
+                    ) : recentNotifications.length === 0 ? (
+                      <div className="p-8 text-center text-slate-400 text-sm">No new notifications.</div>
+                    ) : recentNotifications.map((n) => (
+                      <div key={n._id} onClick={() => { if (!n.isRead && !n._id.startsWith('inv_')) markNotifAsRead(n._id); setIsNotifDropdownOpen(false); const tid = n.metadata?.taskId || n.relatedId; navigate(tid ? `/my-tasks/${tid}` : '/notifications'); }} className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors ${!n.isRead && 'bg-indigo-50/30'}`}>
+                        <p className="text-sm font-bold text-slate-800 truncate">{n.title}</p>
+                        <p className="text-xs text-slate-500 line-clamp-2 mt-1">{n.message}</p>
+                        <p className="text-[10px] text-slate-400 mt-2">{timeAgo(n.createdAt)}</p>
                       </div>
-                      <button
-                        onClick={() => { setIsNotifDropdownOpen(false); navigate('/notifications'); }}
-                        style={{
-                          background: 'none', border: 'none', color: '#3b82f6',
-                          cursor: 'pointer', fontSize: '13px', fontWeight: '600',
-                          padding: '6px 12px', borderRadius: '8px', transition: 'background 0.2s'
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                      >
-                        View All →
-                      </button>
-                    </div>
-
-                    {/* Notification List */}
-                    <div style={{ overflowY: 'auto', flex: 1 }}>
-                      {notifLoading ? (
-                        <div style={{ padding: '32px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '24px', marginBottom: '8px' }}>⏳</div>
-                          <div style={{ fontSize: '13px', color: '#64748b' }}>Loading...</div>
-                        </div>
-                      ) : recentNotifications.length === 0 ? (
-                        <div style={{ padding: '40px 24px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '40px', marginBottom: '12px' }}>🎉</div>
-                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '4px' }}>All caught up!</div>
-                          <div style={{ fontSize: '13px', color: '#64748b' }}>No notifications right now.</div>
-                        </div>
-                      ) : (
-                        recentNotifications.map((notif) => {
-                          const cfg = getNotifConfig(notif.type);
-                          const isTask = notif.relatedModel === 'Task' || notif.type?.startsWith('task_');
-                          return (
-                            <div
-                              key={notif._id}
-                              onClick={() => {
-                                if (!notif.isRead && !notif._id.startsWith('inv_')) markNotifAsRead(notif._id);
-                                setIsNotifDropdownOpen(false);
-                                if (isTask) {
-                                  const taskId = notif.metadata?.taskId || notif.relatedId;
-                                  if (taskId) navigate(`/my-tasks/${taskId}`);
-                                  else navigate('/notifications');
-                                } else {
-                                  navigate('/notifications');
-                                }
-                              }}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: '12px',
-                                padding: '14px 20px',
-                                borderBottom: '1px solid #f8fafc',
-                                cursor: 'pointer',
-                                background: notif.isRead ? 'white' : `${cfg.color}08`,
-                                transition: 'background 0.15s',
-                                position: 'relative'
-                              }}
-                              onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                              onMouseLeave={e => e.currentTarget.style.background = notif.isRead ? 'white' : `${cfg.color}08`}
-                            >
-                              {/* unread dot */}
-                              {!notif.isRead && (
-                                <div style={{
-                                  position: 'absolute', top: '16px', right: '16px',
-                                  width: '7px', height: '7px', borderRadius: '50%',
-                                  background: cfg.color
-                                }} />
-                              )}
-                              {/* icon */}
-                              <div style={{
-                                width: '38px', height: '38px', borderRadius: '10px',
-                                background: `${cfg.color}15`,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: '18px', flexShrink: 0
-                              }}>
-                                {cfg.icon}
-                              </div>
-                              {/* text */}
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{
-                                  fontSize: '13px',
-                                  fontWeight: notif.isRead ? '500' : '700',
-                                  color: '#0f172a',
-                                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                  marginBottom: '3px'
-                                }}>
-                                  {notif.title}
-                                </div>
-                                <div style={{
-                                  fontSize: '12px', color: '#64748b', lineHeight: '1.4',
-                                  overflow: 'hidden', display: '-webkit-box',
-                                  WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'
-                                }}>
-                                  {notif.message}
-                                </div>
-                                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
-                                  {timeAgo(notif.createdAt)}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-
-                    {/* Footer */}
-                    <div style={{
-                      padding: '12px 20px',
-                      borderTop: '1px solid #f1f5f9',
-                      textAlign: 'center'
-                    }}>
-                      <button
-                        onClick={() => { setIsNotifDropdownOpen(false); navigate('/notifications'); }}
-                        style={{
-                          width: '100%', padding: '10px',
-                          background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                          color: 'white', border: 'none', borderRadius: '10px',
-                          fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-                          transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(59,130,246,0.3)'
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)'}
-                      >
-                        View All Notifications
-                      </button>
-                    </div>
+                    ))}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+            </div>
 
-              <div style={{
-                padding: '8px 16px',
-                background: 'linear-gradient(135deg, #f1f5f9, #e2e8f0)',
-                borderRadius: '20px',
-                fontSize: '12px',
-                fontWeight: '600',
-                color: '#475569'
-              }}>
-                {new Date().toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </div>
+            {/* Time Display */}
+            <div className="hidden md:flex items-center gap-2 px-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 text-xs font-semibold shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-sm" />
+              {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
             </div>
           </div>
         </header>
 
-        {/* Content */}
-        <main style={{
-          flex: 1,
-          padding: '32px',
-          overflow: 'auto',
-          background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-          minHeight: 'calc(100vh - 120px)'
-        }}>
-          <div style={{
-            maxWidth: '1400px',
-            margin: '0 auto',
-            width: '100%'
-          }}>
+        {/* Content Portal */}
+        <main className="flex-1 overflow-y-auto p-6 lg:p-10">
+          <div className="max-w-7xl mx-auto">
             {children}
           </div>
         </main>
-      </div>
+      </main>
 
       {isChatOpen && <GlobalChat onClose={() => setIsChatOpen(false)} />}
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+      ` }} />
     </div>
   );
 };

@@ -1,67 +1,8 @@
 import React, { useState } from 'react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragOverlay,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useCompany } from '../../../context/CompanyContext';
-
-// Add CSS animations
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0px rgba(16, 185, 129, 0.4); }
-    70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-    100% { box-shadow: 0 0 0 0px rgba(16, 185, 129, 0); }
-  }
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateX(-50%) translateY(-4px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-  }
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      max-height: 0;
-    }
-    to {
-      opacity: 1;
-      max-height: 1000px;
-    }
-  }
-`;
-if (!document.head.querySelector('style[data-listview-animations]')) {
-  style.setAttribute('data-listview-animations', 'true');
-  document.head.appendChild(style);
-}
-
-const formatCurrency = (amount, currencyCode = 'USD') => {
-  if (amount === undefined || amount === null || amount === 0) return '-';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currencyCode,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(amount);
-};
-
 
 const ListView = ({
   tasks,
@@ -73,365 +14,133 @@ const ListView = ({
   onReorderTasks,
   taskCosts = {},
   teamActivity = [],
-  // Duration mode props
   isDurationEntryMode,
   durationContext,
   pendingDurations,
   setPendingDurations,
-  existingDurations,
-  // Filter props
-  selectedAssignee,
-  selectedTaskRole,
-  selectedProjectRole
+  existingDurations
 }) => {
   const { state: companyState } = useCompany();
   const companyCurrency = companyState?.selectedCompany?.currency || 'USD';
-
   const [expandedTasks, setExpandedTasks] = useState(new Set());
   const [activeTask, setActiveTask] = useState(null);
 
-  const gridStyle = {
-    display: 'grid',
-    gridTemplateColumns: '40px minmax(300px, 1fr) 120px 100px 160px 100px 80px 100px',
-    gap: '12px',
-    alignItems: 'center'
-  };
-
-  // Setup sensors for drag and drop
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, // 8px movement required before drag starts
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Build task hierarchy
   const buildTaskHierarchy = (tasks) => {
     const taskMap = new Map();
     const rootTasks = [];
-
-    // First pass: create map of all tasks
-    tasks.forEach(task => {
-      taskMap.set(task._id, { ...task, children: [] });
-    });
-
-    // Second pass: build hierarchy
+    tasks.forEach(task => taskMap.set(task._id, { ...task, children: [] }));
     tasks.forEach(task => {
       if (task.parent) {
         const parentId = typeof task.parent === 'object' ? task.parent._id : task.parent;
         const parent = taskMap.get(parentId);
-        if (parent) {
-          parent.children.push(taskMap.get(task._id));
-        } else {
-          rootTasks.push(taskMap.get(task._id));
-        }
-      } else {
-        rootTasks.push(taskMap.get(task._id));
-      }
+        if (parent) parent.children.push(taskMap.get(task._id));
+        else rootTasks.push(taskMap.get(task._id));
+      } else rootTasks.push(taskMap.get(task._id));
     });
-
     return rootTasks;
   };
 
   const hierarchicalTasks = buildTaskHierarchy(tasks);
-
   const toggleExpand = (taskId) => {
     const newExpanded = new Set(expandedTasks);
-    if (newExpanded.has(taskId)) {
-      newExpanded.delete(taskId);
-    } else {
-      newExpanded.add(taskId);
-    }
+    if (newExpanded.has(taskId)) newExpanded.delete(taskId);
+    else newExpanded.add(taskId);
     setExpandedTasks(newExpanded);
   };
 
-  const countSubtasks = (task) => {
-    if (!task.children || task.children.length === 0) return 0;
-    return task.children.length + task.children.reduce((sum, child) => sum + countSubtasks(child), 0);
-  };
-
-  // Handle drag start
-  const handleDragStart = (event) => {
-    const { active } = event;
-    const task = tasks.find(t => t._id === active.id);
-    setActiveTask(task);
-  };
-
-  // Handle drag end
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
+  const handleDragStart = (e) => setActiveTask(tasks.find(t => t._id === e.active.id));
+  const handleDragEnd = (e) => {
     setActiveTask(null);
-
-    if (over && active.id !== over.id) {
-      const oldIndex = tasks.findIndex((task) => task._id === active.id);
-      const newIndex = tasks.findIndex((task) => task._id === over.id);
-
-      const reorderedTasks = arrayMove(tasks, oldIndex, newIndex);
-
-      // Call the parent component's reorder handler
-      if (onReorderTasks) {
-        onReorderTasks(reorderedTasks);
-      }
+    if (e.over && e.active.id !== e.over.id) {
+      const oldIndex = tasks.findIndex(t => t._id === e.active.id);
+      const newIndex = tasks.findIndex(t => t._id === e.over.id);
+      if (onReorderTasks) onReorderTasks(arrayMove(tasks, oldIndex, newIndex));
     }
   };
 
-  // Handle drag cancel
-  const handleDragCancel = () => {
-    setActiveTask(null);
-  };
-
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      <div style={{
-        backgroundColor: 'white',
-        border: '1px solid #dfe1e6',
-        borderRadius: '3px',
-        boxShadow: '0 1px 2px rgba(9, 30, 66, 0.08)',
-        overflow: 'hidden'
-      }}>
-        {/* Header */}
-        <div style={{
-          ...gridStyle,
-          padding: '12px 16px',
-          borderBottom: '2px solid #dfe1e6',
-          backgroundColor: '#f4f5f7',
-          fontSize: '11px',
-          fontWeight: '700',
-          color: '#5e6c84',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px'
-        }}>
-          <div></div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            Issue
-            {tasks.length > 0 && (
-              <span style={{
-                backgroundColor: '#0052cc',
-                color: 'white',
-                padding: '2px 8px',
-                borderRadius: '12px',
-                fontSize: '10px',
-                fontWeight: '700',
-                textTransform: 'none'
-              }}>
-                {tasks.length}
-              </span>
-            )}
-          </div>
-          <div>Status</div>
-          <div>Priority</div>
-          <div>Assignees</div>
-          <div>Due Date</div>
-          <div>Dur (h)</div>
-          <div>Cost</div>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={() => setActiveTask(null)}>
+      <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
+        <div className="grid grid-cols-[40px_1fr_120px_100px_140px_100px_80px_100px] gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200 items-center">
+          <div />
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Task Name</div>
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status</div>
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Priority</div>
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Assignees</div>
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Due Date</div>
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Duration</div>
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Cost</div>
         </div>
 
-        {/* Task List */}
-        <SortableContext
-          items={tasks.map(t => t._id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div>
+        <SortableContext items={tasks.map(t => t._id)} strategy={verticalListSortingStrategy}>
+          <div className="divide-y divide-slate-100 min-h-[400px]">
             {tasks.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '80px 24px',
-                color: '#5e6c84',
-                backgroundColor: '#fafbfc'
-              }}>
-                <div style={{
-                  fontSize: '64px',
-                  marginBottom: '20px',
-                  opacity: 0.5
-                }}>📋</div>
-                <h4 style={{
-                  margin: '0 0 12px 0',
-                  fontSize: '18px',
-                  color: '#172b4d',
-                  fontWeight: '600'
-                }}>No issues yet</h4>
-                <p style={{
-                  margin: 0,
-                  fontSize: '14px',
-                  color: '#5e6c84',
-                  lineHeight: '1.6'
-                }}>Create an issue to get started with your project tracking.</p>
+              <div className="py-24 text-center space-y-4">
+                <div className="text-4xl">📋</div>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-slate-900">No tasks found</h4>
+                  <p className="text-xs text-slate-500">Add a task to get started on your project.</p>
+                </div>
               </div>
             ) : (
-              <div>
-                {hierarchicalTasks.map(task => (
-                  <SortableTaskRow
-                    key={task._id}
-                    task={task}
-                    level={0}
-                    onEdit={onEditTask}
-                    onDelete={onDeleteTask}
-                    onAddSubtask={onAddSubtask}
-                    isSelected={selectedTaskId === task._id}
-                    onSelect={() => onSelectTask(task)}
-                    isExpanded={expandedTasks.has(task._id)}
-                    onToggleExpand={() => toggleExpand(task._id)}
-                    countSubtasks={countSubtasks}
-                    taskCosts={taskCosts}
-                    companyCurrency={companyCurrency}
-                    teamActivity={teamActivity}
-                    // Duration mode props
-                    isDurationEntryMode={isDurationEntryMode}
-                    durationContext={durationContext}
-                    pendingDurations={pendingDurations}
-                    setPendingDurations={setPendingDurations}
-                    existingDurations={existingDurations}
-                    // Filter props
-                    selectedAssignee={selectedAssignee}
-                    selectedTaskRole={selectedTaskRole}
-                    selectedProjectRole={selectedProjectRole}
-                  />
-                ))}
-              </div>
+              hierarchicalTasks.map(task => (
+                <SortableTaskRow
+                  key={task._id}
+                  task={task}
+                  level={0}
+                  onEdit={onEditTask}
+                  onDelete={onDeleteTask}
+                  onAddSubtask={onAddSubtask}
+                  isSelected={selectedTaskId === task._id}
+                  onSelect={() => onSelectTask(task)}
+                  isExpanded={expandedTasks.has(task._id)}
+                  onToggleExpand={() => toggleExpand(task._id)}
+                  taskCosts={taskCosts}
+                  companyCurrency={companyCurrency}
+                  teamActivity={teamActivity}
+                  isDurationEntryMode={isDurationEntryMode}
+                  durationContext={durationContext}
+                  pendingDurations={pendingDurations}
+                  setPendingDurations={setPendingDurations}
+                  existingDurations={existingDurations}
+                />
+              ))
             )}
           </div>
         </SortableContext>
       </div>
 
       <DragOverlay>
-        {activeTask ? (
-          <div style={{ opacity: 0.9, cursor: 'grabbing' }}>
-            <TaskListRowContent task={activeTask} isDragging />
+        {activeTask && (
+          <div className="bg-white rounded-lg p-4 shadow-xl border border-indigo-200 flex items-center gap-4 cursor-grabbing">
+            <div className="w-3 h-3 rounded-full bg-indigo-500" />
+            <div className="text-sm font-bold text-slate-900">{activeTask.title}</div>
           </div>
-        ) : null}
+        )}
       </DragOverlay>
     </DndContext>
   );
 };
 
-// Sortable wrapper for TaskRow
-const SortableTaskRow = ({
-  task,
-  level,
-  onEdit,
-  onDelete,
-  onAddSubtask,
-  isSelected,
-  onSelect,
-  isExpanded,
-  onToggleExpand,
-  countSubtasks,
-  taskCosts = {},
-  companyCurrency,
-  teamActivity,
-  // Duration mode props
-  isDurationEntryMode,
-  durationContext,
-  pendingDurations,
-  setPendingDurations,
-  existingDurations,
-  // Filter props
-  selectedAssignee,
-  selectedTaskRole,
-  selectedProjectRole
-}) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: task._id,
-    data: {
-      type: 'task',
-      task,
-    },
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  const hasChildren = task.children && task.children.length > 0;
-  const subtaskCount = countSubtasks(task);
-  const indent = level * 24;
-  const cost = taskCosts[task._id];
+const SortableTaskRow = (props) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.task._id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : 1 };
+  const hasChildren = props.task.children?.length > 0;
 
   return (
     <div ref={setNodeRef} style={style}>
       <div {...attributes} {...listeners}>
-        <TaskListRow
-          task={task}
-          level={level}
-          indent={indent}
-          hasChildren={hasChildren}
-          subtaskCount={subtaskCount}
-          isExpanded={isExpanded}
-          onToggleExpand={onToggleExpand}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onAddSubtask={onAddSubtask}
-          isSelected={isSelected}
-          onSelect={onSelect}
-          isDragging={isDragging}
-          cost={cost}
-          companyCurrency={companyCurrency}
-          teamActivity={teamActivity}
-          // Duration mode props
-          isDurationEntryMode={isDurationEntryMode}
-          durationContext={durationContext}
-          pendingDurations={pendingDurations}
-          setPendingDurations={setPendingDurations}
-          existingDurations={existingDurations}
-          // Filter props
-          selectedAssignee={selectedAssignee}
-          selectedTaskRole={selectedTaskRole}
-          selectedProjectRole={selectedProjectRole}
-        />
+        <TaskRowContent {...props} isDragging={isDragging} hasChildren={hasChildren} />
       </div>
-
-      {/* Render children if expanded */}
-      {hasChildren && isExpanded && (
-        <div style={{
-          animation: 'slideDown 0.2s ease-out',
-          overflow: 'hidden'
-        }}>
-          {task.children.map(child => (
-            <SortableTaskRow
-              key={child._id}
-              task={child}
-              level={level + 1}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onAddSubtask={onAddSubtask}
-              isSelected={isSelected}
-              onSelect={onSelect}
-              isExpanded={isExpanded}
-              onToggleExpand={onToggleExpand}
-              countSubtasks={countSubtasks}
-              taskCosts={taskCosts}
-              companyCurrency={companyCurrency}
-              teamActivity={teamActivity}
-              // Duration mode props
-              isDurationEntryMode={isDurationEntryMode}
-              durationContext={durationContext}
-              pendingDurations={pendingDurations}
-              setPendingDurations={setPendingDurations}
-              existingDurations={existingDurations}
-              // Filter props
-              selectedAssignee={selectedAssignee}
-              selectedTaskRole={selectedTaskRole}
-              selectedProjectRole={selectedProjectRole}
-            />
+      {hasChildren && props.isExpanded && (
+        <div className="bg-slate-50/30">
+          {props.task.children.map(child => (
+            <SortableTaskRow key={child._id} {...props} task={child} level={props.level + 1} />
           ))}
         </div>
       )}
@@ -439,658 +148,83 @@ const SortableTaskRow = ({
   );
 };
 
-const TaskListRow = ({
-  task,
-  level,
-  indent,
-  hasChildren,
-  subtaskCount,
-  isExpanded,
-  onToggleExpand,
-  onEdit,
-  onDelete,
-  onAddSubtask,
-  isSelected,
-  onSelect,
-  isDragging,
-  cost,
-  companyCurrency,
-  teamActivity,
-  // Duration mode props
-  isDurationEntryMode,
-  durationContext,
-  pendingDurations,
-  setPendingDurations,
-  existingDurations,
-  // Filter props
-  selectedAssignee,
-  selectedTaskRole,
-  selectedProjectRole
-}) => {
-  return (
-    <TaskListRowContent
-      task={task}
-      level={level}
-      indent={indent}
-      hasChildren={hasChildren}
-      subtaskCount={subtaskCount}
-      isExpanded={isExpanded}
-      onToggleExpand={onToggleExpand}
-      onEdit={onEdit}
-      onDelete={onDelete}
-      onAddSubtask={onAddSubtask}
-      isSelected={isSelected}
-      onSelect={onSelect}
-      isDragging={isDragging}
-      cost={cost}
-      companyCurrency={companyCurrency}
-      teamActivity={teamActivity}
-      // Duration mode props
-      isDurationEntryMode={isDurationEntryMode}
-      durationContext={durationContext}
-      pendingDurations={pendingDurations}
-      setPendingDurations={setPendingDurations}
-      existingDurations={existingDurations}
-      // Filter props
-      selectedAssignee={selectedAssignee}
-      selectedTaskRole={selectedTaskRole}
-      selectedProjectRole={selectedProjectRole}
-    />
-  );
-};
-
-const TaskListRowContent = ({
-  task,
-  level,
-  indent,
-  hasChildren,
-  subtaskCount,
-  isExpanded,
-  onToggleExpand,
-  onEdit,
-  onDelete,
-  onAddSubtask,
-  isSelected,
-  onSelect,
-  isDragging,
-  cost,
-  companyCurrency,
-  teamActivity,
-  // Duration mode props
-  isDurationEntryMode,
-  durationContext,
-  pendingDurations,
-  setPendingDurations,
-  existingDurations,
-  // Filter props
-  selectedAssignee,
-  selectedTaskRole,
-  selectedProjectRole
-}) => {
-  const gridStyle = {
-    display: 'grid',
-    gridTemplateColumns: '40px minmax(300px, 1fr) 120px 100px 160px 100px 80px 100px',
-    gap: '12px',
-    alignItems: 'center'
-  };
-
-  const getPriorityColor = (priority) => {
-    const colors = {
-      urgent: '#de350b',
-      high: '#ff8b00',
-      medium: '#ffab00',
-      low: '#36b37e'
-    };
-    return colors[priority] || '#6b7280';
-  };
-
-  const getStatusColor = (status) => {
-    if (!status || !status.color) {
-      return { bg: '#f3f4f6', text: '#6b7280' };
-    }
-    return {
-      bg: status.color + '20',
-      text: status.color
-    };
-  };
-
-  const getIssueTypeIcon = (type) => {
-    const types = {
-      task: { icon: '✓', color: '#0052cc', bg: '#deebff' },
-      bug: { icon: '🐛', color: '#de350b', bg: '#ffebe6' },
-      story: { icon: '📖', color: '#00875a', bg: '#e3fcef' },
-      epic: { icon: '⚡', color: '#6554c0', bg: '#eae6ff' },
-      subtask: { icon: '↳', color: '#5e6c84', bg: '#f4f5f7' }
-    };
-    return types[type] || (level > 0 ? types.subtask : types.task);
-  };
-
-  const statusColor = getStatusColor(task.status);
-  const issueType = getIssueTypeIcon(task.issueType || (level > 0 ? 'subtask' : 'task'));
-  const priorityColor = getPriorityColor(task.priority);
+const TaskRowContent = ({ task, level, hasChildren, isExpanded, onToggleExpand, onSelect, isSelected, isDragging, taskCosts, companyCurrency, isDurationEntryMode, durationContext, pendingDurations, setPendingDurations, existingDurations }) => {
+  const cost = taskCosts[task._id];
+  const priorityColor = { urgent: 'bg-rose-500', high: 'bg-orange-500', medium: 'bg-amber-400', low: 'bg-emerald-500' }[task.priority] || 'bg-slate-300';
+  const statusColor = task.status?.color ? { color: task.status.color, bg: `${task.status.color}10` } : { color: '#64748b', bg: '#f8fafc' };
 
   return (
     <div
       onClick={onSelect}
-      style={{
-        ...gridStyle,
-        padding: '12px 16px',
-        borderBottom: '1px solid #f4f5f7',
-        backgroundColor: isDurationEntryMode ? '#fffbf2' : (isSelected ? '#f0f6ff' : 'white'),
-        borderLeft: isDurationEntryMode ? '3px solid #ffab00' : (isSelected ? '3px solid #0052cc' : '3px solid transparent'),
-        cursor: isDragging ? 'grabbing' : 'grab',
-        transition: 'all 0.15s ease-in-out',
-        boxShadow: isDragging ? '0 4px 12px rgba(0,0,0,0.15)' : (isDurationEntryMode ? 'inset 0 0 10px rgba(255, 171, 0, 0.05)' : 'none')
-      }}
-      onMouseEnter={(e) => {
-        if (!isSelected && !isDragging && !isDurationEntryMode) {
-          e.currentTarget.style.backgroundColor = '#fafbfc';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!isSelected && !isDragging && !isDurationEntryMode) {
-          e.currentTarget.style.backgroundColor = 'white';
-        }
-      }}
+      className={`grid grid-cols-[40px_1fr_120px_100px_140px_100px_80px_100px] gap-4 px-6 py-4 items-center cursor-pointer transition-colors relative group ${isSelected ? 'bg-indigo-50/50' : 'hover:bg-slate-50/50'}`}
     >
-      {/* Expand/Collapse + Type Icon */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', paddingLeft: `${indent}px` }}>
-        {hasChildren && (
+      {isSelected && <div className="absolute left-0 top-0 w-1 h-full bg-indigo-600 shadow-sm" />}
+
+      <div className="flex justify-center" style={{ marginLeft: `${level * 20}px` }}>
+        {hasChildren ? (
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleExpand();
-            }}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '2px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#5e6c84',
-              fontSize: '12px',
-              transition: 'transform 0.2s'
-            }}
+            onClick={e => { e.stopPropagation(); onToggleExpand(); }}
+            className={`w-6 h-6 rounded flex items-center justify-center transition-all ${isExpanded ? 'bg-indigo-600 text-white rotate-90' : 'text-slate-400 hover:bg-slate-100'}`}
           >
-            <span style={{
-              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-              transition: 'transform 0.2s',
-              display: 'inline-block'
-            }}>
-              ▶
-            </span>
+            <span className="text-[8px]">▶</span>
           </button>
+        ) : (
+          <div className="w-1 h-4 rounded-full bg-slate-200 opacity-50" />
         )}
-        <div style={{
-          width: '20px',
-          height: '20px',
-          backgroundColor: issueType.bg,
-          borderRadius: '3px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '11px',
-          marginLeft: hasChildren ? '0' : '18px'
-        }}>
-          {issueType.icon}
-        </div>
       </div>
 
-      {/* Title + Subtask Count */}
-      <div style={{ minWidth: 0 }}>
-        <div style={{
-          fontWeight: '500',
-          color: '#172b4d',
-          fontSize: '14px',
-          marginBottom: '4px',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
+      <div className="min-w-0 pr-4">
+        <h4 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
           {task.title}
-          {subtaskCount > 0 && (
-            <span style={{
-              fontSize: '11px',
-              color: '#5e6c84',
-              backgroundColor: '#f4f5f7',
-              padding: '2px 6px',
-              borderRadius: '10px',
-              fontWeight: '600'
-            }}>
-              {subtaskCount} subtask{subtaskCount > 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-        {task.description && (
-          <div style={{
-            fontSize: '12px',
-            color: '#5e6c84',
-            lineHeight: '1.4',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          }}>
-            {task.description}
-          </div>
-        )}
+          {task.children?.length > 0 && <span className="ml-2 text-[10px] font-medium text-slate-400">({task.children.length})</span>}
+        </h4>
+        <p className="text-[10px] text-slate-500 mt-0.5 truncate">{task.description || 'No description'}</p>
       </div>
 
-      {/* Status */}
       <div>
-        {task.status && (
-          <span style={{
-            padding: '4px 10px',
-            borderRadius: '12px',
-            fontSize: '11px',
-            fontWeight: '600',
-            backgroundColor: statusColor.bg,
-            color: statusColor.text,
-            textTransform: 'uppercase',
-            display: 'inline-block'
-          }}>
-            {task.status.name}
-          </span>
-        )}
+        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight" style={{ backgroundColor: statusColor.bg, color: statusColor.color }}>
+          {task.status?.name || 'Backlog'}
+        </span>
       </div>
 
-      {/* Priority */}
-      <div>
-        {task.priority && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: priorityColor
-            }} />
-            <span style={{ fontSize: '12px', textTransform: 'capitalize', color: '#172b4d' }}>
-              {task.priority}
-            </span>
+      <div className="flex items-center gap-2">
+        <div className={`w-2 h-2 rounded-full ${priorityColor}`} />
+        <span className="text-[10px] font-medium text-slate-600 capitalize">{task.priority}</span>
+      </div>
+
+      <div className="flex -space-x-2 overflow-hidden">
+        {task.assignees?.slice(0, 3).map((a, i) => (
+          <div key={i} className="w-7 h-7 rounded-lg border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-700 shrink-0 shadow-sm overflow-hidden" title={a.name}>
+            {a.avatar ? <img src={a.avatar} alt="" className="w-full h-full object-cover" /> : a.name?.charAt(0)}
           </div>
-        )}
+        ))}
+        {(task.assignees?.length > 3) && <div className="w-7 h-7 rounded-lg border-2 border-white bg-slate-800 text-white flex items-center justify-center text-[8px] font-bold shrink-0">+{task.assignees.length - 3}</div>}
+        {!task.assignees?.length && <div className="text-[10px] text-slate-300 font-medium">unassigned</div>}
       </div>
 
-      {/* Assignees */}
-      <AssigneeList
-        assignees={task.assignees}
-        roleAssignments={task.roleAssignments}
-        teamActivity={teamActivity}
-        taskId={task._id}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (onEdit) {
-            onEdit(task);
-          }
-        }}
-        // Filter props
-        selectedAssignee={selectedAssignee}
-        selectedTaskRole={selectedTaskRole}
-        selectedProjectRole={selectedProjectRole}
-      />
-
-      {/* Due Date */}
-      <div style={{ fontSize: '12px', color: '#5e6c84' }}>
-        {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-'}
+      <div className="text-[11px] font-medium text-slate-600 tabular-nums">
+        {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '--'}
       </div>
 
-      {/* Duration */}
-      <div style={{ fontSize: '12px' }}>
-        {isDurationEntryMode && durationContext?.roleId && durationContext?.userId ? (
+      <div className="text-center">
+        {isDurationEntryMode && durationContext?.roleId ? (
           <input
-            type="number"
-            min="0"
-            step="0.5"
-            placeholder="hr"
-            className="duration-input"
-            value={(() => {
-              if (pendingDurations[task._id] !== undefined) return pendingDurations[task._id];
-              // Fallback: existing duration from TaskUserDuration (converted from minutes to hours)
-              const existingMinutes = existingDurations?.[task._id];
-              if (existingMinutes != null && existingMinutes > 0) {
-                return +(existingMinutes / 60).toFixed(2);
-              }
-              return '';
-            })()}
-            onChange={(e) => setPendingDurations({ ...pendingDurations, [task._id]: e.target.value })}
-            onKeyDown={(e) => {
-              if (e.key === 'Tab' || e.key === 'Enter') {
-                e.preventDefault();
-                const inputs = Array.from(document.querySelectorAll('.duration-input'));
-                const currentIndex = inputs.indexOf(e.target);
-                const nextIndex = e.shiftKey ? currentIndex - 1 : currentIndex + 1;
-                if (nextIndex >= 0 && nextIndex < inputs.length) {
-                  inputs[nextIndex].focus();
-                  inputs[nextIndex].select();
-                }
-              }
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.target.select();
-            }}
-            style={{
-              width: '100%',
-              padding: '6px 10px',
-              border: pendingDurations[task._id] !== undefined ? '2px solid #ff8b00' : '1px solid #ffab00',
-              borderRadius: '6px',
-              backgroundColor: 'white',
-              fontSize: '13px',
-              fontWeight: '600',
-              color: '#172b4d',
-              outline: 'none',
-              transition: 'all 0.2s',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-              textAlign: 'center'
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#ff8b00';
-              e.target.style.boxShadow = '0 0 0 3px rgba(255, 139, 0, 0.2)';
-              e.target.style.backgroundColor = 'white';
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = pendingDurations[task._id] !== undefined ? '#ff8b00' : '#ffab00';
-              e.target.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
-              e.target.style.backgroundColor = 'white';
-            }}
+            type="number" step="0.5"
+            onClick={e => { e.stopPropagation(); e.target.select(); }}
+            onChange={e => setPendingDurations({ ...pendingDurations, [task._id]: e.target.value })}
+            className="w-12 py-1 bg-amber-50 border border-amber-300 rounded text-center text-xs font-bold text-amber-700 outline-none focus:bg-white"
+            value={pendingDurations[task._id] !== undefined ? pendingDurations[task._id] : (existingDurations?.[task._id] ? +(existingDurations[task._id] / 60).toFixed(2) : '')}
           />
         ) : (
-          <div style={{ color: '#5e6c84', fontWeight: '500' }}>
-            {(() => {
-              // Show aggregated duration from TaskUserDuration records (in hours)
-              if (task.totalDurationMinutes > 0) {
-                const hours = +(task.totalDurationMinutes / 60).toFixed(2);
-                return `${hours}h`;
-              }
-              return '-';
-            })()}
-          </div>
+          <span className="text-[11px] font-bold text-slate-400 tabular-nums">{task.duration?.value || '-'}h</span>
         )}
       </div>
 
-      {/* Cost */}
-      <div style={{ fontSize: '12px', color: cost ? '#059669' : '#a8b1bd', fontWeight: cost ? '600' : '400' }}>
-        {formatCurrency(cost, companyCurrency)}
+      <div className="text-right text-[11px] font-bold text-slate-700 tabular-nums">
+        {cost ? new Intl.NumberFormat('en-US', { style: 'currency', currency: companyCurrency }).format(cost) : '-'}
       </div>
-    </div>
-  );
-};
-
-const AssigneeList = ({
-  assignees,
-  roleAssignments = [],
-  teamActivity = [],
-  taskId,
-  onClick,
-  // Filter props
-  selectedAssignee,
-  selectedTaskRole,
-  selectedProjectRole
-}) => {
-  if ((!assignees || assignees.length === 0) && (!roleAssignments || roleAssignments.length === 0)) {
-    return (
-      <div
-        onClick={onClick}
-        style={{
-          fontSize: '12px',
-          color: '#a8b1bd',
-          fontStyle: 'italic',
-          cursor: onClick ? 'pointer' : 'default',
-          padding: '4px 8px',
-          borderRadius: '4px',
-          transition: 'background-color 0.2s'
-        }}
-        onMouseEnter={(e) => {
-          if (onClick) e.currentTarget.style.backgroundColor = '#f4f5f7';
-        }}
-        onMouseLeave={(e) => {
-          if (onClick) e.currentTarget.style.backgroundColor = 'transparent';
-        }}
-      >
-        Unassigned
-      </div>
-    );
-  }
-
-  const getInitials = (name) => {
-    if (!name) return '?';
-    const parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
-
-  const getAvatarColor = (name) => {
-    const colors = [
-      '#0052cc', '#5243aa', '#ff5630', '#ff8b00',
-      '#36b37e', '#00b8d9', '#6554c0', '#ff991f'
-    ];
-    const index = name ? name.charCodeAt(0) % colors.length : 0;
-    return colors[index];
-  };
-
-  // Flatten roleAssignments into a list of { user, roleName }
-  let flattenedAssignments = [];
-  if (roleAssignments && roleAssignments.length > 0) {
-    roleAssignments.forEach(ra => {
-      // Filter by task role if selected
-      const currentRoleId = ra.role?._id || ra.role;
-      if (selectedTaskRole && currentRoleId !== selectedTaskRole) return;
-
-      const roleName = ra.role?.name || ra.roleName;
-      if (ra.assignees && ra.assignees.length > 0) {
-        ra.assignees.forEach(assignee => {
-          // Filter by specific assignee if selected
-          const userId = assignee._id || assignee;
-          if (selectedAssignee && userId !== selectedAssignee) return;
-
-          // Filter by project role if selected (assignee object might have it)
-          if (selectedProjectRole && assignee.projectRole !== selectedProjectRole) return;
-
-          flattenedAssignments.push({
-            user: assignee,
-            roleName: roleName
-          });
-        });
-      }
-    });
-  } else if (assignees && assignees.length > 0) {
-    // Fallback to flat assignees if no roleAssignments
-    assignees.forEach(a => {
-      const userId = a._id || a;
-      if (selectedAssignee && userId !== selectedAssignee) return;
-      if (selectedProjectRole && a.projectRole !== selectedProjectRole) return;
-
-      flattenedAssignments.push({ user: a });
-    });
-  }
-
-  // No longer deduplicating here to allow showing multiple roles for the same user
-  // (User requested: "added four time but just once")
-
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '-4px',
-        cursor: onClick ? 'pointer' : 'default',
-        padding: '4px 8px',
-        borderRadius: '4px',
-        margin: '-4px -8px',
-        transition: 'background-color 0.2s'
-      }}
-      onMouseEnter={(e) => {
-        if (onClick) e.currentTarget.style.backgroundColor = '#f4f5f7';
-      }}
-      onMouseLeave={(e) => {
-        if (onClick) e.currentTarget.style.backgroundColor = 'transparent';
-      }}
-    >
-      {flattenedAssignments.slice(0, 3).map((assignment, index) => {
-        const assignee = assignment.user;
-        const isActive = teamActivity.some(m =>
-          m.currentTask?._id === taskId &&
-          (m.user?._id === (assignee._id || assignee) || m.user === (assignee._id || assignee))
-        );
-        return (
-          <AssigneeAvatar
-            key={`${assignee._id || index}-${assignment.roleName || ''}`}
-            assignee={assignee}
-            roleName={assignment.roleName}
-            getInitials={getInitials}
-            getAvatarColor={getAvatarColor}
-            style={{ marginLeft: index > 0 ? '-6px' : '0' }}
-            isActive={isActive}
-          />
-        );
-      })}
-      {flattenedAssignments.length > 3 && (
-        <div style={{
-          width: '24px',
-          height: '24px',
-          borderRadius: '50%',
-          backgroundColor: '#f4f5f7',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '10px',
-          fontWeight: '600',
-          color: '#5e6c84',
-          border: '2px solid white',
-          marginLeft: '-6px',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-        }}>
-          +{flattenedAssignments.length - 3}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const AssigneeAvatar = ({ assignee, roleName, getInitials, getAvatarColor, style, isActive }) => {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const profilePicture = assignee.profile?.profilePicture;
-
-  return (
-    <div
-      style={{ position: 'relative', display: 'inline-block', ...style }}
-      onMouseEnter={() => setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
-    >
-      {profilePicture ? (
-        <img
-          src={profilePicture}
-          alt={assignee.name}
-          style={{
-            width: '24px',
-            height: '24px',
-            borderRadius: '50%',
-            objectFit: 'cover',
-            border: '2px solid white',
-            cursor: 'pointer',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-            transition: 'transform 0.15s ease-in-out',
-            backgroundColor: 'white',
-            display: 'block'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        />
-      ) : (
-        <div style={{
-          width: '24px',
-          height: '24px',
-          borderRadius: '50%',
-          backgroundColor: getAvatarColor(assignee.name),
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          fontSize: '10px',
-          fontWeight: '600',
-          border: '2px solid white',
-          cursor: 'pointer',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-          transition: 'transform 0.15s ease-in-out'
-        }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          {getInitials(assignee.name)}
-        </div>
-      )}
-
-      {isActive && (
-        <div style={{
-          position: 'absolute',
-          bottom: '-2px',
-          right: '-2px',
-          width: '10px',
-          height: '10px',
-          backgroundColor: '#10b981',
-          borderRadius: '50%',
-          border: '2px solid white',
-          boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
-          zIndex: 2,
-          animation: 'pulse 1.5s infinite'
-        }} />
-      )}
-
-      {showTooltip && (
-        <div style={{
-          position: 'absolute',
-          bottom: '100%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          marginBottom: '8px',
-          backgroundColor: '#172b4d',
-          color: 'white',
-          padding: '8px 12px',
-          borderRadius: '4px',
-          fontSize: '12px',
-          whiteSpace: 'nowrap',
-          zIndex: 1000,
-          boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-          pointerEvents: 'none',
-          animation: 'fadeIn 0.2s ease-in-out'
-        }}>
-          <div style={{ fontWeight: '600', marginBottom: '2px' }}>
-            {assignee.name}
-          </div>
-          {roleName && (
-            <div style={{ fontSize: '11px', color: '#00dcff', fontWeight: '700', textTransform: 'uppercase', marginBottom: '2px' }}>
-              {roleName}
-            </div>
-          )}
-          {assignee.email && (
-            <div style={{ fontSize: '11px', opacity: 0.9 }}>
-              {assignee.email}
-            </div>
-          )}
-          {/* Tooltip arrow */}
-          <div style={{
-            position: 'absolute',
-            top: '100%',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 0,
-            height: 0,
-            borderLeft: '6px solid transparent',
-            borderRight: '6px solid transparent',
-            borderTop: '6px solid #172b4d'
-          }} />
-        </div>
-      )}
     </div>
   );
 };
 
 export default ListView;
-

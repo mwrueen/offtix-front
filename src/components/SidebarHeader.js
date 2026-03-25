@@ -10,15 +10,13 @@ const SidebarHeader = ({
 }) => {
   return (
     <div
-      className={`sidebar-header border-b border-white/10 flex relative transition-colors duration-200 ${
-        sidebarCollapsed 
-          ? 'p-5 px-3 items-center justify-between' 
-          : 'p-6 px-5 items-start justify-between'
-      } ${
-        isDropdownOpen 
-          ? 'bg-blue-500/8' 
-          : 'bg-white/2'
-      }`}
+      className={`sidebar-header border-b border-white/10 flex relative transition-colors duration-200 ${sidebarCollapsed
+        ? 'p-5 px-3 items-center justify-between'
+        : 'p-6 px-5 items-start justify-between'
+        } ${isDropdownOpen
+          ? 'bg-slate-800'
+          : 'bg-transparent hover:bg-slate-800'
+        }`}
     >
       {sidebarCollapsed ? (
         <CollapsedLogo
@@ -39,11 +37,10 @@ const SidebarHeader = ({
       {/* Toggle Button */}
       <button
         onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-        className={`absolute w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 border-2 border-slate-900 text-white cursor-pointer flex items-center justify-center transition-all duration-300 shadow-lg shadow-blue-500/30 z-10 hover:from-blue-600 hover:to-blue-700 hover:scale-105 ${
-          sidebarCollapsed 
-            ? 'right-1/2 -bottom-4 translate-x-1/2' 
-            : 'right-5 top-6'
-        }`}
+        className={`absolute w-8 h-8 rounded-lg bg-indigo-600 border border-slate-700 text-white cursor-pointer flex items-center justify-center transition-all duration-300 shadow-md z-10 hover:bg-indigo-700 ${sidebarCollapsed
+          ? 'right-1/2 -bottom-4 translate-x-1/2'
+          : 'right-5 top-6'
+          }`}
       >
         <svg
           width="16"
@@ -54,9 +51,8 @@ const SidebarHeader = ({
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={`transition-transform duration-300 ${
-            sidebarCollapsed ? 'rotate-0' : 'rotate-180'
-          }`}
+          className={`transition-transform duration-300 ${sidebarCollapsed ? 'rotate-0' : 'rotate-180'
+            }`}
         >
           <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
@@ -73,11 +69,10 @@ const CollapsedLogo = ({ selectedCompany, companyData, onClick }) => {
       onClick={onClick}
       className="flex items-center justify-center w-full cursor-pointer"
     >
-      <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold text-white overflow-hidden transition-transform duration-200 hover:scale-105 ${
-        isPersonal 
-          ? 'bg-gradient-to-br from-violet-500 to-violet-600 shadow-lg shadow-violet-500/40' 
-          : 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/40'
-      }`}>
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold text-white overflow-hidden transition-transform duration-200 hover:scale-105 ${isPersonal
+        ? 'bg-indigo-600 shadow-sm'
+        : 'bg-indigo-600 shadow-sm'
+        }`}>
         {isPersonal ? (
           <PersonalIcon size={18} />
         ) : companyData?.logo ? (
@@ -102,7 +97,7 @@ const ExpandedHeader = ({ selectedCompany, companyData, setSidebarCollapsed, onC
   return (
     <div
       onClick={onClick}
-      className="flex-1 mr-3 cursor-pointer rounded-lg p-1 -m-1 transition-colors duration-200 hover:bg-white/5"
+      className="flex-1 mr-3 cursor-pointer rounded-lg p-1 -m-1 transition-colors duration-200"
     >
       <div className="flex items-center gap-3 mb-4">
         <CompanyLogo
@@ -124,9 +119,8 @@ const ExpandedHeader = ({ selectedCompany, companyData, setSidebarCollapsed, onC
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={`transition-transform duration-300 ease-out opacity-70 flex-shrink-0 ml-auto ${
-            isDropdownOpen ? 'rotate-180' : 'rotate-0'
-          }`}
+          className={`transition-transform duration-300 ease-out opacity-70 flex-shrink-0 ml-auto ${isDropdownOpen ? 'rotate-180' : 'rotate-0'
+            }`}
         >
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
@@ -137,11 +131,10 @@ const ExpandedHeader = ({ selectedCompany, companyData, setSidebarCollapsed, onC
 
 const CompanyLogo = ({ isPersonal, logo, companyName }) => {
   return (
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold text-white overflow-hidden ${
-      isPersonal 
-        ? 'bg-gradient-to-br from-violet-500 to-violet-600 shadow-lg shadow-violet-500/40' 
-        : 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/40'
-    }`}>
+    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold text-white overflow-hidden ${isPersonal
+      ? 'bg-indigo-600 shadow-sm'
+      : 'bg-indigo-600 shadow-sm'
+      }`}>
       {isPersonal ? (
         <PersonalIcon size={20} />
       ) : logo ? (
@@ -162,11 +155,11 @@ const CompanyLogo = ({ isPersonal, logo, companyName }) => {
 const CompanyInfo = ({ companyName, isPersonal }) => {
   return (
     <div className="flex-1 min-w-0">
-      <h2 className="m-0 text-white text-xl font-bold tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
+      <h2 className="m-0 text-white text-lg font-bold tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
         {companyName || 'Offtix'}
       </h2>
-      <p className="m-0 text-xs text-slate-400 font-medium">
-        {isPersonal ? 'Personal Workspace' : 'Project Management'}
+      <p className="m-0 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+        {isPersonal ? 'Personal Account' : 'Workspace'}
       </p>
     </div>
   );

@@ -25,357 +25,244 @@ const AnalyticsTab = ({ projectId }) => {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '4px solid #e5e7eb',
-          borderTop: '4px solid #3b82f6',
-          borderRadius: '50%',
-          margin: '0 auto 16px',
-          animation: 'spin 1s linear infinite'
-        }}></div>
-        Loading analytics...
+      <div className="flex flex-col items-center justify-center py-20 animate-pulse">
+        <div className="w-10 h-10 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin mb-4" />
+        <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Loading Analytics...</p>
       </div>
     );
   }
 
   if (!analytics) {
-    return <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>No analytics data available</div>;
+    return (
+      <div className="text-center py-24 bg-white rounded-3xl border border-slate-200 shadow-sm">
+        <p className="text-slate-500 font-medium">No analytics data available for this project yet.</p>
+      </div>
+    );
   }
 
-  const getHealthColor = (status) => {
-    const colors = {
-      'healthy': { bg: '#dcfce7', text: '#166534', border: '#86efac' },
-      'at-risk': { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
-      'critical': { bg: '#fee2e2', text: '#991b1b', border: '#fca5a5' },
-      'completed': { bg: '#dbeafe', text: '#1e40af', border: '#93c5fd' },
-      'on-hold': { bg: '#f3f4f6', text: '#374151', border: '#d1d5db' }
+  const getHealthBadge = (status) => {
+    const statusMap = {
+      'healthy': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      'at-risk': 'bg-amber-50 text-amber-700 border-amber-200',
+      'critical': 'bg-rose-50 text-rose-700 border-rose-200',
+      'completed': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      'on-hold': 'bg-slate-50 text-slate-700 border-slate-200'
     };
-    return colors[status] || colors['at-risk'];
+    return statusMap[status] || 'bg-slate-50 text-slate-700 border-slate-200';
   };
 
-  const healthColor = getHealthColor(analytics.health.status);
-
   return (
-    <div>
-      {/* Health Score Card */}
-      <div style={{
-        background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-        borderRadius: '16px',
-        padding: '32px',
-        marginBottom: '32px',
-        boxShadow: '0 10px 40px rgba(59, 130, 246, 0.2)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '300px',
-          height: '300px',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
-          borderRadius: '50%',
-          transform: 'translate(30%, -30%)'
-        }}></div>
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+      {/* Hero Health Section */}
+      <div className="relative overflow-hidden bg-slate-950 rounded-3xl p-8 lg:p-12 shadow-xl border border-slate-800">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/5 rounded-full blur-[100px] -mr-48 -mt-48" />
 
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <h2 style={{ margin: '0 0 24px 0', color: '#ffffff', fontSize: '24px', fontWeight: '600' }}>
-            Project Health
-          </h2>
+        <div className="relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+            <div>
+              <h2 className="text-2xl font-bold text-white uppercase tracking-tight">Project Health & Status</h2>
+              <p className="text-slate-500 text-sm mt-1">Key performance indicators and operational health score.</p>
+            </div>
+            <div className={`px-4 py-1.5 rounded-xl border text-[10px] font-bold uppercase tracking-wider ${getHealthBadge(analytics.health.status)}`}>
+              Status: {analytics.health.status.replace('-', ' ')}
+            </div>
+          </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-            <div style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: '12px',
-              padding: '20px',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}>
-              <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '8px' }}>
-                Health Score
-              </div>
-              <div style={{ fontSize: '32px', fontWeight: '700', color: '#ffffff' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white/5 border border-white/10 p-6 rounded-2xl flex flex-col justify-center">
+              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-3">Health Score</p>
+              <div className="text-3xl font-black text-white flex items-baseline gap-1">
                 {analytics.health.score}
-                <span style={{ fontSize: '18px', marginLeft: '4px' }}>/100</span>
+                <span className="text-xs text-slate-500 font-bold">/100</span>
               </div>
             </div>
 
-            <div style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: '12px',
-              padding: '20px',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}>
-              <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '8px' }}>
-                Status
-              </div>
-              <div style={{
-                display: 'inline-block',
-                padding: '6px 14px',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '600',
-                backgroundColor: healthColor.bg,
-                color: healthColor.text,
-                border: `2px solid ${healthColor.border}`,
-                textTransform: 'capitalize'
-              }}>
-                {analytics.health.status.replace('-', ' ')}
+            <div className="bg-white/5 border border-white/10 p-6 rounded-2xl flex flex-col justify-center">
+              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-3">Overall Progress</p>
+              <div className="text-3xl font-black text-white">{analytics.overview.progress}%</div>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 p-6 rounded-2xl flex flex-col justify-center">
+              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-3">Timeline Status</p>
+              <div className="flex flex-col">
+                <span className={`text-sm font-bold ${analytics.timeline.isOverdue ? 'text-rose-400' : 'text-emerald-400'}`}>
+                  {analytics.timeline.isOverdue ? 'BEHIND SCHEDULE' : 'ON SCHEDULE'}
+                </span>
+                <span className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-tight">{analytics.timeline.daysRemaining} days remaining</span>
               </div>
             </div>
 
-            <div style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: '12px',
-              padding: '20px',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}>
-              <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '8px' }}>
-                Progress
-              </div>
-              <div style={{ fontSize: '32px', fontWeight: '700', color: '#ffffff' }}>
-                {analytics.overview.progress}%
-              </div>
-            </div>
-
-            <div style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: '12px',
-              padding: '20px',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
-            }}>
-              <div style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '8px' }}>
-                Team Size
-              </div>
-              <div style={{ fontSize: '32px', fontWeight: '700', color: '#ffffff' }}>
-                {analytics.overview.teamSize}
+            <div className="bg-white/5 border border-white/10 p-6 rounded-2xl flex flex-col justify-center">
+              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-3">Project Team</p>
+              <div className="text-sm font-bold text-white">
+                <span className="text-indigo-400">{analytics.overview.teamSize}</span> active members
+                <div className="text-[10px] text-slate-500 mt-1 uppercase">{analytics.overview.deviceCount || 0} tracked assets</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Timeline Analytics */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        border: '2px solid #e5e7eb',
-        borderRadius: '16px',
-        padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
-          Timeline Progress
-        </h3>
-
-        <div style={{ marginBottom: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '14px', color: '#64748b' }}>Timeline Completion</span>
-            <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Schedule/Timeline Tracking */}
+        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 capitalize tracking-tight">Project Schedule</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Timeline execution and deadline management</p>
+            </div>
+            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 font-bold text-sm border border-indigo-100 italic">
               {analytics.timeline.progress}%
-            </span>
+            </div>
           </div>
-          <div style={{
-            width: '100%',
-            height: '12px',
-            backgroundColor: '#e5e7eb',
-            borderRadius: '6px',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: `${Math.min(100, analytics.timeline.progress)}%`,
-              height: '100%',
-              background: analytics.timeline.isOverdue
-                ? 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
-                : 'linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%)',
-              transition: 'width 0.3s ease'
-            }}></div>
+
+          <div className="space-y-8 flex-1 flex flex-col justify-center">
+            <div className="relative pt-2">
+              <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">
+                <span>START: {new Date(analytics.timeline.startDate).toLocaleDateString()}</span>
+                <span>END: {new Date(analytics.timeline.endDate).toLocaleDateString()}</span>
+              </div>
+              <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-1000 ${analytics.timeline.isOverdue ? 'bg-rose-500' : 'bg-indigo-600'}`}
+                  style={{ width: `${Math.min(100, analytics.timeline.progress)}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100">
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Time Elapsed</p>
+                <div className="text-2xl font-bold text-slate-900">{analytics.timeline.daysElapsed} <span className="text-xs text-slate-400 font-medium">Days</span></div>
+              </div>
+              <div className={`p-6 rounded-2xl border ${analytics.timeline.isOverdue ? 'bg-rose-50 border-rose-100' : 'bg-slate-50/50 border-slate-100'}`}>
+                <p className={`text-[9px] font-bold uppercase tracking-widest mb-1 ${analytics.timeline.isOverdue ? 'text-rose-500' : 'text-slate-400'}`}>
+                  {analytics.timeline.isOverdue ? 'Days Overdue' : 'Days Remaining'}
+                </p>
+                <div className={`text-2xl font-bold ${analytics.timeline.isOverdue ? 'text-rose-600' : 'text-slate-900'}`}>{Math.abs(analytics.timeline.daysRemaining)}</div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
-          <div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Start Date</div>
-            <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-              {analytics.timeline.startDate ? new Date(analytics.timeline.startDate).toLocaleDateString() : 'N/A'}
+        {/* Budget Analysis */}
+        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 capitalize tracking-tight">Budget Analysis</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Capital usage and expenditure mapping</p>
+            </div>
+            <div className={`px-3 py-1 rounded-lg font-bold text-[9px] border tracking-widest uppercase ${analytics.budget.isOverBudget ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
+              {analytics.budget.utilization}% spent
             </div>
           </div>
-          <div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>End Date</div>
-            <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-              {analytics.timeline.endDate ? new Date(analytics.timeline.endDate).toLocaleDateString() : 'N/A'}
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Days Elapsed</div>
-            <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-              {analytics.timeline.daysElapsed}
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Days Remaining</div>
-            <div style={{ fontSize: '14px', fontWeight: '600', color: analytics.timeline.isOverdue ? '#ef4444' : '#1e293b' }}>
-              {analytics.timeline.daysRemaining}
-              {analytics.timeline.isOverdue && ' (Overdue)'}
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Budget Analytics */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        border: '2px solid #e5e7eb',
-        borderRadius: '16px',
-        padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
-          Budget Tracking
-        </h3>
-
-        <div style={{ marginBottom: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '14px', color: '#64748b' }}>Budget Utilization</span>
-            <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-              {analytics.budget.utilization}%
-            </span>
-          </div>
-          <div style={{
-            width: '100%',
-            height: '12px',
-            backgroundColor: '#e5e7eb',
-            borderRadius: '6px',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: `${Math.min(100, analytics.budget.utilization)}%`,
-              height: '100%',
-              background: analytics.budget.isOverBudget
-                ? 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
-                : analytics.budget.utilization > 80
-                  ? 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)'
-                  : 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
-              transition: 'width 0.3s ease'
-            }}></div>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
-          <div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Budget</div>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
-              {companyCurrency} {analytics.budget.budgetAmount.toLocaleString()}
+          <div className="space-y-8 flex-1 flex flex-col justify-center">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 px-1">Allocation</p>
+                <p className="text-base font-bold text-slate-900 truncate">{companyCurrency} {analytics.budget.budgetAmount.toLocaleString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 px-1">Actual</p>
+                <p className={`text-base font-bold truncate ${analytics.budget.isOverBudget ? 'text-rose-500' : 'text-slate-900'}`}>
+                  {companyCurrency} {analytics.budget.actualCost.toLocaleString()}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 px-1">Variance</p>
+                <p className={`text-base font-bold truncate ${analytics.budget.remaining < 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                  {companyCurrency} {analytics.budget.remaining.toLocaleString()}
+                </p>
+              </div>
             </div>
-          </div>
-          <div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Actual Cost</div>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: analytics.budget.isOverBudget ? '#ef4444' : '#1e293b' }}>
-              {companyCurrency} {analytics.budget.actualCost.toLocaleString()}
+
+            <div className="relative pt-2">
+              <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-1000 ${analytics.budget.isOverBudget ? 'bg-rose-500' : analytics.budget.utilization > 85 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                  style={{ width: `${Math.min(100, analytics.budget.utilization)}%` }}
+                />
+              </div>
             </div>
-          </div>
-          <div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Remaining</div>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: analytics.budget.remaining < 0 ? '#ef4444' : '#10b981' }}>
-              {companyCurrency} {analytics.budget.remaining.toLocaleString()}
+
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Variance is {analytics.budget.isOverBudget ? 'Critical (Over Budget)' : 'Within Operational Parameters'}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Metrics Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-        {/* Milestones */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          border: '2px solid #e5e7eb',
-          borderRadius: '16px',
-          padding: '24px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-        }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
-            Milestones
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '14px', color: '#64748b' }}>Total</span>
-              <span style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>{analytics.milestones.total}</span>
+      {/* Grid Metrics Breakdown */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Milestone Drilldown */}
+        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm group hover:shadow-md transition-all">
+          <div className="w-10 h-10 bg-indigo-50 p-2 rounded-xl mb-6 flex items-center justify-center text-lg shadow-inner">🎯</div>
+          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-6">Milestones</h4>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Completion Rate</span>
+              <span className="text-sm font-bold text-indigo-600">{analytics.milestones.progress}%</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '14px', color: '#64748b' }}>Completed</span>
-              <span style={{ fontSize: '16px', fontWeight: '600', color: '#10b981' }}>{analytics.milestones.completed}</span>
+            <div className="flex justify-between items-center px-1">
+              <span className="text-xs text-slate-500 font-medium">Total Tracked</span>
+              <span className="text-sm font-bold text-slate-900">{analytics.milestones.total}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '14px', color: '#64748b' }}>Delayed</span>
-              <span style={{ fontSize: '16px', fontWeight: '600', color: '#ef4444' }}>{analytics.milestones.delayed}</span>
+            <div className="flex justify-between items-center px-1">
+              <span className="text-xs text-slate-500 font-medium">Successful</span>
+              <span className="text-sm font-bold text-emerald-600">{analytics.milestones.completed}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '14px', color: '#64748b' }}>Progress</span>
-              <span style={{ fontSize: '16px', fontWeight: '600', color: '#3b82f6' }}>{analytics.milestones.progress}%</span>
+            <div className="flex justify-between items-center px-1 border-t border-slate-50 pt-2">
+              <span className="text-xs text-slate-500 font-medium">Delayed</span>
+              <span className="text-sm font-bold text-rose-500">{analytics.milestones.delayed}</span>
             </div>
           </div>
         </div>
 
-        {/* Risks */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          border: '2px solid #e5e7eb',
-          borderRadius: '16px',
-          padding: '24px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-        }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
-            Risks
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '14px', color: '#64748b' }}>Total</span>
-              <span style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>{analytics.risks.total}</span>
+        {/* Risk Assessment */}
+        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm group hover:shadow-md transition-all font-sans">
+          <div className="w-10 h-10 bg-rose-50 p-2 rounded-xl mb-6 flex items-center justify-center text-lg shadow-inner">⚠️</div>
+          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-6">Risk Assessment</h4>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Mitigated Ratio</span>
+              <span className="text-sm font-bold text-emerald-600">{Math.round((analytics.risks.mitigated / (analytics.risks.total || 1)) * 100)}%</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '14px', color: '#64748b' }}>Critical</span>
-              <span style={{ fontSize: '16px', fontWeight: '600', color: '#dc2626' }}>{analytics.risks.critical}</span>
+            <div className="flex justify-between items-center px-1">
+              <span className="text-xs text-slate-500 font-medium">Active Risks</span>
+              <span className="text-sm font-bold text-slate-900">{analytics.risks.total}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '14px', color: '#64748b' }}>High</span>
-              <span style={{ fontSize: '16px', fontWeight: '600', color: '#f59e0b' }}>{analytics.risks.high}</span>
+            <div className="flex justify-between items-center px-1">
+              <span className="text-xs text-slate-500 font-medium">Critical Issues</span>
+              <span className="text-sm font-bold text-rose-600">{analytics.risks.critical}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '14px', color: '#64748b' }}>Mitigated</span>
-              <span style={{ fontSize: '16px', fontWeight: '600', color: '#10b981' }}>{analytics.risks.mitigated}</span>
+            <div className="flex justify-between items-center px-1 border-t border-slate-50 pt-2">
+              <span className="text-xs text-slate-500 font-medium">High Impact</span>
+              <span className="text-sm font-bold text-amber-600">{analytics.risks.high}</span>
             </div>
           </div>
         </div>
 
-        {/* Dependencies */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          border: '2px solid #e5e7eb',
-          borderRadius: '16px',
-          padding: '24px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-        }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
-            Dependencies
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '14px', color: '#64748b' }}>Total</span>
-              <span style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>{analytics.dependencies.total}</span>
+        {/* Dependency Map */}
+        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm group hover:shadow-md transition-all">
+          <div className="w-10 h-10 bg-emerald-50 p-2 rounded-xl mb-6 flex items-center justify-center text-lg shadow-inner">🔗</div>
+          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-6">Dependencies</h4>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Resolution Rate</span>
+              <span className="text-sm font-bold text-emerald-600">{Math.round((analytics.dependencies.resolved / (analytics.dependencies.total || 1)) * 100)}%</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '14px', color: '#64748b' }}>Blocked</span>
-              <span style={{ fontSize: '16px', fontWeight: '600', color: '#ef4444' }}>{analytics.dependencies.blocked}</span>
+            <div className="flex justify-between items-center px-1">
+              <span className="text-xs text-slate-500 font-medium">Total Linked</span>
+              <span className="text-sm font-bold text-slate-900">{analytics.dependencies.total}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '14px', color: '#64748b' }}>Resolved</span>
-              <span style={{ fontSize: '16px', fontWeight: '600', color: '#10b981' }}>{analytics.dependencies.resolved}</span>
+            <div className="flex justify-between items-center px-1">
+              <span className="text-xs text-slate-500 font-medium">Current Blocks</span>
+              <span className="text-sm font-bold text-rose-500">{analytics.dependencies.blocked}</span>
+            </div>
+            <div className="flex justify-between items-center px-1 border-t border-slate-50 pt-2">
+              <span className="text-xs text-slate-500 font-medium">Resolved</span>
+              <span className="text-sm font-bold text-emerald-600">{analytics.dependencies.resolved}</span>
             </div>
           </div>
         </div>
@@ -385,4 +272,3 @@ const AnalyticsTab = ({ projectId }) => {
 };
 
 export default AnalyticsTab;
-

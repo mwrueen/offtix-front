@@ -6,83 +6,33 @@ const PageHeader = ({
     stats = [],
     actions = null,
     icon = null,
-    gradient = 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
-    color = 'white'
+    gradient = 'bg-slate-900',
+    color = 'text-white'
 }) => {
     return (
-        <div style={{
-            background: gradient,
-            borderRadius: '24px',
-            padding: '40px',
-            marginBottom: '32px',
-            color: color,
-            position: 'relative',
-            overflow: 'hidden',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
-        }}>
-            {/* Decorative Elements */}
-            <div style={{
-                position: 'absolute',
-                top: '-20px',
-                right: '-20px',
-                width: '150px',
-                height: '150px',
-                borderRadius: '50%',
-                background: 'rgba(255, 255, 255, 0.1)'
-            }}></div>
-            <div style={{
-                position: 'absolute',
-                bottom: '-40px',
-                left: '10%',
-                width: '100px',
-                height: '100px',
-                borderRadius: '50%',
-                background: 'rgba(255, 255, 255, 0.05)'
-            }}></div>
+        <div className={`${gradient} rounded-[2.5rem] p-12 mb-12 ${color} relative overflow-hidden shadow-24 group animate-in fade-in slide-in-from-top-4 duration-700`}>
+            {/* Cybernetic Accents */}
+            <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 group-hover:bg-indigo-600/20 transition-all duration-1000"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-600/10 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2"></div>
 
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                position: 'relative',
-                zIndex: 1,
-                flexWrap: 'wrap',
-                gap: '24px'
-            }}>
-                <div style={{ flex: '1', minWidth: '300px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 relative z-10">
+                <div className="flex-1 min-w-[300px]">
+                    <div className="flex items-center gap-8 mb-4">
                         {icon && (
-                            <div style={{
-                                width: '48px',
-                                height: '48px',
-                                borderRadius: '12px',
-                                background: 'rgba(255, 255, 255, 0.2)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                backdropFilter: 'blur(10px)',
-                                border: '1px solid rgba(255, 255, 255, 0.3)'
-                            }}>
-                                {icon}
+                            <div className="w-20 h-20 rounded-3xl bg-white/5 backdrop-blur-xl flex items-center justify-center border border-white/10 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-2xl relative">
+                                <div className="text-indigo-400 relative z-10">
+                                    {icon}
+                                </div>
+                                <div className="absolute inset-0 bg-indigo-500/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                             </div>
                         )}
                         <div>
-                            <h1 style={{
-                                fontSize: '32px',
-                                fontWeight: '800',
-                                margin: 0,
-                                letterSpacing: '-0.025em',
-                                lineHeight: '1.2'
-                            }}>
-                                {title}
+                            <h1 className="text-4xl font-black uppercase tracking-[0.25em] leading-none mb-3 drop-shadow-sm">
+                                {title.replace(' ', '_')}
                             </h1>
                             {subtitle && (
-                                <p style={{
-                                    fontSize: '16px',
-                                    color: color === 'white' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.6)',
-                                    margin: '4px 0 0 0',
-                                    fontWeight: '500'
-                                }}>
+                                <p className="text-[11px] font-black uppercase italic tracking-[0.3em] text-slate-400 flex items-center gap-3">
+                                    <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_10px_rgba(99,102,241,0.5)]"></span>
                                     {subtitle}
                                 </p>
                             )}
@@ -90,29 +40,19 @@ const PageHeader = ({
                     </div>
 
                     {stats && stats.length > 0 && (
-                        <div style={{
-                            display: 'flex',
-                            gap: '20px',
-                            marginTop: '32px',
-                            flexWrap: 'wrap'
-                        }}>
+                        <div className="flex flex-wrap gap-6 mt-12">
                             {stats.map((stat, index) => (
-                                <div key={index} style={{
-                                    background: 'rgba(255, 255, 255, 0.1)',
-                                    backdropFilter: 'blur(10px)',
-                                    padding: '12px 24px',
-                                    borderRadius: '16px',
-                                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                                    minWidth: '120px'
-                                }}>
-                                    <div style={{ fontSize: '24px', fontWeight: '700' }}>{stat.value}</div>
-                                    <div style={{
-                                        fontSize: '11px',
-                                        textTransform: 'uppercase',
-                                        opacity: 0.8,
-                                        letterSpacing: '0.05em',
-                                        fontWeight: '600'
-                                    }}>{stat.label}</div>
+                                <div
+                                    key={index}
+                                    className="bg-white/5 hover:bg-white/10 backdrop-blur-md px-8 py-5 rounded-3xl border border-white/10 min-w-[160px] transition-all duration-500 hover:-translate-y-1 hover:shadow-24 group/stat relative overflow-hidden"
+                                >
+                                    <div className="text-3xl font-black tracking-tighter mb-1 font-mono text-indigo-400 group-hover:text-white transition-colors relative z-10">
+                                        {stat.value}
+                                    </div>
+                                    <div className="text-[10px] font-black uppercase tracking-[0.25em] opacity-50 italic group-hover:opacity-80 transition-opacity relative z-10">
+                                        {stat.label.replace(' ', '_')}
+                                    </div>
+                                    <div className="absolute bottom-0 left-0 w-full h-1 bg-indigo-500/0 group-hover:bg-indigo-500 transition-all duration-500"></div>
                                 </div>
                             ))}
                         </div>
@@ -120,11 +60,7 @@ const PageHeader = ({
                 </div>
 
                 {actions && (
-                    <div style={{
-                        display: 'flex',
-                        gap: '12px',
-                        alignItems: 'center'
-                    }}>
+                    <div className="flex items-center gap-6 shrink-0 lg:self-end">
                         {actions}
                     </div>
                 )}

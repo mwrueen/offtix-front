@@ -6,70 +6,45 @@ import AuthLayout from './auth/AuthLayout';
 import SocialLoginButtons from './auth/SocialLoginButtons';
 
 const SignIn = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { state, dispatch } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const from = location.state?.from?.pathname || '/dashboard';
-  
+
   useEffect(() => {
-    if (state.isAuthenticated) {
-      navigate(from, { replace: true });
-    }
+    if (state.isAuthenticated) navigate(from, { replace: true });
   }, [state.isAuthenticated, navigate, from]);
 
-  // Handle URL parameters for social login errors
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const errorParam = urlParams.get('error');
-    if (errorParam) {
-      setError(decodeURIComponent(errorParam));
-    }
+    if (errorParam) setError(decodeURIComponent(errorParam));
   }, [location.search]);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(''); // Clear any previous errors
+    setError('');
     setIsLoading(true);
     dispatch({ type: 'SET_LOADING', payload: true });
-    
+
     try {
       const response = await authAPI.signin(formData);
       dispatch({ type: 'LOGIN_SUCCESS', payload: response.data });
       navigate(from, { replace: true });
     } catch (error) {
-      // Extract error message from various possible response formats
-      let errorMessage = 'Sign in failed';
-      
-      if (error.response) {
-        // Server responded with error
-        errorMessage = error.response.data?.error || 
-                      error.response.data?.message || 
-                      error.response.statusText || 
-                      'Invalid email or password';
-      } else if (error.request) {
-        // Request was made but no response received
-        errorMessage = 'Network error. Please check your connection.';
-      } else {
-        // Something else happened
-        errorMessage = error.message || 'An unexpected error occurred';
-      }
-      
+      let errorMessage = 'Sign in protocol failure';
+      if (error.response) errorMessage = error.response.data?.error || error.response.data?.message || 'Invalid credentials recorded';
+      else if (error.request) errorMessage = 'Transmission error: Check link status';
       setError(errorMessage);
       dispatch({ type: 'SET_LOADING', payload: false });
       setIsLoading(false);
@@ -77,116 +52,95 @@ const SignIn = () => {
   };
 
   return (
-    <AuthLayout 
-      title="Welcome back" 
-      subtitle="Sign in to your account to continue"
+    <AuthLayout
+      title="IDENTITY_ACCESS"
+      subtitle="Synchronize your authority profile to secure terminal access."
     >
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm flex items-center gap-2">
-          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-          </svg>
+        <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 px-10 py-6 rounded-[2.5rem] mb-12 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-6 animate-in slide-in-from-top-6 duration-700 italic shadow-24 shadow-rose-500/5">
+          <span className="text-2xl">⚠️</span>
           {error}
         </div>
       )}
 
-      {/* Social Login Buttons */}
       <SocialLoginButtons />
 
-      {/* Divider */}
-      <div className="flex items-center my-6 text-gray-500 text-sm">
-        <div className="flex-1 h-px bg-gray-200"></div>
-        <span className="px-4">or continue with email</span>
-        <div className="flex-1 h-px bg-gray-200"></div>
+      <div className="relative flex items-center my-16 opacity-30">
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent to-white/20"></div>
+        <span className="px-10 text-[9px] font-black text-white uppercase tracking-[0.5em] italic whitespace-nowrap">SECURE_CREDENTIAL_BLOCK</span>
+        <div className="flex-1 h-px bg-gradient-to-l from-transparent to-white/20"></div>
       </div>
-      
-      <form onSubmit={handleSubmit} className="mb-6">
-        <div className="mb-5">
-          <label className="block mb-1.5 text-sm font-semibold text-gray-700">
-            Email address
-          </label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base outline-none transition-colors duration-200 focus:border-indigo-500"
-          />
-        </div>
-        
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-1.5">
-            <label className="text-sm font-semibold text-gray-700">
-              Password
-            </label>
-            <Link 
-              to="/forgot-password" 
-              className="text-indigo-500 no-underline text-sm font-medium hover:text-indigo-600"
-            >
-              Forgot password?
-            </Link>
+
+      <form onSubmit={handleSubmit} className="space-y-12 group/form">
+        <div className="space-y-4">
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic ml-4">EMAIL_REGISTRY_IDENT</label>
+          <div className="relative group/input">
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              placeholder="IDENT_USER@NODE.SYS"
+              className="w-full px-12 py-7 bg-white/5 border border-white/10 rounded-[3rem] text-sm font-black text-white uppercase tracking-wider outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/5 shadow-inner"
+            />
+            <div className="absolute right-10 top-1/2 -translate-y-1/2 text-2xl grayscale group-hover/input:grayscale-0 transition-grayscale duration-700">📧</div>
           </div>
-          <div className="relative">
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex justify-between items-center px-4">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">SECRET_KEYPHRASE</label>
+            <Link to="/forgot-password" size="small" className="text-indigo-400 no-underline text-[9px] font-black uppercase tracking-[0.3em] hover:text-indigo-300 transition-colors italic">RESET_VAULT_LINK</Link>
+          </div>
+          <div className="relative group/input">
             <input
               type={showPassword ? 'text' : 'password'}
               name="password"
               value={formData.password}
               onChange={handleChange}
               required
-              className="w-full py-3 pr-11 pl-4 border border-gray-300 rounded-lg text-base outline-none transition-colors duration-200 focus:border-indigo-500"
+              placeholder="••••••••••••••••"
+              className="w-full pl-12 pr-24 py-7 bg-white/5 border border-white/10 rounded-[3rem] text-sm font-black text-indigo-400 uppercase tracking-[0.5em] outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/5 shadow-inner"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-0 cursor-pointer p-1 flex items-center justify-center text-gray-500 transition-colors duration-200 hover:text-gray-700"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="absolute right-8 top-1/2 -translate-y-1/2 w-14 h-14 rounded-2xl bg-white/5 border border-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center text-xl italic"
             >
-              {showPassword ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              )}
+              {showPassword ? '👁️' : '🔒'}
             </button>
           </div>
         </div>
-        
+
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full px-4 py-3 text-white border-0 rounded-lg text-base font-semibold transition-colors duration-200 flex items-center justify-center gap-2 ${
-            isLoading 
-              ? 'bg-gray-400 cursor-not-allowed' 
-              : 'bg-indigo-500 cursor-pointer hover:bg-indigo-600'
-          }`}
+          className={`w-full py-8 rounded-[3rem] font-black text-[10px] uppercase tracking-[0.5em] transition-all duration-1000 flex items-center justify-center gap-6 shadow-24 active:scale-95 group overflow-hidden relative italic ${isLoading
+            ? 'bg-slate-950 text-slate-600 grayscale cursor-not-allowed border border-white/5'
+            : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.02] shadow-indigo-600/30 border-2 border-indigo-500/20'
+            }`}
         >
-          {isLoading && (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="31.416" strokeDashoffset="31.416">
-                <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
-                <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
-              </circle>
-            </svg>
+          <span className="relative z-10">{isLoading ? 'SYNCHRONIZING_PHASE_01...' : 'GRANT_ACCESS_DIRECTIVE'}</span>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-[shimmer_3s_infinite] -z-0" />
+
+          {isLoading ? (
+            <div className="w-5 h-5 border-4 border-indigo-200 border-t-white rounded-full animate-spin" />
+          ) : (
+            <span className="text-2xl group-hover:translate-x-6 transition-transform duration-1000 opacity-60">➜</span>
           )}
-          {isLoading ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
-      
-      <div className="text-center">
-        <span className="text-gray-500 text-sm">
-          Don't have an account?{' '}
-        </span>
-        <Link 
-          to="/signup" 
-          className="text-indigo-500 no-underline font-semibold text-sm hover:text-indigo-600"
+
+      <div className="text-center pt-12 space-y-4">
+        <p className="text-slate-500 text-[9px] font-black uppercase tracking-[0.4em] italic opacity-60">
+          UNREGISTERED_OPERATIONAL_TARGET?
+        </p>
+        <Link
+          to="/signup"
+          className="inline-block text-white no-underline font-black text-[10px] uppercase tracking-[0.5em] hover:text-indigo-400 transition-all italic border-b-2 border-white/10 hover:border-indigo-500 pb-2"
         >
-          Sign up
+          INITIALIZE_NEW_AUTH_NODE
         </Link>
       </div>
     </AuthLayout>

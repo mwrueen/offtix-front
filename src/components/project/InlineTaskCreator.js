@@ -1,12 +1,15 @@
 import React, { useState, useRef } from 'react';
 
-const InlineTaskCreator = ({ onCreateTask, onCancel, defaultDurationUnit = 'hours' }) => {
+const InlineTaskCreator = ({ isOpen, onClose, onCreate, taskStatuses, users, sprints, phases }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [duration, setDuration] = useState('');
-  const [durationUnit, setDurationUnit] = useState(defaultDurationUnit);
-  const [showDescription, setShowDescription] = useState(false);
+  const [durationUnit, setDurationUnit] = useState('hours');
+  const [status, setStatus] = useState('');
+  const [priority, setPriority] = useState('medium');
   const titleInputRef = useRef(null);
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -14,148 +17,103 @@ const InlineTaskCreator = ({ onCreateTask, onCancel, defaultDurationUnit = 'hour
 
     const taskData = {
       title: title.trim(),
-      description: description.trim() || undefined
+      description: description.trim() || undefined,
+      status: status || undefined,
+      priority: priority || undefined
     };
 
-    // Add duration if provided
     if (duration && parseFloat(duration) > 0) {
-      taskData.duration = {
-        value: parseFloat(duration),
-        unit: durationUnit
-      };
+      taskData.duration = { value: parseFloat(duration), unit: durationUnit };
     }
 
-    await onCreateTask(taskData);
-
-    // Reset form
-    setTitle('');
-    setDescription('');
-    setDuration('');
-    setDurationUnit(defaultDurationUnit);
-    setShowDescription(false);
-
-    // Focus the input for the next task
-    setTimeout(() => {
-      if (titleInputRef.current) {
-        titleInputRef.current.focus();
-      }
-    }, 0);
-  };
-
-  const handleCancel = () => {
-    setTitle('');
-    setDescription('');
-    setDuration('');
-    setDurationUnit(defaultDurationUnit);
-    setShowDescription(false);
-    if (onCancel) onCancel();
+    await onCreate(taskData);
+    setTitle(''); setDescription(''); setDuration(''); setStatus(''); setPriority('medium');
+    onClose();
   };
 
   return (
-    <div style={{
-      padding: '16px',
-      backgroundColor: 'white',
-      border: '1px solid #dfe1e6',
-      borderRadius: '3px',
-      marginTop: '8px'
-    }}>
-      <form onSubmit={handleSubmit}>
-        {/* Title Input */}
-        <input
-          type="text"
-          ref={titleInputRef}
-          placeholder="What needs to be done?"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          autoFocus
-          style={{
-            width: '100%',
-            padding: '10px 12px',
-            border: '2px solid #dfe1e6',
-            borderRadius: '3px',
-            fontSize: '14px',
-            fontFamily: 'inherit',
-            marginBottom: '8px',
-            outline: 'none',
-            transition: 'border-color 0.2s'
-          }}
-          onFocus={(e) => {
-            e.target.style.borderColor = '#0052cc';
-            setShowDescription(true);
-          }}
-          onBlur={(e) => {
-            e.target.style.borderColor = '#dfe1e6';
-          }}
-        />
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[2000] p-4" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl w-full max-w-lg shadow-xl border border-slate-200 overflow-hidden flex flex-col"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+          <h3 className="text-base font-bold text-slate-900">Add New Task</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
+            <span className="text-2xl leading-none">&times;</span>
+          </button>
+        </div>
 
-        {/* Description and Duration - Only show when focused */}
-        {showDescription && (
-          <>
-            <textarea
-              placeholder="Add a description (optional)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '2px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                fontFamily: 'inherit',
-                marginBottom: '12px',
-                minHeight: '80px',
-                resize: 'vertical',
-                outline: 'none',
-                transition: 'border-color 0.2s'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#0052cc';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#dfe1e6';
-              }}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 ml-1">Task Title</label>
+            <input
+              ref={titleInputRef}
+              autoFocus
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
+              placeholder="What needs to be done?"
+              required
             />
+          </div>
 
-            {/* Duration Input */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 ml-1">Description (Optional)</label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              className="w-full min-h-[100px] px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all resize-none"
+              placeholder="Add more details about this task..."
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 ml-1">Priority</label>
+              <select
+                value={priority}
+                onChange={e => setPriority(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+              >
+                <option value="urgent">Urgent</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 ml-1">Initial Status</label>
+              <select
+                value={status}
+                onChange={e => setStatus(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+              >
+                <option value="">Backlog (Default)</option>
+                {taskStatuses?.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 ml-1">Duration</label>
               <input
                 type="number"
-                placeholder="Duration (optional)"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                min="0"
                 step="0.5"
-                style={{
-                  flex: 1,
-                  padding: '10px 12px',
-                  border: '2px solid #dfe1e6',
-                  borderRadius: '3px',
-                  fontSize: '14px',
-                  fontFamily: 'inherit',
-                  outline: 'none',
-                  transition: 'border-color 0.2s'
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#0052cc';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#dfe1e6';
-                }}
+                value={duration}
+                onChange={e => setDuration(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-500"
+                placeholder="0.0"
               />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 ml-1">Unit</label>
               <select
                 value={durationUnit}
-                onChange={(e) => setDurationUnit(e.target.value)}
-                style={{
-                  padding: '10px 12px',
-                  border: '2px solid #dfe1e6',
-                  borderRadius: '3px',
-                  fontSize: '14px',
-                  fontFamily: 'inherit',
-                  backgroundColor: 'white',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  minWidth: '120px'
-                }}
+                onChange={e => setDurationUnit(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none cursor-pointer"
               >
                 <option value="minutes">Minutes</option>
                 <option value="hours">Hours</option>
@@ -163,47 +121,26 @@ const InlineTaskCreator = ({ onCreateTask, onCancel, defaultDurationUnit = 'hour
                 <option value="weeks">Weeks</option>
               </select>
             </div>
-          </>
-        )}
+          </div>
 
-        {/* Action Buttons */}
-        {showDescription && (
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+          <div className="flex gap-3 pt-4">
             <button
               type="button"
-              onClick={handleCancel}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: 'transparent',
-                color: '#5e6c84',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
+              onClick={onClose}
+              className="flex-1 py-2.5 text-sm font-bold text-slate-500 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!title.trim()}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: title.trim() ? '#0052cc' : '#dfe1e6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: title.trim() ? 'pointer' : 'not-allowed',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
+              className="flex-[2] py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-indigo-700 disabled:opacity-20 transition-all active:scale-95"
             >
-              Create
+              Add Task
             </button>
           </div>
-        )}
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

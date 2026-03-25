@@ -11,7 +11,7 @@ const CreateCompany = () => {
   const { state } = useAuth();
   const { createCompany } = useCompany();
   const toast = useToast();
-  
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -36,25 +36,15 @@ const CreateCompany = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const handleAddRole = () => {
     if (!newRole.name.trim()) {
-      toast?.showToast?.('Please enter a role name', 'error');
+      toast?.showToast?.('ROLE_NAME_EMPTY_IDENTIFICATION_REQUIRED', 'error');
       return;
     }
-
     setAdditionalRoles(prev => [...prev, { ...newRole, id: Date.now() }]);
     setNewRole({ name: '', description: '' });
   };
@@ -65,22 +55,10 @@ const CreateCompany = () => {
 
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Company name is required';
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = 'Company description is required';
-    }
-
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    if (formData.website && !/^https?:\/\/.+/.test(formData.website)) {
-      newErrors.website = 'Please enter a valid URL (starting with http:// or https://)';
-    }
+    if (!formData.name.trim()) newErrors.name = 'ENTITY_NAME_REQUIRED_FOR_REGISTRY';
+    if (!formData.description.trim()) newErrors.description = 'MISSION_DESCRIPTION_AWAITING_INPUT';
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'INVALID_COMMUNICATION_ADDRESS';
+    if (formData.website && !/^https?:\/\/.+/.test(formData.website)) newErrors.website = 'URL_PROTOCOL_ERROR_HTTPS_REQUIRED';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -88,629 +66,423 @@ const CreateCompany = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) {
-      toast?.showToast?.('Please fix the errors in the form', 'error');
+      toast?.showToast?.('FORM_ENCRYPTION_ERRORS_DETECTED', 'error');
       return;
     }
-
     setLoading(true);
-
     try {
-      // Prepare company data
       const companyData = {
+        ...formData,
         name: formData.name.trim(),
         description: formData.description.trim(),
-        industry: formData.industry,
-        website: formData.website,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        country: formData.country,
-        zipCode: formData.zipCode,
-        phone: formData.phone,
-        email: formData.email,
-        foundedYear: formData.foundedYear,
-        companySize: formData.companySize,
-        founderRole: formData.founderRole,
-        additionalRoles: additionalRoles.map(role => ({
-          name: role.name,
-          description: role.description
-        }))
+        additionalRoles: additionalRoles.map(role => ({ name: role.name, description: role.description }))
       };
-
-      console.log('=== CREATING COMPANY ===');
-      console.log('Company data being sent:', companyData);
-      console.log('========================');
-
       await createCompany(companyData);
-      toast?.showToast?.('Company created successfully!', 'success');
+      toast?.showToast?.('CLUSTER_INITIALIZED_SUCCESSFULLY_LINK_ESTABLISHED', 'success');
       navigate('/overview');
     } catch (error) {
       console.error('Error creating company:', error);
-      toast?.showToast?.(
-        error.response?.data?.message || 'Failed to create company. Please try again.',
-        'error'
-      );
+      toast?.showToast?.(error.response?.data?.message || 'CLUSTER_INITIALIZATION_FAILURE_RETRY_PROTOCOL', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const companySizeOptions = [
-    { value: '', label: 'Select company size' },
-    { value: '1-10', label: '1-10 employees' },
-    { value: '11-50', label: '11-50 employees' },
-    { value: '51-200', label: '51-200 employees' },
-    { value: '201-500', label: '201-500 employees' },
-    { value: '501-1000', label: '501-1000 employees' },
-    { value: '1000+', label: '1000+ employees' }
+    { value: '', label: 'IDENTIFY_ENTITY_SCALE' },
+    { value: '1-10', label: '1-10_NODES' },
+    { value: '11-50', label: '11-50_NODES' },
+    { value: '51-200', label: '51-200_NODES' },
+    { value: '201-500', label: '201-500_NODES' },
+    { value: '501-1000', label: '501-1000_NODES' },
+    { value: '1000+', label: '1000+_NODES' }
   ];
 
   const industryOptions = [
-    { value: '', label: 'Select industry' },
-    { value: 'Technology', label: 'Technology' },
-    { value: 'Finance', label: 'Finance' },
-    { value: 'Healthcare', label: 'Healthcare' },
-    { value: 'Education', label: 'Education' },
-    { value: 'Retail', label: 'Retail' },
-    { value: 'Manufacturing', label: 'Manufacturing' },
-    { value: 'Consulting', label: 'Consulting' },
-    { value: 'Real Estate', label: 'Real Estate' },
-    { value: 'Other', label: 'Other' }
+    { value: '', label: 'IDENTIFY_SECTOR_CLUSTER' },
+    { value: 'Technology', label: 'TECH_MATRIX' },
+    { value: 'Finance', label: 'FINANCIAL_GRID' },
+    { value: 'Healthcare', label: 'BIO_SYSTEMS' },
+    { value: 'Education', label: 'KNOWLEDGE_CORE' },
+    { value: 'Retail', label: 'COMMERCE_UPLINK' },
+    { value: 'Manufacturing', label: 'PRODUCTION_LINE' },
+    { value: 'Consulting', label: 'ADVISORY_NODE' },
+    { value: 'Real Estate', label: 'GEO_ASSETS' },
+    { value: 'Other', label: 'X_UNKNOWN_SECTOR' }
   ];
 
   return (
     <Layout>
-      <div style={{
-        maxWidth: '900px',
-        margin: '0 auto'
-      }}>
-        {/* Header */}
-        <div style={{
-          marginBottom: '32px'
-        }}>
-          <h1 style={{
-            margin: '0 0 8px 0',
-            fontSize: '32px',
-            fontWeight: '700',
-            color: '#1e293b',
-            letterSpacing: '-0.5px'
-          }}>
-            Create New Company
+      <div className="max-w-[1200px] mx-auto py-24 px-10 italic pb-60">
+        {/* Modern Tactical Header */}
+        <div className="mb-24 text-center lg:text-left relative group">
+          <div className="absolute -left-10 top-0 w-2 h-full bg-indigo-600 rounded-full animate-pulse group-hover:w-4 transition-all" />
+          <h1 className="text-7xl lg:text-8xl font-black text-slate-950 tracking-tighter mb-6 uppercase italic leading-none drop-shadow-sm group-hover:text-indigo-600 transition-colors">
+            ESTABLISH_NEW_CLUSTER
           </h1>
-          <p style={{
-            margin: 0,
-            fontSize: '16px',
-            color: '#64748b'
-          }}>
-            Set up your company profile and start managing your team and projects
+          <p className="text-xl font-black text-slate-400 italic uppercase tracking-[0.4em] underline underline-offset-[16px] decoration-slate-100">
+            Define organizational parameters and mission-critical objectives.
           </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit}>
-          {/* Basic Information */}
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            padding: '32px',
-            marginBottom: '24px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <h2 style={{
-              margin: '0 0 24px 0',
-              fontSize: '20px',
-              fontWeight: '600',
-              color: '#1e293b',
-              borderBottom: '2px solid #f1f5f9',
-              paddingBottom: '12px'
-            }}>
-              Basic Information
-            </h2>
+        {/* Form Matrix */}
+        <form onSubmit={handleSubmit} className="space-y-20 animate-in fade-in slide-in-from-bottom-12 duration-1200">
 
-            <Input
-              label="Company Name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="e.g., Acme Corporation, Tech Solutions Inc."
-              required
-              error={errors.name}
-            />
-
-            <Input
-              label="Description"
-              name="description"
-              type="textarea"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Brief description of your company..."
-              required
-              rows={4}
-              error={errors.description}
-              helperText="Provide a brief overview of what your company does"
-            />
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: '20px'
-            }}>
-              <Input
-                label="Industry"
-                name="industry"
-                type="select"
-                value={formData.industry}
-                onChange={handleChange}
-                options={industryOptions}
-              />
-
-              <Input
-                label="Company Size"
-                name="companySize"
-                type="select"
-                value={formData.companySize}
-                onChange={handleChange}
-                options={companySizeOptions}
-              />
-
-              <Input
-                label="Founded Year"
-                name="foundedYear"
-                type="number"
-                value={formData.foundedYear}
-                onChange={handleChange}
-                placeholder="e.g., 2020"
-                min="1800"
-                max={new Date().getFullYear()}
-              />
+          {/* Core Specs Section */}
+          <section className="bg-white rounded-[6rem] p-16 shadow-24 border-8 border-slate-50 relative overflow-hidden group/sec">
+            <div className="absolute top-0 right-0 p-24 text-[240px] font-black italic opacity-[0.03] grayscale pointer-events-none select-none text-slate-900 leading-none">CORE</div>
+            <div className="flex items-center gap-8 mb-16 border-b-4 border-slate-100 pb-10 relative z-10 italic">
+              <div className="w-20 h-20 rounded-[2.5rem] bg-indigo-600 text-white flex items-center justify-center text-4xl shadow-24 group-hover/sec:rotate-12 transition-transform duration-700 border-4 border-white">
+                📋
+              </div>
+              <div className="space-y-4">
+                <h2 className="text-4xl font-black text-slate-950 tracking-tighter uppercase italic leading-none text-indigo-600">
+                  CORE_SPECIFICATIONS_MATRIX
+                </h2>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.6em] italic opacity-60 underline underline-offset-8 decoration-slate-50">Primary_Entity_Neural_Data_Sync</p>
+              </div>
             </div>
-          </div>
 
-          {/* Contact Information */}
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            padding: '32px',
-            marginBottom: '24px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <h2 style={{
-              margin: '0 0 24px 0',
-              fontSize: '20px',
-              fontWeight: '600',
-              color: '#1e293b',
-              borderBottom: '2px solid #f1f5f9',
-              paddingBottom: '12px'
-            }}>
-              Contact Information
-            </h2>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: '20px'
-            }}>
+            <div className="space-y-12 relative z-10 max-w-5xl">
               <Input
-                label="Email"
-                name="email"
-                type="email"
-                value={formData.email}
+                label="ENTITY_CLUSTER_NAME"
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
-                placeholder="contact@company.com"
-                error={errors.email}
+                placeholder="E.G., NEURAL_DYNAMICS_CORP_ALPHA"
+                required
+                error={errors.name}
               />
 
               <Input
-                label="Phone"
-                name="phone"
-                type="tel"
-                value={formData.phone}
+                label="MISSION_OBJECTIVE_SUMMARY"
+                name="description"
+                type="textarea"
+                value={formData.description}
                 onChange={handleChange}
-                placeholder="+1 (555) 123-4567"
+                placeholder="DEFINE_PRIMARY_OPERATIONAL_OBJECTIVES_FOR_THIS_CLUSTER..."
+                required
+                rows={4}
+                error={errors.description}
+                helperText="OPERATIONAL_SCOPE_AND_ARCHITECTURAL_MAPPING_ID_..."
               />
 
-              <Input
-                label="Website"
-                name="website"
-                type="url"
-                value={formData.website}
-                onChange={handleChange}
-                placeholder="https://www.company.com"
-                error={errors.website}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <Input
+                  label="SECTOR_IDENT"
+                  name="industry"
+                  type="select"
+                  value={formData.industry}
+                  onChange={handleChange}
+                  options={industryOptions}
+                />
+
+                <Input
+                  label="ENTITY_SCALE_RANK"
+                  name="companySize"
+                  type="select"
+                  value={formData.companySize}
+                  onChange={handleChange}
+                  options={companySizeOptions}
+                />
+
+                <Input
+                  label="ORIGIN_CYCLE_Y"
+                  name="foundedYear"
+                  type="number"
+                  value={formData.foundedYear}
+                  onChange={handleChange}
+                  placeholder="202X_CYCLE"
+                  min="1800"
+                  max={new Date().getFullYear()}
+                />
+              </div>
             </div>
-          </div>
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[160px] -translate-y-1/2 translate-x-1/2 -z-0 pointer-events-none group-hover/sec:scale-125 transition-transform duration-2000"></div>
+          </section>
 
-          {/* Address Information */}
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            padding: '32px',
-            marginBottom: '24px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <h2 style={{
-              margin: '0 0 24px 0',
-              fontSize: '20px',
-              fontWeight: '600',
-              color: '#1e293b',
-              borderBottom: '2px solid #f1f5f9',
-              paddingBottom: '12px'
-            }}>
-              Address Information
-            </h2>
-
-            <Input
-              label="Street Address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              placeholder="123 Main Street"
-            />
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '20px'
-            }}>
-              <Input
-                label="City"
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-                placeholder="San Francisco"
-              />
-
-              <Input
-                label="State/Province"
-                name="state"
-                value={formData.state}
-                onChange={handleChange}
-                placeholder="California"
-              />
-
-              <Input
-                label="Country"
-                name="country"
-                value={formData.country}
-                onChange={handleChange}
-                placeholder="United States"
-              />
-
-              <Input
-                label="Zip/Postal Code"
-                name="zipCode"
-                value={formData.zipCode}
-                onChange={handleChange}
-                placeholder="94102"
-              />
-            </div>
-          </div>
-
-          {/* Founder/Owner Role */}
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            padding: '32px',
-            marginBottom: '24px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <h2 style={{
-              margin: '0 0 16px 0',
-              fontSize: '20px',
-              fontWeight: '600',
-              color: '#1e293b',
-              borderBottom: '2px solid #f1f5f9',
-              paddingBottom: '12px'
-            }}>
-              Your Role
-            </h2>
-
-            <div style={{
-              backgroundColor: '#f0f9ff',
-              border: '1px solid #bae6fd',
-              borderRadius: '8px',
-              padding: '16px',
-              marginBottom: '20px'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'start',
-                gap: '12px'
-              }}>
-                <span style={{ fontSize: '20px' }}>ℹ️</span>
+          {/* Contact & Geo Grid Omega */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+            {/* Comms Network Input */}
+            <section className="bg-white rounded-[5rem] p-14 shadow-24 border-8 border-slate-50 group/comms relative overflow-hidden italic">
+              <div className="absolute top-0 right-0 p-16 text-[180px] font-black italic opacity-[0.02] grayscale pointer-events-none select-none text-slate-900 leading-none">COMMS</div>
+              <div className="flex items-center gap-8 mb-12 border-b-4 border-slate-50 pb-8 relative z-10">
+                <div className="w-16 h-16 rounded-[2rem] bg-indigo-50 text-indigo-600 flex items-center justify-center text-3xl shadow-inner group-hover/comms:scale-110 group-hover/comms:rotate-12 transition-all duration-700">
+                  🌐
+                </div>
                 <div>
-                  <p style={{
-                    margin: '0 0 8px 0',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#0c4a6e'
-                  }}>
-                    You will be the company owner
-                  </p>
-                  <p style={{
-                    margin: 0,
-                    fontSize: '13px',
-                    color: '#075985',
-                    lineHeight: '1.5'
-                  }}>
-                    As the creator of this company, you will automatically be assigned as the owner with full administrative privileges. You can specify your role/title below.
+                  <h2 className="text-2xl font-black text-slate-950 uppercase tracking-tighter leading-none mb-3"> COMMS_CHANNEL_ID </h2>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic opacity-40">EXTERNAL_UPLINK_SIGNATURES</p>
+                </div>
+              </div>
+
+              <div className="space-y-10 relative z-10">
+                <Input
+                  label="SECURE_EMAIL_PROTOCOL"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="OPS_CENTER@ENTITY.IO"
+                  error={errors.email}
+                />
+
+                <Input
+                  label="DIRECT_VOICE_UPLINK"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="+X_CHANNEL_IDENT"
+                />
+
+                <Input
+                  label="WEB_TERMINAL_INTERFACE"
+                  name="website"
+                  type="url"
+                  value={formData.website}
+                  onChange={handleChange}
+                  placeholder="HTTPS://TERMINAL_NODE.NET"
+                  error={errors.website}
+                />
+              </div>
+            </section>
+
+            {/* Geo Matrix Input */}
+            <section className="bg-white rounded-[5rem] p-14 shadow-24 border-8 border-slate-50 group/geo relative overflow-hidden italic">
+              <div className="absolute top-0 right-0 p-16 text-[180px] font-black italic opacity-[0.02] grayscale pointer-events-none select-none text-slate-900 leading-none">GEO</div>
+              <div className="flex items-center gap-8 mb-12 border-b-4 border-slate-50 pb-8 relative z-10">
+                <div className="w-16 h-16 rounded-[2rem] bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl shadow-inner group-hover/geo:scale-110 group-hover/geo:rotate-12 transition-all duration-700">
+                  📍
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-950 uppercase tracking-tighter leading-none mb-3"> GEOSPATIAL_COORDS </h2>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic opacity-40">PHYSICAL_SECTOR_IDENTIFICATION</p>
+                </div>
+              </div>
+
+              <div className="space-y-10 relative z-10">
+                <Input
+                  label="HQ_PRIMARY_COORD"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  placeholder="PHYSICAL_LOCATION_DATA..."
+                />
+
+                <div className="grid grid-cols-2 gap-8">
+                  <Input
+                    label="METRO_CORE"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    placeholder="TERMINAL_CITY"
+                  />
+
+                  <Input
+                    label="SECTOR_DISTRICT"
+                    name="state"
+                    value={formData.state}
+                    onChange={handleChange}
+                    placeholder="SECTOR_7_DELTA"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-8">
+                  <Input
+                    label="TERRITORY_IDENT"
+                    name="country"
+                    value={formData.country}
+                    onChange={handleChange}
+                    placeholder="NEUTRAL_ZONE_X"
+                  />
+
+                  <Input
+                    label="ZIP_INDEX_HASH"
+                    name="zipCode"
+                    value={formData.zipCode}
+                    onChange={handleChange}
+                    placeholder="SIG_XXXXX"
+                  />
+                </div>
+              </div>
+            </section>
+          </div>
+
+          {/* Root Command Designation Zeta */}
+          <section className="bg-slate-950 rounded-[6rem] p-16 shadow-24 border-8 border-slate-900 relative overflow-hidden group/root italic">
+            <div className="absolute top-0 right-0 p-24 text-[240px] font-black italic opacity-[0.03] grayscale pointer-events-none select-none text-white leading-none">ROOT</div>
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent pointer-events-none group-hover/root:opacity-20 transition-opacity duration-1000" />
+            <div className="flex items-center gap-10 mb-16 border-b-8 border-white/5 pb-12 relative z-10">
+              <div className="w-24 h-24 rounded-[3.5rem] bg-indigo-600 text-white flex items-center justify-center text-5xl shadow-24 group-hover/root:rotate-12 group-hover/root:scale-110 transition-all duration-1000 border-4 border-white animate-pulse">
+                👑
+              </div>
+              <div className="space-y-4">
+                <h2 className="text-4xl font-black text-white tracking-tighter uppercase italic leading-none drop-shadow-sm">
+                  ROOT_COMMAND_DESIGNATION
+                </h2>
+                <p className="text-[12px] font-black text-indigo-400 uppercase tracking-[0.6em] italic opacity-60 underline underline-offset-8 decoration-white/5">Primary_Sector_Identity_Lock</p>
+              </div>
+            </div>
+
+            <div className="relative z-10 bg-white/5 border-4 border-white/5 rounded-[3.5rem] p-10 mb-16 backdrop-blur-3xl group-hover/root:bg-white/10 transition-all duration-1000">
+              <div className="flex gap-10 items-start">
+                <span className="text-5xl bg-white/10 w-20 h-20 rounded-[2rem] flex items-center justify-center shadow-24 border-2 border-white/5 grayscale group-hover/root:grayscale-0 group-hover/root:rotate-12 transition-all">🛡️</span>
+                <div className="space-y-6 flex-1">
+                  <p className="text-2xl font-black text-indigo-400 uppercase tracking-tighter"> AUTHORIZATION_ROOT_GRANTED </p>
+                  <p className="text-sm text-white/40 font-black leading-relaxed italic uppercase tracking-widest max-w-2xl group-hover/root:text-white/60 transition-colors">
+                    Initializing this cluster grants permanent ROOT administrative privileges over all entities, mission logs, and financial resource allocation streams linked to this sector. Confirm your tactical designation.
                   </p>
                 </div>
               </div>
             </div>
 
             <Input
-              label="Your Role/Title"
+              label="OPERATIONAL_ROOT_TITLE"
               name="founderRole"
               value={formData.founderRole}
               onChange={handleChange}
-              placeholder="e.g., Founder, CEO, Managing Director"
+              placeholder="E.G., FOUNDER_COMMAND_DIRECTOR"
               required
-              helperText="This will be your designation in the company"
+              helperText="SPECIFY_YOUR_DESIGNATION_RANK_WITHIN_THE_PRIMARY_COMMAND_STRUCTURE_..."
+              inputClassName="bg-white/5 border-white/10 focus:bg-white/10 text-white font-black tracking-tight uppercase placeholder:text-slate-800 text-2xl py-8 pl-10"
             />
-          </div>
+            <div className="absolute -bottom-48 -left-48 w-[600px] h-[600px] bg-indigo-500/5 rounded-full blur-[180px] -z-0 pointer-events-none group-hover/root:scale-125 transition-transform duration-2000"></div>
+          </section>
 
-          {/* Additional Roles */}
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            padding: '32px',
-            marginBottom: '24px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <h2 style={{
-              margin: '0 0 16px 0',
-              fontSize: '20px',
-              fontWeight: '600',
-              color: '#1e293b',
-              borderBottom: '2px solid #f1f5f9',
-              paddingBottom: '12px'
-            }}>
-              Additional Roles (Optional)
-            </h2>
-
-            <p style={{
-              margin: '0 0 24px 0',
-              fontSize: '14px',
-              color: '#64748b'
-            }}>
-              Define additional roles/designations that you plan to use in your company. You can always add more later.
-            </p>
-
-            {/* List of added roles */}
-            {additionalRoles.length > 0 && (
-              <div style={{ marginBottom: '24px' }}>
-                {additionalRoles.map((role) => (
-                  <div
-                    key={role.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '12px 16px',
-                      backgroundColor: '#f8fafc',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      marginBottom: '8px'
-                    }}
-                  >
-                    <div style={{ flex: 1 }}>
-                      <div style={{
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#1e293b',
-                        marginBottom: '4px'
-                      }}>
-                        {role.name}
-                      </div>
-                      {role.description && (
-                        <div style={{
-                          fontSize: '13px',
-                          color: '#64748b'
-                        }}>
-                          {role.description}
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveRole(role.id)}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: '#fee2e2',
-                        color: '#dc2626',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        fontWeight: '500',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#fecaca';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#fee2e2';
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
+          {/* Subsidiary Operational Nodes Eta */}
+          <section className="bg-white rounded-[6rem] p-16 shadow-24 border-8 border-slate-50 relative overflow-hidden italic group/subs animate-in zoom-in-95">
+            <div className="absolute bottom-0 right-0 p-24 text-[240px] font-black italic opacity-[0.02] grayscale pointer-events-none select-none text-slate-950 leading-none">NODES</div>
+            <div className="flex items-center justify-between gap-8 mb-16 border-b-4 border-slate-50 pb-12">
+              <div className="flex items-center gap-10">
+                <div className="w-20 h-20 rounded-[2.5rem] bg-slate-950 text-white flex items-center justify-center text-4xl shadow-24 group-hover/subs:rotate-12 transition-all duration-700 border-4 border-white">
+                  👥
+                </div>
+                <div className="space-y-4">
+                  <h2 className="text-4xl font-black text-slate-950 tracking-tighter uppercase italic leading-none group-hover/subs:text-indigo-600 transition-colors">
+                    SUBSIDIARY_OPERATIONAL_NODES
+                  </h2>
+                  <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.6em] italic opacity-60 underline underline-offset-8 decoration-slate-50">Authorized_Hierarchy_Designations</p>
+                </div>
               </div>
-            )}
-
-            {/* Add new role form */}
-            <div style={{
-              backgroundColor: '#f8fafc',
-              border: '1px dashed #cbd5e1',
-              borderRadius: '8px',
-              padding: '20px'
-            }}>
-              <Input
-                label="Role Name"
-                name="roleName"
-                value={newRole.name}
-                onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
-                placeholder="e.g., Project Manager, Developer, Designer"
-                style={{ marginBottom: '16px' }}
-              />
-
-              <Input
-                label="Role Description"
-                name="roleDescription"
-                type="textarea"
-                value={newRole.description}
-                onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
-                placeholder="Brief description of this role..."
-                rows={2}
-                style={{ marginBottom: '16px' }}
-              />
-
-              <button
-                type="button"
-                onClick={handleAddRole}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#f1f5f9',
-                  color: '#475569',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#e2e8f0';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#f1f5f9';
-                }}
-              >
-                <span style={{ fontSize: '16px' }}>➕</span>
-                Add Role
-              </button>
             </div>
-          </div>
 
-          {/* Form Actions */}
-          <div style={{
-            display: 'flex',
-            gap: '16px',
-            justifyContent: 'flex-end',
-            paddingTop: '24px',
-            borderTop: '2px solid #e2e8f0'
-          }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
+              <div className="space-y-10">
+                <h3 className="text-[12px] font-black text-slate-400 uppercase tracking-[0.8em] mb-8 border-b-4 border-slate-50 pb-6 italic underline underline-offset-8"> CURRENT_REGISTRY_STATE </h3>
+                {additionalRoles.length === 0 ? (
+                  <div className="py-24 text-center bg-slate-50/50 rounded-[4.5rem] border-8 border-dashed border-slate-100 flex flex-col items-center gap-10 grayscale opacity-20">
+                    <div className="text-9xl mb-4">🗂️</div>
+                    <p className="text-[14px] font-black text-slate-300 uppercase tracking-[0.8em] italic"> NO_SUBSIDIARY_ROLES_DETECTED </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {additionalRoles.map((role, i) => (
+                      <div
+                        key={role.id}
+                        className="group flex items-center justify-between p-8 bg-slate-50/50 hover:bg-white border-4 border-slate-50 hover:border-indigo-100 rounded-[3rem] transition-all duration-1000 hover:shadow-24 relative overflow-hidden animate-in slide-in-from-left-8" style={{ animationDelay: `${i * 100}ms` }}
+                      >
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-bl-full translate-x-12 -translate-y-12 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform duration-1000" />
+                        <div className="flex-1 min-w-0 pr-6 relative z-10">
+                          <div className="text-xl font-black text-slate-950 uppercase italic tracking-tighter mb-2 leading-none group-hover:text-indigo-600 transition-colors">{role.name}</div>
+                          <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest italic truncate opacity-60 underline underline-offset-4 decoration-slate-100">{role.description || 'MISSION_BRIEF_NEGATIVE'}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveRole(role.id)}
+                          className="w-14 h-14 bg-rose-50 text-rose-500 hover:bg-rose-600 hover:text-white rounded-[1.5rem] transition-all duration-500 flex items-center justify-center shadow-sm hover:shadow-24 hover:rotate-90 active:scale-90 shrink-0 border-2 border-transparent hover:border-white relative z-10 text-xl font-black"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-12 bg-slate-950 rounded-[5rem] shadow-24 border-8 border-slate-900 group/form-role relative overflow-hidden italic animate-in slide-in-from-right-12 duration-1200 transition-all hover:scale-[1.02]">
+                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-indigo-500/10 to-transparent pointer-events-none" />
+                <div className="space-y-10 relative z-10">
+                  <div className="flex items-center gap-6 mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 border-2 border-white/10 flex items-center justify-center text-xl shadow-inner text-indigo-400">⚡</div>
+                    <h4 className="text-[12px] font-black text-indigo-400 uppercase tracking-[0.8em] italic"> INITIALIZE_NODE_MODULE </h4>
+                  </div>
+
+                  <Input
+                    label="NODE_DESIGNATION_RANK"
+                    name="roleName"
+                    value={newRole.name}
+                    onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
+                    placeholder="E.G., PROJECT_COORD_7"
+                    inputClassName="bg-white/5 border-white/10 focus:bg-white/10 text-white font-black tracking-tight uppercase text-lg py-6"
+                  />
+
+                  <Input
+                    label="MISSION_BRIEF_ID"
+                    name="roleDescription"
+                    type="textarea"
+                    value={newRole.description}
+                    onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
+                    placeholder="SPECIFY_SECTOR_RESPONSIBILITIES_LOGS..."
+                    rows={3}
+                    inputClassName="bg-white/5 border-white/10 focus:bg-white/10 text-white text-sm italic py-6 leading-loose"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleAddRole}
+                    className="w-full h-24 bg-white text-slate-950 rounded-[2.5rem] font-black text-base uppercase tracking-[0.6em] transition-all hover:bg-indigo-400 hover:text-white shadow-24 active:scale-95 group/btn-add relative overflow-hidden border-8 border-white/10 shrink-0"
+                  >
+                    <span className="relative z-10 flex items-center justify-center gap-6">
+                      <span className="text-3xl group-hover/btn-add:rotate-90 transition-transform duration-700">＋</span>
+                      REGISTER_NODE_SIG
+                    </span>
+                    <div className="absolute top-0 left-0 w-full h-full bg-white/20 -translate-x-full group-hover/btn-add:animate-[shimmer_3s_infinite]" />
+                  </button>
+                </div>
+                <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover/form-role:scale-150 transition-transform duration-2000"></div>
+              </div>
+            </div>
+          </section>
+
+          {/* Action Sequencer Omega */}
+          <div className="flex flex-col sm:flex-row gap-10 justify-center lg:justify-end pt-20 border-t-8 border-slate-50 pb-40">
             <button
               type="button"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/overview')}
               disabled={loading}
-              style={{
-                padding: '14px 28px',
-                backgroundColor: '#f8fafc',
-                color: '#64748b',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontSize: '15px',
-                fontWeight: '600',
-                transition: 'all 0.2s',
-                opacity: loading ? 0.6 : 1
-              }}
-              onMouseEnter={(e) => {
-                if (!loading) {
-                  e.target.style.backgroundColor = '#f1f5f9';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!loading) {
-                  e.target.style.backgroundColor = '#f8fafc';
-                }
-              }}
+              className="px-16 py-8 bg-white border-4 border-slate-100 hover:border-slate-300 text-slate-400 rounded-[3.5rem] text-[13px] font-black uppercase tracking-[0.6em] transition-all hover:text-rose-600 active:scale-95 disabled:opacity-50 italic underline underline-offset-[16px] decoration-slate-50"
             >
-              Cancel
+              ABORT_CLUSTER_ID_INIT
             </button>
 
             <button
               type="submit"
               disabled={loading}
-              style={{
-                padding: '14px 32px',
-                background: loading
-                  ? '#94a3b8'
-                  : 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontSize: '15px',
-                fontWeight: '600',
-                transition: 'all 0.2s',
-                boxShadow: loading ? 'none' : '0 4px 12px rgba(59, 130, 246, 0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-              onMouseEnter={(e) => {
-                if (!loading) {
-                  e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!loading) {
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
-                }
-              }}
+              className={`px-24 py-8 rounded-[3.5rem] font-black text-[14px] uppercase tracking-[0.8em] text-white shadow-24 transition-all hover:scale-110 active:scale-95 group/submit relative overflow-hidden border-8 border-white min-w-[360px] italic ${loading ? 'bg-slate-300 text-slate-500 grayscale' : 'bg-slate-950 shadow-indigo-950/20 hover:bg-indigo-600'}`}
             >
-              {loading ? (
-                <>
-                  <span style={{
-                    width: '16px',
-                    height: '16px',
-                    border: '2px solid #ffffff',
-                    borderTop: '2px solid transparent',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }}></span>
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <span style={{ fontSize: '18px' }}>🏢</span>
-                  Create Company
-                </>
-              )}
+              <span className="relative z-10 flex items-center justify-center gap-8">
+                {loading ? (
+                  <>
+                    <div className="w-10 h-10 border-8 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    SYNCHRONIZING_CORE_PULSE...
+                  </>
+                ) : (
+                  <>
+                    <span className="text-3xl group-hover:rotate-12 transition-transform duration-700">🏢</span>
+                    CONFIRM_DEPLOYMENT_LINK
+                    <span className="text-3xl group-hover:translate-x-4 transition-transform duration-700">➜</span>
+                  </>
+                )}
+              </span>
+              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_3s_infinite] -z-0"></div>
             </button>
           </div>
         </form>
-
-        {/* Add keyframe animation for loading spinner */}
-        <style>
-          {`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}
-        </style>
       </div>
     </Layout>
   );
 };
 
 export default CreateCompany;
-

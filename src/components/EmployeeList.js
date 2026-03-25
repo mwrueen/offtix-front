@@ -6,269 +6,185 @@ import { useAuth } from '../context/AuthContext';
 import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import Layout from './Layout';
 import PageHeader from './PageHeader';
-import { getCurrencySymbol } from '../utils/currency';
 
 const EmployeeList = () => {
-  const navigate = useNavigate();
-  const { state } = useCompany();
+  const { state: { selectedCompany } } = useCompany();
   const { state: authState } = useAuth();
+  const navigate = useNavigate();
   const { hasPermission } = usePermissions();
-  const selectedCompany = state.selectedCompany;
   const [employees, setEmployees] = useState([]);
   const [company, setCompany] = useState(null);
   const [designations, setDesignations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDesignation, setFilterDesignation] = useState('all');
-
-  // Permission derived from context
   const canAddEmployee = hasPermission(PERMISSIONS.ADD_EMPLOYEE);
 
-
-  const currencySymbol = getCurrencySymbol(company?.currency);
-
   useEffect(() => {
-    if (state.loading) {
-      return;
-    }
-
-    if (selectedCompany && selectedCompany.id !== 'personal') {
-      fetchEmployees();
-    } else if (!state.loading && (selectedCompany === null || selectedCompany?.id === 'personal')) {
-      navigate('/overview');
-    }
-  }, [selectedCompany, state.loading, navigate]);
+    if (authState.loading) return;
+    if (selectedCompany && selectedCompany.id !== 'personal') fetchEmployees();
+    else if (!authState.loading && (selectedCompany === null || selectedCompany?.id === 'personal')) navigate('/overview');
+  }, [selectedCompany, authState.loading]);
 
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      const response = await employeeAPI.getAll(selectedCompany.id);
-      setEmployees(response.data.employees || []);
-      const companyData = response.data.company;
-      setCompany(companyData);
-      setDesignations(response.data.designations || []);
-    } catch (error) {
-      console.error('Error fetching employees:', error);
+      const res = await employeeAPI.getAll(selectedCompany.id);
+      setEmployees(res.data.employees || []);
+      setCompany(res.data.company);
+      setDesignations(res.data.designations || []);
+    } catch (e) {
+      console.error('Failed to fetch employees', e);
     } finally {
       setLoading(false);
     }
   };
 
   const filteredEmployees = employees.filter(emp => {
-    const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDesignation = filterDesignation === 'all' || emp.designation === filterDesignation;
-    return matchesSearch && matchesDesignation;
+    const ms = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) || emp.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const md = filterDesignation === 'all' || emp.designation === filterDesignation;
+    return ms && md;
   });
 
-  const getDesignationColor = (designation) => {
-    if (designation === 'Owner') return '#ef4444';
-    if (designation === 'Managing Director') return '#f59e0b';
-    if (designation === 'HR Manager') return '#10b981';
-    if (designation === 'Project Manager') return '#3b82f6';
-    return '#6b7280';
+  const getDColor = (d) => {
+    const map = { 'Owner': 'rose', 'Managing Director': 'amber', 'HR Manager': 'emerald', 'Project Manager': 'indigo' };
+    return map[d] || 'slate';
   };
 
-  if (state.loading) {
-    return (
-      <Layout>
-        <div style={{ textAlign: 'center', padding: '50px' }}>
-          <div style={{ fontSize: '18px', color: '#64748b' }}>Loading...</div>
+  if (loading) return (
+    <Layout>
+      <div className="space-y-8 pb-12">
+        <div className="h-40 bg-slate-100 rounded-2xl w-full animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {Array(8).fill(0).map((_, i) => (
+            <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4 animate-pulse">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-slate-50" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-slate-50 rounded w-3/4" />
+                  <div className="h-3 bg-slate-50 rounded w-1/2" />
+                </div>
+              </div>
+              <div className="h-20 bg-slate-50 rounded-xl w-full" />
+            </div>
+          ))}
         </div>
-      </Layout>
-    );
-  }
+      </div>
+    </Layout>
+  );
 
   return (
     <Layout>
-      <PageHeader
-        title="Employee Directory"
-        subtitle={`${company?.name} • ${filteredEmployees.length} ${filteredEmployees.length === 1 ? 'employee' : 'employees'}`}
-        icon={
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-          </svg>
-        }
-        actions={
-          canAddEmployee && (
+      <div className="space-y-8 pb-12">
+        <PageHeader
+          title="Employee Directory"
+          subtitle={`Manage personnel for ${company?.name || 'your company'}. View profiles and roles.`}
+          icon={<div className="w-12 h-12 bg-white text-indigo-600 rounded-xl flex items-center justify-center text-2xl shadow-sm border border-slate-100">👥</div>}
+          stats={[
+            { label: 'Total Employees', value: employees.length },
+            { label: 'Matching Results', value: filteredEmployees.length }
+          ]}
+          actions={canAddEmployee && (
             <button
               onClick={() => navigate('/add-employee')}
-              style={{
-                padding: '12px 24px',
-                backgroundColor: 'white',
-                color: '#3b82f6',
-                border: 'none',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-              }}
+              className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 transition-all shadow-sm flex items-center gap-2"
             >
-              <span>➕</span> Add Employee
+              <span>+</span>
+              <span>Add Employee</span>
             </button>
-          )
-        }
-      />
+          )}
+        />
 
-      <div style={{
-        backgroundColor: 'white',
-        padding: '20px',
-        borderRadius: '12px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        marginBottom: '24px',
-        display: 'flex',
-        gap: '16px',
-        flexWrap: 'wrap'
-      }}>
-        <div style={{ flex: '1', minWidth: '250px' }}>
-          <input
-            type="text"
-            placeholder="🔍 Search by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              fontSize: '14px',
-              outline: 'none'
-            }}
-          />
-        </div>
-        <div style={{ minWidth: '200px' }}>
-          <select
-            value={filterDesignation}
-            onChange={(e) => setFilterDesignation(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              fontSize: '14px',
-              outline: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            <option value="all">All Designations</option>
-            <option value="Owner">Owner</option>
-            {designations.map(des => (
-              <option key={des._id} value={des.name}>{des.name}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {loading ? (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-          gap: '20px'
-        }}>
-          {Array(6).fill(0).map((_, index) => (
-            <div key={index} style={{
-              backgroundColor: 'white',
-              borderRadius: '12px',
-              padding: '24px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              border: '1px solid #e2e8f0'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-                <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#f1f5f9' }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ width: '120px', height: '16px', backgroundColor: '#f1f5f9', borderRadius: '4px', marginBottom: '8px' }} />
-                  <div style={{ width: '180px', height: '14px', backgroundColor: '#f1f5f9', borderRadius: '4px' }} />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : filteredEmployees.length > 0 ? (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-          gap: '20px'
-        }}>
-          {filteredEmployees.map((employee) => (
-            <div
-              key={employee._id}
-              onClick={() => navigate(`/employees/${employee._id}`)}
-              style={{
-                backgroundColor: 'white',
-                borderRadius: '12px',
-                padding: '24px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                border: '1px solid #e2e8f0',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
+        {/* Search & Filter */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap gap-4 items-center">
+          <div className="flex-1 min-w-[300px] relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 transition-all"
+            />
+          </div>
+          <div className="min-w-[200px] relative">
+            <select
+              value={filterDesignation}
+              onChange={(e) => setFilterDesignation(e.target.value)}
+              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 cursor-pointer appearance-none transition-all"
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
-                  backgroundColor: getDesignationColor(employee.designation) + '20',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '24px',
-                  fontWeight: 'bold',
-                  color: getDesignationColor(employee.designation),
-                  backgroundImage: employee.profile?.profilePicture ? `url(${employee.profile.profilePicture})` : 'none',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }}>
-                  {!employee.profile?.profilePicture && employee.name.charAt(0).toUpperCase()}
+              <option value="all">All Designations</option>
+              {designations.map(des => <option key={des._id} value={des.name}>{des.name}</option>)}
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
+          </div>
+        </div>
+
+        {filteredEmployees.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredEmployees.map((e) => {
+              const dColor = getDColor(e.designation);
+              return (
+                <div
+                  key={e._id}
+                  onClick={() => navigate(`/employees/${e._id}`)}
+                  className="group bg-white p-6 rounded-2xl border border-slate-200 hover:border-indigo-400 hover:shadow-lg transition-all cursor-pointer relative flex flex-col"
+                >
+                  <div className="flex flex-col items-center mb-6 text-center space-y-3">
+                    <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center font-bold text-2xl border border-slate-200 overflow-hidden shrink-0">
+                      {e.profile?.profilePicture ? (
+                        <img src={e.profile.profilePicture} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-slate-700">{e.name.charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-bold text-slate-800 truncate transition-colors group-hover:text-indigo-600"> {e.name} </h3>
+                      <p className="text-xs font-medium text-slate-500 truncate"> {e.email} </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 mt-auto">
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Role</span>
+                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase border bg-${dColor}-50 text-${dColor}-700 border-${dColor}-100`}>
+                          {e.designation || 'Staff'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Joined</span>
+                        <span className="text-xs font-bold text-slate-700">
+                          {new Date(e.joinedAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex justify-center opacity-0 group-hover:opacity-100 transition-all">
+                      <span className="text-xs font-bold text-indigo-600 flex items-center gap-1">
+                        View Profile <span>→</span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {employee.name}
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {employee.email}
-                  </p>
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Designation</span>
-                  <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', backgroundColor: getDesignationColor(employee.designation) + '15', color: getDesignationColor(employee.designation) }}>
-                    {employee.designation}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Joined</span>
-                  <span style={{ fontSize: '13px', color: '#1e293b' }}>
-                    {new Date(employee.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                  </span>
-                </div>
-              </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bg-white p-16 rounded-3xl border-2 border-dashed border-slate-100 text-center space-y-6">
+            <div className="text-8xl grayscale opacity-10">🗂️</div>
+            <div className="space-y-2">
+              <h3 className="text-3xl font-bold text-slate-800">No Employees Found</h3>
+              <p className="text-slate-500 max-w-sm mx-auto">No employees match your search criteria. Try adjusting your filters or search terms.</p>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '60px 20px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>👥</div>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#374151' }}>No employees found</h3>
-          <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>Try adjusting your filters</p>
-        </div>
-      )}
+            <button
+              onClick={() => { setSearchTerm(''); setFilterDesignation('all'); }}
+              className="px-8 py-3 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 transition-all shadow-md"
+            >
+              Reset Filters
+            </button>
+          </div>
+        )}
+      </div>
     </Layout>
   );
 };

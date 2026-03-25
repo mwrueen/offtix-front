@@ -73,6 +73,7 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
     });
     setEditingMeeting(meeting);
     setShowForm(true);
+    setViewingMeeting(null);
   };
 
   const handleDelete = (meetingId) => {
@@ -94,20 +95,18 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
     }
   };
 
-  const getMeetingTypeColor = (type) => {
-    const colors = {
-      'planning': { bg: '#e6f7ff', text: '#0052cc', border: '#91d5ff' },
-      'standup': { bg: '#fff4e6', text: '#d46b08', border: '#ffcc95' },
-      'review': { bg: '#f6ffed', text: '#389e0d', border: '#b7eb8f' },
-      'retrospective': { bg: '#f9f0ff', text: '#722ed1', border: '#d3adf7' },
-      'stakeholder': { bg: '#fff1f0', text: '#cf1322', border: '#ffa39e' },
-      'technical': { bg: '#f4f5f7', text: '#5e6c84', border: '#dfe1e6' },
-      'other': { bg: '#f4f5f7', text: '#5e6c84', border: '#dfe1e6' }
+  const getTypeBadge = (type) => {
+    const typeMap = {
+      'planning': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      'standup': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      'review': 'bg-amber-50 text-amber-700 border-amber-200',
+      'retrospective': 'bg-purple-50 text-purple-700 border-purple-200',
+      'stakeholder': 'bg-blue-50 text-blue-700 border-blue-200',
+      'technical': 'bg-slate-50 text-slate-700 border-slate-200'
     };
-    return colors[type] || colors.other;
+    return typeMap[type] || 'bg-slate-50 text-slate-700 border-slate-200';
   };
 
-  // Filter meeting notes
   const filteredMeetingNotes = meetingNotes.filter(meeting => {
     const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (meeting.description && meeting.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -117,118 +116,45 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
   });
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#fafbfc', minHeight: '100vh' }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '24px',
-        padding: '0 4px'
-      }}>
+    <div className="p-6 bg-slate-50 min-h-screen">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 style={{
-            margin: '0 0 4px 0',
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#172b4d',
-            letterSpacing: '-0.5px'
-          }}>
-            Meeting Notes
-          </h1>
-          <p style={{
-            margin: 0,
-            fontSize: '16px',
-            color: '#5e6c84',
-            fontWeight: '400'
-          }}>
-            {filteredMeetingNotes.length} of {meetingNotes.length} meeting{meetingNotes.length !== 1 ? 's' : ''}
+          <h1 className="text-2xl font-bold text-slate-900">Meeting Notes</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Browse and manage all project meeting records
           </p>
         </div>
         {isProjectOwner && (
           <button
-            onClick={() => setShowForm(!showForm)}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: showForm ? '#f4f5f7' : '#0052cc',
-              color: showForm ? '#5e6c84' : 'white',
-              border: showForm ? '1px solid #dfe1e6' : 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-              transition: 'all 0.2s ease',
-              boxShadow: showForm ? 'none' : '0 2px 4px rgba(0, 82, 204, 0.2)'
+            onClick={() => {
+              if (showForm) resetForm();
+              else setShowForm(true);
             }}
+            className={`px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 ${showForm ? 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
           >
-            {showForm ? '✕ Cancel' : '+ Add Meeting Note'}
+            {showForm ? 'Cancel' : '+ New Meeting Note'}
           </button>
         )}
       </div>
 
-      {/* Search and Filter Bar */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        border: '1px solid #e1e5e9',
-        borderRadius: '12px',
-        padding: '20px',
-        marginBottom: '24px',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '50px' }}>
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#5e6c84',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Search
-            </label>
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Search Notes</label>
             <input
               type="text"
-              placeholder="Search meeting notes..."
+              placeholder="Search by title, description, or notes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 16px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'border-color 0.2s ease'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#0052cc'}
-              onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 transition-all"
             />
           </div>
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#5e6c84',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Meeting Type
-            </label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Meeting Type</label>
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 16px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '8px',
-                fontSize: '14px',
-                backgroundColor: '#ffffff',
-                cursor: 'pointer'
-              }}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 cursor-pointer"
             >
               <option value="all">All Types</option>
               <option value="planning">Planning</option>
@@ -244,293 +170,78 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
       </div>
 
       {showForm && (
-        <div style={{
-          backgroundColor: '#ffffff',
-          border: '2px solid #e1e5e9',
-          borderRadius: '16px',
-          padding: '40px',
-          marginBottom: '32px',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            marginBottom: '32px',
-            paddingBottom: '24px',
-            borderBottom: '2px solid #f4f5f7'
-          }}>
-            <div style={{
-              width: '56px',
-              height: '56px',
-              backgroundColor: '#e6f7ff',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '24px',
-              boxShadow: '0 2px 8px rgba(0, 82, 204, 0.1)'
-            }}>
-              📝
-            </div>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#172b4d', letterSpacing: '-0.5px' }}>
-                {editingMeeting ? 'Edit Meeting Note' : 'Create New Meeting Note'}
-              </h3>
-              <p style={{ margin: '6px 0 0 0', fontSize: '15px', color: '#5e6c84', lineHeight: '1.5' }}>
-                {editingMeeting ? 'Update meeting details and notes' : 'Document meeting discussions and decisions'}
-              </p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 mb-8 shadow-md">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-xl">📝</div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-900">{editingMeeting ? 'Edit Meeting Details' : 'Record New Meeting'}</h3>
+              <p className="text-sm text-slate-500">Document discussions, decisions, and action items.</p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '40px' }}>
-              <div>
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Meeting Title <span style={{ color: '#cf1322' }}>*</span>
-                  </label>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="md:col-span-2 space-y-6">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Meeting Title <span className="text-rose-500">*</span></label>
                   <input
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     required
-                    placeholder="Enter meeting title"
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      transition: 'all 0.2s ease',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    placeholder="e.g., Weekly Sync"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400"
                   />
                 </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Description
-                  </label>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Short Description</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows="3"
-                    placeholder="Brief description of the meeting purpose"
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      resize: 'vertical',
-                      fontFamily: 'inherit',
-                      transition: 'all 0.2s ease',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc',
-                      lineHeight: '1.6'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    rows="2"
+                    placeholder="Brief summary of the meeting..."
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 resize-none"
                   />
                 </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Meeting Notes
-                  </label>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Detailed Notes</label>
                   <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    rows="6"
-                    placeholder="Add meeting notes, discussions, and key points..."
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      resize: 'vertical',
-                      fontFamily: 'inherit',
-                      transition: 'all 0.2s ease',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc',
-                      lineHeight: '1.6'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    rows="8"
+                    placeholder="Detailed notes, discussions, etc..."
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400"
                   />
                 </div>
               </div>
 
-              <div>
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Meeting Date <span style={{ color: '#cf1322' }}>*</span>
-                  </label>
+              <div className="space-y-6">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Meeting Date <span className="text-rose-500">*</span></label>
                   <input
                     type="date"
                     value={formData.meetingDate}
                     onChange={(e) => setFormData({ ...formData, meetingDate: e.target.value })}
                     required
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400"
                   />
                 </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Duration (minutes)
-                  </label>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Duration (minutes)</label>
                   <input
                     type="number"
                     value={formData.duration}
                     onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                     placeholder="60"
-                    min="0"
-                    step="5"
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400"
                   />
                 </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Meeting Type
-                  </label>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Meeting Type</label>
                   <select
                     value={formData.meetingType}
                     onChange={(e) => setFormData({ ...formData, meetingType: e.target.value })}
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      backgroundColor: '#fafbfc',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none cursor-pointer"
                   >
                     <option value="planning">📋 Planning</option>
                     <option value="standup">🏃 Standup</option>
@@ -541,18 +252,8 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
                     <option value="other">📌 Other</option>
                   </select>
                 </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Attendees
-                  </label>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Attendees</label>
                   <select
                     multiple
                     value={formData.attendees}
@@ -560,620 +261,152 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
                       const values = Array.from(e.target.selectedOptions, option => option.value);
                       setFormData({ ...formData, attendees: values });
                     }}
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      minHeight: '140px',
-                      backgroundColor: '#fafbfc',
-                      outline: 'none',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none h-40 scrollbar-thin"
                   >
                     {users.map(user => (
-                      <option key={user._id} value={user._id}>👤 {user.name}</option>
+                      <option key={user._id} value={user._id}>{user.name}</option>
                     ))}
                   </select>
-                  <div style={{
-                    fontSize: '13px',
-                    color: '#5e6c84',
-                    marginTop: '8px',
-                    padding: '8px 12px',
-                    backgroundColor: '#f4f5f7',
-                    borderRadius: '6px',
-                    border: '1px solid #e1e5e9'
-                  }}>
-                    💡 Hold Ctrl/Cmd to select multiple attendees
-                  </div>
+                  <p className="text-[10px] text-slate-400 mt-2 font-medium">Hold Ctrl/Cmd to select multiple</p>
                 </div>
               </div>
             </div>
 
-            <div style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '16px',
-              marginTop: '40px',
-              paddingTop: '32px',
-              borderTop: '2px solid #f4f5f7'
-            }}>
+            <div className="flex justify-end gap-3 pt-8 border-t border-slate-100">
               <button
                 type="button"
                 onClick={resetForm}
-                style={{
-                  padding: '14px 32px',
-                  backgroundColor: '#ffffff',
-                  color: '#5e6c84',
-                  border: '2px solid #dfe1e6',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  transition: 'all 0.2s ease',
-                  letterSpacing: '0.3px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#f4f5f7';
-                  e.target.style.borderColor = '#c1c7d0';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#ffffff';
-                  e.target.style.borderColor = '#dfe1e6';
-                }}
+                className="px-6 py-2 bg-white text-slate-500 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                style={{
-                  padding: '14px 32px',
-                  backgroundColor: '#0052cc',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  boxShadow: '0 4px 12px rgba(0, 82, 204, 0.3)',
-                  transition: 'all 0.2s ease',
-                  letterSpacing: '0.3px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#0747a6';
-                  e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = '0 6px 16px rgba(0, 82, 204, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#0052cc';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(0, 82, 204, 0.3)';
-                }}
+                className="px-8 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition-all"
               >
-                {editingMeeting ? '✓ Update Meeting Note' : '+ Create Meeting Note'}
+                {editingMeeting ? 'Update Meeting' : 'Save Meeting Note'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Meeting Notes List - Only show when form is not visible */}
       {!showForm && (
-        <div style={{ display: 'grid', gap: '16px' }}>
-          {filteredMeetingNotes.length === 0 && meetingNotes.length > 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '64px 24px',
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              border: '1px solid #e1e5e9'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-                No Meeting Notes Found
-              </h3>
-              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
-                Try adjusting your search or filter criteria.
-              </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredMeetingNotes.map(meeting => (
+            <div
+              key={meeting._id}
+              className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all group cursor-pointer flex flex-col"
+              onClick={() => setViewingMeeting(meeting)}
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className={`px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase border tracking-wider ${getTypeBadge(meeting.meetingType)}`}>
+                  {meeting.meetingType}
+                </div>
+                {isProjectOwner && (
+                  <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                    <button onClick={() => handleEdit(meeting)} className="p-1 px-2 text-slate-400 hover:text-indigo-600 transition-colors text-xs">✎</button>
+                    <button onClick={() => handleDelete(meeting._id)} className="p-1 px-2 text-slate-400 hover:text-rose-600 transition-colors text-xs">✕</button>
+                  </div>
+                )}
+              </div>
+
+              <h3 className="text-base font-bold text-slate-900 mb-2 line-clamp-1 group-hover:text-indigo-600 transition-colors">{meeting.title}</h3>
+              <p className="text-xs text-slate-500 mb-6 line-clamp-2 h-8">{meeting.description || 'No summary provided.'}</p>
+
+              <div className="mt-auto flex justify-between items-center pt-4 border-t border-slate-50">
+                <div className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
+                  <span>📅</span> {new Date(meeting.meetingDate).toLocaleDateString()}
+                </div>
+                <div className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">See Details ⮕</div>
+              </div>
+            </div>
+          ))}
+
+          {filteredMeetingNotes.length === 0 && (
+            <div className="col-span-full py-24 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-center">
+              <div className="text-4xl mb-4">📝</div>
+              <h3 className="text-lg font-bold text-slate-900">No meeting notes found</h3>
+              <p className="text-sm text-slate-500 mt-1">Try adjusting your filters or record a new meeting.</p>
               <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setFilterType('all');
-                }}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#f4f5f7',
-                  color: '#5e6c84',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600'
-                }}
+                onClick={() => { setSearchTerm(''); setFilterType('all'); }}
+                className="mt-6 text-xs font-bold text-indigo-600 hover:underline uppercase tracking-widest"
               >
                 Clear Filters
               </button>
             </div>
-          ) : meetingNotes.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '64px 24px',
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              border: '1px solid #e1e5e9'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>📝</div>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-                No Meeting Notes Yet
-              </h3>
-              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
-                Start documenting your meetings to track discussions and decisions.
-              </p>
-              {isProjectOwner && (
-                <button
-                  onClick={() => setShowForm(true)}
-                  style={{
-                    padding: '12px 24px',
-                    backgroundColor: '#0052cc',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    boxShadow: '0 2px 4px rgba(0, 82, 204, 0.2)'
-                  }}
-                >
-                  Create First Meeting Note
-                </button>
-              )}
-            </div>
-          ) : (
-            filteredMeetingNotes.map(meeting => {
-              const typeColor = getMeetingTypeColor(meeting.meetingType);
-
-              return (
-                <div
-                  key={meeting._id}
-                  style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e1e5e9',
-                    borderRadius: '12px',
-                    padding: '24px',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.08)';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{
-                        margin: '0 0 8px 0',
-                        fontSize: '18px',
-                        fontWeight: '700',
-                        color: '#172b4d',
-                        lineHeight: '1.3'
-                      }}>
-                        {meeting.title}
-                      </h3>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
-                        <span style={{
-                          ...typeColor,
-                          padding: '4px 12px',
-                          borderRadius: '16px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          textTransform: 'capitalize',
-                          border: `1px solid ${typeColor.border}`
-                        }}>
-                          {meeting.meetingType}
-                        </span>
-                        <span style={{
-                          padding: '4px 12px',
-                          backgroundColor: '#f4f5f7',
-                          color: '#5e6c84',
-                          borderRadius: '16px',
-                          fontSize: '12px',
-                          fontWeight: '600'
-                        }}>
-                          📅 {new Date(meeting.meetingDate).toLocaleDateString()}
-                        </span>
-                        {meeting.duration && (
-                          <span style={{
-                            padding: '4px 12px',
-                            backgroundColor: '#fff4e6',
-                            color: '#d46b08',
-                            borderRadius: '16px',
-                            fontSize: '12px',
-                            fontWeight: '600'
-                          }}>
-                            ⏱️ {meeting.duration}min
-                          </span>
-                        )}
-                        {meeting.attendees && meeting.attendees.length > 0 && (
-                          <span style={{
-                            padding: '4px 12px',
-                            backgroundColor: '#e6f7ff',
-                            color: '#0052cc',
-                            borderRadius: '16px',
-                            fontSize: '12px',
-                            fontWeight: '600'
-                          }}>
-                            👥 {meeting.attendees.length} attendee{meeting.attendees.length !== 1 ? 's' : ''}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
-                      <button
-                        onClick={() => setViewingMeeting(meeting)}
-                        style={{
-                          padding: '8px 12px',
-                          backgroundColor: '#e6f7ff',
-                          color: '#0052cc',
-                          border: '1px solid #91d5ff',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#0052cc';
-                          e.target.style.color = 'white';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = '#e6f7ff';
-                          e.target.style.color = '#0052cc';
-                        }}
-                      >
-                        View
-                      </button>
-                      {isProjectOwner && (
-                        <>
-                          <button
-                            onClick={() => handleEdit(meeting)}
-                            style={{
-                              padding: '8px 12px',
-                              backgroundColor: '#f4f5f7',
-                              color: '#5e6c84',
-                              border: '1px solid #dfe1e6',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#0052cc';
-                              e.target.style.color = 'white';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = '#f4f5f7';
-                              e.target.style.color = '#5e6c84';
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(meeting._id)}
-                            style={{
-                              padding: '8px 12px',
-                              backgroundColor: '#fff1f0',
-                              color: '#cf1322',
-                              border: '1px solid #ffa39e',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#cf1322';
-                              e.target.style.color = 'white';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = '#fff1f0';
-                              e.target.style.color = '#cf1322';
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {meeting.description && (
-                    <p style={{
-                      margin: '0 0 16px 0',
-                      color: '#5e6c84',
-                      fontSize: '14px',
-                      lineHeight: '1.6'
-                    }}>
-                      {meeting.description}
-                    </p>
-                  )}
-
-                  {meeting.notes && (
-                    <div style={{
-                      backgroundColor: '#f4f5f7',
-                      padding: '16px',
-                      borderRadius: '8px',
-                      marginBottom: '12px'
-                    }}>
-                      <h5 style={{
-                        margin: '0 0 8px 0',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        color: '#5e6c84',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px'
-                      }}>
-                        Meeting Notes
-                      </h5>
-                      <p style={{
-                        margin: 0,
-                        color: '#172b4d',
-                        fontSize: '14px',
-                        lineHeight: '1.6',
-                        whiteSpace: 'pre-wrap'
-                      }}>
-                        {meeting.notes.length > 200 ? `${meeting.notes.substring(0, 200)}...` : meeting.notes}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              );
-            })
           )}
         </div>
       )}
 
-      {/* Details Modal */}
       {viewingMeeting && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '24px'
-        }}
-          onClick={() => setViewingMeeting(null)}
-        >
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            maxWidth: '900px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
-          }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{
-              padding: '32px',
-              borderBottom: '1px solid #e1e5e9',
-              position: 'sticky',
-              top: 0,
-              backgroundColor: '#ffffff',
-              zIndex: 1
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ margin: '0 0 12px 0', fontSize: '24px', fontWeight: '700', color: '#172b4d' }}>
-                    {viewingMeeting.title}
-                  </h2>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    <span style={{
-                      ...getMeetingTypeColor(viewingMeeting.meetingType),
-                      padding: '4px 12px',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      textTransform: 'capitalize',
-                      border: `1px solid ${getMeetingTypeColor(viewingMeeting.meetingType).border}`
-                    }}>
-                      {viewingMeeting.meetingType}
-                    </span>
-                    <span style={{
-                      padding: '4px 12px',
-                      backgroundColor: '#f4f5f7',
-                      color: '#5e6c84',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '600'
-                    }}>
-                      📅 {new Date(viewingMeeting.meetingDate).toLocaleDateString()}
-                    </span>
-                    {viewingMeeting.duration && (
-                      <span style={{
-                        padding: '4px 12px',
-                        backgroundColor: '#fff4e6',
-                        color: '#d46b08',
-                        borderRadius: '16px',
-                        fontSize: '12px',
-                        fontWeight: '600'
-                      }}>
-                        ⏱️ {viewingMeeting.duration} minutes
-                      </span>
-                    )}
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[2000] p-4" onClick={() => setViewingMeeting(null)}>
+          <div className="bg-white rounded-3xl p-10 w-full max-w-4xl shadow-2xl border border-slate-200 overflow-hidden relative max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-8 flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-2xl border border-slate-100">📝</div>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 leading-none">{viewingMeeting.title}</h2>
+                  <div className="flex items-center gap-3 mt-3">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border uppercase ${getTypeBadge(viewingMeeting.meetingType)}`}>{viewingMeeting.meetingType}</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date: {new Date(viewingMeeting.meetingDate).toLocaleDateString()}</span>
                   </div>
                 </div>
-                <button
-                  onClick={() => setViewingMeeting(null)}
-                  style={{
-                    padding: '8px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '24px',
-                    color: '#5e6c84',
-                    lineHeight: 1
-                  }}
-                >
-                  ×
-                </button>
+              </div>
+              <button onClick={() => setViewingMeeting(null)} className="p-2 text-slate-400 hover:text-slate-900 text-2xl leading-none">✕</button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin space-y-8">
+              <div>
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Notes</h4>
+                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                  {viewingMeeting.notes || 'No notes were recorded.'}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Meeting Info</h4>
+                    <div className="space-y-2">
+                      <div className="bg-white border border-slate-100 p-4 rounded-xl flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Duration</span>
+                        <span className="text-sm font-bold text-slate-900">{viewingMeeting.duration || '??'} Minutes</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Attendees ({viewingMeeting.attendees?.length || 0})</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {viewingMeeting.attendees?.map((a, i) => (
+                      <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="w-5 h-5 bg-indigo-100 rounded-lg flex items-center justify-center text-[10px] font-bold text-indigo-700">{a.user?.name?.charAt(0)}</div>
+                        <span className="text-[11px] font-medium text-slate-700">{a.user?.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div style={{ padding: '32px' }}>
-              {viewingMeeting.description && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                    Description
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '16px', color: '#172b4d', lineHeight: '1.6' }}>
-                    {viewingMeeting.description}
-                  </p>
-                </div>
-              )}
-
-              {viewingMeeting.notes && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                    Meeting Notes
-                  </h3>
-                  <div style={{
-                    backgroundColor: '#f4f5f7',
-                    padding: '20px',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    color: '#172b4d',
-                    lineHeight: '1.8',
-                    whiteSpace: 'pre-wrap'
-                  }}>
-                    {viewingMeeting.notes}
-                  </div>
-                </div>
-              )}
-
-              {viewingMeeting.attendees && viewingMeeting.attendees.length > 0 && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                    Attendees ({viewingMeeting.attendees.length})
-                  </h3>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {viewingMeeting.attendees.map((attendee, index) => (
-                      <span key={index} style={{
-                        padding: '8px 16px',
-                        backgroundColor: '#e6f7ff',
-                        color: '#0052cc',
-                        borderRadius: '20px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        border: '1px solid #91d5ff'
-                      }}>
-                        👤 {attendee.user.name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {viewingMeeting.actionItems && viewingMeeting.actionItems.length > 0 && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                    Action Items
-                  </h3>
-                  <ul style={{ margin: 0, paddingLeft: '20px', color: '#172b4d', fontSize: '16px', lineHeight: '1.8' }}>
-                    {viewingMeeting.actionItems.map((item, index) => (
-                      <li key={index}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {viewingMeeting.decisions && viewingMeeting.decisions.length > 0 && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                    Decisions Made
-                  </h3>
-                  <ul style={{ margin: 0, paddingLeft: '20px', color: '#172b4d', fontSize: '16px', lineHeight: '1.8' }}>
-                    {viewingMeeting.decisions.map((decision, index) => (
-                      <li key={index}>{decision}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #e1e5e9', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                {isProjectOwner && (
-                  <>
-                    <button
-                      onClick={() => {
-                        handleEdit(viewingMeeting);
-                        setViewingMeeting(null);
-                      }}
-                      style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#0052cc',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '600'
-                      }}
-                    >
-                      Edit Meeting Note
-                    </button>
-                    <button
-                      onClick={() => {
-                        setViewingMeeting(null);
-                        handleDelete(viewingMeeting._id);
-                      }}
-                      style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#fff1f0',
-                        color: '#cf1322',
-                        border: '1px solid #ffa39e',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '600'
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
+            {isProjectOwner && (
+              <div className="mt-10 pt-8 border-t border-slate-100 flex gap-4 flex-shrink-0">
+                <button onClick={() => { handleEdit(viewingMeeting); }} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-all uppercase tracking-widest">Edit Note</button>
+                <button onClick={() => { setViewingMeeting(null); handleDelete(viewingMeeting._id); }} className="flex-1 py-3 bg-slate-50 text-rose-500 border border-slate-200 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all uppercase tracking-widest">Delete Note</button>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
+
       <DeleteConfirmModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
         onConfirm={confirmDelete}
         title="Delete Meeting Note"
-        message="Are you sure you want to delete this meeting note? This action cannot be undone."
-        itemName={deleteModal.name}
+        message={`Are you sure you want to delete "${deleteModal.name}"? This action cannot be undone.`}
       />
     </div>
   );

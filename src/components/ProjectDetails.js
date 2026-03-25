@@ -35,7 +35,6 @@ const ProjectDetails = () => {
   const [error, setError] = useState(null);
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_EXPANDED_WIDTH);
 
-  // Get active tab from URL query param
   const searchParams = new URLSearchParams(location.search);
   const activeTab = searchParams.get('tab') || 'overview';
   const [requirements, setRequirements] = useState([]);
@@ -43,188 +42,68 @@ const ProjectDetails = () => {
   const [sprints, setSprints] = useState([]);
   const [phases, setPhases] = useState([]);
 
-  const handleSidebarWidthChange = useCallback((width) => {
-    setSidebarWidth(width);
-  }, []);
+  const handleSidebarWidthChange = useCallback((width) => setSidebarWidth(width), []);
 
-  useEffect(() => {
-    fetchProjectData();
-  }, [id]);
+  useEffect(() => { fetchProjectData(); }, [id]);
 
   const fetchProjectData = async () => {
     try {
-      console.log('ProjectDetails Debug - Company Filter:', {
-        companyId: companyFilter.companyId,
-        isPersonal: companyFilter.isPersonal,
-        companyFilter: companyFilter
-      });
-
-      // First get the project to determine its company
+      setLoading(true);
       const projectRes = await projectAPI.getById(id);
-
-      console.log('ProjectDetails Debug - Project Info:', {
-        projectId: projectRes.data._id,
-        projectTitle: projectRes.data.title,
-        projectCompany: projectRes.data.company,
-        projectOwner: projectRes.data.owner
-      });
-
-      // Determine which company ID to use for filtering users
       let usersRes;
-
-      if (projectRes.data.company) {
-        // Project has a company - get employees from that specific company
-        const projectCompanyId = projectRes.data.company._id || projectRes.data.company;
-        console.log('Getting employees from project company:', projectCompanyId);
-        usersRes = await userAPI.getCompanyEmployees(projectCompanyId);
-      } else if (companyFilter.companyId && companyFilter.companyId !== 'personal') {
-        // Project has no company but user has selected a company - get employees from selected company
-        console.log('Getting employees from selected company:', companyFilter.companyId);
-        usersRes = await userAPI.getCompanyEmployees(companyFilter.companyId);
-      } else {
-        // No company context - get all users (fallback)
-        console.log('No company context - getting all users');
-        usersRes = await userAPI.getAll(null);
-      }
-
-      console.log('ProjectDetails Debug - Users Response:', {
-        totalUsers: usersRes.data.length,
-        users: usersRes.data.map(u => ({ id: u._id, name: u.name, email: u.email }))
-      });
+      if (projectRes.data.company) usersRes = await userAPI.getCompanyEmployees(projectRes.data.company._id || projectRes.data.company);
+      else usersRes = await userAPI.getAll(null);
 
       setProject(projectRes.data);
       setUsers(usersRes.data);
-
-      // Fetch additional data based on active tab
       await fetchTabData('overview');
     } catch (error) {
-      console.error('Error fetching project data:', error);
-
-      // Check if it's an access denied error (403)
-      if (error.response && error.response.status === 403) {
-        setError({
-          type: 'access_denied',
-          message: error.response.data.message || 'You do not have permission to view this project.'
-        });
-      } else if (error.response && error.response.status === 404) {
-        setError({
-          type: 'not_found',
-          message: 'Project not found.'
-        });
-      } else {
-        // Fallback: if company filtering fails, try to get all users
-        try {
-          console.log('Fallback: Trying to get all users without company filter');
-          const projectRes = await projectAPI.getById(id);
-          const usersRes = await userAPI.getAll(null); // Get all users
-
-          setProject(projectRes.data);
-          setUsers(usersRes.data);
-
-          console.log('Fallback successful - got', usersRes.data.length, 'users');
-        } catch (fallbackError) {
-          console.error('Fallback also failed:', fallbackError);
-          if (fallbackError.response && fallbackError.response.status === 403) {
-            setError({
-              type: 'access_denied',
-              message: fallbackError.response.data.message || 'You do not have permission to view this project.'
-            });
-          } else if (fallbackError.response && fallbackError.response.status === 404) {
-            setError({
-              type: 'not_found',
-              message: 'Project not found.'
-            });
-          } else {
-            setError({
-              type: 'error',
-              message: 'An error occurred while loading the project.'
-            });
-          }
-        }
-      }
-    } finally {
-      setLoading(false);
-    }
+      console.error('Project Data Fetch Error', error);
+      setError({ type: 'error', message: 'Failed to load project information.' });
+    } finally { setLoading(false); }
   };
 
   const fetchTabData = async (tab) => {
     try {
-      switch (tab) {
-        case 'requirements':
-          const reqRes = await requirementAPI.getAll(id);
-          setRequirements(reqRes.data);
-          break;
-        case 'meetings':
-          const meetRes = await meetingNoteAPI.getAll(id);
-          setMeetingNotes(meetRes.data);
-          break;
-        case 'sprints':
-          const sprintRes = await sprintAPI.getAll(id);
-          setSprints(sprintRes.data);
-          break;
-        case 'phases':
-          const phaseRes = await phaseAPI.getAll(id);
-          setPhases(phaseRes.data);
-          break;
-        default:
-          break;
+      const apiMap = { requirements: requirementAPI, meetings: meetingNoteAPI, sprints: sprintAPI, phases: phaseAPI };
+      const setterMap = { requirements: setRequirements, meetings: setMeetingNotes, sprints: setSprints, phases: setPhases };
+      if (apiMap[tab]) {
+        const res = await apiMap[tab].getAll(id);
+        setterMap[tab](res.data);
       }
-    } catch (error) {
-      console.error(`Error fetching ${tab} data:`, error);
-    }
+    } catch (e) { console.error(`Data sync error: ${tab}`, e); }
   };
 
-  // Fetch tab data when tab changes via URL
-  useEffect(() => {
-    if (project && activeTab !== 'overview') {
-      fetchTabData(activeTab);
-    }
-  }, [activeTab, project]);
+  useEffect(() => { if (project && activeTab !== 'overview') fetchTabData(activeTab); }, [activeTab, project]);
 
-  // More robust project owner check
-  const isProjectOwner = authState.user && project && (
-    project.owner === authState.user.id ||
-    project.owner?._id === authState.user.id ||
-    project.owner === authState.user._id ||
-    project.owner?._id === authState.user._id
-  );
-
-  const isProjectManager = authState.user && project && project.members && project.members.some(member => {
-    const memberUserId = member.user?._id || member.user;
-    const userId = authState.user.id || authState.user._id;
-    return (memberUserId === userId) && member.role === 'Project Manager';
-  });
-
+  const isProjectOwner = authState.user && project && (project.owner?._id === authState.user.id || project.owner === authState.user.id || project.owner === authState.user._id || project.owner?._id === authState.user._id);
+  const isProjectManager = authState.user && project?.members?.some(m => (m.user?._id === authState.user.id || m.user === authState.user.id) && m.role === 'Project Manager');
   const canEditProject = isProjectOwner || isSuperAdmin || hasPermission(PERMISSIONS.EDIT_PROJECT);
   const canViewAnalytics = isProjectOwner || isSuperAdmin || hasPermission(PERMISSIONS.VIEW_PROJECT_ANALYTICS);
 
-  if (loading) return <Layout><div>Loading...</div></Layout>;
+  if (loading) return (
+    <Layout>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin" />
+        <p className="text-sm font-medium text-slate-500">Loading project details...</p>
+      </div>
+    </Layout>
+  );
 
-  if (error) {
-    return (
-      <Layout>
-        <div className="p-10 text-center max-w-2xl mx-auto">
-          <div className="text-5xl mb-5">
-            {error.type === 'access_denied' ? '🔒' : '❌'}
-          </div>
-          <h2 className="mb-2.5 text-gray-800">
-            {error.type === 'access_denied' ? 'Access Denied' : error.type === 'not_found' ? 'Project Not Found' : 'Error'}
-          </h2>
-          <p className="text-gray-600 mb-8 leading-relaxed">
-            {error.message}
-          </p>
-          <button
-            onClick={() => navigate('/projects')}
-            className="px-5 py-2.5 bg-blue-600 text-white border-0 rounded cursor-pointer text-sm hover:bg-blue-700"
-          >
-            Go to Projects
-          </button>
+  if (error || !project) return (
+    <Layout>
+      <div className="max-w-2xl mx-auto my-20 bg-white rounded-3xl p-12 shadow-sm border border-rose-100 text-center space-y-6">
+        <div className="text-7xl opacity-20">🚫</div>
+        <div className="space-y-2">
+          <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Access Denied</h2>
+          <p className="text-slate-500">{error?.message || 'The project could not be found or you do not have permission to view it.'}</p>
         </div>
-      </Layout>
-    );
-  }
-
-  if (!project) return <Layout><div>Project not found</div></Layout>;
+        <button onClick={() => navigate('/projects')} className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md">
+          Back to Projects
+        </button>
+      </div>
+    </Layout>
+  );
 
   const projectTabs = [
     { id: 'overview', label: 'Overview', icon: '📋' },
@@ -246,169 +125,54 @@ const ProjectDetails = () => {
     <Layout>
       <ProjectSidebar projectId={id} project={project} onWidthChange={handleSidebarWidthChange} />
 
-      <div 
-        className="p-6 transition-[margin-right] duration-300 ease-in-out"
+      <div
+        className="transition-all duration-300 ease-in-out min-h-screen pb-20"
         style={{ marginRight: `${sidebarWidth}px` }}
       >
-        <Breadcrumb
-          onNavigateToProjects={() => navigate('/projects')}
-          projectTitle={project.title}
-        />
+        <div className="space-y-8 max-w-[1600px] mx-auto">
+          <Breadcrumb onNavigateToProjects={() => navigate('/projects')} projectTitle={project.title} />
 
-        <ProjectHeader
-          project={project}
-          onNavigateToTasks={() => navigate(`/projects/${id}?tab=tasks`)}
-          isProjectOwner={isProjectOwner}
-          onRefresh={fetchProjectData}
-        />
+          <ProjectHeader project={project} onNavigateToTasks={() => navigate(`/projects/${id}?tab=tasks`)} isProjectOwner={isProjectOwner} onRefresh={fetchProjectData} />
 
-        {/* Premium Tab Bar */}
-        <div className="flex overflow-x-auto gap-2 p-2 bg-white rounded-2xl mb-6 border border-slate-200 shadow-sm scrollbar-none">
-          {projectTabs.map((tab) => {
-            if (tab.permission === false) return null;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => navigate(`/projects/${id}?tab=${tab.id}`)}
-                className={`flex items-center gap-2 px-5 py-3 rounded-xl border-0 text-sm cursor-pointer transition-all duration-200 ease-out whitespace-nowrap relative ${
-                  isActive 
-                    ? 'bg-blue-50 text-blue-600 font-bold' 
-                    : 'bg-transparent text-slate-500 font-medium hover:bg-slate-50 hover:text-slate-700'
-                }`}
-              >
-                <span className="text-base">{tab.icon}</span>
-                {tab.label}
-                {isActive && (
-                  <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-0.5 bg-blue-600 rounded-sm" />
-                )}
-              </button>
-            );
-          })}
-        </div>
+          {/* Tab Navigation */}
+          <div className="sticky top-0 z-[100] flex bg-white/80 backdrop-blur-md p-2 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto scrollbar-none gap-1">
+            {projectTabs.map((tab) => {
+              if (tab.permission === false) return null;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => navigate(`/projects/${id}?tab=${tab.id}`)}
+                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap relative shrink-0 ${isActive ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
+                >
+                  <span className="text-xl">{tab.icon}</span>
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Tab Content Container */}
-        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-lg shadow-black/4 min-h-[600px]">
-          {activeTab === 'overview' && (
-            <ProjectOverview
-              project={project}
-              users={users}
-              isProjectOwner={canEditProject}
-            />
-          )}
-
-          {activeTab === 'team' && (
-            <TeamTab
-              projectId={id}
-              project={project}
-              users={users}
-              isProjectOwner={isProjectOwner}
-              isProjectManager={isProjectManager}
-              onRefresh={fetchProjectData}
-            />
-          )}
-
-          {activeTab === 'chat' && (
-            <ChatTab
-              projectId={id}
-              project={project}
-            />
-          )}
-
-          {activeTab === 'analytics' && canViewAnalytics && (
-            <AnalyticsTab
-              projectId={id}
-            />
-          )}
-
-          {activeTab === 'files' && (
-            <FilesTab
-              project={project}
-              isProjectOwner={canEditProject}
-              onRefresh={fetchProjectData}
-            />
-          )}
-
-          {activeTab === 'requirements' && (
-            <RequirementsTab
-              projectId={id}
-              requirements={requirements}
-              setRequirements={setRequirements}
-              users={users}
-              isProjectOwner={canEditProject}
-              onRefresh={() => fetchTabData('requirements')}
-            />
-          )}
-
-          {activeTab === 'meetings' && (
-            <MeetingNotesTab
-              projectId={id}
-              meetingNotes={meetingNotes}
-              setMeetingNotes={setMeetingNotes}
-              users={users}
-              isProjectOwner={canEditProject}
-              onRefresh={() => fetchTabData('meetings')}
-            />
-          )}
-
-          {activeTab === 'phases' && (
-            <PhasesTab
-              projectId={id}
-              phases={phases}
-              setPhases={setPhases}
-              users={users}
-              isProjectOwner={canEditProject}
-              onRefresh={() => fetchTabData('phases')}
-            />
-          )}
-
-          {activeTab === 'sprints' && (
-            <SprintsTab
-              projectId={id}
-              sprints={sprints}
-              setSprints={setSprints}
-              phases={phases}
-              users={users}
-              isProjectOwner={canEditProject}
-              onRefresh={() => fetchTabData('sprints')}
-            />
-          )}
-
-          {activeTab === 'risks' && (
-            <RisksTab
-              projectId={id}
-              project={project}
-              isProjectOwner={canEditProject}
-              onRefresh={fetchProjectData}
-            />
-          )}
-
-          {activeTab === 'dependencies' && (
-            <DependenciesTab
-              projectId={id}
-              project={project}
-              isProjectOwner={canEditProject}
-              onRefresh={fetchProjectData}
-            />
-          )}
-
-          {activeTab === 'history' && (
-            <ProjectHistoryTab
-              projectId={id}
-              project={project}
-            />
-          )}
-
-          {activeTab === 'tasks' && (
-            <TasksTab
-              projectId={id}
-              project={project}
-              users={users}
-              onRefresh={fetchProjectData}
-            />
-          )}
+          {/* Content Area */}
+          <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm min-h-[600px] relative">
+            <div className="relative z-10 h-full">
+              {activeTab === 'overview' && <ProjectOverview project={project} users={users} isProjectOwner={canEditProject} />}
+              {activeTab === 'team' && <TeamTab projectId={id} project={project} users={users} isProjectOwner={isProjectOwner} isProjectManager={isProjectManager} onRefresh={fetchProjectData} />}
+              {activeTab === 'chat' && <ChatTab projectId={id} project={project} />}
+              {activeTab === 'analytics' && canViewAnalytics && <AnalyticsTab projectId={id} />}
+              {activeTab === 'files' && <FilesTab project={project} isProjectOwner={canEditProject} onRefresh={fetchProjectData} />}
+              {activeTab === 'requirements' && <RequirementsTab projectId={id} requirements={requirements} setRequirements={setRequirements} users={users} isProjectOwner={canEditProject} onRefresh={() => fetchTabData('requirements')} />}
+              {activeTab === 'meetings' && <MeetingNotesTab projectId={id} meetingNotes={meetingNotes} setMeetingNotes={setMeetingNotes} users={users} isProjectOwner={canEditProject} onRefresh={() => fetchTabData('meetings')} />}
+              {activeTab === 'phases' && <PhasesTab projectId={id} phases={phases} setPhases={setPhases} users={users} isProjectOwner={canEditProject} onRefresh={() => fetchTabData('phases')} />}
+              {activeTab === 'sprints' && <SprintsTab projectId={id} sprints={sprints} setSprints={setSprints} phases={phases} users={users} isProjectOwner={canEditProject} onRefresh={() => fetchTabData('sprints')} />}
+              {activeTab === 'risks' && <RisksTab projectId={id} project={project} isProjectOwner={canEditProject} onRefresh={fetchProjectData} />}
+              {activeTab === 'dependencies' && <DependenciesTab projectId={id} project={project} isProjectOwner={canEditProject} onRefresh={fetchProjectData} />}
+              {activeTab === 'history' && <ProjectHistoryTab projectId={id} project={project} />}
+              {activeTab === 'tasks' && <TasksTab projectId={id} project={project} users={users} onRefresh={fetchProjectData} />}
+            </div>
+          </div>
         </div>
       </div>
+      <div className="fixed bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-600 to-transparent opacity-20 pointer-events-none" />
     </Layout>
   );
 };

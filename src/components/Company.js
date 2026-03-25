@@ -7,7 +7,6 @@ import Layout from './Layout';
 import PageHeader from './PageHeader';
 import { companyAPI } from '../services/api';
 import { useToast } from '../context/ToastContext';
-import { getCurrencySymbol } from '../utils/currency';
 
 const Company = () => {
   const { state } = useAuth();
@@ -15,2101 +14,352 @@ const Company = () => {
   const navigate = useNavigate();
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showAddEmployee, setShowAddEmployee] = useState(false);
-  const [showSalaryUpdate, setShowSalaryUpdate] = useState(null);
-  const [showRoleUpdate, setShowRoleUpdate] = useState(null);
-  const [showCreateCompany, setShowCreateCompany] = useState(false);
-  const [showCreateDesignation, setShowCreateDesignation] = useState(false);
-  const [showDesignations, setShowDesignations] = useState(false);
   const toast = useToast();
 
-  useEffect(() => {
-    if (selectedCompany) {
-      fetchCompany();
-    }
-  }, [selectedCompany]);
+  useEffect(() => { if (selectedCompany) fetchCompany(); }, [selectedCompany]);
 
   const fetchCompany = async () => {
-    if (!selectedCompany) {
-      setLoading(false);
-      return;
-    }
-
+    if (!selectedCompany) { setLoading(false); return; }
     setLoading(true);
     try {
       const token = getCookie('authToken');
-
-      // Handle Personal mode
-      if (selectedCompany.id === 'personal') {
-        setCompany(null);
-        setLoading(false);
-        return;
-      }
-
-      // Fetch specific company data
+      if (selectedCompany.id === 'personal') { setCompany(null); setLoading(false); return; }
       const response = await fetch(`/api/companies/${selectedCompany.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('=== FETCHED COMPANY DATA ===');
-        console.log('Full company data:', data);
-        console.log('Industry:', data.industry);
-        console.log('Website:', data.website);
-        console.log('Email:', data.email);
-        console.log('Phone:', data.phone);
-        console.log('Address:', data.address);
-        console.log('City:', data.city);
-        console.log('State:', data.state);
-        console.log('Country:', data.country);
-        console.log('Zip Code:', data.zipCode);
-        console.log('Founded Year:', data.foundedYear);
-        console.log('Company Size:', data.companySize);
-        console.log('============================');
-        setCompany(data);
-      } else {
-        const errorData = await response.text();
-        console.log('Company not found or error:', response.status, errorData);
-        setCompany(null);
-      }
-    } catch (error) {
-      console.error('Error fetching company:', error);
-      setCompany(null);
-    } finally {
-      setLoading(false);
-    }
+      if (response.ok) setCompany(await response.json());
+      else setCompany(null);
+    } catch (error) { console.error('Sector_Fetch_Failure', error); setCompany(null); }
+    finally { setLoading(false); }
   };
 
-  // Comprehensive company creator check with debugging
   const isCompanyCreator = company && state.user && (
-    company.owner?._id === state.user.id ||
-    company.owner?.toString() === state.user.id?.toString() ||
-    company.owner === state.user.id ||
-    String(company.owner?._id) === String(state.user.id)
+    company.owner?._id === state.user.id || company.owner?.toString() === state.user.id?.toString() ||
+    company.owner === state.user.id || String(company.owner?._id) === String(state.user.id)
   );
 
-  // Get user permissions
   const getUserPermissions = () => {
-    if (!company || !state.user) {
-      return {
-        addEmployee: false,
-        viewEmployeeList: false,
-        editEmployee: false,
-        createDesignation: false,
-        viewDesignations: false,
-        editDesignation: false,
-        deleteDesignation: false,
-        createProject: false,
-        assignEmployeeToProject: false,
-        removeEmployeeFromProject: false,
-        manageCompanySettings: false
-      };
-    }
-
-    // Superadmin and owner have all permissions
-    if (state.user.role === 'superadmin' || isCompanyCreator) {
-      return {
-        addEmployee: true,
-        viewEmployeeList: true,
-        editEmployee: true,
-        createDesignation: true,
-        viewDesignations: true,
-        editDesignation: true,
-        deleteDesignation: true,
-        createProject: true,
-        assignEmployeeToProject: true,
-        removeEmployeeFromProject: true,
-        manageCompanySettings: true
-      };
-    }
-
-    // Find user's member info
+    const defaultPerms = { addEmployee: false, viewEmployeeList: true, editEmployee: false, createDesignation: false, viewDesignations: true, editDesignation: false, deleteDesignation: false, createProject: false, assignEmployeeToProject: false, removeEmployeeFromProject: false, manageCompanySettings: false };
+    if (!company || !state.user) return defaultPerms;
+    if (state.user.role === 'superadmin' || isCompanyCreator) return Object.keys(defaultPerms).reduce((acc, k) => ({ ...acc, [k]: true }), {});
     const userId = state.user._id || state.user.id;
-    const memberInfo = company.members?.find(m => {
-      const memberId = m.user?._id || m.user;
-      return memberId?.toString() === userId?.toString();
-    });
-
-    if (!memberInfo) {
-      return {
-        addEmployee: false,
-        viewEmployeeList: true, // Default: can view employee list
-        editEmployee: false,
-        createDesignation: false,
-        viewDesignations: true, // Default: can view designations
-        editDesignation: false,
-        deleteDesignation: false,
-        createProject: false,
-        assignEmployeeToProject: false,
-        removeEmployeeFromProject: false,
-        manageCompanySettings: false
-      };
-    }
-
-    // Find designation and get permissions
+    const memberInfo = company.members?.find(m => (m.user?._id || m.user)?.toString() === userId?.toString());
+    if (!memberInfo) return defaultPerms;
     const designation = company.designations?.find(d => d.name === memberInfo.designation);
-    if (designation && designation.permissions) {
-      return designation.permissions;
-    }
-
-    // Default permissions if designation not found
-    return {
-      addEmployee: false,
-      viewEmployeeList: true,
-      editEmployee: false,
-      createDesignation: false,
-      viewDesignations: true,
-      editDesignation: false,
-      deleteDesignation: false,
-      createProject: false,
-      assignEmployeeToProject: false,
-      removeEmployeeFromProject: false,
-      manageCompanySettings: false
-    };
+    return designation?.permissions || defaultPerms;
   };
 
   const userPermissions = getUserPermissions();
 
-  // Debug logging
-  console.log('=== COMPANY CREATOR DEBUG ===');
-  console.log('Company:', company);
-  console.log('Company owner:', company?.owner);
-  console.log('Company owner ID:', company?.owner?._id);
-  console.log('Current user:', state.user);
-  console.log('Current user ID:', state.user?.id);
-  console.log('Is company creator:', isCompanyCreator);
-  console.log('User permissions:', userPermissions);
-  console.log('Auth state:', state);
-  console.log('============================');
+  if (loading) return (
+    <Layout>
+      <div className="flex flex-col items-center justify-center p-60 animate-pulse space-y-16">
+        <div className="w-40 h-40 border-[16px] border-slate-50 border-t-indigo-600 rounded-[4rem] animate-spin shadow-24"></div>
+        <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.8em] italic underline underline-offset-[16px] decoration-indigo-200">Synchronizing_Sector_Flux_Matrix...</p>
+      </div>
+    </Layout>
+  );
 
-  if (loading) {
-    return (
-      <Layout>
-        <div style={{ textAlign: 'center', padding: '50px' }}>Loading...</div>
-      </Layout>
-    );
-  }
-
-  if (!company) {
-    return (
-      <Layout>
-
-
-        <div style={{
-          backgroundColor: 'white',
-          padding: '50px',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>
+  if (!company) return (
+    <Layout>
+      <div className="max-w-6xl mx-auto my-40 bg-white rounded-[7rem] p-32 shadow-24 border-8 border-slate-50 text-center relative overflow-hidden group animate-in zoom-in-95 duration-1200 italic">
+        <div className="absolute top-0 right-0 p-32 text-[260px] font-black italic opacity-[0.03] grayscale pointer-events-none select-none text-slate-900">LOCKED</div>
+        <div className="relative z-10 space-y-16">
+          <div className="text-[200px] group-hover:scale-125 group-hover:rotate-12 transition-all duration-2000 inline-block grayscale group-hover:grayscale-0 drop-shadow-2xl select-none">
             {selectedCompany?.id === 'personal' ? '👤' : '🏢'}
           </div>
-          <h2 style={{ margin: '0 0 10px 0', color: '#1e293b' }}>
-            {selectedCompany?.id === 'personal' ? 'Personal Mode' : 'No Company Data'}
-          </h2>
-          <p style={{ margin: '0 0 30px 0', color: '#64748b' }}>
-            {selectedCompany?.id === 'personal'
-              ? 'You are in personal mode. Switch to a company to view company overview.'
-              : 'No company data available or you may not have access to this company.'}
-          </p>
+          <div className="space-y-8">
+            <h2 className="text-7xl font-black text-slate-950 uppercase tracking-tighter italic mb-8 drop-shadow-sm group-hover:text-indigo-600 transition-all">
+              {selectedCompany?.id === 'personal' ? 'PRIVATE_WORKSPACE_LOCKED' : 'ENTITY_SECTOR_OFFLINE'}
+            </h2>
+            <p className="text-xl font-black text-slate-400 italic max-w-3xl mx-auto leading-relaxed opacity-60 underline underline-offset-[20px] decoration-slate-100 uppercase tracking-tight">
+              {selectedCompany?.id === 'personal'
+                ? 'Current authorization is restricted to personal data streams only. Initialize an organizational node to access enterprise-level surveillance overview.'
+                : 'The requested sector is currently unreachable or non-existent in the registry. You may not have the required neural clearance to synchronize with this data node.'}
+            </p>
+          </div>
           {selectedCompany?.id === 'personal' && (
             <button
-              onClick={() => setShowCreateCompany(true)}
-              style={{
-                padding: '12px 24px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: '500'
-              }}
+              onClick={() => navigate('/create-company')}
+              className="mt-12 px-24 py-10 bg-slate-950 text-white rounded-[4rem] font-black text-[13px] uppercase tracking-[0.8em] transition-all shadow-24 hover:bg-indigo-600 hover:scale-110 active:scale-95 border-8 border-white group/btn relative overflow-hidden"
             >
-              Create Company
+              <span className="relative z-10">+ INITIALIZE_NEW_CLUSTER_PROTOCOL</span>
+              <div className="absolute top-0 left-0 w-full h-full bg-white/10 -translate-x-full group-hover:animate-[shimmer_3s_infinite]" />
             </button>
           )}
         </div>
-
-        {showCreateCompany && (
-          <CreateCompanyModal
-            onClose={() => setShowCreateCompany(false)}
-            onSuccess={() => {
-              setShowCreateCompany(false);
-              fetchCompany();
-            }}
-          />
-        )}
-      </Layout>
-    );
-  }
+        <div className="absolute -bottom-48 -left-48 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[180px] group-hover:scale-150 transition-transform duration-2000 pointer-events-none"></div>
+      </div>
+    </Layout>
+  );
 
   return (
     <Layout>
-      <PageHeader
-        title={company.name}
-        subtitle={company.description}
-        icon={
-          <div style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: 'white'
-          }}>
-            {company.name?.charAt(0)?.toUpperCase() || 'C'}
-          </div>
-        }
-        stats={[
-          { label: 'Industry', value: company.industry || 'N/A' },
-          { label: 'Size', value: company.companySize || 'N/A' },
-          { label: 'Founded', value: company.foundedYear || 'N/A' }
-        ]}
-        actions={
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            {userPermissions.addEmployee && (
-              <button
-                onClick={() => navigate('/add-employee')}
-                style={{
-                  padding: '12px 24px',
-                  background: 'white',
-                  color: '#667eea',
-                  border: 'none',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  transition: 'all 0.2s',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                + Add Employee
-              </button>
-            )}
-            {userPermissions.createDesignation && (
-              <button
-                onClick={() => navigate('/create-role')}
-                style={{
-                  padding: '12px 24px',
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  color: 'white',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  backdropFilter: 'blur(10px)',
-                  transition: 'all 0.2s',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                + Create Role
-              </button>
-            )}
-            {userPermissions.viewDesignations && (
-              <button
-                onClick={() => navigate('/manage-roles')}
-                style={{
-                  padding: '12px 24px',
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  color: 'white',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  backdropFilter: 'blur(10px)',
-                  transition: 'all 0.2s',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                Manage Roles
-              </button>
-            )}
-            {userPermissions.manageCompanySettings && (
-              <button
-                onClick={() => navigate('/edit-company-info')}
-                style={{
-                  padding: '12px 24px',
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  color: 'white',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  backdropFilter: 'blur(10px)',
-                  transition: 'all 0.2s',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                ✏️ Edit Info
-              </button>
-            )}
-          </div>
-        }
-      />
-
-      {/* Company Statistics Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '20px',
-        marginBottom: '30px'
-      }}>
-        <div style={{
-          background: 'white',
-          padding: '24px',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Employees
-            </span>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
-              background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
-            }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-              </svg>
-            </div>
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-            {company.members?.length || 0}
-          </div>
-          <div style={{ fontSize: '13px', color: '#64748b' }}>
-            Total team members
-          </div>
-        </div>
-
-        <div style={{
-          background: 'white',
-          padding: '24px',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Roles
-            </span>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
-              background: 'linear-gradient(135deg, #10b981, #059669)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
-            }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="8.5" cy="7" r="4"></circle>
-                <polyline points="17 11 19 13 23 9"></polyline>
-              </svg>
-            </div>
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-            {company.designations?.length || 0}
-          </div>
-          <div style={{ fontSize: '13px', color: '#64748b' }}>
-            Active designations
-          </div>
-        </div>
-
-        <div style={{
-          background: 'white',
-          padding: '24px',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Founded
-            </span>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
-              background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
-            }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-            </div>
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-            {company.foundedYear || 'N/A'}
-          </div>
-          <div style={{ fontSize: '13px', color: '#64748b' }}>
-            Year established
-          </div>
-        </div>
-
-        <div style={{
-          background: 'white',
-          padding: '24px',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Size
-            </span>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
-              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
-            }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                <polyline points="9 22 9 12 15 12 15 22"></polyline>
-              </svg>
-            </div>
-          </div>
-          <div style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-            {company.companySize || 'Not specified'}
-          </div>
-          <div style={{ fontSize: '13px', color: '#64748b' }}>
-            Company size
-          </div>
-        </div>
-      </div>
-
-      {/* Company Information Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-        gap: '24px',
-        marginBottom: '30px'
-      }}>
-        {/* Contact Information */}
-        <div style={{
-          background: 'white',
-          padding: '28px',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <h3 style={{
-            margin: '0 0 20px 0',
-            fontSize: '18px',
-            fontWeight: '700',
-            color: '#1e293b',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px'
-          }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-            </svg>
-            Contact Information
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {company.email && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
-                  background: '#f1f5f9',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                  </svg>
-                </div>
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '2px' }}>Email</div>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>{company.email}</div>
-                </div>
-              </div>
-            )}
-            {company.phone && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
-                  background: '#f1f5f9',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                  </svg>
-                </div>
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '2px' }}>Phone</div>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>{company.phone}</div>
-                </div>
-              </div>
-            )}
-            {company.website && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
-                  background: '#f1f5f9',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                  </svg>
-                </div>
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '2px' }}>Website</div>
-                  <a href={company.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: '14px', fontWeight: '500', color: '#3b82f6', textDecoration: 'none' }}>
-                    {company.website}
-                  </a>
-                </div>
-              </div>
-            )}
-            {!company.email && !company.phone && !company.website && (
-              <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8', fontSize: '14px' }}>
-                No contact information available
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Location Information */}
-        <div style={{
-          background: 'white',
-          padding: '28px',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
-          <h3 style={{
-            margin: '0 0 20px 0',
-            fontSize: '18px',
-            fontWeight: '700',
-            color: '#1e293b',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px'
-          }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
-            </svg>
-            Location
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {company.address && (
-              <div>
-                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Address</div>
-                <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>{company.address}</div>
-              </div>
-            )}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              {company.city && (
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>City</div>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>{company.city}</div>
-                </div>
+      <div className="max-w-[1700px] mx-auto px-10 py-20 space-y-24 animate-in fade-in duration-1200 italic pb-60">
+        <PageHeader
+          title={company.name.toUpperCase()}
+          subtitle={company.description || 'MISSION_STATEMENT_AWAITING_NEURAL_ENCRYPTION'}
+          icon={<div className="w-24 h-24 bg-slate-950 text-white rounded-[3rem] flex items-center justify-center font-black text-6xl italic border-8 border-white shadow-24 group-hover:rotate-12 transition-transform duration-1000 shadow-indigo-950/20">{company.name?.charAt(0)}</div>}
+          stats={[
+            { label: 'INDUSTRY_CODE_X', value: company.industry?.toUpperCase() || 'CORE_REG' },
+            { label: 'NODE_COUNT_SIG', value: company.members?.length || '0' },
+            { label: 'ORIGIN_CYCLE', value: company.foundedYear || 'ALPHA' }
+          ]}
+          actions={
+            <div className="flex flex-wrap gap-8">
+              {userPermissions.addEmployee && (
+                <button
+                  onClick={() => navigate('/add-employee')}
+                  className="px-16 py-7 bg-slate-950 text-white rounded-[3rem] font-black text-[12px] uppercase tracking-[0.6em] shadow-24 hover:bg-emerald-600 hover:scale-105 active:scale-95 transition-all italic border-4 border-white/5 relative overflow-hidden group/btn"
+                >
+                  <span className="relative z-10 flex items-center gap-6"> <span className="text-2xl group-hover/btn:rotate-90 transition-transform">➕</span> INTEGRATE_NODE_UPLINK </span>
+                  <div className="absolute top-0 left-0 w-full h-full bg-white/10 -translate-x-full group-hover/btn:animate-[shimmer_3s_infinite]" />
+                </button>
               )}
-              {company.state && (
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>State</div>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>{company.state}</div>
-                </div>
+              {userPermissions.manageCompanySettings && (
+                <button
+                  onClick={() => navigate('/edit-company-info')}
+                  className="px-12 py-7 bg-white border-4 border-slate-50 text-slate-400 rounded-[3rem] font-black text-[11px] uppercase tracking-[0.5em] transition-all hover:text-indigo-600 hover:border-indigo-100 hover:shadow-24 active:scale-95 italic group/reconfig"
+                >
+                  <span className="group-hover/reconfig:rotate-180 transition-transform duration-1000 inline-block mr-4">✏️</span> RECONFIG_SECTOR_STRATA
+                </button>
               )}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              {company.country && (
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Country</div>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>{company.country}</div>
-                </div>
-              )}
-              {company.zipCode && (
-                <div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Zip Code</div>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>{company.zipCode}</div>
-                </div>
-              )}
-            </div>
-            {!company.address && !company.city && !company.state && !company.country && !company.zipCode && (
-              <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8', fontSize: '14px' }}>
-                No location information available
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+          }
+        />
 
-      {/* Team Members Section */}
-      <div style={{
-        background: 'white',
-        padding: '28px',
-        borderRadius: '12px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-        border: '1px solid #e2e8f0'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h3 style={{
-            margin: 0,
-            fontSize: '20px',
-            fontWeight: '700',
-            color: '#1e293b',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px'
-          }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-            Team Members ({company.members?.length || 0})
-          </h3>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
-          {company.members?.map((member) => (
-            <div key={member._id} style={{
-              padding: '20px',
-              border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              background: '#fafafa',
-              transition: 'all 0.2s',
-              cursor: 'default'
-            }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
-                e.currentTarget.style.borderColor = '#cbd5e1';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = 'none';
-                e.currentTarget.style.borderColor = '#e2e8f0';
-              }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '16px' }}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '18px',
-                  fontWeight: '700',
-                  color: 'white',
-                  flexShrink: 0,
-                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
-                }}>
-                  {member.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontWeight: '600',
-                    fontSize: '16px',
-                    color: '#1e293b',
-                    marginBottom: '4px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}>
-                    {member.user?.name}
-                    {member.user?._id === company.owner?._id && (
-                      <span style={{
-                        marginLeft: '8px',
-                        padding: '2px 8px',
-                        background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                        color: 'white',
-                        borderRadius: '6px',
-                        fontSize: '10px',
-                        fontWeight: '700',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px'
-                      }}>
-                        Owner
-                      </span>
-                    )}
-                  </div>
-                  <div style={{
-                    fontSize: '13px',
-                    color: '#64748b',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}>
-                    {member.user?.email}
-                  </div>
+        {/* Intelligence Grid Delta */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-14">
+          {[
+            { label: 'TOTAL_PERSONNEL_NODES', value: company.members?.length || 0, icon: '👥', color: 'indigo' },
+            { label: 'PROTOCOL_DEFINITIONS_SIG', value: company.designations?.length || 0, icon: '🎯', color: 'emerald' },
+            { label: 'TEMPORAL_ORIGIN_CYCLE', value: company.foundedYear || 'N/A', icon: '🗓', color: 'amber' },
+            { label: 'ENTITY_MAGNITUDE_RANK', value: company.companySize || 'N/P', icon: '🏢', color: 'rose' }
+          ].map((stat, i) => (
+            <div key={i} className="bg-white p-14 rounded-[5rem] border-4 border-slate-50 shadow-sm hover:shadow-24 transition-all duration-1000 group/card relative overflow-hidden hover:-translate-y-4 animate-in zoom-in-95" style={{ animationDelay: `${i * 100}ms` }}>
+              <div className="absolute top-0 right-0 p-12 text-[120px] opacity-[0.03] grayscale group-hover/card:scale-125 group-hover/card:rotate-12 transition-all duration-1000 select-none grayscale group-hover/card:grayscale-0">{stat.icon}</div>
+              <div className="relative z-10 flex flex-col justify-between h-full space-y-10">
+                <div className={`text-6xl font-black text-slate-950 italic tracking-tighter leading-none group-hover/card:text-${stat.color}-600 transition-colors`}>{stat.value}</div>
+                <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.6em] italic flex items-center gap-6 underline underline-offset-[12px] decoration-slate-50 group-hover/card:decoration-indigo-100 transition-all">
+                  <div className={`w-4 h-4 rounded-full bg-${stat.color}-500 shadow-[0_0_20px_rgba(0,0,0,0.1)] group-hover/card:scale-150 transition-all group-hover/card:animate-ping`} />
+                  {stat.label}
                 </div>
               </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                  <span style={{
-                    padding: '4px 12px',
-                    background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                    color: 'white',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    fontWeight: '600'
-                  }}>
-                    {member.designation}
-                  </span>
-                </div>
-                {member.currentSalary > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="12" y1="1" x2="12" y2="23"></line>
-                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                    </svg>
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#10b981' }}>
-                      {getCurrencySymbol(company.currency)}{member.currentSalary.toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                {member.joinedAt && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                      <line x1="16" y1="2" x2="16" y2="6"></line>
-                      <line x1="8" y1="2" x2="8" y2="6"></line>
-                      <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>
-                      Joined {new Date(member.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {isCompanyCreator && member.user?._id !== state.user?.id && (
-                <div style={{ display: 'flex', gap: '8px', paddingTop: '12px', borderTop: '1px solid #e2e8f0' }}>
-                  <button
-                    onClick={() => setShowRoleUpdate(member)}
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      transition: 'all 0.2s',
-                      boxShadow: '0 2px 8px rgba(139, 92, 246, 0.2)'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.transform = 'translateY(-1px)';
-                      e.target.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.2)';
-                    }}
-                  >
-                    Change Role
-                  </button>
-                  <button
-                    onClick={() => setShowSalaryUpdate(member)}
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      background: 'linear-gradient(135deg, #10b981, #059669)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      transition: 'all 0.2s',
-                      boxShadow: '0 2px 8px rgba(16, 185, 129, 0.2)'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.transform = 'translateY(-1px)';
-                      e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = '0 2px 8px rgba(16, 185, 129, 0.2)';
-                    }}
-                  >
-                    Update Salary
-                  </button>
-                </div>
-              )}
             </div>
           ))}
         </div>
 
-        {(!company.members || company.members.length === 0) && (
-          <div style={{
-            textAlign: 'center',
-            padding: '60px 20px',
-            color: '#94a3b8'
-          }}>
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 16px' }}>
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-            <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>No team members yet</div>
-            <div style={{ fontSize: '14px' }}>Add employees to start building your team</div>
+        {/* Operational Hubs Gamma */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
+          {/* Comms Network Node */}
+          <section className="bg-white p-20 rounded-[6rem] border-8 border-slate-50 shadow-24 group overflow-hidden relative animate-in slide-in-from-left-12 duration-1200">
+            <div className="absolute top-0 right-0 p-24 text-[240px] font-black italic opacity-[0.02] grayscale pointer-events-none select-none text-slate-900 leading-none">@</div>
+            <h3 className="text-4xl font-black text-slate-950 uppercase italic tracking-tighter mb-20 flex items-center gap-8 relative z-10 leading-none">
+              <span className="w-6 h-6 rounded-[1.5rem] bg-indigo-600 shadow-[0_0_25px_rgba(79,70,229,0.5)] animate-pulse" />
+              COMMUNICATIONS_MATRIX_SYNC
+            </h3>
+            <div className="space-y-10 relative z-10">
+              {[
+                { label: 'ENCRYPTED_EMAIL_PROTOCOL', value: company.email, icon: '✉️' },
+                { label: 'SECURE_VOICE_LINK_ID', value: company.phone, icon: '📞' },
+                { label: 'WEB_INTERFACE_LINK_CORE', value: company.website, icon: '🌐', isLink: true }
+              ].map((item, i) => item.value && (
+                <div key={i} className="flex items-center gap-12 p-10 rounded-[4rem] bg-slate-50/50 border-4 border-slate-50 hover:bg-white hover:border-indigo-100 hover:shadow-24 transition-all duration-1000 group/item relative overflow-hidden animate-in slide-in-from-left-8" style={{ animationDelay: `${i * 150}ms` }}>
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-white/80 rounded-bl-full translate-x-12 -translate-y-12 group-hover/item:translate-x-0 group-hover/item:translate-y-0 transition-transform duration-1000 shadow-sm" />
+                  <div className="w-24 h-24 rounded-[2.5rem] bg-white border-4 border-slate-100 flex items-center justify-center text-4xl shadow-24 group-hover/item:scale-110 group-hover/item:rotate-12 transition-all duration-700 shrink-0 italic relative z-10">
+                    {item.icon}
+                  </div>
+                  <div className="relative z-10 flex-1 min-w-0">
+                    <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.5em] mb-3 italic underline underline-offset-8 decoration-slate-100">{item.label}</div>
+                    {item.isLink ? (
+                      <a href={item.value} target="_blank" rel="noreferrer" className="text-2xl font-black text-indigo-600 hover:text-slate-950 hover:decoration-indigo-400 transition-colors uppercase tracking-tighter italic decoration-indigo-200 underline underline-offset-[12px] truncate block">{item.value}</a>
+                    ) : (
+                      <div className="text-2xl font-black text-slate-950 uppercase tracking-tighter italic truncate">{item.value}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-500/[0.03] rounded-full blur-[160px] pointer-events-none group-hover:scale-150 transition-transform duration-2000" />
+          </section>
+
+          {/* Geospatial Sector Node */}
+          <section className="bg-slate-950 p-20 rounded-[6rem] shadow-24 border-8 border-slate-900 group relative overflow-hidden animate-in slide-in-from-right-12 duration-1200">
+            <div className="absolute top-0 right-0 p-32 text-[260px] font-black italic opacity-[0.03] grayscale pointer-events-none select-none text-white leading-none">LOC</div>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#4f46e5_0%,transparent_70%)] opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity duration-1000" />
+            <h3 className="text-4xl font-black text-white uppercase italic tracking-tighter mb-20 flex items-center gap-8 relative z-10 leading-none">
+              <span className="w-6 h-6 rounded-[1.5rem] bg-emerald-400 shadow-[0_0_30px_rgba(52,211,153,0.8)] animate-pulse" />
+              GEOSPATIAL_SECTOR_COORDINATES
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 relative z-10">
+              {[
+                { label: 'PRIMARY_TERMINAL_BASE', value: company.address, full: true },
+                { label: 'METRO_CORE_ZONE', value: company.city },
+                { label: 'SECTOR_STATE_REGION', value: company.state },
+                { label: 'NATION_IDENT_SIG', value: company.country },
+                { label: 'ZIP_INDEX_HASH', value: company.zipCode }
+              ].map((loc, i) => loc.value && (
+                <div key={i} className={`p-10 bg-white/5 rounded-[2.5rem] border-4 border-white/5 hover:bg-white/10 hover:border-white/10 transition-all duration-700 italic group/loc hover:-translate-y-2 animate-in slide-in-from-right-8 ${loc.full ? 'md:col-span-2' : ''}`} style={{ animationDelay: `${i * 100}ms` }}>
+                  <div className="text-[11px] font-black text-white/20 uppercase tracking-[0.6em] mb-3 italic underline underline-offset-8 decoration-white/5 group-hover/loc:decoration-emerald-400/20">{loc.label}</div>
+                  <div className="text-xl font-black text-white uppercase italic tracking-tighter leading-relaxed group-hover/loc:text-emerald-400 transition-colors truncate">{loc.value}</div>
+                </div>
+              ))}
+            </div>
+            <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[180px] group-hover:scale-125 transition-transform duration-2000 pointer-events-none" />
+          </section>
+        </div>
+
+        {/* Neural Registry Stream Delta */}
+        <section className="bg-white p-20 rounded-[7rem] border-8 border-slate-50 shadow-24 relative group/registry animate-in slide-in-from-bottom-20 duration-1200">
+          <div className="absolute top-0 right-0 p-32 text-[260px] font-black italic opacity-[0.02] grayscale pointer-events-none select-none text-slate-900 leading-none">PERSONNEL</div>
+          <div className="flex flex-col md:flex-row justify-between items-end mb-24 gap-12 px-8 relative z-10">
+            <div className="space-y-6">
+              <h3 className="text-5xl font-black text-slate-950 uppercase italic tracking-tighter leading-none"> PERSONNEL_REGISTRY_STREAM </h3>
+              <p className="text-[12px] font-black text-indigo-600 uppercase tracking-[0.8em] italic animate-pulse flex items-center gap-6 underline underline-offset-[16px] decoration-indigo-50">
+                <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-lg" /> ACTIVE_SYNCHRONIZATION: {company.members?.length || 0} NODES_VERIFIED
+              </p>
+            </div>
+            {userPermissions.viewDesignations && (
+              <button onClick={() => navigate('/manage-roles')} className="bg-slate-950 text-white px-20 py-8 rounded-[3.5rem] font-black text-[12px] uppercase tracking-[0.6em] hover:bg-indigo-600 hover:scale-110 active:scale-95 transition-all shadow-24 italic border-8 border-white group/btn relative overflow-hidden shadow-indigo-950/20 shrink-0">
+                <span className="relative z-10 flex items-center gap-8"> AUTHORIZE_ROLE_PROTOCOLS <span className="text-2xl group-hover/btn:translate-x-6 transition-transform duration-700">➜</span> </span>
+                <div className="absolute top-0 left-0 w-full h-full bg-white/10 -translate-x-full group-hover/btn:animate-[shimmer_3s_infinite]" />
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-12 relative z-10">
+            {company.members?.map((member, index) => (
+              <div key={member._id} onClick={() => navigate(`/employees/${member.user?._id || member.user}`)} className="group/node p-12 rounded-[4.5rem] border-4 border-slate-50 bg-slate-50/50 hover:bg-white hover:border-indigo-100 hover:shadow-24 transition-all duration-1000 cursor-pointer overflow-hidden relative italic animate-in zoom-in-95 hover:-translate-y-4" style={{ animationDelay: `${index * 50}ms` }}>
+                <div className="flex flex-col items-center gap-10 mb-12 relative z-10 text-center pt-4">
+                  <div className="w-28 h-28 rounded-[3.5rem] bg-slate-950 text-white border-8 border-white shadow-24 flex items-center justify-center font-black text-4xl italic group-hover/node:bg-indigo-600 transition-all duration-1000 group-hover/node:rotate-12 group-hover/node:scale-110 relative overflow-hidden">
+                    {member.user?.name?.charAt(0)}
+                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover/node:opacity-100 transition-opacity" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-2xl font-black text-slate-950 uppercase italic tracking-tighter truncate leading-none mb-4 group-hover/node:text-indigo-600 transition-colors drop-shadow-sm">{member.user?.name}</h4>
+                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest italic truncate opacity-50 underline underline-offset-8 decoration-slate-100">{member.user?.email}</p>
+                    {member.user?._id === company.owner?._id && <span className="mt-6 inline-block px-6 py-2 bg-amber-400 text-amber-950 text-[10px] font-black uppercase rounded-2xl shadow-24 italic border-2 border-white animate-bounce-slow">COMMANDER_ALPHA</span>}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-8 p-10 bg-white rounded-[3rem] border-4 border-slate-50 group-hover/node:border-indigo-100 group-hover/node:shadow-inner transition-all duration-1000 relative z-10 shadow-sm border-l-[16px] border-l-slate-200 group-hover:border-l-indigo-600">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-50 border-2 border-slate-100 flex items-center justify-center text-3xl grayscale group-hover/node:grayscale-0 group-hover/node:scale-125 group-hover/node:rotate-12 transition-all duration-700">🛡️</div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic leading-none mb-2">AUTH_RANK</span>
+                    <span className="text-[12px] font-black uppercase tracking-[0.4em] text-indigo-600 italic group-hover/node:text-slate-950 transition-colors">{member.designation?.toUpperCase() || 'UNLINKED_PROTOCOL'}</span>
+                  </div>
+                </div>
+                <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover/node:scale-150 transition-transform duration-2000 opacity-0 group-hover/node:opacity-100" />
+              </div>
+            ))}
+          </div>
+          <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-indigo-500/[0.03] rounded-full blur-[180px] group-hover/registry:scale-125 transition-transform duration-2000 pointer-events-none" />
+        </section>
+
+        {/* Global Config Terminal Epsilon */}
+        {userPermissions.manageCompanySettings && (
+          <div className="animate-in slide-in-from-bottom-24 duration-1200 delay-300">
+            <CompanySettings company={company} onRefresh={fetchCompany} />
           </div>
         )}
       </div>
-
-      {/* Company Settings Section */}
-      {isCompanyCreator && (
-        <CompanySettingsSection company={company} onRefresh={fetchCompany} />
-      )}
-
-      {/* Add Employee Modal */}
-      {showAddEmployee && (
-        <AddEmployeeModal
-          company={company}
-          onClose={() => setShowAddEmployee(false)}
-          onSuccess={() => {
-            setShowAddEmployee(false);
-            fetchCompany();
-          }}
-        />
-      )}
-
-      {/* Update Salary Modal */}
-      {showSalaryUpdate && (
-        <UpdateSalaryModal
-          member={showSalaryUpdate}
-          company={company}
-          onClose={() => setShowSalaryUpdate(null)}
-          onSuccess={() => {
-            setShowSalaryUpdate(null);
-            fetchCompany();
-          }}
-        />
-      )}
-
-      {/* Update Role Modal */}
-      {showRoleUpdate && (
-        <UpdateRoleModal
-          member={showRoleUpdate}
-          company={company}
-          onClose={() => setShowRoleUpdate(null)}
-          onSuccess={() => {
-            setShowRoleUpdate(null);
-            fetchCompany();
-          }}
-        />
-      )}
-
-      {/* Create Designation Modal */}
-      {showCreateDesignation && (
-        <CreateDesignationModal
-          company={company}
-          onClose={() => setShowCreateDesignation(false)}
-          onSuccess={() => {
-            setShowCreateDesignation(false);
-            fetchCompany();
-          }}
-        />
-      )}
-
-      {/* Manage Designations Modal */}
-      {showDesignations && (
-        <ManageDesignationsModal
-          company={company}
-          onClose={() => setShowDesignations(false)}
-          onSuccess={() => {
-            setShowDesignations(false);
-            fetchCompany();
-          }}
-        />
-      )}
     </Layout>
   );
 };
 
-const AddEmployeeModal = ({ company, onClose, onSuccess }) => {
-  const [email, setEmail] = useState('');
-  const [designation, setDesignation] = useState('Employee');
-  const [salary, setSalary] = useState('');
-  const [loading, setLoading] = useState(false);
+const CompanySettings = ({ company, onRefresh }) => {
   const toast = useToast();
+  const [saving, setSaving] = useState(false);
+  const [currency, setCurrency] = useState(company.currency || 'USD');
+  const [settings, setSettings] = useState(company.settings || { timeTracking: { defaultDurationUnit: 'hours', hoursPerDay: 8, daysPerWeek: 5, workingHoursStart: '09:00', workingHoursEnd: '17:00' } });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  const currencies = [{ code: 'USD', symbol: '$' }, { code: 'EUR', symbol: '€' }, { code: 'GBP', symbol: '£' }, { code: 'BDT', symbol: '৳' }, { code: 'INR', symbol: '₹' }];
 
+  const updateCT = (f, v) => setSettings(p => ({ ...p, timeTracking: { ...p.timeTracking, [f]: v } }));
+
+  const handleSave = async () => {
+    setSaving(true);
     try {
-      const response = await fetch(`/api/companies/${company._id}/add-member`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getCookie('authToken')}`
-        },
-        body: JSON.stringify({
-          email,
-          designation,
-          salary: salary ? parseInt(salary) : 0
-        })
-      });
-
-      if (response.ok) {
-        onSuccess();
-      } else {
-        const error = await response.json();
-        toast.error(error.message);
-      }
-    } catch (error) {
-      toast.error('Error adding employee');
-    } finally {
-      setLoading(false);
-    }
+      await companyAPI.updateSettings(company._id || company.id, settings);
+      await companyAPI.updateProfile(company._id || company.id, { currency });
+      toast.showToast('PROTOCOL_SYNCHRONIZATION_LOCKED', 'success');
+      if (onRefresh) onRefresh();
+    } catch (e) { toast.showToast('SYNC_FAILED_LINK_UNSTABLE', 'error'); }
+    finally { setSaving(false); }
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '30px',
-        borderRadius: '12px',
-        width: '400px',
-        maxWidth: '90vw'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0' }}>Add Employee</h3>
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px'
-              }}
-            />
+    <div className="bg-slate-950 p-20 rounded-[7rem] shadow-24 border-8 border-slate-900 relative overflow-hidden group italic">
+      <div className="absolute top-0 right-0 p-32 text-[260px] font-black italic opacity-[0.03] grayscale pointer-events-none select-none text-white leading-none">CONFIG</div>
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-emerald-500/5 pointer-events-none group-hover:opacity-20 transition-opacity duration-1000" />
+      <div className="relative z-10 space-y-24">
+        <div className="flex flex-col md:flex-row items-center gap-14 text-center md:text-left">
+          <div className="w-32 h-32 rounded-[3.5rem] bg-indigo-600 border-8 border-white/10 flex items-center justify-center text-7xl shadow-24 animate-pulse italic group-hover:rotate-12 transition-transform duration-1000 shadow-indigo-500/50 relative overflow-hidden">
+            ⚙️
+            <div className="absolute inset-0 bg-white/10 -translate-x-full animate-[shimmer_3s_infinite]" />
           </div>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>
-              Designation
-            </label>
-            <select
-              value={designation}
-              onChange={(e) => setDesignation(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px'
-              }}
-            >
-              {company.designations?.map((des) => (
-                <option key={des._id} value={des.name}>{des.name}</option>
-              ))}
-            </select>
+          <div className="space-y-4">
+            <h3 className="text-5xl font-black text-white uppercase italic tracking-tighter leading-none mb-4"> SECTOR_CONFIGURATION_TERMINAL </h3>
+            <p className="text-[14px] font-black text-indigo-400 uppercase tracking-[0.8em] italic opacity-60 underline underline-offset-[20px] decoration-white/5"> Core_System_Administrative_Directives // Security_Bypass: NEGATIVE </p>
           </div>
-          <div style={{ marginBottom: '30px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>
-              Salary (Optional)
-            </label>
-            <input
-              type="number"
-              value={salary}
-              onChange={(e) => setSalary(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px'
-              }}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: '12px 20px',
-                backgroundColor: '#6b7280',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: '12px 20px',
-                backgroundColor: loading ? '#9ca3af' : '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: loading ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {loading ? 'Adding...' : 'Add Employee'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-const UpdateSalaryModal = ({ member, company, onClose, onSuccess }) => {
-  const [salary, setSalary] = useState(member.currentSalary || '');
-  const [reason, setReason] = useState('');
-  const [loading, setLoading] = useState(false);
-  const toast = useToast();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const response = await fetch(`/api/companies/${company._id}/update-salary`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getCookie('authToken')}`
-        },
-        body: JSON.stringify({
-          memberId: member._id,
-          newSalary: parseInt(salary),
-          reason
-        })
-      });
-
-      if (response.ok) {
-        onSuccess();
-      } else {
-        const error = await response.json();
-        toast.error(error.message);
-      }
-    } catch (error) {
-      toast.error('Error updating salary');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '30px',
-        borderRadius: '12px',
-        width: '400px',
-        maxWidth: '90vw'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0' }}>Update Salary - {member.user?.name}</h3>
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>
-              New Salary
-            </label>
-            <input
-              type="number"
-              value={salary}
-              onChange={(e) => setSalary(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px'
-              }}
-            />
-          </div>
-          <div style={{ marginBottom: '30px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>
-              Reason
-            </label>
-            <input
-              type="text"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g., Annual increment, Promotion"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px'
-              }}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: '12px 20px',
-                backgroundColor: '#6b7280',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: '12px 20px',
-                backgroundColor: loading ? '#9ca3af' : '#10b981',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: loading ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {loading ? 'Updating...' : 'Update Salary'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-const UpdateRoleModal = ({ member, company, onClose, onSuccess }) => {
-  const [designation, setDesignation] = useState(member.designation || '');
-  const [loading, setLoading] = useState(false);
-  const toast = useToast();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const response = await fetch(`/api/companies/${company._id}/update-designation`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getCookie('authToken')}`
-        },
-        body: JSON.stringify({
-          memberId: member._id,
-          designation
-        })
-      });
-
-      if (response.ok) {
-        onSuccess();
-      } else {
-        const error = await response.json();
-        toast.error(error.message);
-      }
-    } catch (error) {
-      toast.error('Error updating role');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '30px',
-        borderRadius: '12px',
-        width: '400px',
-        maxWidth: '90vw'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0' }}>Update Role - {member.user?.name}</h3>
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '30px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>
-              Designation
-            </label>
-            <select
-              value={designation}
-              onChange={(e) => setDesignation(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px'
-              }}
-            >
-              {company.designations?.map((des) => (
-                <option key={des._id} value={des.name}>{des.name}</option>
-              ))}
-            </select>
-          </div>
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: '12px 20px',
-                backgroundColor: '#6b7280',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: '12px 20px',
-                backgroundColor: loading ? '#9ca3af' : '#8b5cf6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: loading ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {loading ? 'Updating...' : 'Update Role'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-const CreateDesignationModal = ({ company, onClose, onSuccess }) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [permissions, setPermissions] = useState({
-    addEmployee: false,
-    viewEmployeeList: true,
-    editEmployee: false,
-    createDesignation: false,
-    viewDesignations: true,
-    editDesignation: false,
-    deleteDesignation: false,
-    createProject: false,
-    assignEmployeeToProject: false,
-    removeEmployeeFromProject: false
-  });
-  const [loading, setLoading] = useState(false);
-  const toast = useToast();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const response = await fetch(`/api/companies/${company._id}/designations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getCookie('authToken')}`
-        },
-        body: JSON.stringify({ name, description, permissions })
-      });
-
-      if (response.ok) {
-        onSuccess();
-      } else {
-        const error = await response.json();
-        toast.error(error.message);
-      }
-    } catch (error) {
-      toast.error('Error creating designation');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const permissionLabels = {
-    addEmployee: 'Add Employee',
-    viewEmployeeList: 'View Employee List',
-    editEmployee: 'Edit Employee',
-    createDesignation: 'Create Designation',
-    viewDesignations: 'View Designations',
-    editDesignation: 'Edit Designation',
-    deleteDesignation: 'Delete Designation',
-    createProject: 'Create Project',
-    assignEmployeeToProject: 'Assign Employee to Project',
-    removeEmployeeFromProject: 'Remove Employee from Project'
-  };
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '30px',
-        borderRadius: '12px',
-        width: '500px',
-        maxWidth: '90vw',
-        maxHeight: '80vh',
-        overflow: 'auto'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0' }}>Create Designation</h3>
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>
-              Designation Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px'
-              }}
-            />
-          </div>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>
-              Description
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                resize: 'vertical'
-              }}
-            />
-          </div>
-          <div style={{ marginBottom: '30px' }}>
-            <label style={{ display: 'block', marginBottom: '12px', fontWeight: '600' }}>
-              Permissions
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              {Object.entries(permissionLabels).map(([key, label]) => (
-                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                  <input
-                    type="checkbox"
-                    checked={permissions[key]}
-                    onChange={(e) => setPermissions({ ...permissions, [key]: e.target.checked })}
-                  />
-                  {label}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: '12px 20px',
-                backgroundColor: '#6b7280',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: '12px 20px',
-                backgroundColor: loading ? '#9ca3af' : '#10b981',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: loading ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {loading ? 'Creating...' : 'Create Designation'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-const ManageDesignationsModal = ({ company, onClose, onSuccess }) => {
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '30px',
-        borderRadius: '12px',
-        width: '600px',
-        maxWidth: '90vw',
-        maxHeight: '80vh',
-        overflow: 'auto'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ margin: 0 }}>Manage Designations</h3>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#6b7280',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer'
-            }}
-          >
-            Close
-          </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {company.designations?.map((designation) => (
-            <div key={designation._id} style={{
-              padding: '16px',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              backgroundColor: '#f8fafc'
-            }}>
-              <div style={{ marginBottom: '12px' }}>
-                <h4 style={{ margin: '0 0 4px 0', color: '#1e293b' }}>{designation.name}</h4>
-                <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>{designation.description}</p>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-20">
+          <div className="p-16 bg-white/5 rounded-[5rem] border-4 border-white/5 backdrop-blur-3xl group/sub hover:bg-white/10 hover:border-indigo-400/30 transition-all duration-1000 relative overflow-hidden italic">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-[80px]" />
+            <h4 className="text-[13px] font-black text-indigo-400 uppercase tracking-[0.8em] mb-16 flex items-center gap-10">
+              <span className="w-20 h-1 bg-indigo-500 shadow-[0_0_20px_indigo] group-hover/sub:w-32 transition-all duration-1000" /> 01_FINANCIAL_NODE_CORE
+            </h4>
+            <div className="space-y-10 group/select">
+              <label className="text-[11px] font-black text-white/30 uppercase tracking-[0.6em] ml-10 italic underline underline-offset-8 decoration-white/5">PRIMARY_MARKET_CURRENCY_IDENT</label>
+              <div className="relative">
+                <select value={currency} onChange={e => setCurrency(e.target.value)} className="w-full bg-black/60 text-white px-12 py-10 rounded-[4rem] border-4 border-white/5 font-black text-xl md:text-2xl outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer uppercase italic shadow-inner">
+                  {currencies.map(c => <option key={c.code} value={c.code} className="bg-slate-900">{c.symbol} {c.code} // PROTOCOL_{c.code}</option>)}
+                </select>
+                <div className="absolute right-12 top-1/2 -translate-y-1/2 text-4xl text-white/20 pointer-events-none group-hover/select:opacity-100 transition-all group-hover/select:translate-y-[-40%]">▼</div>
               </div>
+            </div>
+          </div>
 
-              <div>
-                <h5 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Permissions:</h5>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {Object.entries(designation.permissions || {}).map(([key, value]) => (
-                    value && (
-                      <span key={key} style={{
-                        padding: '2px 8px',
-                        backgroundColor: '#10b981',
-                        color: 'white',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontWeight: '500'
-                      }}>
-                        {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                      </span>
-                    )
-                  ))}
+          <div className="p-16 bg-white/5 rounded-[5rem] border-4 border-white/5 backdrop-blur-3xl group/sub hover:bg-white/10 hover:border-emerald-400/30 transition-all duration-1000 relative overflow-hidden italic">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-[80px]" />
+            <h4 className="text-[13px] font-black text-emerald-400 uppercase tracking-[0.8em] mb-16 flex items-center gap-10">
+              <span className="w-20 h-1 bg-emerald-500 shadow-[0_0_20px_emerald] group-hover/sub:w-32 transition-all duration-1000" /> 02_TEMPORAL_REGISTRY_SYNC
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div className="space-y-8 group/select">
+                <label className="text-[11px] font-black text-white/30 uppercase tracking-[0.6em] ml-10 italic underline underline-offset-8 decoration-white/5">DURATION_METRIC_UNIT</label>
+                <div className="relative">
+                  <select value={settings.timeTracking.defaultDurationUnit} onChange={e => updateCT('defaultDurationUnit', e.target.value)} className="w-full bg-black/60 text-white px-12 py-8 rounded-[3rem] border-4 border-white/5 font-black text-[12px] uppercase outline-none focus:border-emerald-500 transition-all cursor-pointer italic appearance-none shadow-inner">
+                    <option value="minutes" className="bg-slate-900">MINUTES_LOG</option>
+                    <option value="hours" className="bg-slate-900">HOURS_INDEX</option>
+                    <option value="days" className="bg-slate-900">DAYS_CYCLE</option>
+                  </select>
+                  <div className="absolute right-10 top-1/2 -translate-y-1/2 text-3xl text-white/20 pointer-events-none group-hover/select:opacity-100 transition-all">▼</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-8 pt-12">
+                <div className="space-y-4">
+                  <label className="text-[9px] font-black text-white/20 uppercase tracking-widest text-center block">H/CYCLE</label>
+                  <input type="number" value={settings.timeTracking.hoursPerDay} onChange={e => updateCT('hoursPerDay', parseInt(e.target.value))} className="w-full bg-black/60 text-emerald-400 p-8 rounded-[2.5rem] border-4 border-white/5 font-black text-center text-4xl outline-none focus:border-emerald-400 focus:bg-black transition-all shadow-inner italic" />
+                </div>
+                <div className="space-y-4">
+                  <label className="text-[9px] font-black text-white/20 uppercase tracking-widest text-center block">D/PULSE</label>
+                  <input type="number" value={settings.timeTracking.daysPerWeek} onChange={e => updateCT('daysPerWeek', parseInt(e.target.value))} className="w-full bg-black/60 text-emerald-400 p-8 rounded-[2.5rem] border-4 border-white/5 font-black text-center text-4xl outline-none focus:border-emerald-400 focus:bg-black transition-all shadow-inner italic" />
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const CreateCompanyModal = ({ onClose, onSuccess }) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [loading, setLoading] = useState(false);
-  const toast = useToast();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const token = getCookie('authToken');
-      const response = await fetch('/api/companies', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ name, description })
-      });
-
-      if (response.ok) {
-        onSuccess();
-      } else {
-        const error = await response.json();
-        toast.error(error.message);
-      }
-    } catch (error) {
-      toast.error('Error creating company');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '30px',
-        borderRadius: '12px',
-        width: '400px',
-        maxWidth: '90vw'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0' }}>Create Company</h3>
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>
-              Company Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px'
-              }}
-            />
-          </div>
-          <div style={{ marginBottom: '30px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600' }}>
-              Description (Optional)
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                resize: 'vertical'
-              }}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: '12px 20px',
-                backgroundColor: '#6b7280',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: '12px 20px',
-                backgroundColor: loading ? '#9ca3af' : '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: loading ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {loading ? 'Creating...' : 'Create Company'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// Company Settings Section Component
-const CompanySettingsSection = ({ company, onRefresh }) => {
-  const { showToast } = useToast();
-  const [settings, setSettings] = useState({
-    timeTracking: {
-      defaultDurationUnit: 'hours',
-      hoursPerDay: 8,
-      daysPerWeek: 5,
-      workingHoursStart: '09:00',
-      workingHoursEnd: '17:00'
-    },
-    workingDays: [1, 2, 3, 4, 5],
-    weekends: [0, 6],
-    holidays: []
-  });
-  const [currency, setCurrency] = useState('USD');
-  const [saving, setSaving] = useState(false);
-
-  const currencies = [
-    { code: 'USD', symbol: '$', name: 'US Dollar' },
-    { code: 'EUR', symbol: '€', name: 'Euro' },
-    { code: 'GBP', symbol: '£', name: 'British Pound' },
-    { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-    { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-    { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
-    { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
-    { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
-    { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
-    { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
-    { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },
-    { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' },
-    { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
-    { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone' },
-    { code: 'DKK', symbol: 'kr', name: 'Danish Krone' },
-    { code: 'MXN', symbol: 'MX$', name: 'Mexican Peso' },
-    { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
-    { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
-    { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
-    { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal' }
-  ];
-
-  useEffect(() => {
-    if (company?.settings) {
-      setSettings({
-        timeTracking: company.settings.timeTracking || {
-          defaultDurationUnit: 'hours',
-          hoursPerDay: 8,
-          daysPerWeek: 5,
-          workingHoursStart: '09:00',
-          workingHoursEnd: '17:00'
-        },
-        workingDays: company.settings.workingDays || [1, 2, 3, 4, 5],
-        weekends: company.settings.weekends || [0, 6],
-        holidays: company.settings.holidays || []
-      });
-    }
-    if (company?.currency) {
-      setCurrency(company.currency);
-    }
-  }, [company]);
-
-  const handleTimeTrackingChange = (field, value) => {
-    setSettings(prev => ({
-      ...prev,
-      timeTracking: {
-        ...prev.timeTracking,
-        [field]: value
-      }
-    }));
-  };
-
-  const handleSaveSettings = async () => {
-    setSaving(true);
-    try {
-      // Save settings
-      await companyAPI.updateSettings(company._id, settings);
-
-      // Save currency (via profile update)
-      await companyAPI.updateProfile(company._id, { currency });
-
-      showToast('Settings saved successfully', 'success');
-      if (onRefresh) onRefresh();
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      showToast('Failed to save settings', 'error');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div style={{
-      background: 'white',
-      padding: '28px',
-      borderRadius: '12px',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-      border: '1px solid #e2e8f0',
-      marginTop: '30px'
-    }}>
-      <h3 style={{
-        margin: '0 0 24px 0',
-        fontSize: '20px',
-        fontWeight: '700',
-        color: '#1e293b',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px'
-      }}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#667eea" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M23 12h-6m-6 0H1m18.2 5.2l-4.2-4.2m0-6l4.2-4.2"></path>
-        </svg>
-        Company Settings
-      </h3>
-
-      {/* Currency Settings */}
-      <div style={{
-        padding: '20px',
-        background: '#f8fafc',
-        borderRadius: '8px',
-        border: '1px solid #e2e8f0',
-        marginBottom: '20px'
-      }}>
-        <h4 style={{
-          margin: '0 0 16px 0',
-          fontSize: '16px',
-          fontWeight: '600',
-          color: '#1e293b',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          💰 Currency
-        </h4>
-
-        <div>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-            DEFAULT CURRENCY
-          </label>
-          <select
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
-            style={{
-              width: '100%',
-              maxWidth: '400px',
-              padding: '10px 14px',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              fontSize: '14px',
-              backgroundColor: 'white',
-              cursor: 'pointer'
-            }}
-          >
-            {currencies.map((curr) => (
-              <option key={curr.code} value={curr.code}>
-                {curr.symbol} {curr.code} - {curr.name}
-              </option>
-            ))}
-          </select>
-          <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#64748b' }}>
-            Used for displaying project and task budgets throughout the system
-          </p>
-        </div>
-      </div>
-
-      {/* Time Tracking Settings */}
-      <div style={{
-        padding: '20px',
-        background: '#f8fafc',
-        borderRadius: '8px',
-        border: '1px solid #e2e8f0',
-        marginBottom: '20px'
-      }}>
-        <h4 style={{
-          margin: '0 0 16px 0',
-          fontSize: '16px',
-          fontWeight: '600',
-          color: '#1e293b',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          ⏱️ Time Tracking
-        </h4>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px',
-          marginBottom: '16px'
-        }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              DEFAULT DURATION UNIT
-            </label>
-            <select
-              value={settings.timeTracking.defaultDurationUnit}
-              onChange={(e) => handleTimeTrackingChange('defaultDurationUnit', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                backgroundColor: 'white'
-              }}
-            >
-              <option value="minutes">Minutes</option>
-              <option value="hours">Hours</option>
-              <option value="days">Days</option>
-              <option value="weeks">Weeks</option>
-            </select>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              HOURS PER DAY
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="24"
-              value={settings.timeTracking.hoursPerDay}
-              onChange={(e) => handleTimeTrackingChange('hoursPerDay', parseInt(e.target.value))}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                backgroundColor: 'white'
-              }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              DAYS PER WEEK
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="7"
-              value={settings.timeTracking.daysPerWeek}
-              onChange={(e) => handleTimeTrackingChange('daysPerWeek', parseInt(e.target.value))}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                backgroundColor: 'white'
-              }}
-            />
           </div>
         </div>
 
-        {/* Working Hours Section */}
-        <div style={{
-          marginTop: '24px',
-          paddingTop: '24px',
-          borderTop: '1px solid #dfe1e6',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '20px'
-        }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              WORKING HOURS START
-            </label>
-            <input
-              type="time"
-              value={settings.timeTracking.workingHoursStart}
-              onChange={(e) => handleTimeTrackingChange('workingHoursStart', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                backgroundColor: 'white'
-              }}
-            />
-            <div style={{ fontSize: '11px', color: '#5e6c84', marginTop: '4px' }}>
-              Daily work start time (e.g., 09:00)
-            </div>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              WORKING HOURS END
-            </label>
-            <input
-              type="time"
-              value={settings.timeTracking.workingHoursEnd}
-              onChange={(e) => handleTimeTrackingChange('workingHoursEnd', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                backgroundColor: 'white'
-              }}
-            />
-            <div style={{ fontSize: '11px', color: '#5e6c84', marginTop: '4px' }}>
-              Daily work end time (e.g., 17:00)
-            </div>
-          </div>
-
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '12px',
-            backgroundColor: '#f4f5f7',
-            borderRadius: '3px',
-            border: '1px solid #dfe1e6'
-          }}>
-            <div>
-              <div style={{ fontSize: '12px', fontWeight: '600', color: '#5e6c84', marginBottom: '4px' }}>
-                TOTAL HOURS
-              </div>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: '#0052cc' }}>
-                {(() => {
-                  const start = settings.timeTracking.workingHoursStart.split(':');
-                  const end = settings.timeTracking.workingHoursEnd.split(':');
-                  const startMinutes = parseInt(start[0]) * 60 + parseInt(start[1]);
-                  const endMinutes = parseInt(end[0]) * 60 + parseInt(end[1]);
-                  const totalMinutes = endMinutes - startMinutes;
-                  const hours = Math.floor(totalMinutes / 60);
-                  const minutes = totalMinutes % 60;
-                  return `${hours}h ${minutes}m`;
-                })()}
-              </div>
-              <div style={{ fontSize: '11px', color: '#5e6c84', marginTop: '2px' }}>
-                per working day
-              </div>
-            </div>
-          </div>
+        <div className="flex justify-center md:justify-end pt-16 border-t-8 border-white/5">
+          <button onClick={handleSave} disabled={saving} className={`px-24 py-10 rounded-[4rem] font-black text-[14px] uppercase tracking-[0.8em] transition-all shadow-24 border-8 border-white/10 relative overflow-hidden group/save ${saving ? 'bg-slate-900 text-slate-700 animate-pulse' : 'bg-indigo-600 text-white hover:bg-white hover:text-indigo-600 hover:scale-110 active:scale-95 shadow-indigo-600/30'}`}>
+            <span className="relative z-10">{saving ? 'SYNCHRONIZING_CORE...' : 'AUTHORIZE_GLOBAL_PROTOCOL_SYNC'}</span>
+            <div className="absolute top-0 left-0 w-full h-full bg-white/20 -translate-x-full group-hover/save:animate-[shimmer_3s_infinite]" />
+          </button>
         </div>
       </div>
-
-      {/* Save Button */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button
-          onClick={handleSaveSettings}
-          disabled={saving}
-          style={{
-            padding: '12px 24px',
-            background: saving ? '#9ca3af' : 'linear-gradient(135deg, #667eea, #764ba2)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: saving ? 'not-allowed' : 'pointer',
-            fontSize: '14px',
-            fontWeight: '600',
-            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            if (!saving) {
-              e.target.style.transform = 'translateY(-1px)';
-              e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.3)';
-          }}
-        >
-          {saving ? 'Saving...' : 'Save Settings'}
-        </button>
-      </div>
+      <div className="absolute -bottom-64 -right-64 w-[800px] h-[800px] bg-indigo-500/10 rounded-full blur-[200px] pointer-events-none" />
     </div>
   );
 };

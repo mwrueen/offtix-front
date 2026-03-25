@@ -4,27 +4,21 @@ import { useToast } from '../context/ToastContext';
 import { useSocket } from '../context/SocketContext';
 import { getCookie } from '../utils/cookies';
 import Layout from './Layout';
+import PageHeader from './PageHeader';
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
-const currencySymbols = {
-  USD: '$', EUR: '€', GBP: '£', JPY: '¥', AUD: 'A$', CAD: 'C$',
-  CHF: 'CHF', CNY: '¥', INR: '₹', SGD: 'S$', HKD: 'HK$', NZD: 'NZ$',
-  SEK: 'kr', NOK: 'kr', DKK: 'kr', MXN: 'MX$', BRL: 'R$', ZAR: 'R',
-  AED: 'د.إ', SAR: '﷼'
-};
+const currencySymbols = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', INR: '₹', BDT: '৳' };
 
 const typeConfig = {
-  task_ready: { icon: '✅', color: 'text-emerald-500', bg: 'bg-emerald-50', label: 'Task Ready' },
-  task_send_back: { icon: '↩️', color: 'text-amber-500', bg: 'bg-amber-50', label: 'Sent Back' },
-  task_role_handoff: { icon: '🔄', color: 'text-blue-500', bg: 'bg-blue-50', label: 'Role Handoff' },
-  task_role_assignment: { icon: '🎯', color: 'text-violet-500', bg: 'bg-violet-50', label: 'Role Assigned' },
-  task_role_completed: { icon: '🏁', color: 'text-emerald-500', bg: 'bg-emerald-50', label: 'Role Completed' },
-  project_assignment: { icon: '📁', color: 'text-cyan-500', bg: 'bg-cyan-50', label: 'Project' },
-  salary_update: { icon: '💰', color: 'text-green-500', bg: 'bg-green-50', label: 'Salary Update' },
-  role_change: { icon: '👤', color: 'text-indigo-500', bg: 'bg-indigo-50', label: 'Role Change' },
-  general: { icon: '🔔', color: 'text-slate-500', bg: 'bg-slate-50', label: 'General' },
-  invitation: { icon: '✉️', color: 'text-blue-500', bg: 'bg-blue-50', label: 'Invitation' },
+  task_ready: { icon: '✅', color: 'indigo-500', label: 'DIRECTIVE_READY' },
+  task_send_back: { icon: '↩️', color: 'rose-500', label: 'LOG_REVERTED' },
+  task_role_handoff: { icon: '🔄', color: 'emerald-500', label: 'PROTOCOL_HANDOFF' },
+  task_role_assignment: { icon: '🎯', color: 'indigo-600', label: 'ROLE_ASSIGNED' },
+  task_role_completed: { icon: '🏁', color: 'emerald-600', label: 'UNIT_COMPLETED' },
+  project_assignment: { icon: '📁', color: 'slate-950', label: 'SECTOR_PROJECT' },
+  salary_update: { icon: '💰', color: 'emerald-500', label: 'COMP_UPDATE' },
+  role_change: { icon: '👤', color: 'indigo-500', label: 'AUTH_SHIFT' },
+  general: { icon: '🔔', color: 'slate-400', label: 'SYSTEM_LOG' },
+  invitation: { icon: '✉️', color: 'indigo-600', label: 'NEXUS_INVITE' },
 };
 
 const getConfig = (type) => typeConfig[type] || typeConfig.general;
@@ -33,16 +27,14 @@ function timeAgo(dateStr) {
   if (!dateStr) return '';
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return 'REAL_TIME';
+  if (mins < 60) return `${mins}M_AGO`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return `${hours}H_AGO`;
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString();
+  if (days < 7) return `${days}D_AGO`;
+  return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toUpperCase();
 }
-
-// ─── component ───────────────────────────────────────────────────────────────
 
 const Notifications = () => {
   const toast = useToast();
@@ -55,16 +47,12 @@ const Notifications = () => {
   const [processingInvitation, setProcessingInvitation] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
-  // On mount: fetch data and clear badge
   useEffect(() => {
     fetchAll();
     clearUnreadCount();
   }, [clearUnreadCount]);
 
-  const authHeaders = () => ({
-    Authorization: `Bearer ${getCookie('authToken')}`,
-    'Content-Type': 'application/json',
-  });
+  const authHeaders = () => ({ Authorization: `Bearer ${getCookie('authToken')}`, 'Content-Type': 'application/json' });
 
   const fetchAll = async () => {
     setLoading(true);
@@ -78,45 +66,30 @@ const Notifications = () => {
         const data = await notifRes.json();
         setNotifications(data.notifications || []);
       }
-    } catch (err) {
-      console.error('Error fetching notifications:', err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error('Core_Log_Query_Error', err); }
+    finally { setLoading(false); }
   };
 
-  // ── Invitation actions ────────────────────────────────────────────────────
   const handleAcceptInvitation = async (id) => {
     setProcessingInvitation(id);
     try {
       const res = await fetch(`/api/invitations/${id}/accept`, { method: 'POST', headers: authHeaders() });
-      if (res.ok) {
-        toast?.showToast?.('Invitation accepted!', 'success');
-        setTimeout(() => window.location.reload(), 1500);
-      } else {
-        toast?.showToast?.((await res.json()).message || 'Failed to accept', 'error');
-      }
-    } catch {
-      toast?.showToast?.('Failed to accept invitation', 'error');
-    } finally {
-      setProcessingInvitation(null);
-    }
+      if (res.ok) { toast?.success?.('Invitation protocol verified!'); setTimeout(() => window.location.reload(), 1500); }
+      else { toast?.error?.((await res.json()).message || 'Auth failure'); }
+    } catch { toast?.error?.('Auth failure during nexus handshake'); }
+    finally { setProcessingInvitation(null); }
   };
 
   const handleRejectInvitation = async (id) => {
     setProcessingInvitation(id);
     try {
       const res = await fetch(`/api/invitations/${id}/reject`, { method: 'POST', headers: authHeaders() });
-      if (res.ok) { toast?.showToast?.('Invitation declined', 'success'); fetchAll(); }
-      else toast?.showToast?.('Failed to decline', 'error');
-    } catch {
-      toast?.showToast?.('Failed to decline invitation', 'error');
-    } finally {
-      setProcessingInvitation(null);
-    }
+      if (res.ok) { toast?.success?.('Invitation purged'); fetchAll(); }
+      else toast?.error?.('Purge failed');
+    } catch { toast?.error?.('Expunge directive failed'); }
+    finally { setProcessingInvitation(null); }
   };
 
-  // ── Notification actions ──────────────────────────────────────────────────
   const markAsRead = async (id) => {
     try {
       await fetch(`/api/notifications/${id}/read`, { method: 'PUT', headers: authHeaders() });
@@ -128,7 +101,7 @@ const Notifications = () => {
     try {
       await fetch('/api/notifications/mark-all-read', { method: 'PUT', headers: authHeaders() });
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      toast?.showToast?.('All marked as read', 'success');
+      toast?.success?.('All nodes synchronized');
     } catch { }
   };
 
@@ -137,9 +110,7 @@ const Notifications = () => {
     try {
       const res = await fetch(`/api/notifications/${id}`, { method: 'DELETE', headers: authHeaders() });
       if (res.ok) setNotifications(prev => prev.filter(n => n._id !== id));
-    } catch { } finally {
-      setDeletingId(null);
-    }
+    } catch { } finally { setDeletingId(null); }
   };
 
   const handleNotifClick = (notif) => {
@@ -150,225 +121,126 @@ const Notifications = () => {
     }
   };
 
-  const unreadNotifications = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  if (loading) {
-    return (
-      <Layout>
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          {/* Skeleton header */}
-          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-10 rounded-2xl mb-8 animate-pulse">
-            <div className="w-48 h-8 bg-white/20 rounded-lg mb-2" />
-            <div className="w-32 h-4 bg-white/10 rounded-md" />
-          </div>
-          {[1, 2, 3].map(i => (
-            <div key={i} className="bg-white rounded-xl p-6 mb-4 shadow-sm border border-slate-100 animate-pulse">
-              <div className="flex gap-4 items-center">
-                <div className="w-12 h-12 rounded-xl bg-slate-50" />
-                <div className="flex-1">
-                  <div className="w-3/5 h-4 bg-slate-50 rounded mb-2" />
-                  <div className="w-4/5 h-3 bg-slate-50 rounded" />
-                </div>
-              </div>
-            </div>
-          ))}
+  if (loading) return (
+    <Layout>
+      <div className="max-w-6xl mx-auto px-10 py-16 animate-pulse space-y-16">
+        <div className="h-48 bg-slate-950 rounded-[4rem] w-full" />
+        <div className="space-y-8">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-white rounded-[3rem] border border-slate-50" />)}
         </div>
-      </Layout>
-    );
-  }
-
-  const totalItems = invitations.length + notifications.length;
+      </div>
+    </Layout>
+  );
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-[1400px] mx-auto px-10 py-16 space-y-16 animate-in fade-in duration-1000">
+        <PageHeader
+          title="ALERT_LOG_REGISTRY"
+          subtitle="System-wide operational updates and personnel nexus invitations."
+          icon={<div className="w-16 h-16 bg-slate-950 text-white rounded-full flex items-center justify-center text-3xl shadow-24 border-4 border-white/10 italic">🔔</div>}
+          stats={[{ label: 'UNOBSERVED_NODES', value: unreadCount }, { label: 'NEXUS_PROPOSALS', value: invitations.length }]}
+          actions={unreadCount > 0 && (
+            <button onClick={markAllAsRead} className="px-12 py-5 bg-slate-950 text-white rounded-[2.5rem] font-black text-[10px] uppercase tracking-[0.4em] shadow-24 hover:bg-black transition-all active:scale-95 italic">FLUSH_BUFFER_REGISTRY</button>
+          )}
+        />
 
-        {/* ── Header ── */}
-        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-10 rounded-2xl mb-8 shadow-xl shadow-indigo-200/50 text-white">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center border-2 border-white/30">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                </svg>
+        <div className="space-y-20">
+          {/* Invitations Section */}
+          {invitations.length > 0 && (
+            <section className="space-y-10">
+              <div className="flex items-center gap-6 px-4">
+                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.5em] italic">CRITICAL_AMBASSADOR_SIGNALS</span>
+                <div className="flex-1 h-px bg-indigo-100" />
               </div>
-              <div>
-                <h1 className="m-0 text-3xl font-bold">Notifications</h1>
-                <p className="m-0 text-indigo-50/80">
-                  {totalItems === 0 ? 'All caught up!' : `${totalItems} item${totalItems !== 1 ? 's' : ''}`}
-                  {unreadNotifications > 0 && ` · ${unreadNotifications} unread`}
-                </p>
-              </div>
-            </div>
 
-            {unreadNotifications > 0 && (
-              <button
-                onClick={markAllAsRead}
-                className="bg-white/20 border border-white/30 text-white rounded-xl px-5 py-2.5 cursor-pointer text-sm font-semibold backdrop-blur-md hover:bg-white/30 transition-all active:scale-95"
-              >
-                ✓ Mark all as read
-              </button>
-            )}
-          </div>
-        </div>
+              <div className="grid grid-cols-1 gap-8">
+                {invitations.map(inv => (
+                  <div key={inv._id} className="group/inv bg-white p-12 rounded-[4.5rem] border border-indigo-100 shadow-24 shadow-indigo-600/5 hover:shadow-indigo-600/10 transition-all duration-700 relative overflow-hidden flex flex-col xl:flex-row items-center gap-12">
+                    <div className="w-28 h-28 rounded-[3rem] bg-slate-950 text-white flex items-center justify-center text-4xl font-black italic shadow-24 group-hover/inv:rotate-6 transition-all duration-1000 shrink-0 border-4 border-white">
+                      {inv.company?.name?.charAt(0)}
+                    </div>
 
-        {/* ── Company Invitations ── */}
-        {invitations.length > 0 && (
-          <div className="mb-8">
-            <h2 className="m-0 mb-4 text-xl font-bold text-slate-800 flex items-center gap-2.5">
-              ✉️ Company Invitations
-              <span className="bg-blue-500 text-white rounded-full px-2.5 py-0.5 text-xs font-bold">
-                {invitations.length}
-              </span>
-            </h2>
-            <div className="flex flex-col gap-4">
-              {invitations.map(inv => (
-                <div key={inv._id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                  <div className="flex justify-between items-start mb-4 flex-wrap gap-3">
-                    <div className="flex-1">
-                      <h3 className="m-0 mb-1.5 text-xl font-bold text-slate-800">
-                        {inv.company?.name}
-                      </h3>
-                      {inv.company?.description && (
-                        <p className="m-0 mb-3 text-sm text-slate-500 leading-relaxed">
-                          {inv.company.description}
-                        </p>
-                      )}
-                      <div className="flex gap-4 flex-wrap text-sm text-slate-500">
-                        <span>
-                          🎭 Role: <strong className="text-slate-800">{inv.designation}</strong>
-                        </span>
-                        {inv.salary > 0 && (
-                          <span>
-                            💰 Salary: <strong className="text-emerald-500">
-                              {currencySymbols[inv.company?.currency || 'USD']}{inv.salary.toLocaleString()}
-                            </strong>
-                          </span>
-                        )}
-                        <span>
-                          👤 Invited by: <strong className="text-slate-800">{inv.invitedBy?.name}</strong>
-                        </span>
+                    <div className="flex-1 min-w-0 text-center xl:text-left space-y-6">
+                      <div>
+                        <h3 className="text-3xl font-black text-slate-950 uppercase italic tracking-tighter group-hover/inv:text-indigo-600 transition-colors">{inv.company?.name} <span className="text-[10px] font-black text-slate-400 opacity-40 ml-4 tracking-[0.2em]">#{inv.company?._id?.slice(-8).toUpperCase()}</span></h3>
+                        <p className="text-xs font-semibold text-slate-500 italic mt-3 uppercase tracking-widest opacity-60 leading-relaxed max-w-2xl">{inv.company?.description || 'MISSION_DIRECTIVES_PENDING_HANDSHAKE'}</p>
+                      </div>
+
+                      <div className="flex flex-wrap justify-center xl:justify-start gap-4">
+                        {[
+                          { label: 'AUTH_ROLE', val: inv.designation, color: 'indigo' },
+                          { label: 'ALLOC_COMP', val: inv.salary > 0 ? `${currencySymbols[inv.company?.currency || 'USD']}${inv.salary.toLocaleString()}` : 'N/A', color: 'emerald' },
+                          { label: 'AGENT_ID', val: inv.invitedBy?.name?.toUpperCase(), color: 'slate' }
+                        ].map((stat, i) => (
+                          <div key={i} className={`px-6 py-3 bg-${stat.color}-50/50 border border-${stat.color}-100 rounded-2xl flex items-center gap-4`}>
+                            <span className={`text-[9px] font-black text-${stat.color}-400 uppercase tracking-widest italic`}>{stat.label}:</span>
+                            <span className={`text-[11px] font-black text-${stat.color}-600 uppercase italic`}>{stat.val}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
+
+                    <div className="flex flex-col gap-4 w-full xl:w-60">
+                      <button onClick={() => handleAcceptInvitation(inv._id)} disabled={processingInvitation === inv._id} className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black text-[10px] uppercase tracking-[0.3em] shadow-24 hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-50 italic">ACCEPT_NEXUS</button>
+                      <button onClick={() => handleRejectInvitation(inv._id)} disabled={processingInvitation === inv._id} className="w-full py-5 bg-white text-rose-500 border-2 border-rose-100 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.3em] hover:bg-rose-50 hover:border-rose-200 active:scale-95 transition-all italic">ABORT_SIGNAL</button>
+                    </div>
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
                   </div>
-                  <div className="flex gap-3 pt-4 border-t border-slate-100">
-                    <button
-                      onClick={() => handleAcceptInvitation(inv._id)}
-                      disabled={processingInvitation === inv._id}
-                      className={`flex-1 py-3 bg-gradient-to-br from-emerald-400 to-emerald-600 text-white border-none rounded-xl font-semibold text-sm shadow-lg shadow-emerald-100 transition-all ${processingInvitation === inv._id ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:shadow-emerald-200 cursor-pointer active:scale-95'}`}
-                    >
-                      {processingInvitation === inv._id ? 'Processing...' : 'Accept Invitation'}
-                    </button>
-                    <button
-                      onClick={() => handleRejectInvitation(inv._id)}
-                      disabled={processingInvitation === inv._id}
-                      className={`flex-1 py-3 bg-white text-slate-600 border border-slate-200 rounded-xl font-semibold text-sm shadow-sm transition-all ${processingInvitation === inv._id ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50 hover:border-slate-300 cursor-pointer active:scale-95'}`}
-                    >
-                      Decline
-                    </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Operational Logs */}
+          <section className="space-y-10">
+            <div className="flex items-center gap-6 px-4">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em] italic">TERMINAL_ACTIVITY_STREAM</span>
+              <div className="flex-1 h-px bg-slate-100" />
+            </div>
+
+            <div className="space-y-6">
+              {notifications.length > 0 ? (
+                notifications.map(notif => {
+                  const cfg = getConfig(notif.type);
+                  const isTask = notif.relatedModel === 'Task' || notif.type?.startsWith('task_');
+                  return (
+                    <div key={notif._id} onClick={() => handleNotifClick(notif)} className={`group relative p-10 rounded-[3.5rem] border transition-all duration-700 flex items-center gap-10 overflow-hidden ${notif.isRead ? 'bg-white border-slate-100 shadow-sm opacity-60 grayscale hover:grayscale-0 hover:opacity-100' : `bg-white border-${cfg.color}/20 shadow-24 shadow-${cfg.color}/5 hover:border-${cfg.color}/40`}`}>
+                      {!notif.isRead && <div className="absolute left-0 top-0 w-2.5 h-full bg-indigo-600 shadow-[0_0_20px_rgba(79,70,229,0.5)] animate-pulse" />}
+                      <div className={`w-20 h-20 rounded-[2rem] bg-slate-50 border border-slate-100 flex items-center justify-center text-4xl shadow-inner shrink-0 group-hover:scale-110 group-hover:-rotate-6 transition-all duration-1000 ${notif.isRead ? '' : 'bg-white group-hover:shadow-24'}`}>
+                        {cfg.icon}
+                      </div>
+
+                      <div className="flex-1 min-w-0 space-y-4">
+                        <div className="flex items-center gap-6 flex-wrap">
+                          <span className={`text-[9px] font-black uppercase tracking-[0.4em] italic px-5 py-1.5 rounded-xl border border-current/10 bg-slate-50 text-${cfg.color}`}> {cfg.label} </span>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-100/50 px-4 py-1.5 rounded-xl italic"> {timeAgo(notif.createdAt)} </span>
+                        </div>
+                        <h3 className={`text-xl font-black uppercase italic tracking-tighter ${notif.isRead ? 'text-slate-500' : 'text-slate-950'}`}> {notif.title} </h3>
+                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] italic opacity-60 line-clamp-1 max-w-4xl"> {notif.message} </p>
+                      </div>
+
+                      <div className="flex gap-4 shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-700 translate-x-10 group-hover:translate-x-0" onClick={e => e.stopPropagation()}>
+                        {!notif.isRead && <button onClick={e => { e.stopPropagation(); markAsRead(notif._id); }} className="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-2xl shadow-24 hover:bg-black transition-all">✓</button>}
+                        <button onClick={e => { e.stopPropagation(); deleteNotification(notif._id); }} disabled={deletingId === notif._id} className="w-14 h-14 rounded-2xl bg-white border-2 border-rose-100 text-rose-500 flex items-center justify-center text-2xl shadow-sm hover:bg-rose-500 hover:text-white transition-all">🗑</button>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-40 bg-white rounded-[5rem] border-4 border-dashed border-slate-100 text-center space-y-12 animate-in zoom-in-95 group">
+                  <div className="text-9xl grayscale opacity-10 group-hover:scale-110 transition-transform duration-1000 inline-block">🛰️</div>
+                  <div>
+                    <h3 className="text-4xl font-black text-slate-950 uppercase italic tracking-tighter">QUIESCENT_VOID_STABLE</h3>
+                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.6em] italic mt-6">PERIMETER_CLEAR // BACKGROUND_SURVEILLANCE_ACTIVE</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Task & System Notifications ── */}
-        {notifications.length > 0 && (
-          <div className="mb-8">
-            <h2 className="m-0 mb-4 text-xl font-bold text-slate-800 flex items-center gap-2.5">
-              🔔 Notifications
-              {unreadNotifications > 0 && (
-                <span className="bg-red-500 text-white rounded-full px-2.5 py-0.5 text-xs font-bold">
-                  {unreadNotifications} new
-                </span>
               )}
-            </h2>
-
-            <div className="flex flex-col gap-2.5">
-              {notifications.map(notif => {
-                const cfg = getConfig(notif.type);
-                const isTask = notif.relatedModel === 'Task' || notif.type?.startsWith('task_');
-                return (
-                  <div
-                    key={notif._id}
-                    onClick={() => handleNotifClick(notif)}
-                    className={`${notif.isRead ? 'bg-white border-slate-200' : `${cfg.bg} border-current/20 shadow-sm`} p-5 rounded-2xl shadow-sm border flex items-start gap-4 transition-all relative ${isTask ? 'cursor-pointer hover:shadow-md hover:border-slate-300' : 'cursor-default'}`}
-                  >
-                    {/* Unread dot */}
-                    {!notif.isRead && (
-                      <div className={`absolute top-5 right-5 w-2 h-2 rounded-full ${cfg.bg.replace('bg-', 'bg-') || 'bg-blue-500'} ${cfg.color} shadow-lg`} style={{ boxShadow: `0 0 10px currentColor` }} />
-                    )}
-
-                    {/* Icon */}
-                    <div className={`${cfg.bg} border border-current/10 w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 transition-transform group-hover:scale-110`}>
-                      {cfg.icon}
-                    </div>
-
-                    {/* Body */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${cfg.color}`}>
-                          {cfg.label}
-                        </span>
-                        <span className="text-xs text-slate-400">
-                          {timeAgo(notif.createdAt)}
-                        </span>
-                      </div>
-                      <div className={`text-base font-bold text-slate-800 mb-1 ${notif.isRead ? 'font-semibold' : 'font-bold'}`}>
-                        {notif.title}
-                      </div>
-                      <div className="text-sm text-slate-500 leading-relaxed">
-                        {notif.message}
-                      </div>
-                      {isTask && (
-                        <div className={`text-xs ${cfg.color} font-bold mt-2 hover:underline inline-flex items-center gap-1`}>
-                          View task details <span className="text-[14px]">→</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-col gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
-                      {!notif.isRead && (
-                        <button
-                          onClick={() => markAsRead(notif._id)}
-                          title="Mark as read"
-                          className={`bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 cursor-pointer text-[10px] text-slate-500 font-bold transition-all hover:bg-slate-50 hover:border-slate-300 hover:${cfg.color} active:scale-95 whitespace-nowrap`}
-                        >
-                          ✓ Read
-                        </button>
-                      )}
-                      <button
-                        onClick={() => deleteNotification(notif._id)}
-                        disabled={deletingId === notif._id}
-                        title="Delete"
-                        className={`bg-white border border-red-100 rounded-lg px-2.5 py-1.5 cursor-pointer text-xs text-red-500 font-bold transition-all hover:bg-red-50 hover:border-red-200 active:scale-95 ${deletingId === notif._id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        {deletingId === notif._id ? '…' : '🗑'}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
             </div>
-          </div>
-        )}
-
-        {/* ── Empty State ── */}
-        {totalItems === 0 && (
-          <div className="bg-white p-16 rounded-3xl text-center shadow-sm border border-slate-100">
-            <div className="text-7xl mb-6 grayscale opacity-80">🎉</div>
-            <h3 className="m-0 mb-3 text-2xl font-bold text-slate-800">
-              All Caught Up!
-            </h3>
-            <p className="m-0 text-base text-slate-500">
-              You have no new notifications at this time.
-            </p>
-          </div>
-        )}
-
+          </section>
+        </div>
       </div>
     </Layout>
   );

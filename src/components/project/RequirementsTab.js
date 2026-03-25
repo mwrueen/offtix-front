@@ -12,7 +12,6 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterType, setFilterType] = useState('all');
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [pendingFiles, setPendingFiles] = useState([]);
   const fileInputRef = useRef(null);
@@ -28,7 +27,6 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
   });
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
 
-  // Quill editor modules configuration
   const quillModules = {
     toolbar: [
       [{ 'header': [1, 2, 3, false] }],
@@ -63,7 +61,6 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
         requirementId = response.data._id;
       }
 
-      // Upload pending files
       if (pendingFiles.length > 0 && requirementId) {
         setUploadingFiles(true);
         for (const file of pendingFiles) {
@@ -98,7 +95,6 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
     });
     setShowForm(false);
     setEditingRequirement(null);
-    setShowAdvanced(false);
     setPendingFiles([]);
   };
 
@@ -131,7 +127,6 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
     });
     setEditingRequirement(requirement);
     setShowForm(true);
-    setShowAdvanced(true);
     setPendingFiles([]);
   };
 
@@ -154,28 +149,27 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
     }
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      'draft': { bg: '#f4f5f7', text: '#5e6c84', border: '#dfe1e6' },
-      'approved': { bg: '#e6f7ff', text: '#0052cc', border: '#91d5ff' },
-      'in-progress': { bg: '#fff4e6', text: '#d46b08', border: '#ffcc95' },
-      'completed': { bg: '#f6ffed', text: '#389e0d', border: '#b7eb8f' },
-      'rejected': { bg: '#fff1f0', text: '#cf1322', border: '#ffa39e' }
+  const getStatusBadge = (status) => {
+    const statusMap = {
+      'draft': 'bg-slate-50 text-slate-600 border-slate-200',
+      'approved': 'bg-indigo-50 text-indigo-700 border-indigo-200 font-bold',
+      'in-progress': 'bg-amber-50 text-amber-700 border-amber-200',
+      'completed': 'bg-emerald-50 text-emerald-700 border-emerald-200 font-black',
+      'rejected': 'bg-rose-50 text-rose-700 border-rose-200'
     };
-    return colors[status] || colors.draft;
+    return statusMap[status] || 'bg-slate-50 text-slate-600 border-slate-200';
   };
 
-  const getPriorityColor = (priority) => {
-    const colors = {
-      'low': { bg: '#f6ffed', text: '#389e0d', border: '#b7eb8f' },
-      'medium': { bg: '#fff4e6', text: '#d46b08', border: '#ffcc95' },
-      'high': { bg: '#fff1f0', text: '#cf1322', border: '#ffa39e' },
-      'critical': { bg: '#f9f0ff', text: '#722ed1', border: '#d3adf7' }
+  const getPriorityBadge = (priority) => {
+    const priorityMap = {
+      'low': 'bg-slate-100 text-slate-500',
+      'medium': 'bg-blue-50 text-blue-600',
+      'high': 'bg-orange-50 text-orange-600 font-bold',
+      'critical': 'bg-rose-50 text-rose-600 font-black'
     };
-    return colors[priority] || colors.medium;
+    return priorityMap[priority] || 'bg-slate-100 text-slate-500';
   };
 
-  // Filter requirements based on search and filters
   const filteredRequirements = requirements.filter(req => {
     const matchesSearch = req.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       req.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -186,118 +180,45 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
   });
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#fafbfc', minHeight: '100vh' }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '24px',
-        padding: '0 4px'
-      }}>
+    <div className="p-6 bg-slate-50 min-h-screen animate-in fade-in duration-500">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 style={{
-            margin: '0 0 4px 0',
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#172b4d',
-            letterSpacing: '-0.5px'
-          }}>
-            Requirements
-          </h1>
-          <p style={{
-            margin: 0,
-            fontSize: '16px',
-            color: '#5e6c84',
-            fontWeight: '400'
-          }}>
-            {filteredRequirements.length} of {requirements.length} requirement{requirements.length !== 1 ? 's' : ''}
+          <h1 className="text-2xl font-bold text-slate-900">Project Requirements</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {filteredRequirements.length} of {requirements.length} entries tracked
           </p>
         </div>
         {isProjectOwner && (
           <button
-            onClick={() => setShowForm(!showForm)}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: showForm ? '#f4f5f7' : '#0052cc',
-              color: showForm ? '#5e6c84' : 'white',
-              border: showForm ? '1px solid #dfe1e6' : 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-              transition: 'all 0.2s ease',
-              boxShadow: showForm ? 'none' : '0 2px 4px rgba(0, 82, 204, 0.2)'
+            onClick={() => {
+              if (showForm) resetForm();
+              else setShowForm(true);
             }}
+            className={`px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 ${showForm ? 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
           >
-            {showForm ? '✕ Cancel' : '+ Add Requirement'}
+            {showForm ? 'Cancel' : '+ Add Requirement'}
           </button>
         )}
       </div>
 
-      {/* Search and Filter Bar */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        border: '1px solid #e1e5e9',
-        borderRadius: '12px',
-        padding: '20px',
-        marginBottom: '24px',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '50px' }}>
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#5e6c84',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Search
-            </label>
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="md:col-span-2 space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Search</label>
             <input
               type="text"
-              placeholder="Search requirements..."
+              placeholder="Filter by title..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 16px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'border-color 0.2s ease'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#0052cc'}
-              onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 transition-all font-medium"
             />
           </div>
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#5e6c84',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Status
-            </label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Status</label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 16px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '8px',
-                fontSize: '14px',
-                backgroundColor: '#ffffff',
-                cursor: 'pointer'
-              }}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 cursor-pointer font-medium"
             >
               <option value="all">All Statuses</option>
               <option value="draft">Draft</option>
@@ -307,30 +228,12 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
               <option value="rejected">Rejected</option>
             </select>
           </div>
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#5e6c84',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Priority
-            </label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Priority</label>
             <select
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 16px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '8px',
-                fontSize: '14px',
-                backgroundColor: '#ffffff',
-                cursor: 'pointer'
-              }}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 cursor-pointer font-medium"
             >
               <option value="all">All Priorities</option>
               <option value="low">Low</option>
@@ -339,1017 +242,253 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
               <option value="critical">Critical</option>
             </select>
           </div>
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#5e6c84',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Type
-            </label>
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 16px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '8px',
-                fontSize: '14px',
-                backgroundColor: '#ffffff',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="all">All Types</option>
-              <option value="functional">Functional</option>
-              <option value="non-functional">Non-Functional</option>
-              <option value="business">Business</option>
-              <option value="technical">Technical</option>
-              <option value="user-story">User Story</option>
-            </select>
-          </div>
         </div>
       </div>
 
       {showForm && (
-        <div style={{
-          backgroundColor: '#ffffff',
-          border: '2px solid #e1e5e9',
-          borderRadius: '16px',
-          padding: '40px',
-          marginBottom: '32px',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            marginBottom: '32px',
-            paddingBottom: '24px',
-            borderBottom: '2px solid #f4f5f7'
-          }}>
-            <div style={{
-              width: '56px',
-              height: '56px',
-              backgroundColor: '#e6f7ff',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '24px',
-              boxShadow: '0 2px 8px rgba(0, 82, 204, 0.1)'
-            }}>
-              📋
-            </div>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#172b4d', letterSpacing: '-0.5px' }}>
-                {editingRequirement ? 'Edit Requirement' : 'Create New Requirement'}
-              </h3>
-              <p style={{ margin: '6px 0 0 0', fontSize: '15px', color: '#5e6c84', lineHeight: '1.5' }}>
-                {editingRequirement ? 'Update requirement details and specifications' : 'Define project requirements and specifications'}
-              </p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 mb-8 shadow-md">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-xl">📝</div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-900">{editingRequirement ? 'Edit Requirement' : 'Add New Requirement'}</h3>
+              <p className="text-sm text-slate-500">Document detailed functional specifications.</p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            {/* Main Form - Title and Description */}
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '10px',
-                fontSize: '14px',
-                fontWeight: '700',
-                color: '#172b4d',
-                letterSpacing: '0.2px'
-              }}>
-                Requirement Title <span style={{ color: '#cf1322' }}>*</span>
-              </label>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 ml-1">Requirement Title <span className="text-rose-500">*</span></label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
-                placeholder="Enter a clear, descriptive title"
-                style={{
-                  boxSizing: 'border-box',
-                  width: '100%',
-                  padding: '14px 16px',
-                  border: '2px solid #e1e5e9',
-                  borderRadius: '10px',
-                  fontSize: '15px',
-                  transition: 'all 0.2s ease',
-                  outline: 'none',
-                  backgroundColor: '#fafbfc'
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#0052cc';
-                  e.target.style.backgroundColor = '#ffffff';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#e1e5e9';
-                  e.target.style.backgroundColor = '#fafbfc';
-                  e.target.style.boxShadow = 'none';
-                }}
+                placeholder="e.g. Exportable Analytics Dashboard"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400"
               />
             </div>
 
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '10px',
-                fontSize: '14px',
-                fontWeight: '700',
-                color: '#172b4d',
-                letterSpacing: '0.2px'
-              }}>
-                Description <span style={{ color: '#6b778c', fontWeight: '400' }}>(optional)</span>
-              </label>
-              <div style={{
-                border: '2px solid #e1e5e9',
-                borderRadius: '10px',
-                overflow: 'hidden',
-                backgroundColor: '#fafbfc'
-              }}>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 ml-1">Detailed Documentation</label>
+              <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-inner">
                 <ReactQuill
                   theme="snow"
                   value={formData.description}
                   onChange={(value) => setFormData({ ...formData, description: value })}
                   modules={quillModules}
                   formats={quillFormats}
-                  placeholder="Provide detailed description of the requirement..."
-                  style={{
-                    backgroundColor: '#ffffff',
-                  }}
+                  className="bg-white"
                 />
               </div>
-              <style>
-                {`
-                  .ql-container {
-                    min-height: 150px;
-                    font-size: 15px;
-                    font-family: inherit;
-                  }
-                  .ql-editor {
-                    min-height: 150px;
-                  }
-                  .ql-toolbar {
-                    border: none !important;
-                    border-bottom: 1px solid #e1e5e9 !important;
-                    background: #f8f9fa;
-                  }
-                  .ql-container {
-                    border: none !important;
-                  }
-                `}
-              </style>
             </div>
 
-            {/* File Upload Section */}
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '10px',
-                fontSize: '14px',
-                fontWeight: '700',
-                color: '#172b4d',
-                letterSpacing: '0.2px'
-              }}>
-                Attachments <span style={{ color: '#6b778c', fontWeight: '400' }}>(optional)</span>
-              </label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 ml-1">Type</label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none cursor-pointer"
+                >
+                  <option value="functional">Functional</option>
+                  <option value="non-functional">Non-Functional</option>
+                  <option value="business">Business</option>
+                  <option value="technical">Technical</option>
+                  <option value="user-story">User Story</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 ml-1">Priority</label>
+                <select
+                  value={formData.priority}
+                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none cursor-pointer"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 ml-1">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none cursor-pointer"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="approved">Approved</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+            </div>
 
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileSelect}
-                multiple
-                style={{ display: 'none' }}
-              />
-
+            <div className="space-y-4 pt-4">
+              <label className="text-xs font-bold text-slate-700 ml-1">Attachments</label>
               <div
+                className="border-2 border-dashed border-slate-200 rounded-2xl p-8 flex flex-col items-center justify-center bg-slate-50 hover:bg-white hover:border-indigo-300 transition-all cursor-pointer shadow-inner"
                 onClick={() => fileInputRef.current?.click()}
-                style={{
-                  border: '2px dashed #d9d9d9',
-                  borderRadius: '10px',
-                  padding: '24px',
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  backgroundColor: '#fafbfc',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#0052cc';
-                  e.currentTarget.style.backgroundColor = '#f0f7ff';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#d9d9d9';
-                  e.currentTarget.style.backgroundColor = '#fafbfc';
-                }}
               >
-                <div style={{ fontSize: '32px', marginBottom: '8px' }}>📎</div>
-                <div style={{ color: '#172b4d', fontWeight: '500', marginBottom: '4px' }}>
-                  Click to upload files
-                </div>
-                <div style={{ color: '#6b778c', fontSize: '13px' }}>
-                  or drag and drop files here (max 10MB each)
-                </div>
+                <input type="file" ref={fileInputRef} onChange={handleFileSelect} multiple className="hidden" />
+                <span className="text-3xl mb-2">📎</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Upload relevant project assets</span>
               </div>
 
-              {/* Pending Files List */}
               {pendingFiles.length > 0 && (
-                <div style={{ marginTop: '12px' }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
                   {pendingFiles.map((file, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '10px 12px',
-                        backgroundColor: '#f0f7ff',
-                        borderRadius: '8px',
-                        marginBottom: '8px',
-                        border: '1px solid #bfdbfe'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '18px' }}>📄</span>
-                        <div>
-                          <div style={{ fontSize: '14px', color: '#172b4d', fontWeight: '500' }}>
-                            {file.name}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#6b778c' }}>
-                            {formatFileSize(file.size)}
-                          </div>
+                    <div key={index} className="flex justify-between items-center p-3 bg-white border border-slate-200 rounded-xl shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">📄</span>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-slate-900 line-clamp-1">{file.name}</span>
+                          <span className="text-[10px] text-slate-400 font-medium">{formatFileSize(file.size)}</span>
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removePendingFile(index)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: '#cf1322',
-                          fontSize: '18px',
-                          padding: '4px'
-                        }}
-                      >
-                        ×
-                      </button>
+                      <button type="button" onClick={() => removePendingFile(index)} className="text-rose-500 hover:text-rose-700 font-bold p-1">✕</button>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Advanced Options Toggle */}
-            <div style={{ marginBottom: '24px' }}>
-              <button
-                type="button"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#0052cc',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  padding: '8px 0'
-                }}
-              >
-                <span style={{
-                  transform: showAdvanced ? 'rotate(90deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.2s ease',
-                  display: 'inline-block'
-                }}>
-                  ▶
-                </span>
-                {showAdvanced ? 'Hide Advanced Options' : 'Show Advanced Options'}
-              </button>
-            </div>
-
-            {/* Advanced Options Section */}
-            {showAdvanced && (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '20px',
-                padding: '24px',
-                backgroundColor: '#f8f9fa',
-                borderRadius: '10px',
-                marginBottom: '24px',
-                border: '1px solid #e1e5e9'
-              }}>
-
-                {/* Type */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '8px',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#172b4d'
-                  }}>
-                    Type
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d9d9d9',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      backgroundColor: '#ffffff',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <option value="functional">📦 Functional</option>
-                    <option value="non-functional">⚙️ Non-Functional</option>
-                    <option value="business">💼 Business</option>
-                    <option value="technical">🔧 Technical</option>
-                    <option value="user-story">👤 User Story</option>
-                  </select>
-                </div>
-
-                {/* Priority */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '8px',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#172b4d'
-                  }}>
-                    Priority
-                  </label>
-                  <select
-                    value={formData.priority}
-                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d9d9d9',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      backgroundColor: '#ffffff',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <option value="low">🟢 Low</option>
-                    <option value="medium">🟡 Medium</option>
-                    <option value="high">🟠 High</option>
-                    <option value="critical">🔴 Critical</option>
-                  </select>
-                </div>
-
-                {/* Status */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '8px',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#172b4d'
-                  }}>
-                    Status
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d9d9d9',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      backgroundColor: '#ffffff',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <option value="draft">📝 Draft</option>
-                    <option value="approved">✅ Approved</option>
-                    <option value="in-progress">🔄 In Progress</option>
-                    <option value="completed">✔️ Completed</option>
-                    <option value="rejected">❌ Rejected</option>
-                  </select>
-                </div>
-
-                {/* Assigned To */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '8px',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#172b4d'
-                  }}>
-                    Assigned To
-                  </label>
-                  <select
-                    value={formData.assignedTo}
-                    onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d9d9d9',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      backgroundColor: '#ffffff',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <option value="">👤 Unassigned</option>
-                    {users.map(user => (
-                      <option key={user._id} value={user._id}>👤 {user.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Estimated Hours */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '8px',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#172b4d'
-                  }}>
-                    Estimated Hours
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.estimatedHours}
-                    onChange={(e) => setFormData({ ...formData, estimatedHours: e.target.value })}
-                    placeholder="0"
-                    min="0"
-                    step="0.5"
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d9d9d9',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      backgroundColor: '#ffffff'
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            <div style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '16px',
-              marginTop: '32px',
-              paddingTop: '24px',
-              borderTop: '1px solid #e1e5e9'
-            }}>
-              <button
-                type="button"
-                onClick={resetForm}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#ffffff',
-                  color: '#5e6c84',
-                  border: '1px solid #d9d9d9',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#f4f5f7';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#ffffff';
-                }}
-              >
-                Cancel
-              </button>
+            <div className="flex justify-end gap-3 pt-8 border-t border-slate-100">
+              <button type="button" onClick={resetForm} className="px-6 py-2.5 bg-white text-slate-500 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all">Cancel</button>
               <button
                 type="submit"
                 disabled={uploadingFiles}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: uploadingFiles ? '#91caff' : '#0052cc',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: uploadingFiles ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  boxShadow: '0 2px 8px rgba(0, 82, 204, 0.2)',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-                onMouseEnter={(e) => {
-                  if (!uploadingFiles) {
-                    e.target.style.backgroundColor = '#0747a6';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!uploadingFiles) {
-                    e.target.style.backgroundColor = '#0052cc';
-                  }
-                }}
+                className="px-8 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition-all disabled:opacity-50"
               >
-                {uploadingFiles ? (
-                  <>
-                    <span style={{
-                      display: 'inline-block',
-                      animation: 'spin 1s linear infinite'
-                    }}>⏳</span>
-                    Uploading...
-                  </>
-                ) : (
-                  editingRequirement ? '✓ Update Requirement' : '+ Create Requirement'
-                )}
+                {uploadingFiles ? 'Saving...' : editingRequirement ? 'Update Requirement' : 'Save Requirement'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* List - Only show when form is not visible */}
       {!showForm && (
-        <div style={{
-          display: 'grid',
-          gap: '16px'
-        }}>
-          {filteredRequirements.map((requirement) => (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredRequirements.map(req => (
             <div
-              key={requirement._id}
-              style={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #e1e5e9',
-                borderRadius: '12px',
-                padding: '24px',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.08)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
+              key={req._id}
+              className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all group cursor-pointer flex flex-col"
+              onClick={() => setViewingRequirement(req)}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{
-                    margin: '0 0 8px 0',
-                    fontSize: '18px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    lineHeight: '1.3'
-                  }}>
-                    {requirement.title}
-                  </h3>
-                  <p style={{
-                    margin: '0 0 16px 0',
-                    fontSize: '14px',
-                    color: '#5e6c84',
-                    lineHeight: '1.5'
-                  }}>
-                    {requirement.description}
-                  </p>
-
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-                    <span style={{
-                      ...getStatusColor(requirement.status),
-                      padding: '4px 12px',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      textTransform: 'capitalize',
-                      border: `1px solid ${getStatusColor(requirement.status).border}`
-                    }}>
-                      {requirement.status.replace('-', ' ')}
-                    </span>
-
-                    <span style={{
-                      ...getPriorityColor(requirement.priority),
-                      padding: '4px 12px',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      textTransform: 'capitalize',
-                      border: `1px solid ${getPriorityColor(requirement.priority).border}`
-                    }}>
-                      {requirement.priority} Priority
-                    </span>
-
-                    <span style={{
-                      padding: '4px 12px',
-                      backgroundColor: '#f4f5f7',
-                      color: '#5e6c84',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      textTransform: 'capitalize'
-                    }}>
-                      {requirement.type.replace('-', ' ')}
-                    </span>
-
-                    {requirement.assignedTo && (
-                      <span style={{
-                        padding: '4px 12px',
-                        backgroundColor: '#e6f7ff',
-                        color: '#0052cc',
-                        borderRadius: '16px',
-                        fontSize: '12px',
-                        fontWeight: '600'
-                      }}>
-                        👤 {requirement.assignedTo.name}
-                      </span>
-                    )}
-
-                    {requirement.estimatedHours && (
-                      <span style={{
-                        padding: '4px 12px',
-                        backgroundColor: '#fff4e6',
-                        color: '#d46b08',
-                        borderRadius: '16px',
-                        fontSize: '12px',
-                        fontWeight: '600'
-                      }}>
-                        ⏱️ {requirement.estimatedHours}h
-                      </span>
-                    )}
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-lg shadow-inner ring-1 ring-slate-100 italic">RQ</div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 line-clamp-1 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{req.title}</h3>
+                    <div className="flex gap-2 mt-1">
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase ${getStatusBadge(req.status)}`}>{req.status}</span>
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase ${getPriorityBadge(req.priority)}`}>{req.priority}</span>
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded border border-slate-100 bg-slate-50 text-slate-400 uppercase tracking-tighter">{req.type}</span>
+                    </div>
                   </div>
                 </div>
+                {isProjectOwner && (
+                  <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                    <button onClick={() => handleEdit(req)} className="p-1 px-2 text-slate-400 hover:text-indigo-600 transition-colors text-xs">✎</button>
+                    <button onClick={() => handleDelete(req._id)} className="p-1 px-2 text-slate-400 hover:text-rose-600 transition-colors text-xs">✕</button>
+                  </div>
+                )}
+              </div>
 
-                <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
-                  <button
-                    onClick={() => setViewingRequirement(requirement)}
-                    style={{
-                      padding: '8px 12px',
-                      backgroundColor: '#e6f7ff',
-                      color: '#0052cc',
-                      border: '1px solid #91d5ff',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#0052cc';
-                      e.target.style.color = 'white';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#e6f7ff';
-                      e.target.style.color = '#0052cc';
-                    }}
-                  >
-                    View
-                  </button>
-                  {isProjectOwner && (
-                    <>
-                      <button
-                        onClick={() => handleEdit(requirement)}
-                        style={{
-                          padding: '8px 12px',
-                          backgroundColor: '#f4f5f7',
-                          color: '#5e6c84',
-                          border: '1px solid #dfe1e6',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#0052cc';
-                          e.target.style.color = 'white';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = '#f4f5f7';
-                          e.target.style.color = '#5e6c84';
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(requirement._id)}
-                        style={{
-                          padding: '8px 12px',
-                          backgroundColor: '#fff1f0',
-                          color: '#cf1322',
-                          border: '1px solid #ffa39e',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#cf1322';
-                          e.target.style.color = 'white';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = '#fff1f0';
-                          e.target.style.color = '#cf1322';
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </>
-                  )}
+              <div className="text-sm text-slate-500 line-clamp-3 mb-6 leading-relaxed bg-slate-50 p-4 rounded-xl font-medium flex-1 overflow-hidden" dangerouslySetInnerHTML={{ __html: req.description || 'No detailed documentation' }} />
+
+              <div className="mt-auto pt-4 border-t border-slate-50 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  {req.assignedTo && <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 italic ring-1 ring-slate-100 px-2 py-1 rounded bg-white">👤 {req.assignedTo.name}</div>}
                 </div>
+                <div className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">See Details ⮕</div>
               </div>
             </div>
           ))}
 
-          {filteredRequirements.length === 0 && requirements.length > 0 && (
-            <div style={{
-              textAlign: 'center',
-              padding: '64px 24px',
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              border: '1px solid #e1e5e9'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-                No Requirements Found
-              </h3>
-              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
-                Try adjusting your search or filter criteria.
-              </p>
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setFilterStatus('all');
-                  setFilterPriority('all');
-                  setFilterType('all');
-                }}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#f4f5f7',
-                  color: '#5e6c84',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600'
-                }}
-              >
-                Clear Filters
-              </button>
-            </div>
-          )}
-
-          {requirements.length === 0 && (
-            <div style={{
-              textAlign: 'center',
-              padding: '64px 24px',
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              border: '1px solid #e1e5e9'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-                No Requirements Yet
-              </h3>
-              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
-                Start by creating your first requirement to define project specifications.
-              </p>
-              {isProjectOwner && (
-                <button
-                  onClick={() => setShowForm(true)}
-                  style={{
-                    padding: '12px 24px',
-                    backgroundColor: '#0052cc',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    boxShadow: '0 2px 4px rgba(0, 82, 204, 0.2)'
-                  }}
-                >
-                  Create First Requirement
-                </button>
-              )}
+          {filteredRequirements.length === 0 && (
+            <div className="col-span-full py-24 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-center">
+              <div className="text-4xl mb-4">📋</div>
+              <h3 className="text-lg font-bold text-slate-900">No requirements found</h3>
+              <p className="text-sm text-slate-500 mt-1">Adjust filters or create a new requirement.</p>
+              <button onClick={() => { setSearchTerm(''); setFilterStatus('all'); setFilterPriority('all'); setFilterType('all'); }} className="mt-6 text-xs font-bold text-indigo-600 hover:underline uppercase tracking-widest">Clear Filters</button>
             </div>
           )}
         </div>
       )}
 
-      {/* Details Modal */}
       {viewingRequirement && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '24px'
-        }}
-          onClick={() => setViewingRequirement(null)}
-        >
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            maxWidth: '800px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
-          }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{
-              padding: '32px',
-              borderBottom: '1px solid #e1e5e9',
-              position: 'sticky',
-              top: 0,
-              backgroundColor: '#ffffff',
-              zIndex: 1
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ margin: '0 0 12px 0', fontSize: '24px', fontWeight: '700', color: '#172b4d' }}>
-                    {viewingRequirement.title}
-                  </h2>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    <span style={{
-                      ...getStatusColor(viewingRequirement.status),
-                      padding: '4px 12px',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      textTransform: 'capitalize',
-                      border: `1px solid ${getStatusColor(viewingRequirement.status).border}`
-                    }}>
-                      {viewingRequirement.status.replace('-', ' ')}
-                    </span>
-                    <span style={{
-                      ...getPriorityColor(viewingRequirement.priority),
-                      padding: '4px 12px',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      textTransform: 'capitalize',
-                      border: `1px solid ${getPriorityColor(viewingRequirement.priority).border}`
-                    }}>
-                      {viewingRequirement.priority} Priority
-                    </span>
-                    <span style={{
-                      padding: '4px 12px',
-                      backgroundColor: '#f4f5f7',
-                      color: '#5e6c84',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      textTransform: 'capitalize'
-                    }}>
-                      {viewingRequirement.type.replace('-', ' ')}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setViewingRequirement(null)}
-                  style={{
-                    padding: '8px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '24px',
-                    color: '#5e6c84',
-                    lineHeight: 1
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-
-            <div style={{ padding: '32px' }}>
-              <div style={{ marginBottom: '24px' }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                  Description
-                </h3>
-                <p style={{ margin: 0, fontSize: '16px', color: '#172b4d', lineHeight: '1.6' }}>
-                  {viewingRequirement.description}
-                </p>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
-                {viewingRequirement.assignedTo && (
-                  <div>
-                    <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                      Assigned To
-                    </h3>
-                    <p style={{ margin: 0, fontSize: '16px', color: '#172b4d' }}>
-                      👤 {viewingRequirement.assignedTo.name}
-                    </p>
-                  </div>
-                )}
-                {viewingRequirement.estimatedHours && (
-                  <div>
-                    <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                      Estimated Hours
-                    </h3>
-                    <p style={{ margin: 0, fontSize: '16px', color: '#172b4d' }}>
-                      ⏱️ {viewingRequirement.estimatedHours} hours
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {viewingRequirement.acceptanceCriteria && viewingRequirement.acceptanceCriteria.length > 0 && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[2000] p-4 font-sans" onClick={() => setViewingRequirement(null)}>
+          <div className="bg-white rounded-3xl p-10 w-full max-w-5xl shadow-2xl border border-slate-200 overflow-hidden relative max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-8 flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-2xl border border-slate-100">📋</div>
                 <div>
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                    Acceptance Criteria
-                  </h3>
-                  <ul style={{ margin: 0, paddingLeft: '20px', color: '#172b4d', fontSize: '16px', lineHeight: '1.8' }}>
-                    {viewingRequirement.acceptanceCriteria.map((criteria, index) => (
-                      <li key={index}>{criteria}</li>
-                    ))}
-                  </ul>
+                  <h2 className="text-2xl font-bold text-slate-900 leading-none">{viewingRequirement.title}</h2>
+                  <div className="flex items-center gap-3 mt-4">
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase ${getStatusBadge(viewingRequirement.status)}`}>{viewingRequirement.status}</span>
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase ${getPriorityBadge(viewingRequirement.priority)}`}>{viewingRequirement.priority}</span>
+                  </div>
                 </div>
-              )}
+              </div>
+              <button onClick={() => setViewingRequirement(null)} className="p-2 text-slate-400 hover:text-slate-900 text-2xl leading-none">✕</button>
+            </div>
 
-              <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #e1e5e9', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                {isProjectOwner && (
-                  <>
-                    <button
-                      onClick={() => {
-                        handleEdit(viewingRequirement);
-                        setViewingRequirement(null);
-                      }}
-                      style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#0052cc',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '600'
-                      }}
-                    >
-                      Edit Requirement
-                    </button>
-                    <button
-                      onClick={() => {
-                        setViewingRequirement(null);
-                        handleDelete(viewingRequirement._id);
-                      }}
-                      style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#fff1f0',
-                        color: '#cf1322',
-                        border: '1px solid #ffa39e',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '600'
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </>
+            <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin space-y-10">
+              <div>
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Specifications</h4>
+                <div className="prose prose-slate prose-sm max-w-none bg-slate-50 p-8 rounded-2xl border border-slate-100 text-slate-700 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: viewingRequirement.description || 'No documentation provided.' }} />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Assignment & Estimates</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white border border-slate-100 p-4 rounded-xl">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Owner</span>
+                      <span className="text-sm font-bold text-slate-900">{viewingRequirement.assignedTo?.name || 'Unassigned'}</span>
+                    </div>
+                    <div className="bg-white border border-slate-100 p-4 rounded-xl">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Estimate</span>
+                      <span className="text-sm font-bold text-slate-900">{viewingRequirement.estimatedHours || 0} Hours</span>
+                    </div>
+                  </div>
+                </div>
+
+                {viewingRequirement.attachments?.length > 0 && (
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Attachments</h4>
+                    <div className="grid grid-cols-1 gap-2">
+                      {viewingRequirement.attachments.map((file, i) => (
+                        <a key={i} href={file.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50 transition-all font-sans">
+                          <span className="text-lg">📄</span>
+                          <span className="text-[11px] font-bold text-slate-600 line-clamp-1">{file.name}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
+
+            {isProjectOwner && (
+              <div className="mt-10 pt-8 border-t border-slate-100 flex gap-4 flex-shrink-0">
+                <button onClick={() => { handleEdit(viewingRequirement); }} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-all uppercase tracking-widest">Edit Requirement</button>
+                <button onClick={() => { setViewingRequirement(null); handleDelete(viewingRequirement._id); }} className="flex-1 py-3 bg-slate-50 text-rose-500 border border-slate-200 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all uppercase tracking-widest">Delete</button>
+              </div>
+            )}
           </div>
         </div>
       )}
+
       <DeleteConfirmModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
         onConfirm={confirmDelete}
         title="Delete Requirement"
-        message="Are you sure you want to delete this requirement? This action cannot be undone."
-        itemName={deleteModal.name}
+        message={`Are you sure you want to permanently delete "${deleteModal.name}"? This action cannot be undone.`}
       />
     </div>
   );

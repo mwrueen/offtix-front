@@ -31,74 +31,27 @@ const TaskWorkflow = ({ task, projectId, onTaskUpdate }) => {
   const handleStartWorkflow = async () => {
     try {
       const response = await taskAPI.startWorkflow(projectId, task._id);
-      showToast('Workflow started! First role assignees have been notified.', 'success');
-      if (onTaskUpdate) {
-        onTaskUpdate(response.data);
-      }
+      showToast('Workflow started! Team members have been notified.', 'success');
+      if (onTaskUpdate) onTaskUpdate(response.data);
     } catch (error) {
       showToast(error.response?.data?.error || 'Failed to start workflow', 'error');
     }
   };
 
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setHandoffData(prev => ({
-      ...prev,
-      files: [...prev.files, ...files]
-    }));
-  };
-
-  const removeFile = (index) => {
-    setHandoffData(prev => ({
-      ...prev,
-      files: prev.files.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addUrl = () => {
-    setHandoffData(prev => ({
-      ...prev,
-      urls: [...prev.urls, { title: '', url: '' }]
-    }));
-  };
-
-  const removeUrl = (index) => {
-    setHandoffData(prev => ({
-      ...prev,
-      urls: prev.urls.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateUrl = (index, field, value) => {
-    setHandoffData(prev => ({
-      ...prev,
-      urls: prev.urls.map((url, i) => i === index ? { ...url, [field]: value } : url)
-    }));
-  };
-
   const handleCompleteRole = async () => {
     try {
       setUploading(true);
-      
-      // Prepare form data for file upload
       const formData = new FormData();
       formData.append('comment', handoffData.comment);
       formData.append('urls', JSON.stringify(handoffData.urls.filter(u => u.title && u.url)));
-      
-      // Append files
-      handoffData.files.forEach((file, index) => {
-        formData.append(`files`, file);
-      });
+      handoffData.files.forEach(file => formData.append(`files`, file));
 
-      // Use fetch for multipart/form-data
       const token = localStorage.getItem('token');
       const response = await fetch(
         `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/projects/${projectId}/tasks/${task._id}/workflow/complete-role`,
         {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
+          headers: { 'Authorization': `Bearer ${token}` },
           body: formData
         }
       );
@@ -109,13 +62,10 @@ const TaskWorkflow = ({ task, projectId, onTaskUpdate }) => {
       }
 
       const updatedTask = await response.json();
-      showToast('Role completed and next role assignees have been notified!', 'success');
+      showToast('Step completed and handed off to the next team.', 'success');
       setShowHandoffModal(false);
       setHandoffData({ comment: '', urls: [{ title: '', url: '' }], files: [] });
-      
-      if (onTaskUpdate) {
-        onTaskUpdate(updatedTask);
-      }
+      if (onTaskUpdate) onTaskUpdate(updatedTask);
     } catch (error) {
       showToast(error.message || 'Failed to complete role', 'error');
     } finally {
@@ -123,192 +73,114 @@ const TaskWorkflow = ({ task, projectId, onTaskUpdate }) => {
     }
   };
 
-  const getUserInitials = (user) => {
-    if (!user || !user.name) return '?';
-    const names = user.name.split(' ');
-    return names.length >= 2 
-      ? (names[0][0] + names[names.length - 1][0]).toUpperCase() 
-      : user.name.substring(0, 2).toUpperCase();
-  };
-
-  const getUserColor = (userId) => {
-    const colors = ['#0052cc', '#00875a', '#ff8b00', '#6554c0', '#00b8d9', '#ff5630'];
-    return colors[userId ? userId.charCodeAt(userId.length - 1) % colors.length : 0];
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active': return '#0052cc';
-      case 'completed': return '#36b37e';
-      case 'skipped': return '#ffab00';
-      default: return '#dfe1e6';
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'active': return '▶';
-      case 'completed': return '✓';
-      case 'skipped': return '⊘';
-      default: return '○';
-    }
-  };
-
   return (
-    <div className="mt-6">
-      <div className="text-xs font-semibold text-secondary-600 mb-3 uppercase">
-        🔄 Workflow Roles
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Workflow Progression</h5>
+        {isWorkflowComplete && (
+          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">✓ Completed</span>
+        )}
       </div>
 
-      {!isWorkflowStarted && (
-        <div className="mb-4">
-          <button
-            onClick={handleStartWorkflow}
-            className="w-full px-4 py-2.5 rounded bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
-          >
-            Start Workflow
-          </button>
-          <p className="text-xs text-secondary-600 mt-2">
-            Starting the workflow will notify assignees of the first role.
-          </p>
-        </div>
-      )}
+      <div className="space-y-3 relative">
+        {/* Connector Line */}
+        <div className="absolute left-[15px] top-4 bottom-4 w-0.5 bg-slate-100 -z-10" />
 
-      {isWorkflowComplete && (
-        <div className="p-3 bg-emerald-50 border border-emerald-300 rounded text-emerald-700 text-sm mb-4">
-          ✓ All roles completed!
-        </div>
-      )}
+        {task.roleAssignments.map((ra, idx) => {
+          const isActive = idx === currentRoleIndex;
+          const isCompleted = ra.status === 'completed';
+          const isPending = !isActive && !isCompleted;
 
-
-      {/* Handoff Modal */}
-      {showHandoffModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[2000]"
-          onClick={() => !uploading && setShowHandoffModal(false)}
-        >
-          <div
-            className="bg-white rounded-lg p-6 w-[90%] max-w-[600px] max-h-[90vh] overflow-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="mb-5 text-lg font-semibold text-secondary-800">
-              Complete Role & Handoff to Next
-            </h3>
-
-            <div className="mb-4">
-              <label className="block mb-1.5 text-[13px] font-semibold text-secondary-600">
-                Comment / Notes
-              </label>
-              <textarea
-                value={handoffData.comment}
-                onChange={(e) => setHandoffData({ ...handoffData, comment: e.target.value })}
-                placeholder="Add comments, notes, or instructions for the next role..."
-                rows="4"
-                className="w-full p-2 border border-secondary-300 rounded text-sm resize-y focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block mb-1.5 text-[13px] font-semibold text-secondary-600">
-                Files
-              </label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="px-3 py-2 bg-secondary-100 border border-secondary-300 rounded text-xs cursor-pointer mb-2 hover:bg-secondary-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                + Add Files
-              </button>
-              {handoffData.files.length > 0 && (
-                <div className="flex flex-col gap-1">
-                  {handoffData.files.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between px-2 py-1.5 bg-secondary-100 rounded text-xs"
-                    >
-                      <span>{file.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeFile(index)}
-                        className="bg-transparent border-0 text-red-600 hover:text-red-700 cursor-pointer text-base px-1"
-                      >
-                        ×
-                      </button>
+          return (
+            <div key={idx} className={`flex items-start gap-4 p-4 rounded-xl border transition-all ${isActive ? 'bg-indigo-50/50 border-indigo-200 shadow-sm' : 'bg-white border-slate-100 opacity-60'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 ${isCompleted ? 'bg-emerald-500 border-emerald-500 text-white' : isActive ? 'bg-white border-indigo-500 text-indigo-500 animate-pulse' : 'bg-white border-slate-200 text-slate-400'}`}>
+                {isCompleted ? '✓' : idx + 1}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <h6 className={`text-xs font-bold uppercase ${isActive ? 'text-indigo-900' : 'text-slate-700'}`}>{ra.role?.name || 'Step'}</h6>
+                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase ${isCompleted ? 'text-emerald-600' : isActive ? 'text-indigo-600' : 'text-slate-400'}`}>
+                    {ra.status || (isPending ? 'Pending' : '')}
+                  </span>
+                </div>
+                <div className="flex -space-x-1.5 overflow-hidden">
+                  {ra.assignees?.map((a, i) => (
+                    <div key={i} className="w-6 h-6 rounded border border-white bg-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-600" title={a.name}>
+                      {a.name?.[0]}
                     </div>
                   ))}
                 </div>
-              )}
+
+                {isActive && isCurrentUserAssigned && (
+                  <div className="mt-4">
+                    <button
+                      onClick={() => setShowHandoffModal(true)}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all shadow-sm"
+                    >
+                      Complete & Handoff
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {!isWorkflowStarted && (
+        <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 border-dashed text-center">
+          <p className="text-xs text-slate-500 mb-3 font-medium">Workflow has not been initiated for this task.</p>
+          <button
+            onClick={handleStartWorkflow}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
+          >
+            Initiate Workflow
+          </button>
+        </div>
+      )}
+
+      {/* Handoff Modal */}
+      {showHandoffModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[2000] p-4" onClick={() => !uploading && setShowHandoffModal(false)}>
+          <div className="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl border border-slate-200 animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+            <div className="mb-6">
+              <h3 className="text-lg font-bold text-slate-900">Task Handoff</h3>
+              <p className="text-xs text-slate-500 mt-1">Add completion notes and files for the next team.</p>
             </div>
 
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[13px] font-semibold text-secondary-600">
-                  URLs / Links
-                </label>
-                <button
-                  type="button"
-                  onClick={addUrl}
-                  className="px-2 py-1 bg-secondary-100 border border-secondary-300 rounded text-xs cursor-pointer hover:bg-secondary-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  + Add URL
+            <div className="space-y-6">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Completion Notes</label>
+                <textarea
+                  value={handoffData.comment}
+                  onChange={e => setHandoffData({ ...handoffData, comment: e.target.value })}
+                  placeholder="What was achieved? Any instructions for the next role?"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 min-h-[100px] resize-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Attachments</label>
+                <div className="flex flex-wrap gap-2">
+                  <input ref={fileInputRef} type="file" multiple className="hidden" onChange={e => setHandoffData(prev => ({ ...prev, files: [...prev.files, ...Array.from(e.target.files)] }))} />
+                  <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-2">
+                    <span>📎</span> Attach Files
+                  </button>
+                  {handoffData.files.map((f, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-indigo-100">
+                      <span className="truncate max-w-[120px]">{f.name}</span>
+                      <button onClick={() => setHandoffData(prev => ({ ...prev, files: prev.files.filter((_, idx) => idx !== i) }))} className="text-indigo-400 hover:text-indigo-600">×</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-6 border-t border-slate-100">
+                <button onClick={() => setShowHandoffModal(false)} disabled={uploading} className="flex-1 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-all">Cancel</button>
+                <button onClick={handleCompleteRole} disabled={uploading} className="flex-[2] py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all disabled:opacity-50">
+                  {uploading ? 'Processing Handoff...' : 'Complete & Send'}
                 </button>
               </div>
-              {handoffData.urls.map((urlItem, index) => (
-                <div key={index} className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    placeholder="Title"
-                    value={urlItem.title}
-                    onChange={(e) => updateUrl(index, 'title', e.target.value)}
-                    className="flex-1 px-2 py-1.5 border border-secondary-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                  <input
-                    type="url"
-                    placeholder="URL"
-                    value={urlItem.url}
-                    onChange={(e) => updateUrl(index, 'url', e.target.value)}
-                    className="flex-[2] px-2 py-1.5 border border-secondary-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                  {handoffData.urls.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeUrl(index)}
-                      className="px-3 py-1.5 bg-red-50 border border-red-300 rounded text-red-600 text-sm hover:bg-red-100"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-end gap-2 mt-5">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowHandoffModal(false);
-                  setHandoffData({ comment: '', urls: [{ title: '', url: '' }], files: [] });
-                }}
-                disabled={uploading}
-                className="px-4 py-2.5 bg-white border border-secondary-300 rounded text-secondary-600 text-sm hover:bg-secondary-50 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleCompleteRole}
-                disabled={uploading}
-                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {uploading ? 'Completing...' : 'Complete & Handoff'}
-              </button>
             </div>
           </div>
         </div>

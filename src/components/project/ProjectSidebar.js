@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { io } from 'socket.io-client';
 
-const SIDEBAR_COLLAPSED_WIDTH = 56;
-const SIDEBAR_EXPANDED_WIDTH = 200;
+const SIDEBAR_COLLAPSED_WIDTH = 64;
+const SIDEBAR_EXPANDED_WIDTH = 240;
 const HEADER_HEIGHT = 81; // Height of the main header in Layout.js
 
 // Helper function to get cookie value
@@ -25,7 +25,6 @@ const ProjectSidebar = ({ projectId, project, onWidthChange }) => {
   const notificationTimeoutRef = useRef(null);
 
   // Determine current page based on URL
-  const isTasksPage = location.search.includes('tab=tasks');
   const isChatPage = location.search.includes('tab=chat');
 
   const tabs = [
@@ -46,14 +45,10 @@ const ProjectSidebar = ({ projectId, project, onWidthChange }) => {
 
   const currentWidth = isExpanded ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH;
 
-  // Notify parent of width changes
   useEffect(() => {
-    if (onWidthChange) {
-      onWidthChange(currentWidth);
-    }
+    if (onWidthChange) onWidthChange(currentWidth);
   }, [currentWidth, onWidthChange]);
 
-  // Socket connection for chat notifications
   useEffect(() => {
     const token = getCookie('authToken');
     if (!token || !projectId) return;
@@ -63,22 +58,13 @@ const ProjectSidebar = ({ projectId, project, onWidthChange }) => {
       transports: ['websocket', 'polling']
     });
 
-    socket.on('connect', () => {
-      console.log('ProjectSidebar: Socket connected for notifications');
-    });
-
-    // Listen for chat notifications
     socket.on('chat-notification', (notification) => {
-      // Only count notifications for this project
       if (notification.projectId === projectId) {
         setUnreadChatCount(prev => prev + 1);
         setLatestNotification(notification);
         setShowChatNotification(true);
 
-        // Hide notification popup after 5 seconds
-        if (notificationTimeoutRef.current) {
-          clearTimeout(notificationTimeoutRef.current);
-        }
+        if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current);
         notificationTimeoutRef.current = setTimeout(() => {
           setShowChatNotification(false);
         }, 5000);
@@ -88,14 +74,11 @@ const ProjectSidebar = ({ projectId, project, onWidthChange }) => {
     socketRef.current = socket;
 
     return () => {
-      if (notificationTimeoutRef.current) {
-        clearTimeout(notificationTimeoutRef.current);
-      }
+      if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current);
       socket.disconnect();
     };
   }, [projectId]);
 
-  // Clear unread count when navigating to chat
   useEffect(() => {
     if (isChatPage) {
       setUnreadChatCount(0);
@@ -104,178 +87,72 @@ const ProjectSidebar = ({ projectId, project, onWidthChange }) => {
   }, [isChatPage]);
 
   const handleTabClick = useCallback((tab) => {
-    // Clear chat notifications when clicking on chat
     if (tab.path === 'chat') {
       setUnreadChatCount(0);
       setShowChatNotification(false);
     }
-
-    if (tab.path === 'overview') {
-      navigate(`/projects/${projectId}`);
-    } else {
-      navigate(`/projects/${projectId}?tab=${tab.path}`);
-    }
+    if (tab.path === 'overview') navigate(`/projects/${projectId}`);
+    else navigate(`/projects/${projectId}?tab=${tab.path}`);
   }, [navigate, projectId]);
 
-  const getCurrentTab = () => {
-    const params = new URLSearchParams(location.search);
-    return params.get('tab') || 'overview';
-  };
-
-  const currentTab = getCurrentTab();
+  const params = new URLSearchParams(location.search);
+  const currentTab = params.get('tab') || 'overview';
 
   return (
-    <div style={{
-      position: 'fixed',
-      right: 0,
-      top: `${HEADER_HEIGHT}px`,
-      width: `${currentWidth}px`,
-      height: `calc(100vh - ${HEADER_HEIGHT}px)`,
-      backgroundColor: '#fff',
-      boxShadow: '-2px 0 10px rgba(0,0,0,0.08)',
-      zIndex: 100,
-      transition: 'width 0.3s ease',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
-      borderLeft: '1px solid #e5e7eb'
-    }}>
-      {/* Header */}
-      <div style={{
-        padding: isExpanded ? '16px' : '12px 8px',
-        borderBottom: '1px solid #e5e7eb',
-        background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: isExpanded ? 'space-between' : 'center',
-        minHeight: '60px'
-      }}>
+    <div
+      className={`fixed right-0 bg-white border-l border-slate-200 z-[100] transition-all duration-300 flex flex-col overflow-hidden shadow-[-4px_0_20px_rgba(0,0,0,0.03)]`}
+      style={{
+        top: `${HEADER_HEIGHT}px`,
+        width: `${currentWidth}px`,
+        height: `calc(100vh - ${HEADER_HEIGHT}px)`,
+      }}
+    >
+      {/* Header Area */}
+      <div className={`p-4 flex items-center bg-slate-900 justify-between min-h-[64px] ${!isExpanded ? 'justify-center' : ''}`}>
         {isExpanded ? (
           <>
-            <div>
-              <h3 style={{
-                margin: 0,
-                color: '#fff',
-                fontSize: '14px',
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                </svg>
-                Project Menu
+            <div className="flex flex-col min-w-0">
+              <h3 className="text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                <span>☰</span> Project Menu
               </h3>
-              {project && (
-                <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.8)', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }}>
-                  {project.title}
-                </p>
-              )}
+              {project && <p className="text-slate-400 text-[10px] truncate mt-1 font-medium">{project.title}</p>}
             </div>
             <button
               onClick={() => setIsExpanded(false)}
-              style={{
-                background: 'rgba(255,255,255,0.2)',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '6px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              title="Collapse menu"
+              className="p-1 px-2.5 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all font-bold text-xs"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
+              ⮕
             </button>
           </>
         ) : (
           <button
             onClick={() => setIsExpanded(true)}
-            style={{
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            title="Expand menu"
+            className="p-1.5 px-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all font-bold text-xs"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
+            ⬅
           </button>
         )}
       </div>
 
-      {/* Chat Notification Popup */}
+      {/* Notification Popup */}
       {showChatNotification && latestNotification && (
-        <div style={{
-          position: 'absolute',
-          top: '80px',
-          left: isExpanded ? '-260px' : '-210px',
-          width: '240px',
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
-          border: '1px solid #e5e7eb',
-          padding: '12px',
-          zIndex: 1000,
-          animation: 'slideIn 0.3s ease'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-            <div style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              backgroundColor: '#3b82f6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: '600',
-              flexShrink: 0
-            }}>
-              {latestNotification.senderName?.charAt(0)?.toUpperCase() || '?'}
+        <div className={`absolute top-20 ${isExpanded ? 'right-64' : 'right-20'} w-64 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 z-[1000] animate-in slide-in-from-right-10`}>
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-lg">
+              {latestNotification.senderName?.charAt(0) || '?'}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '12px', fontWeight: '600', color: '#1f2937', marginBottom: '2px' }}>
-                {latestNotification.senderName}
-              </div>
-              <div style={{ fontSize: '11px', color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {latestNotification.content}
-              </div>
-              <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>
-                New message in chat
-              </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-slate-900">{latestNotification.senderName}</p>
+              <p className="text-[10px] text-slate-500 truncate mt-0.5">{latestNotification.content}</p>
+              <span className="text-[8px] text-indigo-500 font-bold uppercase tracking-widest mt-2 block">New Message</span>
             </div>
-            <button
-              onClick={() => setShowChatNotification(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '4px',
-                color: '#9ca3af',
-                fontSize: '16px'
-              }}
-            >
-              ×
-            </button>
+            <button onClick={() => setShowChatNotification(false)} className="text-slate-300 hover:text-rose-500">×</button>
           </div>
         </div>
       )}
 
-      {/* Menu Items */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: isExpanded ? '8px' : '8px 4px' }}>
+      {/* Scrollable Menu Items */}
+      <div className="flex-1 overflow-y-auto p-4 py-6 scrollbar-none space-y-1">
         {tabs.map((tab) => {
           const isActive = currentTab === tab.id;
           const hasBadge = tab.id === 'chat' && unreadChatCount > 0;
@@ -284,122 +161,29 @@ const ProjectSidebar = ({ projectId, project, onWidthChange }) => {
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab)}
-              title={!isExpanded ? (hasBadge ? `${tab.label} (${unreadChatCount} new)` : tab.label) : undefined}
-              style={{
-                width: '100%',
-                padding: isExpanded ? '10px 12px' : '10px',
-                marginBottom: '2px',
-                backgroundColor: isActive ? '#eff6ff' : (hasBadge ? '#fef3c7' : 'transparent'),
-                border: isActive ? '1px solid #bfdbfe' : (hasBadge ? '1px solid #fcd34d' : '1px solid transparent'),
-                borderRadius: '8px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: isExpanded ? 'flex-start' : 'center',
-                gap: '10px',
-                color: isActive ? '#1e40af' : (hasBadge ? '#92400e' : '#4b5563'),
-                fontSize: '13px',
-                fontWeight: isActive || hasBadge ? '600' : '500',
-                transition: 'all 0.2s ease',
-                textAlign: 'left',
-                position: 'relative'
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive && !hasBadge) {
-                  e.currentTarget.style.backgroundColor = '#f3f4f6';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.backgroundColor = hasBadge ? '#fef3c7' : 'transparent';
-                }
-              }}
+              title={!isExpanded ? tab.label : undefined}
+              className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all duration-200 ${isActive ? 'bg-indigo-50 text-indigo-700 font-bold shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'} ${!isExpanded ? 'justify-center' : ''}`}
             >
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div className="relative shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d={tab.icon}></path>
                 </svg>
-                {/* Badge for collapsed view */}
-                {hasBadge && !isExpanded && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '-6px',
-                    right: '-6px',
-                    backgroundColor: '#ef4444',
-                    color: 'white',
-                    fontSize: '10px',
-                    fontWeight: '700',
-                    minWidth: '16px',
-                    height: '16px',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '0 4px',
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
-                  }}>
-                    {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                {hasBadge && (
+                  <div className={`absolute -top-2 -right-2 bg-rose-500 text-white text-[9px] font-black h-4 w-4 rounded-full flex items-center justify-center shadow-md animate-bounce`}>
+                    {unreadChatCount > 9 ? '9+' : unreadChatCount}
                   </div>
                 )}
               </div>
               {isExpanded && (
-                <>
-                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>{tab.label}</span>
-                  {/* Badge for expanded view */}
-                  {hasBadge && (
-                    <div style={{
-                      backgroundColor: '#ef4444',
-                      color: 'white',
-                      fontSize: '11px',
-                      fontWeight: '700',
-                      minWidth: '20px',
-                      height: '20px',
-                      borderRadius: '10px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '0 6px',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-                      animation: 'pulse 2s infinite'
-                    }}>
-                      {unreadChatCount > 99 ? '99+' : unreadChatCount}
-                    </div>
-                  )}
-                </>
+                <span className="text-xs uppercase tracking-widest truncate">{tab.label}</span>
               )}
             </button>
           );
         })}
       </div>
-
-      {/* Animation styles */}
-      <style>
-        {`
-          @keyframes slideIn {
-            from {
-              opacity: 0;
-              transform: translateX(20px);
-            }
-            to {
-              opacity: 1;
-              transform: translateX(0);
-            }
-          }
-          @keyframes pulse {
-            0%, 100% {
-              transform: scale(1);
-            }
-            50% {
-              transform: scale(1.1);
-            }
-          }
-        `}
-      </style>
     </div>
   );
 };
 
-// Export constants for parent components
 export { SIDEBAR_COLLAPSED_WIDTH, SIDEBAR_EXPANDED_WIDTH };
 export default ProjectSidebar;
-

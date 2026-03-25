@@ -63,8 +63,8 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
       name: phase.name,
       description: phase.description || '',
       status: phase.status,
-      startDate: new Date(phase.startDate).toISOString().split('T')[0],
-      endDate: new Date(phase.endDate).toISOString().split('T')[0],
+      startDate: phase.startDate ? new Date(phase.startDate).toISOString().split('T')[0] : '',
+      endDate: phase.endDate ? new Date(phase.endDate).toISOString().split('T')[0] : '',
       budget: phase.budget || '',
       milestones: phase.milestones || []
     });
@@ -91,14 +91,14 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
     }
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      'planning': { bg: '#fff4e6', text: '#d46b08', border: '#ffcc95' },
-      'active': { bg: '#e6f7ff', text: '#0052cc', border: '#91d5ff' },
-      'completed': { bg: '#f6ffed', text: '#389e0d', border: '#b7eb8f' },
-      'on-hold': { bg: '#fff1f0', text: '#cf1322', border: '#ffa39e' }
+  const getStatusBadge = (status) => {
+    const statusMap = {
+      'planning': 'bg-amber-50 text-amber-700 border-amber-200',
+      'active': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      'completed': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      'on-hold': 'bg-slate-50 text-slate-700 border-slate-200'
     };
-    return colors[status] || colors.planning;
+    return statusMap[status] || 'bg-slate-50 text-slate-700 border-slate-200';
   };
 
   const calculateProgress = (phase) => {
@@ -107,7 +107,6 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
     return Math.round((completed / phase.milestones.length) * 100);
   };
 
-  // Filter phases
   const filteredPhases = phases.filter(phase => {
     const matchesSearch = phase.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (phase.description && phase.description.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -116,118 +115,45 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
   });
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#fafbfc', minHeight: '100vh' }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '24px',
-        padding: '0 4px'
-      }}>
+    <div className="p-6 bg-slate-50 min-h-screen">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 style={{
-            margin: '0 0 4px 0',
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#172b4d',
-            letterSpacing: '-0.5px'
-          }}>
-            Project Phases
-          </h1>
-          <p style={{
-            margin: 0,
-            fontSize: '16px',
-            color: '#5e6c84',
-            fontWeight: '400'
-          }}>
-            {filteredPhases.length} of {phases.length} phase{phases.length !== 1 ? 's' : ''}
+          <h1 className="text-2xl font-bold text-slate-900">Project Phases</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {filteredPhases.length} of {phases.length} total phases
           </p>
         </div>
         {isProjectOwner && (
           <button
-            onClick={() => setShowForm(!showForm)}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: showForm ? '#f4f5f7' : '#0052cc',
-              color: showForm ? '#5e6c84' : 'white',
-              border: showForm ? '1px solid #dfe1e6' : 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-              transition: 'all 0.2s ease',
-              boxShadow: showForm ? 'none' : '0 2px 4px rgba(0, 82, 204, 0.2)'
+            onClick={() => {
+              if (showForm) resetForm();
+              else setShowForm(true);
             }}
+            className={`px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 ${showForm ? 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
           >
-            {showForm ? '✕ Cancel' : '+ Add Phase'}
+            {showForm ? 'Cancel' : '+ Add New Phase'}
           </button>
         )}
       </div>
 
-      {/* Search and Filter Bar */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        border: '1px solid #e1e5e9',
-        borderRadius: '12px',
-        padding: '20px',
-        marginBottom: '24px',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '50px' }}>
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#5e6c84',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Search
-            </label>
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Search</label>
             <input
               type="text"
-              placeholder="Search phases..."
+              placeholder="Filter by phase name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 16px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'border-color 0.2s ease'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#0052cc'}
-              onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 transition-all font-medium"
             />
           </div>
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#5e6c84',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Status
-            </label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Status</label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 16px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '8px',
-                fontSize: '14px',
-                backgroundColor: '#ffffff',
-                cursor: 'pointer'
-              }}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 transition-all cursor-pointer font-medium"
             >
               <option value="all">All Statuses</option>
               <option value="planning">Planning</option>
@@ -240,884 +166,244 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
       </div>
 
       {showForm && (
-        <div style={{
-          backgroundColor: '#ffffff',
-          border: '2px solid #e1e5e9',
-          borderRadius: '16px',
-          padding: '40px',
-          marginBottom: '32px',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            marginBottom: '32px',
-            paddingBottom: '24px',
-            borderBottom: '2px solid #f4f5f7'
-          }}>
-            <div style={{
-              width: '56px',
-              height: '56px',
-              backgroundColor: '#e6f7ff',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '24px',
-              boxShadow: '0 2px 8px rgba(0, 82, 204, 0.1)'
-            }}>
-              📁
-            </div>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#172b4d', letterSpacing: '-0.5px' }}>
-                {editingPhase ? 'Edit Phase' : 'Create New Phase'}
-              </h3>
-              <p style={{ margin: '6px 0 0 0', fontSize: '15px', color: '#5e6c84', lineHeight: '1.5' }}>
-                {editingPhase ? 'Update phase details and timeline' : 'Define project phase and milestones'}
-              </p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 mb-8 shadow-md">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-xl">📁</div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-900">{editingPhase ? 'Edit Phase' : 'Create New Phase'}</h3>
+              <p className="text-xs text-slate-500 font-medium">Structure your project timeline and deliverables.</p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '40px' }}>
-              <div>
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Phase Name <span style={{ color: '#cf1322' }}>*</span>
-                  </label>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Phase Name <span className="text-rose-500">*</span></label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
-                    placeholder="e.g., Discovery, Development, Testing"
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      transition: 'all 0.2s ease',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    placeholder="e.g., Discovery & Analysis"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400"
                   />
                 </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Description
-                  </label>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Description</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows="4"
-                    placeholder="Describe the phase objectives and deliverables"
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      resize: 'vertical',
-                      fontFamily: 'inherit',
-                      transition: 'all 0.2s ease',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc',
-                      lineHeight: '1.6'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 resize-none"
+                    placeholder="Objectives and scope..."
                   />
                 </div>
               </div>
 
-              <div>
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Status
-                  </label>
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Status</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      backgroundColor: '#fafbfc',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 transition-all cursor-pointer"
                   >
-                    <option value="planning">📋 Planning</option>
-                    <option value="active">🏃 Active</option>
-                    <option value="completed">✅ Completed</option>
-                    <option value="on-hold">⏸️ On Hold</option>
+                    <option value="planning">Planning</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="on-hold">On Hold</option>
                   </select>
                 </div>
 
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Start Date <span style={{ color: '#cf1322' }}>*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    required
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 ml-1">Start Date <span className="text-rose-500">*</span></label>
+                    <input
+                      type="date"
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      required
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-indigo-400"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 ml-1">End Date <span className="text-rose-500">*</span></label>
+                    <input
+                      type="date"
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      required
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-indigo-400"
+                    />
+                  </div>
                 </div>
 
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    End Date <span style={{ color: '#cf1322' }}>*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    required
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Budget
-                  </label>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Allocated Budget ({companyCurrency})</label>
                   <input
                     type="number"
                     value={formData.budget}
                     onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                    placeholder="10000"
-                    min="0"
-                    step="100"
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400"
+                    placeholder="e.g., 5000"
                   />
                 </div>
               </div>
             </div>
 
-            <div style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '16px',
-              marginTop: '40px',
-              paddingTop: '32px',
-              borderTop: '2px solid #f4f5f7'
-            }}>
+            <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
               <button
                 type="button"
                 onClick={resetForm}
-                style={{
-                  padding: '14px 32px',
-                  backgroundColor: '#ffffff',
-                  color: '#5e6c84',
-                  border: '2px solid #dfe1e6',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  transition: 'all 0.2s ease',
-                  letterSpacing: '0.3px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#f4f5f7';
-                  e.target.style.borderColor = '#c1c7d0';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#ffffff';
-                  e.target.style.borderColor = '#dfe1e6';
-                }}
+                className="px-8 py-2.5 bg-white text-slate-500 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all font-sans"
               >
-                Cancel
+                Discard
               </button>
               <button
                 type="submit"
-                style={{
-                  padding: '14px 32px',
-                  backgroundColor: '#0052cc',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  boxShadow: '0 4px 12px rgba(0, 82, 204, 0.3)',
-                  transition: 'all 0.2s ease',
-                  letterSpacing: '0.3px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#0747a6';
-                  e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = '0 6px 16px rgba(0, 82, 204, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#0052cc';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(0, 82, 204, 0.3)';
-                }}
+                className="px-10 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition-all"
               >
-                {editingPhase ? '✓ Update Phase' : '+ Create Phase'}
+                {editingPhase ? 'Update Phase' : 'Create Phase'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Phases List - Only show when form is not visible */}
       {!showForm && (
-        <div style={{ display: 'grid', gap: '16px' }}>
-          {filteredPhases.length === 0 && phases.length > 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '64px 24px',
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              border: '1px solid #e1e5e9'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-                No Phases Found
-              </h3>
-              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
-                Try adjusting your search or filter criteria.
-              </p>
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setFilterStatus('all');
-                }}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#f4f5f7',
-                  color: '#5e6c84',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600'
-                }}
-              >
-                Clear Filters
-              </button>
-            </div>
-          ) : phases.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '64px 24px',
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              border: '1px solid #e1e5e9'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>📁</div>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-                No Phases Yet
-              </h3>
-              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
-                Create phases to organize your project timeline and track progress.
-              </p>
-              {isProjectOwner && (
-                <button
-                  onClick={() => setShowForm(true)}
-                  style={{
-                    padding: '12px 24px',
-                    backgroundColor: '#0052cc',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    boxShadow: '0 2px 4px rgba(0, 82, 204, 0.2)'
-                  }}
-                >
-                  Create First Phase
-                </button>
-              )}
-            </div>
-          ) : (
-            filteredPhases.map(phase => {
-              const statusColor = getStatusColor(phase.status);
-              const progress = calculateProgress(phase);
-
-              return (
-                <div
-                  key={phase._id}
-                  style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e1e5e9',
-                    borderRadius: '12px',
-                    padding: '24px',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.08)';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{
-                        margin: '0 0 8px 0',
-                        fontSize: '18px',
-                        fontWeight: '700',
-                        color: '#172b4d',
-                        lineHeight: '1.3'
-                      }}>
-                        {phase.name}
-                      </h3>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
-                        <span style={{
-                          ...statusColor,
-                          padding: '4px 12px',
-                          borderRadius: '16px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          textTransform: 'capitalize',
-                          border: `1px solid ${statusColor.border}`
-                        }}>
-                          {phase.status}
-                        </span>
-                        <span style={{
-                          padding: '4px 12px',
-                          borderRadius: '16px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          backgroundColor: progress === 100 ? '#f6ffed' : '#f4f5f7',
-                          color: progress === 100 ? '#389e0d' : '#5e6c84',
-                          border: `1px solid ${progress === 100 ? '#b7eb8f' : '#dfe1e6'}`
-                        }}>
-                          {progress}% Complete
-                        </span>
-                        {phase.milestones && phase.milestones.length > 0 && (
-                          <span style={{
-                            padding: '4px 12px',
-                            backgroundColor: '#e6f7ff',
-                            color: '#0052cc',
-                            borderRadius: '16px',
-                            fontSize: '12px',
-                            fontWeight: '600'
-                          }}>
-                            🎯 {phase.milestones.length} milestone{phase.milestones.length !== 1 ? 's' : ''}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
-                      <button
-                        onClick={() => setViewingPhase(phase)}
-                        style={{
-                          padding: '8px 12px',
-                          backgroundColor: '#e6f7ff',
-                          color: '#0052cc',
-                          border: '1px solid #91d5ff',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#0052cc';
-                          e.target.style.color = 'white';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = '#e6f7ff';
-                          e.target.style.color = '#0052cc';
-                        }}
-                      >
-                        View
-                      </button>
-                      {isProjectOwner && (
-                        <>
-                          <button
-                            onClick={() => handleEdit(phase)}
-                            style={{
-                              padding: '8px 12px',
-                              backgroundColor: '#f4f5f7',
-                              color: '#5e6c84',
-                              border: '1px solid #dfe1e6',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#e1e5e9';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = '#f4f5f7';
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(phase._id)}
-                            style={{
-                              padding: '8px 12px',
-                              backgroundColor: '#fff1f0',
-                              color: '#cf1322',
-                              border: '1px solid #ffa39e',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#cf1322';
-                              e.target.style.color = 'white';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = '#fff1f0';
-                              e.target.style.color = '#cf1322';
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </>
-                      )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPhases.map(phase => {
+            const progress = calculateProgress(phase);
+            return (
+              <div key={phase._id} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all group relative">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-lg border border-slate-100">📁</div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 line-clamp-1 uppercase tracking-tight">{phase.name}</h3>
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase mt-1 inline-block ${getStatusBadge(phase.status)}`}>{phase.status}</span>
                     </div>
                   </div>
-
-                  {phase.description && (
-                    <p style={{
-                      margin: '0 0 16px 0',
-                      color: '#5e6c84',
-                      fontSize: '14px',
-                      lineHeight: '1.6'
-                    }}>
-                      {phase.description}
-                    </p>
+                  {isProjectOwner && (
+                    <div className="flex gap-1">
+                      <button onClick={() => handleEdit(phase)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">✎</button>
+                      <button onClick={() => handleDelete(phase._id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">✕</button>
+                    </div>
                   )}
+                </div>
 
-                  {/* Progress Bar */}
-                  <div style={{ marginBottom: '16px' }}>
-                    <div style={{
-                      width: '100%',
-                      height: '10px',
-                      backgroundColor: '#f4f5f7',
-                      borderRadius: '5px',
-                      overflow: 'hidden',
-                      border: '1px solid #e1e5e9'
-                    }}>
-                      <div style={{
-                        width: `${progress}%`,
-                        height: '100%',
-                        backgroundColor: progress === 100 ? '#52c41a' : '#0052cc',
-                        transition: 'width 0.3s ease',
-                        boxShadow: progress > 0 ? 'inset 0 1px 2px rgba(0, 0, 0, 0.1)' : 'none'
-                      }} />
-                    </div>
+                <div className="mb-6">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Progress</span>
+                    <span className="text-xs font-bold text-slate-900">{progress}%</span>
                   </div>
-
-                  <div style={{ display: 'flex', gap: '12px', fontSize: '12px', flexWrap: 'wrap' }}>
-                    <span style={{
-                      padding: '6px 12px',
-                      backgroundColor: '#f4f5f7',
-                      color: '#5e6c84',
-                      borderRadius: '16px',
-                      fontWeight: '600'
-                    }}>
-                      📅 {new Date(phase.startDate).toLocaleDateString()} - {new Date(phase.endDate).toLocaleDateString()}
-                    </span>
-                    {phase.budget && (
-                      <span style={{
-                        padding: '6px 12px',
-                        backgroundColor: '#fff4e6',
-                        color: '#d46b08',
-                        borderRadius: '16px',
-                        fontWeight: '600'
-                      }}>
-                        💰 {phase.budget.toLocaleString()} {companyCurrency}
-                      </span>
-                    )}
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
                   </div>
                 </div>
-              );
-            })
+
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                  <div>
+                    <div className="text-[9px] font-bold text-slate-400 uppercase mb-1">Budget</div>
+                    <div className="text-xs font-bold text-slate-900">{companyCurrency} {phase.budget || '0'}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[9px] font-bold text-slate-400 uppercase mb-1">Timeline</div>
+                    <div className="text-[10px] font-bold text-slate-700">Ends {new Date(phase.endDate).toLocaleDateString()}</div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setViewingPhase(phase)}
+                  className="mt-6 w-full py-2.5 bg-slate-50 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
+                >
+                  Phase Details
+                </button>
+              </div>
+            );
+          })}
+
+          {filteredPhases.length === 0 && (
+            <div className="col-span-full py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-center">
+              <div className="text-4xl mb-4">🔍</div>
+              <h3 className="text-lg font-bold text-slate-900">No phases found</h3>
+              <p className="text-sm text-slate-400 mt-1">Try adjusting your filters or create a new phase.</p>
+              <button
+                onClick={() => { setSearchTerm(''); setFilterStatus('all'); }}
+                className="mt-4 text-xs font-bold text-indigo-600 hover:text-indigo-800 underline uppercase tracking-widest"
+              >
+                Clear all filters
+              </button>
+            </div>
           )}
         </div>
       )}
 
-      {/* Details Modal */}
+      {/* Viewing Modal */}
       {viewingPhase && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '24px'
-        }}
-          onClick={() => setViewingPhase(null)}
-        >
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            maxWidth: '900px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
-          }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{
-              padding: '32px',
-              borderBottom: '1px solid #e1e5e9',
-              position: 'sticky',
-              top: 0,
-              backgroundColor: '#ffffff',
-              zIndex: 1
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ margin: '0 0 12px 0', fontSize: '24px', fontWeight: '700', color: '#172b4d' }}>
-                    {viewingPhase.name}
-                  </h2>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    <span style={{
-                      ...getStatusColor(viewingPhase.status),
-                      padding: '4px 12px',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      textTransform: 'capitalize',
-                      border: `1px solid ${getStatusColor(viewingPhase.status).border}`
-                    }}>
-                      {viewingPhase.status}
-                    </span>
-                    <span style={{
-                      padding: '4px 12px',
-                      backgroundColor: calculateProgress(viewingPhase) === 100 ? '#f6ffed' : '#f4f5f7',
-                      color: calculateProgress(viewingPhase) === 100 ? '#389e0d' : '#5e6c84',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      border: `1px solid ${calculateProgress(viewingPhase) === 100 ? '#b7eb8f' : '#dfe1e6'}`
-                    }}>
-                      {calculateProgress(viewingPhase)}% Complete
-                    </span>
-                  </div>
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[2000] p-4" onClick={() => setViewingPhase(null)}>
+          <div className="bg-white rounded-3xl p-10 w-full max-w-3xl shadow-2xl border border-slate-200" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-10">
+              <div className="flex items-center gap-5">
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-3xl border border-slate-100">📁</div>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">{viewingPhase.name}</h2>
+                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase mt-2 inline-block ${getStatusBadge(viewingPhase.status)}`}>{viewingPhase.status}</span>
                 </div>
-                <button
-                  onClick={() => setViewingPhase(null)}
-                  style={{
-                    padding: '8px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '24px',
-                    color: '#5e6c84',
-                    lineHeight: 1
-                  }}
-                >
-                  ×
-                </button>
               </div>
+              <button onClick={() => setViewingPhase(null)} className="p-2 text-slate-400 hover:text-slate-900 text-2xl">✕</button>
             </div>
 
-            <div style={{ padding: '32px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-6">
                 <div>
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                    Start Date
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '16px', color: '#172b4d', fontWeight: '600' }}>
-                    {new Date(viewingPhase.startDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                  </p>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Description</h4>
+                  <p className="text-sm text-slate-600 leading-relaxed font-medium bg-slate-50 p-6 rounded-2xl border border-slate-100 min-h-[140px]">{viewingPhase.description || 'No description provided.'}</p>
                 </div>
-                <div>
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                    End Date
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '16px', color: '#172b4d', fontWeight: '600' }}>
-                    {new Date(viewingPhase.endDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                  </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-amber-50 p-5 rounded-2xl border border-amber-100">
+                    <div className="text-[9px] font-bold text-amber-600 uppercase mb-1">Budget</div>
+                    <div className="text-xl font-black text-amber-900 truncate">{companyCurrency} {viewingPhase.budget || '0'}</div>
+                  </div>
+                  <div className="bg-indigo-50 p-5 rounded-2xl border border-indigo-100">
+                    <div className="text-[9px] font-bold text-indigo-600 uppercase mb-1">Progress</div>
+                    <div className="text-xl font-black text-indigo-900">{calculateProgress(viewingPhase)}%</div>
+                  </div>
                 </div>
               </div>
 
-              {viewingPhase.description && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                    Description
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '16px', color: '#172b4d', lineHeight: '1.6' }}>
-                    {viewingPhase.description}
-                  </p>
-                </div>
-              )}
-
-              {viewingPhase.budget && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                    Budget
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '24px', color: '#172b4d', fontWeight: '700' }}>
-                    {viewingPhase.budget.toLocaleString()} <span style={{ fontSize: '16px', fontWeight: '400', color: '#5e6c84' }}>{companyCurrency}</span>
-                  </p>
-                </div>
-              )}
-
-              {viewingPhase.milestones && viewingPhase.milestones.length > 0 && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                    Milestones ({viewingPhase.milestones.length})
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {viewingPhase.milestones.map((milestone, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          padding: '16px',
-                          backgroundColor: milestone.completed ? '#f6ffed' : '#f4f5f7',
-                          borderRadius: '8px',
-                          border: `1px solid ${milestone.completed ? '#b7eb8f' : '#e1e5e9'}`,
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: '12px'
-                        }}
-                      >
-                        <div style={{
-                          width: '20px',
-                          height: '20px',
-                          borderRadius: '50%',
-                          backgroundColor: milestone.completed ? '#52c41a' : '#ffffff',
-                          border: `2px solid ${milestone.completed ? '#52c41a' : '#d9d9d9'}`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          marginTop: '2px'
-                        }}>
-                          {milestone.completed && (
-                            <span style={{ color: 'white', fontSize: '12px', fontWeight: 'bold' }}>✓</span>
-                          )}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <h4 style={{
-                            margin: '0 0 4px 0',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            color: '#172b4d',
-                            textDecoration: milestone.completed ? 'line-through' : 'none'
-                          }}>
-                            {milestone.name}
-                          </h4>
-                          {milestone.dueDate && (
-                            <p style={{ margin: 0, fontSize: '12px', color: '#5e6c84' }}>
-                              Due: {new Date(milestone.dueDate).toLocaleDateString()}
-                            </p>
-                          )}
-                        </div>
+              <div>
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Timeline & Milestones</h4>
+                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-6">
+                  <div className="flex justify-between items-center text-sm font-bold text-slate-700">
+                    <span>Starts: {new Date(viewingPhase.startDate).toLocaleDateString()}</span>
+                    <span>Ends: {new Date(viewingPhase.endDate).toLocaleDateString()}</span>
+                  </div>
+                  <div className="space-y-3">
+                    {viewingPhase.milestones?.length > 0 ? viewingPhase.milestones.map((m, i) => (
+                      <div key={i} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
+                        <div className={`w-2 h-2 rounded-full ${m.completed ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                        <span className="text-xs font-bold text-slate-700">{m.name}</span>
+                        {m.dueDate && <span className="text-[9px] text-slate-400 ml-auto font-medium">{new Date(m.dueDate).toLocaleDateString()}</span>}
                       </div>
-                    ))}
+                    )) : (
+                      <p className="text-xs text-slate-400 text-center py-4">No milestones defined for this phase.</p>
+                    )}
                   </div>
                 </div>
-              )}
-
-              <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #e1e5e9', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                {isProjectOwner && (
-                  <>
-                    <button
-                      onClick={() => {
-                        handleEdit(viewingPhase);
-                        setViewingPhase(null);
-                      }}
-                      style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#0052cc',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '600'
-                      }}
-                    >
-                      Edit Phase
-                    </button>
-                    <button
-                      onClick={() => {
-                        setViewingPhase(null);
-                        handleDelete(viewingPhase._id);
-                      }}
-                      style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#fff1f0',
-                        color: '#cf1322',
-                        border: '1px solid #ffa39e',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '600'
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
               </div>
             </div>
           </div>
         </div>
       )}
+
       <DeleteConfirmModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
         onConfirm={confirmDelete}
         title="Delete Phase"
-        message="Are you sure you want to delete this phase? All associated milestones will be lost. This action cannot be undone."
-        itemName={deleteModal.name}
+        message={`Are you sure you want to delete ${deleteModal.name}? This will remove all phase associations.`}
       />
     </div>
   );

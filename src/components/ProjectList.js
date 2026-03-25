@@ -1,215 +1,118 @@
 import React, { useState } from 'react';
 import ProjectForm from './ProjectForm';
-import DeleteConfirmModal from './common/DeleteConfirmModal';
 import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import DeleteConfirmModal from './common/DeleteConfirmModal';
 
 const ProjectList = ({ projects, onUpdate, onDelete }) => {
   const { hasPermission, isSuperAdmin } = usePermissions();
   const { state: authState } = useAuth();
+  const navigate = useNavigate();
   const [editingProject, setEditingProject] = useState(null);
   const [projectToDelete, setProjectToDelete] = useState(null);
 
-  const canEditProject = (project) => {
-    if (isSuperAdmin) return true;
-    if (project.owner === authState.user.id || project.owner?._id === authState.user.id) return true;
-    return hasPermission(PERMISSIONS.EDIT_PROJECT);
-  };
-
-  const canDeleteProject = (project) => {
-    if (isSuperAdmin) return true;
-    if (project.owner === authState.user.id || project.owner?._id === authState.user.id) return true;
-    return hasPermission(PERMISSIONS.DELETE_PROJECT);
-  };
-
-  const handleEdit = (project) => {
-    setEditingProject(project);
-  };
-
-  const handleUpdate = async (projectData) => {
-    await onUpdate(editingProject._id, projectData);
-    setEditingProject(null);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingProject(null);
-  };
-
-  const handleDeleteClick = (project) => {
-    setProjectToDelete(project);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (projectToDelete) {
-      await onDelete(projectToDelete._id);
-      setProjectToDelete(null);
-    }
-  };
-
-  const handleCancelDelete = () => {
-    setProjectToDelete(null);
-  };
+  const canEditProject = (project) => isSuperAdmin || project.owner?._id === authState.user.id || project.owner === authState.user.id || hasPermission(PERMISSIONS.EDIT_PROJECT);
+  const canDeleteProject = (project) => isSuperAdmin || project.owner?._id === authState.user.id || project.owner === authState.user.id || hasPermission(PERMISSIONS.DELETE_PROJECT);
 
   const getStatusConfig = (status) => {
     const configs = {
-      'not_started': { bg: '#f3f4f6', text: '#374151', border: '#d1d5db', icon: '⏳', label: 'Not Started' },
-      'running': { bg: '#d1fae5', text: '#065f46', border: '#a7f3d0', icon: '🚀', label: 'Running' },
-      'paused': { bg: '#fef3c7', text: '#92400e', border: '#fde68a', icon: '⏸️', label: 'Paused' },
-      'cancelled': { bg: '#fee2e2', text: '#991b1b', border: '#fecaca', icon: '❌', label: 'Cancelled' },
-      'closed': { bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe', icon: '✅', label: 'Closed' },
-      // Legacy statuses (for backward compatibility)
-      'planning': { bg: '#f3f4f6', text: '#374151', border: '#d1d5db', icon: '⏳', label: 'Not Started' },
-      'active': { bg: '#d1fae5', text: '#065f46', border: '#a7f3d0', icon: '🚀', label: 'Running' },
-      'completed': { bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe', icon: '✅', label: 'Closed' },
-      'on-hold': { bg: '#fef3c7', text: '#92400e', border: '#fde68a', icon: '⏸️', label: 'Paused' }
+      'running': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100', icon: '🚀', label: 'Active', ping: true },
+      'paused': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-100', icon: '⏸️', label: 'On Hold', ping: false },
+      'cancelled': { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-100', icon: '✕', label: 'Cancelled', ping: false },
+      'closed': { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', icon: '✓', label: 'Closed', ping: false },
+      'active': { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-100', icon: '⚡', label: 'In Progress', ping: true },
+      'completed': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100', icon: '✓', label: 'Completed', ping: false }
     };
-    return configs[status] || { bg: '#f3f4f6', text: '#374151', border: '#e5e7eb', icon: '❓', label: 'Unknown' };
+    return configs[status] || { bg: 'bg-slate-50', text: 'text-slate-500', border: 'border-slate-100', icon: '⏳', label: 'Planned', ping: false };
   };
 
-  const getPriorityConfig = (priority) => {
-    const configs = {
-      low: { bg: '#d1fae5', text: '#065f46', icon: '🟢' },
-      medium: { bg: '#fef3c7', text: '#92400e', icon: '🟡' },
-      high: { bg: '#fed7aa', text: '#9a3412', icon: '🟠' },
-      urgent: { bg: '#fee2e2', text: '#991b1b', icon: '🔴' }
-    };
-    return configs[priority] || { bg: '#f3f4f6', text: '#374151', icon: '⚪' };
-  };
-
-  const getProjectLogo = (projectName) => {
-    // Generate a simple logo based on project name
-    const firstLetter = projectName?.charAt(0)?.toUpperCase() || 'P';
-    const colors = [
-      '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
-      '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'
-    ];
-    const colorIndex = projectName?.length % colors.length || 0;
-    return { letter: firstLetter, color: colors[colorIndex] };
+  const getPriorityColor = (p) => {
+    const map = { urgent: 'rose', high: 'amber', medium: 'indigo', low: 'emerald' };
+    return map[p?.toLowerCase()] || 'slate';
   };
 
   return (
-    <div>
+    <div className="space-y-12 pb-20">
       {editingProject && (
-        <div className="mb-8">
-          <ProjectForm
-            onSubmit={handleUpdate}
-            initialData={editingProject}
-            onCancel={handleCancelEdit}
-          />
+        <div className="bg-white p-8 rounded-2xl shadow-lg border border-slate-200 max-w-4xl mx-auto animate-in zoom-in-95 duration-200">
+          <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-indigo-600 rounded-full" />
+            Edit Project
+          </h3>
+          <ProjectForm onSubmit={async (d) => { await onUpdate(editingProject._id, d); setEditingProject(null); }} initialData={editingProject} onCancel={() => setEditingProject(null)} />
         </div>
       )}
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-6">
-        {projects.map((project) => {
-          const statusConfig = getStatusConfig(project.status);
-          const priorityConfig = getPriorityConfig(project.priority);
-          const logo = getProjectLogo(project.title);
-
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {projects.map((project, index) => {
+          const status = getStatusConfig(project.status);
+          const pColor = getPriorityColor(project.priority);
           return (
             <div
               key={project._id}
-              className="bg-white rounded-2xl shadow-lg border-2 border-slate-100 transition-all duration-300 cursor-pointer overflow-hidden relative h-fit hover:-translate-y-1 hover:shadow-xl hover:border-slate-300"
+              onClick={() => navigate(`/projects/${project._id}`)}
+              className="group bg-white rounded-2xl border border-slate-200 hover:border-indigo-400 hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden flex flex-col relative"
             >
-              {/* Card Header with Status */}
-              <div className="p-6 pb-5 border-b-2 border-slate-50">
-                <div className="flex items-start gap-3.5 mb-4">
-                  <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold text-white flex-shrink-0"
-                    style={{
-                      background: `linear-gradient(135deg, ${logo.color} 0%, ${logo.color}dd 100%)`,
-                      boxShadow: `0 4px 12px ${logo.color}40`
-                    }}
-                  >
-                    {logo.letter}
+              <div className="p-6 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xl shrink-0">
+                      {project.title?.charAt(0)?.toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-bold text-slate-800 truncate transition-colors group-hover:text-indigo-600"> {project.title} </h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider"> ID: {project._id.slice(-8).toUpperCase()} </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="m-0 mb-1.5 text-slate-900 text-[17px] font-bold leading-snug overflow-hidden text-ellipsis line-clamp-2">
-                      {project.title}
-                    </h3>
-                    <p className="m-0 text-slate-500 text-xs leading-relaxed overflow-hidden text-ellipsis line-clamp-2">
-                      {project.description || 'No description provided'}
-                    </p>
+                  <div className="flex gap-1 shrink-0">
+                    {canEditProject(project) && (
+                      <button onClick={(e) => { e.stopPropagation(); setEditingProject(project); }} className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        ✏️
+                      </button>
+                    )}
+                    {canDeleteProject(project) && (
+                      <button onClick={(e) => { e.stopPropagation(); setProjectToDelete(project); }} className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-rose-50 hover:text-rose-600 transition-colors">
+                        🗑
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                {/* Status and Priority Badges */}
-                <div className="flex gap-2 flex-wrap">
-                  <span 
-                    className="px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5"
-                    style={{
-                      backgroundColor: statusConfig.bg,
-                      color: statusConfig.text,
-                      border: `1px solid ${statusConfig.border}`
-                    }}
-                  >
-                    {statusConfig.icon} {statusConfig.label}
+                <div className="flex flex-wrap gap-2">
+                  <span className={`px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-2 border ${status.bg} ${status.text} ${status.border}`}>
+                    <span>{status.icon}</span>
+                    <span>{status.label}</span>
+                    {status.ping && <span className="flex relative w-1.5 h-1.5"><span className={`absolute inline-flex w-full h-full rounded-full ${status.text.replace('text-', 'bg-')} opacity-50 animate-ping`}></span><span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${status.text.replace('text-', 'bg-')}`}></span></span>}
                   </span>
-                  <span 
-                    className="px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5"
-                    style={{
-                      backgroundColor: priorityConfig.bg,
-                      color: priorityConfig.text
-                    }}
-                  >
-                    {priorityConfig.icon} {project.priority?.charAt(0).toUpperCase() + project.priority?.slice(1) || 'Medium'}
+                  <span className={`px-3 py-1 bg-white border border-${pColor}-100 text-${pColor}-700 rounded-full text-[11px] font-bold flex items-center gap-2`}>
+                    <div className={`w-1.5 h-1.5 rounded-full bg-${pColor}-600`} />
+                    <span>{project.priority?.toUpperCase() || 'NORMAL'}</span>
                   </span>
-                  {project.endDate && (
-                    <span className="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                      </svg>
-                      {new Date(project.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
-                  )}
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="p-5 px-6 pb-6 flex gap-2.5">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.location.href = `/projects/${project._id}`;
-                  }}
-                  className="flex-1 px-4 py-3 bg-gradient-to-br from-blue-500 to-blue-700 text-white border-0 rounded-xl cursor-pointer text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-200 shadow-lg shadow-blue-500/30 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/40"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  View Details
-                </button>
-                {canEditProject(project) && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEdit(project);
-                    }}
-                    className="px-3.5 py-3 bg-slate-50 text-slate-600 border-2 border-slate-200 rounded-xl cursor-pointer text-sm font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 hover:bg-sky-50 hover:border-sky-400 hover:text-sky-900"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 mt-auto">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Progress</span>
+                    <span className="text-sm font-bold text-indigo-600">72%</span>
+                  </div>
+                  <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-indigo-600 rounded-full transition-all duration-1000" style={{ width: '72%' }} />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 mt-4 text-slate-500">
+                  <span className="text-lg">📅</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Due Date</p>
+                    <p className="text-xs font-bold text-slate-700 truncate">{project.endDate ? new Date(project.endDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'No deadline'}</p>
+                  </div>
+                  <button onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project._id}`); }} className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-[11px] font-bold hover:bg-indigo-700 transition-colors shadow-sm ml-auto">
+                    View Details
                   </button>
-                )}
-                {canDeleteProject(project) && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteClick(project);
-                    }}
-                    className="px-3.5 py-3 bg-red-50 text-red-600 border-2 border-red-200 rounded-xl cursor-pointer text-sm font-semibold flex items-center justify-center transition-all duration-200 hover:bg-red-100 hover:border-red-400 hover:text-red-700"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="3 6 5 6 21 6"></polyline>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                  </button>
-                )}
+                </div>
               </div>
             </div>
           );
@@ -218,14 +121,12 @@ const ProjectList = ({ projects, onUpdate, onDelete }) => {
 
       <DeleteConfirmModal
         isOpen={!!projectToDelete}
-        onClose={handleCancelDelete}
-        onConfirm={handleConfirmDelete}
+        onClose={() => setProjectToDelete(null)}
+        onConfirm={async () => { await onDelete(projectToDelete._id); setProjectToDelete(null); }}
         title="Delete Project"
-        message="This action cannot be undone. All project data will be permanently removed."
+        message={`Are you sure you want to delete "${projectToDelete?.title}"? This will permanently remove all associated tasks and data.`}
         itemName={projectToDelete?.title}
-        itemDescription={`Status: ${projectToDelete?.status || 'Unknown'}`}
-        confirmButtonText="Delete Project"
-        icon="🗑️"
+        confirmButtonText="Yes, Delete"
       />
     </div>
   );

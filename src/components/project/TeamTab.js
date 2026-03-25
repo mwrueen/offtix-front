@@ -7,7 +7,7 @@ import { useToast } from '../../context/ToastContext';
 
 const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, onRefresh }) => {
   const { hasPermission } = usePermissions();
-  const toast = useToast();
+  const { showToast } = useToast();
   const [showAddMember, setShowAddMember] = useState(false);
   const [showAddRole, setShowAddRole] = useState(false);
   const [selectedUserOption, setSelectedUserOption] = useState(null);
@@ -16,104 +16,80 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
   const [memberToRemove, setMemberToRemove] = useState(null);
   const [roleToRemove, setRoleToRemove] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [companyRoles, setCompanyRoles] = useState([]);
   const [projectRoles, setProjectRoles] = useState([]);
 
-  // Permission logic
   const canAddMembers = isProjectOwner || isProjectManager || hasPermission(PERMISSIONS.ASSIGN_EMPLOYEE_TO_PROJECT);
   const canRemoveMembers = isProjectOwner || isProjectManager || hasPermission(PERMISSIONS.REMOVE_EMPLOYEE_FROM_PROJECT);
   const canManageRoles = isProjectOwner || isProjectManager;
 
-  // Clear error after some time
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
-
-  // Fetch roles
-  useEffect(() => {
-    fetchRoles();
-  }, [projectId, project]);
+  useEffect(() => { fetchRoles(); }, [projectId, project]);
 
   const fetchRoles = async () => {
     try {
       const projectRolesRes = await taskRoleAPI.getAll(projectId);
       setProjectRoles(projectRolesRes.data || []);
-
       if (project?.company) {
         const companyId = typeof project.company === 'object' ? project.company._id : project.company;
         const response = await companyAPI.getById(companyId);
-
         if (response.data?.designations) {
-          const roles = response.data.designations
-            .sort((a, b) => a.level - b.level)
-            .map(d => d.name);
-          setCompanyRoles(roles);
+          setCompanyRoles(response.data.designations.sort((a, b) => a.level - b.level).map(d => d.name));
         }
       }
-    } catch (error) {
-      console.error('Error fetching roles:', error);
-    }
+    } catch (e) { console.error('Error fetching roles', e); }
   };
 
-  // Combine company and project roles for selection options
   const roleOptions = useMemo(() => {
     const projectSpecific = projectRoles.map(r => ({ value: r.name, label: r.name }));
-    const standard = [
-      { value: 'Project Manager', label: 'Project Manager' },
-      ...companyRoles.map(r => ({ value: r, label: r }))
-    ];
-
+    const standard = [{ value: 'Project Manager', label: 'Project Manager' }, ...companyRoles.map(r => ({ value: r, label: r }))];
     return [
       { label: 'Project Specific Roles', options: projectSpecific },
-      { label: 'Standard Roles', options: standard }
+      { label: 'Standard Company Roles', options: standard }
     ];
   }, [projectRoles, companyRoles]);
 
-  // Get available users options for react-select
   const userOptions = useMemo(() => {
     if (!users) return [];
-
-    const available = users.filter(user => {
-      const isAlreadyMember = project.members?.some(member =>
-        (member.user?._id === user._id) || (member._id === user._id) || (member === user._id)
-      );
-      const isOwner = project.owner?._id === user._id || project.owner === user._id;
-      return !isAlreadyMember && !isOwner;
-    });
-
-    return available.map(u => ({
-      value: u._id,
-      label: `${u.name} (${u.email})`,
-      user: u
-    }));
+    const available = users.filter(user => !project.members?.some(m => (m.user?._id || m.user) === user._id) && project.owner?._id !== user._id && project.owner !== user._id);
+    return available.map(u => ({ value: u._id, label: `${u.name} (${u.email})`, user: u }));
   }, [users, project.members, project.owner]);
 
   const handleCreateRole = async () => {
     if (!newRole.name.trim()) return;
     setLoading(true);
-    setError(null);
     try {
-      await taskRoleAPI.create(projectId, {
-        name: newRole.name.trim(),
-        description: newRole.description.trim(),
-        color: newRole.color,
-        order: projectRoles.length + 1
-      });
+      await taskRoleAPI.create(projectId, { ...newRole, order: projectRoles.length + 1 });
       setNewRole({ name: '', description: '', color: '#6366f1' });
       setShowAddRole(false);
-      toast.success('Role created successfully');
-      await fetchRoles();
-    } catch (error) {
-      const msg = error.response?.data?.message || 'Failed to create role';
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
+      showToast('Role created successfully', 'success');
+      fetchRoles();
+    } catch (e) { showToast('Failed to create role', 'error'); }
+    finally { setLoading(false); }
+  };
+
+  const handleAddMember = async () => {
+    if (!selectedUserOption || selectedRoleOptions.length === 0) return;
+    setLoading(true);
+    try {
+      const combinedRoles = selectedRoleOptions.map(opt => opt.value).join(', ');
+      await projectAPI.addTeamMember(projectId, selectedUserOption.value, combinedRoles);
+      setSelectedUserOption(null); setSelectedRoleOptions([]); setShowAddMember(false);
+      showToast('Team member added successfully', 'success');
+      onRefresh();
+    } catch (e) { showToast('Failed to add team member', 'error'); }
+    finally { setLoading(false); }
+  };
+
+  const handleRemoveMember = async () => {
+    if (!memberToRemove) return;
+    setLoading(true);
+    try {
+      await projectAPI.removeTeamMember(projectId, memberToRemove.user?._id || memberToRemove.user);
+      setMemberToRemove(null);
+      showToast('Team member removed successfully', 'success');
+      onRefresh();
+    } catch (e) { showToast('Failed to remove team member', 'error'); }
+    finally { setLoading(false); }
   };
 
   const handleDeleteRole = async () => {
@@ -122,124 +98,47 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
     try {
       await taskRoleAPI.delete(projectId, roleToRemove._id);
       setRoleToRemove(null);
-      toast.success('Role deleted');
-      await fetchRoles();
-    } catch (error) {
-      toast.error('Failed to delete role');
-    } finally {
-      setLoading(false);
-    }
+      showToast('Role deleted successfully', 'success');
+      fetchRoles();
+    } catch (e) { showToast('Failed to delete role', 'error'); }
+    finally { setLoading(false); }
   };
 
-  const handleAddMember = async () => {
-    if (!selectedUserOption || selectedRoleOptions.length === 0) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const combinedRoles = selectedRoleOptions.map(opt => opt.value).join(', ');
-      await projectAPI.addTeamMember(projectId, selectedUserOption.value, combinedRoles);
-
-      setSelectedUserOption(null);
-      setSelectedRoleOptions([]);
-      setShowAddMember(false);
-      toast.success('Member added successfully');
-      await onRefresh();
-    } catch (error) {
-      const msg = error.response?.data?.message || 'Failed to add member';
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRemoveMember = async () => {
-    if (!memberToRemove) return;
-    setLoading(true);
-    try {
-      const memberUserId = memberToRemove.user?._id || memberToRemove._id || memberToRemove.user;
-      await projectAPI.removeTeamMember(projectId, memberUserId);
-      setMemberToRemove(null);
-      toast.success('Member removed');
-      await onRefresh();
-    } catch (error) {
-      toast.error('Failed to remove member');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUpdateMemberRoles = async (member, newRoles) => {
-    setLoading(true);
-    try {
-      const userId = member.user?._id || member._id || member.user;
-      await projectAPI.addTeamMember(projectId, userId, newRoles);
-      toast.success('Member roles updated');
-      await onRefresh();
-    } catch (error) {
-      toast.error('Failed to update member roles');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRemoveSpecificRole = (member, roleToRemove) => {
-    const currentRoles = member.role?.split(',').map(r => r.trim()) || [];
-    const updatedRoles = currentRoles.filter(r => r !== roleToRemove).join(', ');
-
-    if (updatedRoles === '') {
-      toast.error('At least one role is required. Remove the member instead.');
-      return;
-    }
-
-    handleUpdateMemberRoles(member, updatedRoles);
-  };
-
-  const handleAddSpecificRole = (member, roleToAdd) => {
-    const currentRoles = member.role?.split(',').map(r => r.trim()) || [];
-    if (currentRoles.includes(roleToAdd)) {
-      toast.error('Role already assigned');
-      return;
-    }
-    const updatedRoles = [...currentRoles, roleToAdd].join(', ');
-    handleUpdateMemberRoles(member, updatedRoles);
-  };
-
-  const renderAvatar = (user, size, bgColor) => {
-    const u = user?.user || user;
-    if (u?.profile?.profilePicture) {
-      return (
-        <img
-          src={u.profile.profilePicture}
-          alt={u.name}
-          style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover' }}
-        />
-      );
-    }
-    return (
-      <div style={{
-        width: size, height: size, borderRadius: '50%', backgroundColor: bgColor,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white',
-        fontSize: size * 0.4, fontWeight: '600'
-      }}>
-        {u?.name?.charAt(0).toUpperCase() || '?'}
-      </div>
-    );
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      borderRadius: '12px',
+      padding: '4px 8px',
+      border: '1px solid #e2e8f0',
+      backgroundColor: '#f8fafc',
+      boxShadow: 'none',
+      '&:hover': { borderColor: '#cbd5e1' },
+      fontSize: '14px',
+      fontWeight: '500'
+    }),
+    placeholder: (base) => ({ ...base, color: '#94a3b8' }),
+    menu: (base) => ({ ...base, borderRadius: '12px', overflow: 'hidden', border: '1px solid #f1f5f9', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isSelected ? '#4f46e5' : state.isFocused ? '#f1f5f9' : '#ffffff',
+      color: state.isSelected ? '#ffffff' : '#1e293b',
+      fontSize: '14px'
+    }),
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      {/* SECTION: PROJECT ROLES */}
-      <section>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+    <div className="space-y-12 pb-20 animate-in fade-in duration-500">
+      {/* Roles Section */}
+      <section className="space-y-6">
+        <div className="flex justify-between items-end border-b border-slate-200 pb-4">
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#172b4d' }}>Project Roles</h2>
-            <p style={{ color: '#5e6c84', fontSize: '14px' }}>Define specific roles for this project</p>
+            <h3 className="text-xl font-bold text-slate-900">Project Roles</h3>
+            <p className="text-sm text-slate-500 mt-1">Define specialization and workflow roles for project tasks</p>
           </div>
           {canManageRoles && (
             <button
               onClick={() => setShowAddRole(true)}
-              style={{ padding: '8px 16px', backgroundColor: '#ebecf0', borderRadius: '3px', border: 'none', cursor: 'pointer', fontWeight: '500' }}
+              className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-sm"
             >
               + Create Role
             </button>
@@ -247,200 +146,179 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
         </div>
 
         {showAddRole && (
-          <div style={{ backgroundColor: '#f4f5f7', padding: '20px', borderRadius: '3px', border: '1px solid #dfe1e6', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>New Project Role</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 100px', gap: '12px', marginBottom: '16px' }}>
-              <input
-                placeholder="Role Name"
-                value={newRole.name}
-                onChange={e => setNewRole({ ...newRole, name: e.target.value })}
-                style={{ padding: '8px', borderRadius: '3px', border: '1px solid #ddd' }}
-              />
-              <input
-                placeholder="Description"
-                value={newRole.description}
-                onChange={e => setNewRole({ ...newRole, description: e.target.value })}
-                style={{ padding: '8px', borderRadius: '3px', border: '1px solid #ddd' }}
-              />
-              <input
-                type="color"
-                value={newRole.color}
-                onChange={e => setNewRole({ ...newRole, color: e.target.value })}
-                style={{ height: '35px', padding: '0', border: 'none', cursor: 'pointer' }}
-              />
+          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-md space-y-6 animate-in zoom-in-95">
+            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-widest">New Role Specification</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Role Title</label>
+                <input
+                  placeholder="e.g. Lead Architect"
+                  value={newRole.name}
+                  onChange={e => setNewRole({ ...newRole, name: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 transition-all"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Responsibilities</label>
+                <input
+                  placeholder="Brief description..."
+                  value={newRole.description}
+                  onChange={e => setNewRole({ ...newRole, description: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 transition-all"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Indicator Color</label>
+                <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl">
+                  <input type="color" value={newRole.color} onChange={e => setNewRole({ ...newRole, color: e.target.value })} className="h-6 w-10 border-none cursor-pointer rounded bg-transparent" />
+                  <span className="text-xs font-bold text-slate-600 uppercase font-mono">{newRole.color}</span>
+                </div>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'flex-end' }}>
-              {error && <span style={{ color: '#ff5630', fontSize: '13px' }}>{error}</span>}
-              <button onClick={() => setShowAddRole(false)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>Cancel</button>
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-50">
+              <button onClick={() => setShowAddRole(false)} className="px-6 py-2 text-xs font-bold text-slate-500 hover:text-rose-600 transition-all">Cancel</button>
               <button
                 onClick={handleCreateRole}
-                disabled={!newRole.name || loading}
-                style={{ backgroundColor: '#0052cc', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '3px', cursor: 'pointer' }}
+                disabled={loading}
+                className="bg-indigo-600 text-white px-8 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-all"
               >
-                {loading ? 'Creating...' : 'Create'}
+                Create Role
               </button>
             </div>
           </div>
         )}
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {projectRoles.map(role => (
-            <div key={role._id} style={{
-              padding: '12px 16px', backgroundColor: 'white', borderRadius: '8px',
-              border: `1px solid ${role.color}40`, borderLeft: `4px solid ${role.color}`,
-              width: '240px', position: 'relative', boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-            }}>
-              <div style={{ fontWeight: '700', fontSize: '14px' }}>{role.name}</div>
-              <div style={{ fontSize: '12px', color: '#5e6c84' }}>{role.description}</div>
-              {canManageRoles && (
-                <button onClick={() => setRoleToRemove(role)} style={{ position: 'absolute', top: '8px', right: '8px', border: 'none', background: 'none', color: '#ff5630', cursor: 'pointer' }}>×</button>
-              )}
+            <div key={role._id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative group hover:shadow-md transition-all">
+              <div className="absolute top-0 left-0 w-1.5 h-full rounded-l-2xl" style={{ backgroundColor: role.color }} />
+              <div className="flex justify-between items-start mb-4">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" style={{ backgroundColor: `${role.color}15`, color: role.color }}>
+                  🎖️
+                </div>
+                {canManageRoles && (
+                  <button onClick={() => setRoleToRemove(role)} className="text-slate-300 hover:text-rose-500 transition-colors">
+                    <span className="text-xl">×</span>
+                  </button>
+                )}
+              </div>
+              <h4 className="text-base font-bold text-slate-900 mb-1">{role.name}</h4>
+              <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2">{role.description || 'No description provided.'}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* SECTION: TEAM MEMBERS */}
-      <section>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      {/* Team Members Section */}
+      <section className="space-y-6">
+        <div className="flex justify-between items-end border-b border-slate-200 pb-4">
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#172b4d' }}>Team Members</h2>
-            <p style={{ color: '#5e6c84', fontSize: '14px' }}>Manage project access</p>
+            <h3 className="text-xl font-bold text-slate-900">Project Team</h3>
+            <p className="text-sm text-slate-500 mt-1">Manage personnel and their specific roles within this project</p>
           </div>
           {canAddMembers && (
             <button
               onClick={() => setShowAddMember(true)}
-              style={{ padding: '8px 16px', backgroundColor: '#0052cc', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer', fontWeight: '500' }}
+              className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-sm"
             >
-              Add Member
+              + Add Member
             </button>
           )}
         </div>
 
         {showAddMember && (
-          <div style={{ backgroundColor: '#f4f5f7', padding: '24px', borderRadius: '3px', marginBottom: '24px', border: '1px solid #dfe1e6' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px' }}>USER</label>
-                <Select
-                  options={userOptions}
-                  value={selectedUserOption}
-                  onChange={setSelectedUserOption}
-                  placeholder="Select user..."
-                  isClearable
-                />
+          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-md space-y-8 animate-in zoom-in-95">
+            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Integrate New Team Member</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">User Identity</label>
+                <Select options={userOptions} value={selectedUserOption} onChange={setSelectedUserOption} styles={selectStyles} placeholder="Search by name or email..." />
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '6px' }}>ROLES</label>
-                <Select
-                  isMulti
-                  options={roleOptions}
-                  value={selectedRoleOptions}
-                  onChange={setSelectedRoleOptions}
-                  placeholder="Select roles..."
-                />
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Assigned Project Roles</label>
+                <Select isMulti options={roleOptions} value={selectedRoleOptions} onChange={setSelectedRoleOptions} styles={selectStyles} placeholder="Select one or more roles..." />
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'flex-end' }}>
-              {error && <span style={{ color: '#ff5630', fontSize: '13px' }}>{error}</span>}
-              <button
-                onClick={() => { setShowAddMember(false); setError(null); }}
-                style={{ border: 'none', background: 'none', cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
+            <div className="flex justify-end gap-3 pt-6 border-t border-slate-50">
+              <button onClick={() => setShowAddMember(false)} className="px-6 py-2 text-xs font-bold text-slate-500 hover:text-rose-600 transition-all">Cancel</button>
               <button
                 onClick={handleAddMember}
-                disabled={!selectedUserOption || selectedRoleOptions.length === 0 || loading}
-                style={{ backgroundColor: '#36b37e', color: 'white', border: 'none', padding: '8px 20px', borderRadius: '3px', cursor: 'pointer', fontWeight: '600' }}
+                disabled={loading || !selectedUserOption}
+                className="bg-indigo-600 text-white px-8 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-all"
               >
-                {loading ? 'Adding...' : 'Add Member'}
+                Add Member
               </button>
             </div>
           </div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {/* Owner */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', backgroundColor: '#e3fcef', borderRadius: '8px' }}>
-            {renderAvatar(project.owner, 40, '#36b37e')}
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '14px', fontWeight: '700' }}>{project.owner?.name}</div>
-              <div style={{ fontSize: '12px', opacity: 0.8 }}>{project.owner?.email}</div>
+        <div className="space-y-4">
+          {/* Owner Identity */}
+          <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-lg flex items-center justify-between border-4 border-slate-800">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-600 border border-indigo-400/30 flex items-center justify-center text-2xl font-black italic shadow-inner">
+                {project.owner?.name?.[0].toUpperCase()}
+              </div>
+              <div>
+                <h4 className="text-lg font-bold">{project.owner?.name}</h4>
+                <p className="text-xs text-slate-400 font-medium font-sans">{project.owner?.email}</p>
+                <div className="mt-2 text-[10px] font-bold uppercase tracking-widest text-indigo-400">Project Owner</div>
+              </div>
             </div>
-            <div style={{ backgroundColor: '#36b37e', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: '700' }}>OWNER</div>
+            <div className="px-4 py-1.5 bg-slate-800 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-400 border border-white/5">
+              Mission Control
+            </div>
           </div>
 
-          {/* Members */}
-          {project.members?.map((member, i) => (
-            <div key={member._id || i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #dfe1e6' }}>
-              {renderAvatar(member.user, 40, '#0052cc')}
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '14px', fontWeight: '600' }}>{member.user?.name || 'Unknown'}</div>
-                <div style={{ fontSize: '12px', color: '#5e6c84' }}>{member.user?.email}</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px', alignItems: 'center' }}>
-                  {member.role?.split(',').map((r, idx) => (
-                    <span
-                      key={idx}
-                      style={{
-                        backgroundColor: '#ebecf0',
-                        padding: '2px 8px',
-                        borderRadius: '3px',
-                        fontSize: '10px',
-                        fontWeight: '700',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                    >
-                      {r.trim()}
-                      {canAddMembers && (
-                        <button
-                          onClick={() => handleRemoveSpecificRole(member, r.trim())}
-                          style={{ border: 'none', background: 'none', color: '#DE350B', cursor: 'pointer', padding: '0', fontSize: '12px', lineHeight: '1' }}
-                          title="Remove this role"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </span>
-                  ))}
-
-                  {canAddMembers && (
-                    <div style={{ width: '150px', marginLeft: '8px' }}>
-                      <Select
-                        placeholder="+ Add role"
-                        options={roleOptions}
-                        onChange={(opt) => handleAddSpecificRole(member, opt.value)}
-                        value={null}
-                        styles={{
-                          control: (base) => ({
-                            ...base,
-                            minHeight: '24px',
-                            height: '24px',
-                            fontSize: '10px',
-                            borderRadius: '3px',
-                          }),
-                          indicatorsContainer: (base) => ({ ...base, height: '24px' }),
-                          valueContainer: (base) => ({ ...base, padding: '0 4px' }),
-                          placeholder: (base) => ({ ...base, fontSize: '10px' }),
-                          option: (base) => ({ ...base, fontSize: '11px', padding: '4px 8px' })
-                        }}
-                      />
+          {/* Member List */}
+          <div className="grid grid-cols-1 gap-4">
+            {project.members?.map((member, i) => (
+              <div key={member._id || i} className="bg-white p-6 rounded-2xl border border-slate-200 flex items-center justify-between hover:shadow-md transition-all group">
+                <div className="flex items-center gap-6">
+                  <div className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-xl font-bold text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-400 transition-colors">
+                    {member.user?.name?.[0].toUpperCase() || '?'}
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{member.user?.name || 'Unknown User'}</h4>
+                    <p className="text-xs text-slate-400 font-medium mt-0.5">{member.user?.email}</p>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {member.role?.split(',').map((r, idx) => (
+                        <span key={idx} className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                          {r.trim()}
+                        </span>
+                      ))}
                     </div>
-                  )}
+                  </div>
                 </div>
+                {canRemoveMembers && (
+                  <button
+                    onClick={() => setMemberToRemove(member)}
+                    className="px-4 py-2 text-rose-500 hover:bg-rose-50 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    Remove Member
+                  </button>
+                )}
               </div>
-              {canRemoveMembers && (
-                <button onClick={() => setMemberToRemove(member)} style={{ padding: '6px 10px', border: '1px solid #dfe1e6', background: 'white', color: '#DE350B', cursor: 'pointer', fontSize: '12px', borderRadius: '3px' }}>Remove Member</button>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
-      <DeleteConfirmModal isOpen={!!memberToRemove} onClose={() => setMemberToRemove(null)} onConfirm={handleRemoveMember} title="Remove Member" itemName={memberToRemove?.user?.name} />
-      <DeleteConfirmModal isOpen={!!roleToRemove} onClose={() => setRoleToRemove(null)} onConfirm={handleDeleteRole} title="Delete Role" itemName={roleToRemove?.name} />
+      <DeleteConfirmModal
+        isOpen={!!memberToRemove}
+        onClose={() => setMemberToRemove(null)}
+        onConfirm={handleRemoveMember}
+        title="Remove Team Member"
+        message={`Are you sure you want to remove ${memberToRemove?.user?.name} from this project? They will no longer have access to mission assets.`}
+      />
+
+      <DeleteConfirmModal
+        isOpen={!!roleToRemove}
+        onClose={() => setRoleToRemove(null)}
+        onConfirm={handleDeleteRole}
+        title="Delete Project Role"
+        message={`Are you sure you want to delete the role: ${roleToRemove?.name}? Active assignments to this role will remain but lose their reference.`}
+      />
     </div>
   );
 };

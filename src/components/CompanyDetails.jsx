@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from './Layout';
+import { BASE_SERVER_URL } from '../services/api';
 
 const CompanyDetails = () => {
     const { id } = useParams();
@@ -23,7 +24,7 @@ const CompanyDetails = () => {
             setLoading(true);
             try {
                 // Fetch company details
-                const companyRes = await fetch(`http://localhost:5000/api/admin/companies/${id}`, {
+                const companyRes = await fetch(`${BASE_SERVER_URL}/api/admin/companies/${id}`, {
                     headers: {
                         'Authorization': `Bearer ${state.token}`
                     }
@@ -37,7 +38,7 @@ const CompanyDetails = () => {
                 }
 
                 // Fetch company projects
-                const projectsRes = await fetch(`http://localhost:5000/api/admin/companies/${id}/projects`, {
+                const projectsRes = await fetch(`${BASE_SERVER_URL}/api/admin/companies/${id}/projects`, {
                     headers: {
                         'Authorization': `Bearer ${state.token}`
                     }
@@ -92,8 +93,8 @@ const CompanyDetails = () => {
         <button
             onClick={() => setActiveTab(id)}
             className={`flex items-center gap-3 px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-300 relative group overflow-hidden ${activeTab === id
-                    ? 'bg-slate-900 text-white shadow-2xl shadow-slate-300 scale-105 z-10'
-                    : 'text-slate-500 hover:bg-white hover:text-slate-900 hover:translate-y-[-2px]'
+                ? 'bg-slate-900 text-white shadow-2xl shadow-slate-300 scale-105 z-10'
+                : 'text-slate-500 hover:bg-white hover:text-slate-900 hover:translate-y-[-2px]'
                 }`}
         >
             <span className={`transition-transform duration-500 ${activeTab === id ? 'scale-110 rotate-3' : 'group-hover:rotate-12'}`}>
@@ -273,8 +274,8 @@ const CompanyDetails = () => {
                                         <div className="flex justify-between items-start mb-8">
                                             <h3 className="text-xl font-black text-slate-800 tracking-tight group-hover:text-indigo-600 transition-colors uppercase">{project.name}</h3>
                                             <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${project.status === 'completed'
-                                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                                                    : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
+                                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                                : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
                                                 }`}>
                                                 {project.status.replace('-', ' ')}
                                             </span>

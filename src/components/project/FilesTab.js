@@ -11,21 +11,18 @@ const FilesTab = ({ project, isProjectOwner, onRefresh }) => {
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     try {
       setUploading(true);
       const formData = new FormData();
       formData.append('file', file);
-
       await projectAPI.uploadAttachment(project._id, formData);
       showToast('File uploaded successfully', 'success');
       onRefresh();
     } catch (error) {
-      console.error('Error uploading file:', error);
+      console.error('Upload Error', error);
       showToast(error.response?.data?.error || 'Failed to upload file', 'error');
     } finally {
-      setUploading(false);
-      e.target.value = '';
+      setUploading(false); e.target.value = '';
     }
   };
 
@@ -35,7 +32,7 @@ const FilesTab = ({ project, isProjectOwner, onRefresh }) => {
       showToast('File deleted successfully', 'success');
       onRefresh();
     } catch (error) {
-      console.error('Error deleting file:', error);
+      console.error('Delete Error', error);
       showToast(error.response?.data?.error || 'Failed to delete file', 'error');
     } finally {
       setDeleteModal({ isOpen: false, fileId: null, fileName: '' });
@@ -43,7 +40,7 @@ const FilesTab = ({ project, isProjectOwner, onRefresh }) => {
   };
 
   const formatFileSize = (bytes) => {
-    if (!bytes) return 'Unknown size';
+    if (!bytes) return '0 Bytes';
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
@@ -65,278 +62,94 @@ const FilesTab = ({ project, isProjectOwner, onRefresh }) => {
   const attachments = project.attachments || [];
 
   return (
-    <div>
-      {/* Upload Section */}
-      <div style={{
-        background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-        borderRadius: '16px',
-        padding: '32px',
-        marginBottom: '32px',
-        boxShadow: '0 10px 40px rgba(59, 130, 246, 0.2)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '300px',
-          height: '300px',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
-          borderRadius: '50%',
-          transform: 'translate(30%, -30%)'
-        }}></div>
+    <div className="space-y-8 p-1 animate-in fade-in duration-500 pb-20">
+      {/* Upload Header */}
+      <div className="bg-slate-900 rounded-3xl p-8 lg:p-12 shadow-xl border border-slate-800 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/5 rounded-full blur-[100px] -mr-48 -mt-48" />
 
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-              <polyline points="13 2 13 9 20 9"></polyline>
-            </svg>
-            <h2 style={{ margin: 0, color: '#ffffff', fontSize: '24px', fontWeight: '600' }}>
-              Project Files
-            </h2>
-          </div>
+        <div className="relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-lg border border-slate-100">📂</div>
+              <div>
+                <h2 className="text-2xl font-bold text-white uppercase tracking-tight">Project Documents</h2>
+                <p className="text-slate-500 text-sm mt-1">Manage and store important project assets and documentation.</p>
+              </div>
+            </div>
 
-          <p style={{ margin: '0 0 24px 0', color: 'rgba(255, 255, 255, 0.9)', fontSize: '14px' }}>
-            Upload and manage project documents, images, and other files
-          </p>
+            <div className="flex items-center gap-6">
+              <div className="hidden sm:flex flex-col items-end">
+                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Storage Status</span>
+                <span className="text-white font-bold text-sm">{attachments.length} Files Uploaded</span>
+              </div>
 
-          <label style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '14px 28px',
-            background: 'rgba(255, 255, 255, 0.2)',
-            backdropFilter: 'blur(10px)',
-            border: '2px solid rgba(255, 255, 255, 0.3)',
-            borderRadius: '12px',
-            color: '#ffffff',
-            fontSize: '15px',
-            fontWeight: '600',
-            cursor: uploading ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s ease',
-            opacity: uploading ? 0.6 : 1
-          }}
-            onMouseEnter={(e) => {
-              if (!uploading) {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!uploading) {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }
-            }}>
-            {uploading ? (
-              <>
-                <div style={{
-                  width: '18px',
-                  height: '18px',
-                  border: '3px solid rgba(255, 255, 255, 0.3)',
-                  borderTop: '3px solid #ffffff',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
-                }}></div>
-                Uploading...
-              </>
-            ) : (
-              <>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                Upload File
-              </>
-            )}
-            <input
-              type="file"
-              onChange={handleFileUpload}
-              disabled={uploading}
-              style={{ display: 'none' }}
-            />
-          </label>
-
-          <div style={{
-            marginTop: '16px',
-            padding: '12px 16px',
-            background: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: '8px',
-            fontSize: '13px',
-            color: 'rgba(255, 255, 255, 0.8)'
-          }}>
-            <strong>Total Files:</strong> {attachments.length} | <strong>Max Size:</strong> 10MB per file
+              <label className={`px-8 py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95 cursor-pointer whitespace-nowrap flex items-center gap-2 ${uploading ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-indigo-700'}`}>
+                {uploading ? (
+                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <span>↑</span>
+                )}
+                <span>{uploading ? 'Uploading...' : 'Upload File'}</span>
+                <input type="file" onChange={handleFileUpload} disabled={uploading} className="hidden" />
+              </label>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Files List */}
+      {/* Grid Display */}
       {attachments.length === 0 ? (
-        <div style={{
-          textAlign: 'center',
-          padding: '60px 20px',
-          backgroundColor: '#f9fafb',
-          borderRadius: '16px',
-          border: '2px dashed #d1d5db'
-        }}>
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 16px' }}>
-            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-            <polyline points="13 2 13 9 20 9"></polyline>
-          </svg>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#6b7280' }}>
-            No files uploaded yet
-          </h3>
-          <p style={{ margin: 0, fontSize: '14px', color: '#9ca3af' }}>
-            Upload your first file to get started
-          </p>
+        <div className="bg-white py-32 rounded-3xl border-2 border-dashed border-slate-200 text-center shadow-sm">
+          <div className="text-6xl mb-6 opacity-20">📁</div>
+          <h3 className="text-xl font-bold text-slate-900 capitalize">No documents found</h3>
+          <p className="text-sm text-slate-500 mt-2 max-w-sm mx-auto font-medium">Your document library is currently empty. Upload files to get started with project organization.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-          {attachments.map((attachment) => (
-            <div
-              key={attachment._id}
-              style={{
-                backgroundColor: '#ffffff',
-                border: '2px solid #e5e7eb',
-                borderRadius: '16px',
-                padding: '20px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '16px' }}>
-                <div style={{
-                  fontSize: '32px',
-                  width: '48px',
-                  height: '48px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: '#f3f4f6',
-                  borderRadius: '12px',
-                  flexShrink: 0
-                }}>
-                  {getFileIcon(attachment.type)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {attachments.map((file) => (
+            <div key={file._id} className="group bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-14 h-14 bg-slate-50 rounded-xl flex items-center justify-center text-3xl border border-slate-100 shadow-inner shrink-0 italic">
+                  {getFileIcon(file.type)}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h4 style={{
-                    margin: '0 0 4px 0',
-                    fontSize: '15px',
-                    fontWeight: '600',
-                    color: '#1e293b',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {attachment.name}
+                <div className="min-w-0 flex-1 pt-1">
+                  <h4 className="font-bold text-slate-900 truncate leading-tight group-hover:text-indigo-600 transition-colors" title={file.name}>
+                    {file.name}
                   </h4>
-                  <div style={{ fontSize: '13px', color: '#64748b' }}>
-                    {formatFileSize(attachment.size)}
-                  </div>
+                  <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-tight">{formatFileSize(file.size)}</p>
                 </div>
               </div>
 
-              <div style={{
-                padding: '12px',
-                backgroundColor: '#f9fafb',
-                borderRadius: '8px',
-                marginBottom: '16px',
-                fontSize: '12px',
-                color: '#64748b'
-              }}>
-                <div style={{ marginBottom: '4px' }}>
-                  <strong>Uploaded:</strong> {new Date(attachment.uploadedAt).toLocaleDateString()}
-                </div>
-                {attachment.uploadedBy && (
-                  <div>
-                    <strong>By:</strong> {attachment.uploadedBy.name || 'Unknown'}
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-2 bg-slate-50/50 p-3 rounded-xl border border-slate-50">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Uploaded</span>
+                    <span className="text-[10px] font-bold text-slate-700 truncate">{new Date(file.uploadedAt).toLocaleDateString()}</span>
                   </div>
-                )}
-              </div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">By</span>
+                    <span className="text-[10px] font-bold text-slate-700 truncate">{file.uploadedBy?.name || 'System'}</span>
+                  </div>
+                </div>
 
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <a
-                  href={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${attachment.url}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    flex: 1,
-                    padding: '10px 16px',
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '10px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    textAlign: 'center',
-                    textDecoration: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                  </svg>
-                  Open
-                </a>
-
-                {isProjectOwner && (
-                  <button
-                    onClick={() => setDeleteModal({ isOpen: true, fileId: attachment._id, fileName: attachment.name })}
-                    style={{
-                      padding: '10px 16px',
-                      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '10px',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
+                <div className="flex gap-2">
+                  <a
+                    href={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${file.url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-2.5 bg-slate-950 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest text-center hover:bg-slate-800 transition-all flex items-center justify-center gap-1.5"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="3 6 5 6 21 6"></polyline>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                  </button>
-                )}
+                    Download
+                  </a>
+                  {isProjectOwner && (
+                    <button
+                      onClick={() => setDeleteModal({ isOpen: true, fileId: file._id, fileName: file.name })}
+                      className="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-rose-600 hover:border-rose-100 hover:bg-rose-50 transition-all"
+                    >
+                      🗑️
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -347,14 +160,11 @@ const FilesTab = ({ project, isProjectOwner, onRefresh }) => {
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, fileId: null, fileName: '' })}
         onConfirm={handleDeleteFile}
-        title="Delete File"
-        message="Are you sure you want to delete this file? This action cannot be undone."
-        itemName={deleteModal.fileName}
-        icon="📁"
+        title="Delete Document"
+        message={`Are you sure you want to permanently delete "${deleteModal.fileName}"? This action cannot be undone.`}
       />
     </div>
   );
 };
 
 export default FilesTab;
-

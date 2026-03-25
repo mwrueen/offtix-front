@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { chatAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -35,13 +35,11 @@ const ChatTab = ({ projectId, project }) => {
     });
 
     newSocket.on('connect', () => {
-      console.log('Socket connected');
       setConnected(true);
       newSocket.emit('join-project', projectId);
     });
 
     newSocket.on('disconnect', () => {
-      console.log('Socket disconnected');
       setConnected(false);
     });
 
@@ -52,12 +50,6 @@ const ChatTab = ({ projectId, project }) => {
 
     newSocket.on('message-deleted', ({ messageId }) => {
       setMessages(prev => prev.filter(m => m._id !== messageId));
-    });
-
-    newSocket.on('message-edited', (updatedMessage) => {
-      setMessages(prev => prev.map(m =>
-        m._id === updatedMessage._id ? updatedMessage : m
-      ));
     });
 
     newSocket.on('user-typing', ({ userId, userName, isTyping }) => {
@@ -71,10 +63,6 @@ const ChatTab = ({ projectId, project }) => {
         }
         return prev;
       });
-    });
-
-    newSocket.on('error', (error) => {
-      console.error('Socket error:', error);
     });
 
     setSocket(newSocket);
@@ -239,35 +227,26 @@ const ChatTab = ({ projectId, project }) => {
 
     if (d.toDateString() === today.toDateString()) return 'Today';
     if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   const renderMessageContent = (content) => {
-    // Highlight @mentions
     const parts = content.split(/(@\w+(?:\s\w+)?)/g);
     return parts.map((part, i) => {
       if (part.startsWith('@')) {
         const mentionedMember = members.find(m => `@${m.name}` === part);
-        return (
-          <span
-            key={i}
-            style={{
-              backgroundColor: mentionedMember ? '#e3f2fd' : 'transparent',
-              color: mentionedMember ? '#1976d2' : 'inherit',
-              padding: mentionedMember ? '2px 4px' : '0',
-              borderRadius: '4px',
-              fontWeight: mentionedMember ? '500' : 'normal'
-            }}
-          >
-            {part}
-          </span>
-        );
+        if (mentionedMember) {
+          return (
+            <span key={i} className="text-indigo-600 font-bold bg-indigo-50 px-1 rounded">
+              {part}
+            </span>
+          );
+        }
       }
       return part;
     });
   };
 
-  // Group messages by date
   const groupedMessages = messages.reduce((groups, message) => {
     const date = formatDate(message.createdAt);
     if (!groups[date]) groups[date] = [];
@@ -277,312 +256,134 @@ const ChatTab = ({ projectId, project }) => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div className="spinner" style={{
-            width: '40px',
-            height: '40px',
-            border: '3px solid #f3f3f3',
-            borderTop: '3px solid #3498db',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 16px'
-          }} />
-          <p style={{ color: '#666' }}>Loading chat...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-24 animate-pulse">
+        <div className="w-10 h-10 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin mb-4" />
+        <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Initialising Comms...</p>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '600px' }}>
-      {/* Connection Status */}
-      <div style={{
-        padding: '8px 16px',
-        backgroundColor: connected ? '#e8f5e9' : '#ffebee',
-        borderRadius: '8px',
-        marginBottom: '16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}>
-        <div style={{
-          width: '8px',
-          height: '8px',
-          borderRadius: '50%',
-          backgroundColor: connected ? '#4caf50' : '#f44336'
-        }} />
-        <span style={{ fontSize: '13px', color: connected ? '#2e7d32' : '#c62828' }}>
-          {connected ? 'Connected to chat' : 'Connecting...'}
-        </span>
-        <span style={{ marginLeft: 'auto', fontSize: '12px', color: '#666' }}>
-          {members.length} members
-        </span>
+    <div className="flex flex-col h-[700px] bg-slate-50 rounded-3xl border border-slate-200 overflow-hidden shadow-inner font-sans">
+      {/* Header Stat Area */}
+      <div className="px-6 py-3 bg-white border-b border-slate-200 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-rose-500'}`} />
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+            {connected ? 'Channel Active' : 'Offline'}
+          </span>
+        </div>
+        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+          {members.length} team members synchronized
+        </div>
       </div>
 
-      {/* Messages Container */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '16px',
-        backgroundColor: '#f8f9fa',
-        borderRadius: '12px',
-        marginBottom: '16px'
-      }}>
+      {/* Messages Scroll Area */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-thin scroll-smooth bg-slate-50/30">
         {messages.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>💬</div>
-            <h3 style={{ marginBottom: '8px' }}>No messages yet</h3>
-            <p>Start the conversation with your team!</p>
+          <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
+            <div className="text-6xl mb-4">💬</div>
+            <h3 className="text-lg font-bold text-slate-900 capitalize">Secure Channel Established</h3>
+            <p className="text-xs text-slate-500 max-w-[200px] mx-auto mt-2 italic font-medium">Commence team synchronization. All signals are encrypted.</p>
           </div>
         ) : (
           Object.entries(groupedMessages).map(([date, dateMessages]) => (
             <div key={date}>
-              {/* Date Separator */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                margin: '20px 0',
-                gap: '12px'
-              }}>
-                <div style={{ flex: 1, height: '1px', backgroundColor: '#ddd' }} />
-                <span style={{ fontSize: '12px', color: '#888', fontWeight: '500' }}>{date}</span>
-                <div style={{ flex: 1, height: '1px', backgroundColor: '#ddd' }} />
+              <div className="flex items-center gap-4 my-8">
+                <div className="flex-1 h-px bg-slate-200" />
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">{date}</span>
+                <div className="flex-1 h-px bg-slate-200" />
               </div>
 
-              {/* Messages for this date */}
-              {dateMessages.map((message, index) => {
-                // Check both 'id' and '_id' for compatibility
-                const currentUserId = authState.user?.id || authState.user?._id;
-                const isOwn = message.sender?._id === currentUserId;
-                const showAvatar = index === 0 ||
-                  dateMessages[index - 1]?.sender?._id !== message.sender?._id;
+              <div className="space-y-4">
+                {dateMessages.map((message, index) => {
+                  const currentUserId = authState.user?.id || authState.user?._id;
+                  const isOwn = message.sender?._id === currentUserId;
+                  const showHeader = index === 0 || dateMessages[index - 1]?.sender?._id !== message.sender?._id;
 
-                return (
-                  <div
-                    key={message._id}
-                    style={{
-                      display: 'flex',
-                      flexDirection: isOwn ? 'row-reverse' : 'row',
-                      marginBottom: '8px',
-                      gap: '8px'
-                    }}
-                  >
-                    {/* Avatar */}
-                    {showAvatar ? (
-                      <div style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '50%',
-                        backgroundColor: isOwn ? '#1976d2' : '#e0e0e0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: isOwn ? '#fff' : '#666',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        flexShrink: 0,
-                        backgroundImage: message.sender?.profile?.profilePicture
-                          ? `url(${message.sender.profile.profilePicture})`
-                          : 'none',
-                        backgroundSize: 'cover'
-                      }}>
-                        {!message.sender?.profile?.profilePicture &&
-                          message.sender?.name?.charAt(0).toUpperCase()}
-                      </div>
-                    ) : (
-                      <div style={{ width: '36px' }} />
-                    )}
+                  return (
+                    <div key={message._id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group transition-all`}>
+                      <div className={`flex flex-col max-w-[80%] ${isOwn ? 'items-end' : 'items-start'}`}>
+                        {showHeader && !isOwn && (
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1">{message.sender?.name}</span>
+                        )}
 
-                    {/* Message Bubble */}
-                    <div style={{
-                      maxWidth: '70%',
-                      position: 'relative'
-                    }}>
-                      {showAvatar && !isOwn && (
-                        <div style={{
-                          fontSize: '12px',
-                          color: '#666',
-                          marginBottom: '4px',
-                          fontWeight: '500'
-                        }}>
-                          {message.sender?.name}
-                        </div>
-                      )}
-                      <div
-                        style={{
-                          padding: '10px 14px',
-                          backgroundColor: isOwn ? '#1976d2' : '#fff',
-                          color: isOwn ? '#fff' : '#333',
-                          borderRadius: isOwn ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                          wordBreak: 'break-word'
-                        }}
-                      >
-                        <div style={{ fontSize: '14px', lineHeight: '1.5' }}>
-                          {renderMessageContent(message.content)}
-                        </div>
-                        <div style={{
-                          fontSize: '11px',
-                          color: isOwn ? 'rgba(255,255,255,0.7)' : '#999',
-                          marginTop: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}>
-                          {formatTime(message.createdAt)}
-                          {message.isEdited && <span>(edited)</span>}
+                        <div className="relative group">
+                          <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm font-medium ${isOwn ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'}`}>
+                            {renderMessageContent(message.content)}
+                            <div className={`text-[9px] mt-2 font-bold uppercase tracking-tight ${isOwn ? 'text-indigo-200' : 'text-slate-400'}`}>
+                              {formatTime(message.createdAt)}
+                            </div>
+                          </div>
+
+                          {isOwn && (
+                            <button
+                              onClick={() => handleDeleteMessage(message._id)}
+                              className="absolute -left-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-2 text-slate-300 hover:text-rose-500"
+                            >
+                              🗑️
+                            </button>
+                          )}
                         </div>
                       </div>
-
-                      {/* Delete button for own messages */}
-                      {isOwn && (
-                        <button
-                          onClick={() => handleDeleteMessage(message._id)}
-                          style={{
-                            position: 'absolute',
-                            top: showAvatar ? '20px' : '0',
-                            right: '-30px',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            opacity: 0.5,
-                            fontSize: '12px'
-                          }}
-                          title="Delete message"
-                        >
-                          🗑️
-                        </button>
-                      )}
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           ))
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Typing Indicator */}
-      {typingUsers.length > 0 && (
-        <div style={{
-          fontSize: '12px',
-          color: '#666',
-          marginBottom: '8px',
-          fontStyle: 'italic'
-        }}>
-          {typingUsers.map(u => u.userName).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
-        </div>
-      )}
-
-      {/* Message Input */}
-      <div style={{ position: 'relative' }}>
-        {/* Mentions Dropdown */}
-        {showMentions && filteredMembers.length > 0 && (
-          <div style={{
-            position: 'absolute',
-            bottom: '100%',
-            left: 0,
-            right: 0,
-            backgroundColor: '#fff',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            boxShadow: '0 -4px 12px rgba(0,0,0,0.15)',
-            maxHeight: '200px',
-            overflowY: 'auto',
-            marginBottom: '8px',
-            zIndex: 10
-          }}>
-            {filteredMembers.map((member, index) => (
-              <div
-                key={member._id}
-                onClick={() => insertMention(member)}
-                style={{
-                  padding: '10px 14px',
-                  cursor: 'pointer',
-                  backgroundColor: index === mentionIndex ? '#e3f2fd' : 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  borderBottom: index < filteredMembers.length - 1 ? '1px solid #f0f0f0' : 'none'
-                }}
-              >
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: '#e0e0e0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  backgroundImage: member.avatar ? `url(${member.avatar})` : 'none',
-                  backgroundSize: 'cover'
-                }}>
-                  {!member.avatar && member.name?.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <div style={{ fontWeight: '500', fontSize: '14px' }}>{member.name}</div>
-                  <div style={{ fontSize: '12px', color: '#666' }}>{member.role}</div>
-                </div>
-              </div>
-            ))}
+      {/* Bottom Area: Typing & Input */}
+      <div className="p-6 bg-white border-t border-slate-200">
+        {typingUsers.length > 0 && (
+          <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-3 animate-pulse italic">
+            {typingUsers.map(u => u.userName).join(', ')} typing...
           </div>
         )}
 
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          alignItems: 'flex-end'
-        }}>
-          <textarea
-            ref={inputRef}
-            value={newMessage}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a message... Use @ to mention someone"
-            disabled={!connected || sending}
-            style={{
-              flex: 1,
-              padding: '12px 16px',
-              border: '2px solid #e0e0e0',
-              borderRadius: '24px',
-              fontSize: '14px',
-              resize: 'none',
-              minHeight: '48px',
-              maxHeight: '120px',
-              outline: 'none',
-              transition: 'border-color 0.2s',
-              fontFamily: 'inherit'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#1976d2'}
-            onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
-            rows={1}
-          />
-          <button
-            onClick={handleSendMessage}
-            disabled={!newMessage.trim() || !connected || sending}
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '50%',
-              backgroundColor: newMessage.trim() && connected ? '#1976d2' : '#e0e0e0',
-              border: 'none',
-              cursor: newMessage.trim() && connected ? 'pointer' : 'not-allowed',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s',
-              flexShrink: 0
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          </button>
+        <div className="relative">
+          {showMentions && filteredMembers.length > 0 && (
+            <div className="absolute bottom-full left-0 right-0 bg-white border border-slate-200 rounded-2xl shadow-xl mb-3 overflow-hidden z-20 max-h-48 overflow-y-auto">
+              {filteredMembers.map((member, idx) => (
+                <div
+                  key={member._id}
+                  onClick={() => insertMention(member)}
+                  className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors ${idx === mentionIndex ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-slate-50 text-slate-600'}`}
+                >
+                  <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold uppercase ring-1 ring-slate-200 italic">
+                    {member.name.charAt(0)}
+                  </div>
+                  <span className="text-xs font-bold">{member.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-end gap-3">
+            <textarea
+              ref={inputRef}
+              value={newMessage}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Shift tactical data points..."
+              disabled={!connected || sending}
+              rows={1}
+              className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 text-sm focus:bg-white focus:border-indigo-400 outline-none transition-all resize-none min-h-[48px] max-h-32 font-medium"
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={!newMessage.trim() || !connected || sending}
+              className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg active:scale-90 transition-all disabled:opacity-30 disabled:grayscale disabled:scale-100"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -590,19 +391,11 @@ const ChatTab = ({ projectId, project }) => {
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, id: null })}
         onConfirm={confirmDeleteMessage}
-        title="Delete Message"
-        message="Are you sure you want to delete this message? This action cannot be undone."
-        itemName="this message"
+        title="Expunge Message"
+        message="Are you sure you want to permanently delete this signal? This action cannot be reversed."
       />
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };
 
 export default ChatTab;
-

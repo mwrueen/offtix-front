@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { myTasksAPI } from '../services/api';
+import { myTasksAPI, BASE_SERVER_URL } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import Layout from './Layout';
 import ReactQuill from 'react-quill';
@@ -218,8 +218,8 @@ const MyTaskDetails = () => {
               <div className="space-y-6 relative ml-4 border-l-2 border-slate-50 pl-10">
                 {taskData.sequentialAssignees.map((assignee, idx) => (
                   <div key={idx} className={`relative p-8 rounded-[32px] border-2 transition-all duration-500 ${assignee.isCurrent
-                      ? 'bg-indigo-50 border-indigo-200 shadow-xl shadow-indigo-100 scale-[1.02]'
-                      : 'bg-white border-slate-100'
+                    ? 'bg-indigo-50 border-indigo-200 shadow-xl shadow-indigo-100 scale-[1.02]'
+                    : 'bg-white border-slate-100'
                     }`}>
                     {/* Step Number Badge */}
                     <div className={`absolute -left-[58px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border-4 border-white flex items-center justify-center font-black text-xs shadow-md transition-colors ${assignee.isCurrent ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'
@@ -320,7 +320,7 @@ const MyTaskDetails = () => {
                       {item.documents && item.documents.length > 0 && (
                         <div className="flex flex-wrap gap-3">
                           {item.documents.map((doc, docIdx) => (
-                            <a key={docIdx} href={`http://localhost:5000/${doc.path}`} target="_blank" rel="noopener noreferrer" className="group/doc inline-flex items-center gap-3 px-4 py-2 bg-emerald-900/20 border border-emerald-900/50 rounded-xl text-xs font-bold text-emerald-400 hover:bg-emerald-900/40 transition-all">
+                            <a key={docIdx} href={`${BASE_SERVER_URL}/${doc.path}`} target="_blank" rel="noopener noreferrer" className="group/doc inline-flex items-center gap-3 px-4 py-2 bg-emerald-900/20 border border-emerald-900/50 rounded-xl text-xs font-bold text-emerald-400 hover:bg-emerald-900/40 transition-all">
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
                               {doc.originalName || 'Artifact'}
                               <span className="opacity-40 font-black">[{Math.round(doc.size / 1024)}KB]</span>
@@ -408,9 +408,9 @@ const MyTaskDetails = () => {
                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Priority Class</div>
                   <div className="flex">
                     <span className={`px-5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest border-2 shadow-inner ${task.priority === 'urgent' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                        task.priority === 'high' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                          task.priority === 'medium' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
-                            'bg-emerald-50 text-emerald-600 border-emerald-100'
+                      task.priority === 'high' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                        task.priority === 'medium' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+                          'bg-emerald-50 text-emerald-600 border-emerald-100'
                       }`}>
                       {task.priority} Alpha
                     </span>
@@ -520,8 +520,8 @@ const MyTaskDetails = () => {
                 onClick={handleModalSubmit}
                 disabled={actionLoading}
                 className={`px-12 py-5 rounded-[24px] font-black text-sm uppercase tracking-widest text-white shadow-2xl transition-all active:scale-95 disabled:opacity-50 ${actionModal === 'complete'
-                    ? 'bg-emerald-600 shadow-emerald-100 hover:bg-emerald-700'
-                    : 'bg-rose-600 shadow-rose-100 hover:bg-rose-700'
+                  ? 'bg-emerald-600 shadow-emerald-100 hover:bg-emerald-700'
+                  : 'bg-rose-600 shadow-rose-100 hover:bg-rose-700'
                   }`}
               >
                 {actionLoading ? 'Synthesizing...' : (actionModal === 'complete' ? 'Execute Validation' : 'Confirm Reversion')}

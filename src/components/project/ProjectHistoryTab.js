@@ -13,15 +13,7 @@ const ProjectHistoryTab = ({ projectId, project }) => {
   const fetchProjectHistory = async () => {
     try {
       setLoading(true);
-      
-      // Fetch all project-related data
-      const [
-        requirementsRes,
-        meetingNotesRes,
-        sprintsRes,
-        phasesRes,
-        tasksRes
-      ] = await Promise.all([
+      const [requirementsRes, meetingNotesRes, sprintsRes, phasesRes, tasksRes] = await Promise.all([
         requirementAPI.getAll(projectId).catch(() => ({ data: [] })),
         meetingNoteAPI.getAll(projectId).catch(() => ({ data: [] })),
         sprintAPI.getAll(projectId).catch(() => ({ data: [] })),
@@ -29,332 +21,181 @@ const ProjectHistoryTab = ({ projectId, project }) => {
         taskAPI.getAll(projectId).catch(() => ({ data: [] }))
       ]);
 
-      // Combine all activities into a single timeline
       const activities = [];
 
-      // Project creation
       activities.push({
         id: `project-${project._id}`,
         type: 'project',
         action: 'created',
-        title: 'Project Created',
-        description: `Project "${project.title}" was created`,
+        title: 'Project Initialized',
+        description: `Project "${project.title}" was registered.`,
         date: project.createdAt,
         user: project.owner,
-        icon: '🚀',
-        color: '#36b37e'
+        icon: '🏠',
+        color: 'bg-indigo-600'
       });
 
-      // Requirements
       requirementsRes.data.forEach(req => {
         activities.push({
-          id: `requirement-${req._id}`,
+          id: `req-${req._id}`,
           type: 'requirement',
           action: 'created',
-          title: 'Requirement Added',
-          description: `"${req.title}" requirement was added`,
+          title: 'Requirement Registered',
+          description: `"${req.title}" added to specifications.`,
           date: req.createdAt,
           user: req.createdBy,
           icon: '📋',
-          color: '#0052cc',
-          details: {
-            type: req.type,
-            priority: req.priority,
-            status: req.status
-          }
+          color: 'bg-emerald-600'
         });
       });
 
-      // Meeting Notes
       meetingNotesRes.data.forEach(meeting => {
         activities.push({
-          id: `meeting-${meeting._id}`,
+          id: `meet-${meeting._id}`,
           type: 'meeting',
           action: 'created',
-          title: 'Meeting Conducted',
-          description: `"${meeting.title}" meeting was held`,
+          title: 'Meeting Logged',
+          description: `"${meeting.title}" discussion recorded.`,
           date: meeting.meetingDate,
           user: meeting.organizer,
-          icon: '📝',
-          color: '#ff8b00',
-          details: {
-            type: meeting.meetingType,
-            duration: meeting.duration,
-            attendees: meeting.attendees?.length || 0
-          }
+          icon: '💬',
+          color: 'bg-amber-600'
         });
       });
 
-      // Sprints
       sprintsRes.data.forEach(sprint => {
         activities.push({
           id: `sprint-${sprint._id}`,
           type: 'sprint',
           action: 'created',
-          title: 'Sprint Created',
-          description: `Sprint "${sprint.name}" was created`,
+          title: 'Sprint Activated',
+          description: `"${sprint.name}" timeline established.`,
           date: sprint.createdAt,
           user: sprint.createdBy,
-          icon: '🏃‍♂️',
-          color: '#6554c0',
-          details: {
-            status: sprint.status,
-            duration: Math.ceil((new Date(sprint.endDate) - new Date(sprint.startDate)) / (1000 * 60 * 60 * 24)),
-            capacity: sprint.capacity
-          }
+          icon: '🏃',
+          color: 'bg-rose-600'
         });
       });
 
-      // Phases
       phasesRes.data.forEach(phase => {
         activities.push({
           id: `phase-${phase._id}`,
           type: 'phase',
           action: 'created',
-          title: 'Phase Created',
-          description: `Phase "${phase.name}" was created`,
+          title: 'Phase Defined',
+          description: `"${phase.name}" structure finalized.`,
           date: phase.createdAt,
           user: phase.createdBy,
           icon: '🎯',
-          color: '#00875a',
-          details: {
-            status: phase.status,
-            budget: phase.budget
-          }
+          color: 'bg-indigo-500'
         });
       });
 
-      // Tasks (flatten subtasks)
-      const flattenTasks = (tasks) => {
-        let result = [];
-        tasks.forEach(task => {
-          result.push(task);
-          if (task.subtasks && task.subtasks.length > 0) {
-            result = result.concat(flattenTasks(task.subtasks));
-          }
+      const flattenTasks = (ts) => {
+        let res = [];
+        ts.forEach(t => {
+          res.push(t);
+          if (t.subtasks?.length) res = res.concat(flattenTasks(t.subtasks));
         });
-        return result;
+        return res;
       };
 
-      const allTasks = flattenTasks(tasksRes.data);
-      allTasks.forEach(task => {
+      flattenTasks(tasksRes.data).forEach(task => {
         activities.push({
           id: `task-${task._id}`,
           type: 'task',
           action: 'created',
-          title: 'Task Created',
-          description: `Task "${task.title}" was created`,
+          title: 'Task Assigned',
+          description: `"${task.title}" added to backlog.`,
           date: task.createdAt,
           user: task.createdBy,
           icon: '✅',
-          color: '#de350b',
-          details: {
-            status: task.status?.name,
-            priority: task.priority,
-            assignees: task.assignees?.length || 0
-          }
+          color: 'bg-slate-700'
         });
       });
 
-      // Sort by date (newest first)
       activities.sort((a, b) => new Date(b.date) - new Date(a.date));
-      
       setHistory(activities);
-    } catch (error) {
-      console.error('Error fetching project history:', error);
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredHistory = filter === 'all' 
-    ? history 
-    : history.filter(item => item.type === filter);
+  const filteredHistory = filter === 'all' ? history : history.filter(h => h.type === filter);
+  const counts = history.reduce((acc, h) => { acc[h.type] = (acc[h.type] || 0) + 1; acc.all++; return acc; }, { all: 0, project: 0, requirement: 0, meeting: 0, sprint: 0, phase: 0, task: 0 });
 
-  const getFilterCounts = () => {
-    const counts = {
-      all: history.length,
-      project: 0,
-      requirement: 0,
-      meeting: 0,
-      sprint: 0,
-      phase: 0,
-      task: 0
-    };
-
-    history.forEach(item => {
-      counts[item.type]++;
-    });
-
-    return counts;
-  };
-
-  const counts = getFilterCounts();
-
-  if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '48px', color: '#5e6c84' }}>
-        Loading project history...
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="p-20 text-center space-y-4">
+      <div className="w-10 h-10 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto" />
+      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Compiling history...</p>
+    </div>
+  );
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: '#172b4d' }}>
-          Project History ({filteredHistory.length} activities)
-        </h2>
+    <div className="space-y-8 animate-in fade-in duration-500 font-sans max-w-5xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 uppercase tracking-tight">Activity Log</h2>
+          <p className="text-sm text-slate-500 font-medium">Timeline of all project operations and events.</p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id: 'all', label: 'All', icon: '📊' },
+            { id: 'task', label: 'Tasks', icon: '✅' },
+            { id: 'sprint', label: 'Sprints', icon: '🏃' },
+            { id: 'phase', label: 'Phases', icon: '🎯' },
+            { id: 'requirement', label: 'Reqs', icon: '📋' }
+          ].map(t => (
+            <button
+              key={t.id}
+              onClick={() => setFilter(t.id)}
+              className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border ${filter === t.id ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+            >
+              {t.icon} {t.label} <span className="opacity-50 ml-1">({counts[t.id] || 0})</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div style={{
-        display: 'flex',
-        gap: '8px',
-        marginBottom: '24px',
-        borderBottom: '1px solid #dfe1e6',
-        paddingBottom: '12px'
-      }}>
-        {[
-          { key: 'all', label: 'All', icon: '📊' },
-          { key: 'project', label: 'Project', icon: '🚀' },
-          { key: 'requirement', label: 'Requirements', icon: '📋' },
-          { key: 'meeting', label: 'Meetings', icon: '📝' },
-          { key: 'phase', label: 'Phases', icon: '🎯' },
-          { key: 'sprint', label: 'Sprints', icon: '🏃‍♂️' },
-          { key: 'task', label: 'Tasks', icon: '✅' }
-        ].map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setFilter(tab.key)}
-            style={{
-              padding: '8px 12px',
-              backgroundColor: filter === tab.key ? '#e6f7ff' : 'transparent',
-              color: filter === tab.key ? '#0052cc' : '#5e6c84',
-              border: filter === tab.key ? '1px solid #91d5ff' : '1px solid #dfe1e6',
-              borderRadius: '3px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: filter === tab.key ? '600' : '400',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            <span>{tab.icon}</span>
-            {tab.label} ({counts[tab.key]})
-          </button>
-        ))}
-      </div>
+      <div className="relative pl-8 space-y-8">
+        {/* Timeline Path */}
+        <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
 
-      {/* Timeline */}
-      <div style={{ position: 'relative' }}>
         {filteredHistory.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '48px',
-            color: '#5e6c84',
-            backgroundColor: '#ffffff',
-            border: '1px solid #dfe1e6',
-            borderRadius: '3px'
-          }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>📚</div>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#172b4d' }}>No activities yet</h4>
-            <p style={{ margin: 0, fontSize: '14px' }}>
-              {filter === 'all' 
-                ? 'Project activities will appear here as they happen.'
-                : `No ${filter} activities found.`
-              }
-            </p>
+          <div className="py-20 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+            <div className="text-4xl mb-4">🗄️</div>
+            <p className="text-sm font-bold text-slate-400">NO ACTIVITIES RECORDED</p>
           </div>
-        ) : (
-          <div style={{ position: 'relative' }}>
-            {/* Timeline line */}
-            <div style={{
-              position: 'absolute',
-              left: '20px',
-              top: '0',
-              bottom: '0',
-              width: '2px',
-              backgroundColor: '#dfe1e6'
-            }} />
+        ) : filteredHistory.map((item, idx) => (
+          <div key={item.id} className="relative group">
+            {/* Timeline Dot */}
+            <div className={`absolute -left-8 top-1 w-8 h-8 ${item.color} text-white rounded-full border-4 border-white flex items-center justify-center text-xs shadow-md z-10 transition-transform group-hover:scale-110`}>
+              {item.icon}
+            </div>
 
-            {filteredHistory.map((activity, index) => (
-              <div key={activity.id} style={{
-                position: 'relative',
-                paddingLeft: '60px',
-                paddingBottom: '24px'
-              }}>
-                {/* Timeline dot */}
-                <div style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '8px',
-                  width: '16px',
-                  height: '16px',
-                  borderRadius: '50%',
-                  backgroundColor: activity.color,
-                  border: '2px solid #ffffff',
-                  boxShadow: '0 0 0 2px #dfe1e6',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '8px'
-                }}>
-                  {activity.icon}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm group-hover:border-indigo-200 group-hover:shadow-md transition-all">
+              <div className="flex flex-col md:flex-row justify-between gap-4">
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-slate-900 uppercase tracking-tight">{item.title}</h4>
+                  <p className="text-xs text-slate-500 font-medium">{item.description}</p>
                 </div>
-
-                {/* Activity card */}
-                <div style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '3px',
-                  padding: '16px'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                    <div>
-                      <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '600', color: '#172b4d' }}>
-                        {activity.title}
-                      </h4>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#5e6c84' }}>
-                        {activity.description}
-                      </p>
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#5e6c84', textAlign: 'right' }}>
-                      <div>{new Date(activity.date).toLocaleDateString()}</div>
-                      <div>{new Date(activity.date).toLocaleTimeString()}</div>
-                    </div>
-                  </div>
-
-                  {activity.details && (
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                      {Object.entries(activity.details).map(([key, value]) => (
-                        value && (
-                          <span key={key} style={{
-                            padding: '2px 6px',
-                            borderRadius: '11px',
-                            fontSize: '10px',
-                            fontWeight: '600',
-                            backgroundColor: '#f4f5f7',
-                            color: '#5e6c84',
-                            border: '1px solid #dfe1e6',
-                            textTransform: 'capitalize'
-                          }}>
-                            {key}: {value}
-                          </span>
-                        )
-                      ))}
-                    </div>
-                  )}
-
-                  <div style={{ fontSize: '11px', color: '#5e6c84' }}>
-                    by {activity.user?.name || 'Unknown User'}
-                  </div>
+                <div className="text-right shrink-0">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{new Date(item.date).toLocaleDateString()}</div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 opacity-60">{new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
               </div>
-            ))}
+
+              <div className="mt-4 pt-4 border-t border-slate-50 flex items-center gap-2">
+                <div className="w-5 h-5 bg-slate-100 rounded flex items-center justify-center text-[10px]">👤</div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Operator:</span>
+                <span className="text-[10px] font-black text-slate-600 uppercase italic transition-colors group-hover:text-indigo-600">{item.user?.name || 'SYSTEM'}</span>
+              </div>
+            </div>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );

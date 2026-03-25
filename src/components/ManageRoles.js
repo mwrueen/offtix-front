@@ -9,64 +9,20 @@ import Layout from './Layout';
 import PageHeader from './PageHeader';
 import DeleteConfirmModal from './common/DeleteConfirmModal';
 
-// Permission categories for better organization
 const permissionCategories = [
-  {
-    title: 'Employee Management',
-    icon: '👥',
-    permissions: [
-      { key: 'addEmployee', label: 'Add Employee', description: 'Can add new employees to the company' },
-      { key: 'viewEmployeeList', label: 'View Employees', description: 'Can view the list of all employees' },
-      { key: 'editEmployee', label: 'Edit Employee', description: 'Can modify employee information' }
-    ]
-  },
-  {
-    title: 'Role Management',
-    icon: '🛡️',
-    permissions: [
-      { key: 'createDesignation', label: 'Create Role', description: 'Can create new roles/designations' },
-      { key: 'viewDesignations', label: 'View Roles', description: 'Can view all roles/designations' },
-      { key: 'editDesignation', label: 'Edit Role', description: 'Can modify role permissions' },
-      { key: 'deleteDesignation', label: 'Delete Role', description: 'Can delete roles/designations' }
-    ]
-  },
-  {
-    title: 'Project Management',
-    icon: '📋',
-    permissions: [
-      { key: 'createProject', label: 'Create Project', description: 'Can create new projects' },
-      { key: 'editProject', label: 'Edit Project', description: 'Can edit project details and status' },
-      { key: 'deleteProject', label: 'Delete Project', description: 'Can delete projects' },
-      { key: 'assignEmployeeToProject', label: 'Assign to Project', description: 'Can assign employees to projects' },
-      { key: 'removeEmployeeFromProject', label: 'Remove from Project', description: 'Can remove employees from projects' },
-      { key: 'viewProjectAnalytics', label: 'View Analytics', description: 'Can view project reports and analytics' }
-    ]
-  },
-  {
-    title: 'Task Management',
-    icon: '✅',
-    permissions: [
-      { key: 'createTask', label: 'Create Task', description: 'Can create tasks within projects' },
-      { key: 'editTask', label: 'Edit Task', description: 'Can modify task information' },
-      { key: 'deleteTask', label: 'Delete Task', description: 'Can delete tasks' }
-    ]
-  },
-  {
-    title: 'Company Settings',
-    icon: '⚙️',
-    permissions: [
-      { key: 'manageCompanySettings', label: 'Manage Settings', description: 'Can modify company settings' }
-    ]
-  }
+  { title: 'Employee_Management', icon: '👥', permissions: [{ key: 'addEmployee', label: 'Add Employee', description: 'Can add new employees to the company' }, { key: 'viewEmployeeList', label: 'View Employees', description: 'Can view the list of all employees' }, { key: 'editEmployee', label: 'Edit Employee', description: 'Can modify employee information' }] },
+  { title: 'Role_Management', icon: '🛡️', permissions: [{ key: 'createDesignation', label: 'Create Role', description: 'Can create new roles/designations' }, { key: 'viewDesignations', label: 'View Roles', description: 'Can view all roles/designations' }, { key: 'editDesignation', label: 'Edit Role', description: 'Can modify role permissions' }, { key: 'deleteDesignation', label: 'Delete Role', description: 'Can delete roles/designations' }] },
+  { title: 'Project_Management', icon: '📋', permissions: [{ key: 'createProject', label: 'Create Project', description: 'Can create new projects' }, { key: 'editProject', label: 'Edit Project', description: 'Can edit project details and status' }, { key: 'deleteProject', label: 'Delete Project', description: 'Can delete projects' }, { key: 'assignEmployeeToProject', label: 'Assign to Project', description: 'Can assign employees to projects' }, { key: 'removeEmployeeFromProject', label: 'Remove from Project', description: 'Can remove employees from projects' }, { key: 'viewProjectAnalytics', label: 'View Analytics', description: 'Can view project reports and analytics' }] },
+  { title: 'Task_Management', icon: '✅', permissions: [{ key: 'createTask', label: 'Create Task', description: 'Can create tasks within projects' }, { key: 'editTask', label: 'Edit Task', description: 'Can modify task information' }, { key: 'deleteTask', label: 'Delete Task', description: 'Can delete tasks' }] },
+  { title: 'Company_Settings', icon: '⚙️', permissions: [{ key: 'manageCompanySettings', label: 'Manage Settings', description: 'Can modify company settings' }] }
 ];
 
 const ManageRoles = () => {
   const navigate = useNavigate();
-  const { state } = useAuth();
+  const { state: authState } = useAuth();
   const { selectedCompany } = useCompanyFilter();
   const toast = useToast();
-  const { hasPermission, PERMISSIONS: PERMS } = usePermissions();
-
+  const { hasPermission } = usePermissions();
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedRole, setSelectedRole] = useState(null);
@@ -75,369 +31,185 @@ const ManageRoles = () => {
   const [editPermissions, setEditPermissions] = useState({});
   const [saving, setSaving] = useState(false);
 
-
-  useEffect(() => {
-    if (selectedCompany && selectedCompany.id !== 'personal') {
-      fetchCompany();
-    }
-  }, [selectedCompany]);
+  useEffect(() => { if (selectedCompany && selectedCompany.id !== 'personal') fetchCompany(); }, [selectedCompany]);
 
   const fetchCompany = async () => {
     try {
       const token = getCookie('authToken');
-      const response = await fetch(`/api/companies/${selectedCompany.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCompany(data);
-      }
-    } catch (error) {
-      console.error('Error fetching company:', error);
-      toast?.showToast?.('Failed to load company data', 'error');
-    } finally {
-      setLoading(false);
-    }
+      const response = await fetch(`/api/companies/${selectedCompany.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (response.ok) setCompany(await response.json());
+    } catch { toast.showToast('CORE_FETCH_INTERRUPTION', 'error'); }
+    finally { setLoading(false); }
   };
 
-  const handleDeleteRole = async (designationId) => {
+  const handleDeleteRole = async (did) => {
     try {
       const token = getCookie('authToken');
-      const response = await fetch(`/api/companies/${selectedCompany.id}/designations/${designationId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        toast?.showToast?.('Role deleted successfully', 'success');
-        fetchCompany();
-        setShowDeleteConfirm(null);
-      } else {
-        const errorData = await response.json();
-        toast?.showToast?.(errorData.message || 'Failed to delete role', 'error');
-      }
-    } catch (error) {
-      console.error('Error deleting role:', error);
-      toast?.showToast?.('Failed to delete role. Please try again.', 'error');
-    }
+      const res = await fetch(`/api/companies/${selectedCompany.id}/designations/${did}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.ok) { toast.showToast('ROLE_EXPUNGED_SUCCESSFULLY', 'warning'); fetchCompany(); setShowDeleteConfirm(null); }
+      else toast.showToast('EXPUNGE_PROTOCOL_FAILED', 'error');
+    } catch { toast.showToast('PROTOCOL_ERROR_DELETION', 'error'); }
   };
 
-  const handleEditRole = (designation) => {
-    setEditingRole(designation);
-    setEditPermissions({ ...designation.permissions });
-  };
-
-  const handlePermissionToggle = (key) => {
-    setEditPermissions(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
+  const handleEditRole = (d) => { setEditingRole(d); setEditPermissions({ ...d.permissions }); };
+  const handlePermissionToggle = (k) => setEditPermissions(prev => ({ ...prev, [k]: !prev[k] }));
 
   const handleSavePermissions = async () => {
-    if (!editingRole) return;
-
-    setSaving(true);
+    if (!editingRole) return; setSaving(true);
     try {
       const token = getCookie('authToken');
-      const response = await fetch(`/api/companies/${selectedCompany.id}/designation-permissions`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          designationId: editingRole._id,
-          permissions: editPermissions
-        })
-      });
-
-      if (response.ok) {
-        toast?.showToast?.('Permissions updated successfully', 'success');
-        fetchCompany();
-        setEditingRole(null);
-        setEditPermissions({});
-      } else {
-        const errorData = await response.json();
-        toast?.showToast?.(errorData.message || 'Failed to update permissions', 'error');
-      }
-    } catch (error) {
-      console.error('Error updating permissions:', error);
-      toast?.showToast?.('Failed to update permissions. Please try again.', 'error');
-    } finally {
-      setSaving(false);
-    }
+      const res = await fetch(`/api/companies/${selectedCompany.id}/designation-permissions`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ designationId: editingRole._id, permissions: editPermissions }) });
+      if (res.ok) { toast.showToast('ACCESS_MATRIX_SYNCHRONIZED', 'success'); fetchCompany(); setEditingRole(null); }
+      else toast.showToast('MATRIX_UPDATE_FAILED', 'error');
+    } catch { toast.showToast('CONNECTION_LOSS_SYNC', 'error'); }
+    finally { setSaving(false); }
   };
 
-  const getPermissionCount = (permissions) => {
-    if (!permissions) return 0;
-    return Object.values(permissions).filter(Boolean).length;
-  };
+  const getPermissionCount = (p) => p ? Object.values(p).filter(Boolean).length : 0;
 
-  if (!selectedCompany || selectedCompany.id === 'personal') {
-    return (
-      <Layout>
-        <div style={{
-          background: 'white',
-          padding: '50px',
-          borderRadius: '12px',
-          textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h2 style={{ color: '#1e293b', marginBottom: '16px' }}>No Company Selected</h2>
-          <p style={{ color: '#64748b', marginBottom: '24px' }}>
-            Please select a company to manage roles
-          </p>
-          <button
-            onClick={() => navigate('/overview')}
-            style={{
-              padding: '12px 24px',
-              background: 'linear-gradient(135deg, #667eea, #764ba2)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '600'
-            }}
-          >
-            Go to Overview
-          </button>
-        </div>
-      </Layout>
-    );
-  }
+  if (!selectedCompany || selectedCompany.id === 'personal') return (
+    <Layout>
+      <div className="max-w-4xl mx-auto my-32 p-24 bg-white rounded-[6rem] border-4 border-dashed border-slate-50 text-center shadow-24 relative overflow-hidden group italic">
+        <div className="text-9xl mb-12 grayscale opacity-10 group-hover:grayscale-0 group-hover:rotate-12 transition-all duration-1000">🛡️</div>
+        <h2 className="text-4xl font-black text-slate-200 uppercase tracking-[0.5em] mb-6 group-hover:text-slate-950 transition-colors">NO_SYSTEM_CONTEXT</h2>
+        <p className="text-[12px] font-black text-slate-400 italic mb-16 opacity-50 uppercase tracking-widest max-w-lg mx-auto leading-relaxed">Select an operational entity sector from the primary command terminal to manage the underlying access hierarchy infrastructure.</p>
+        <button onClick={() => navigate('/dashboard')} className="px-16 py-7 bg-indigo-600 text-white rounded-[3rem] font-black text-[11px] uppercase tracking-[0.4em] shadow-24 hover:bg-slate-950 transition-all italic">RETURN_TO_CORE_COMMAND</button>
+      </div>
+    </Layout>
+  );
 
-  if (loading) {
-    return (
-      <Layout>
-        <div style={{ textAlign: 'center', padding: '50px' }}>
-          <div style={{ fontSize: '18px', color: '#64748b' }}>Loading roles...</div>
-        </div>
-      </Layout>
-    );
-  }
+  if (loading) return (
+    <Layout>
+      <div className="max-w-[1600px] mx-auto px-10 py-40 text-center animate-pulse space-y-12">
+        <div className="w-24 h-24 border-8 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto shadow-24" />
+        <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.6em] italic">DECRYPTING_ACCESS_MATRIX...</p>
+      </div>
+    </Layout>
+  );
 
-  if (!hasPermission(PERMISSIONS.VIEW_DESIGNATIONS)) {
-    return (
-      <Layout>
-        <div style={{
-          background: 'white',
-          padding: '50px',
-          borderRadius: '12px',
-          textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔒</div>
-          <h2 style={{ color: '#1e293b', marginBottom: '16px' }}>Access Denied</h2>
-          <p style={{ color: '#64748b', marginBottom: '24px' }}>
-            You don't have permission to view or manage roles
-          </p>
-          <button
-            onClick={() => navigate('/overview')}
-            style={{
-              padding: '12px 24px',
-              background: 'linear-gradient(135deg, #667eea, #764ba2)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '600'
-            }}
-          >
-            Go to Overview
-          </button>
-        </div>
-      </Layout>
-    );
-  }
+  if (!hasPermission(PERMISSIONS.VIEW_DESIGNATIONS)) return (
+    <Layout>
+      <div className="max-w-4xl mx-auto my-32 p-32 bg-slate-950 rounded-[6rem] text-center shadow-24 border border-white/5 relative overflow-hidden italic">
+        <div className="text-[150px] mb-12 grayscale opacity-40 animate-pulse select-none">🔒</div>
+        <h2 className="text-5xl font-black text-white uppercase tracking-[0.2em] mb-6">AUTHORITY_DENIED</h2>
+        <p className="text-[12px] font-black text-slate-500 uppercase tracking-[0.5em] mb-16 underline underline-offset-8 decoration-white/10 decoration-dashed">Level_5_Clearance_Required // Node_Decryption_Keys_Negative</p>
+        <button onClick={() => navigate('/dashboard')} className="px-16 py-7 bg-white text-slate-950 rounded-[3rem] font-black text-[11px] uppercase tracking-[0.4em] hover:scale-105 active:scale-95 transition-all shadow-24 italic">REQUEST_RELOCATION_PROTOCOL</button>
+        <div className="absolute top-0 right-0 w-[50%] h-full bg-rose-600/10 rounded-full blur-[140px] pointer-events-none" />
+      </div>
+    </Layout>
+  );
 
   return (
     <Layout>
-      <PageHeader
-        title="Manage Roles"
-        subtitle={`${company?.designations?.length || 0} roles in ${selectedCompany.name}`}
-        icon={
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="8.5" cy="7" r="4"></circle>
-            <polyline points="17 11 19 13 23 9"></polyline>
-          </svg>
-        }
-        actions={
-          hasPermission(PERMISSIONS.CREATE_DESIGNATION) && (
-            <button
-              onClick={() => navigate('/create-role')}
-              style={{
-                padding: '12px 24px',
-                background: 'white',
-                color: '#8b5cf6',
-                border: 'none',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '14px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              Create New Role
-            </button>
-          )
-        }
-      />
+      <div className="max-w-[1600px] mx-auto px-10 py-16 space-y-20 animate-in fade-in slide-in-from-bottom-20 duration-1000">
+        <PageHeader
+          title="ACCESS_MATRIX_CORE"
+          subtitle={`Management of ${company?.designations?.length || 0} authority profiles in current sector cluster.`}
+          icon={<div className="w-16 h-16 bg-slate-950 text-white rounded-full flex items-center justify-center text-3xl shadow-24 border-4 border-white/10 italic">🛡️</div>}
+          stats={[{ label: 'ACTIVE_PROFILES', value: company?.designations?.length || 0 }, { label: 'SECURITY_LEVEL', value: 'LVL_5' }]}
+          actions={hasPermission(PERMISSIONS.CREATE_DESIGNATION) && <button onClick={() => navigate('/create-role')} className="px-12 py-6 bg-slate-950 text-white rounded-[2.5rem] font-black text-[10px] uppercase tracking-[0.4em] shadow-24 hover:bg-indigo-600 transition-all italic underline decoration-white/20 underline-offset-8">+ INITIALIZE_NEW_ROLE</button>}
+        />
 
-      {/* Roles Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-        gap: '20px'
-      }}>
-        {company?.designations?.map((designation, index) => (
-          <div
-            key={index}
-            style={{
-              background: 'white',
-              padding: '28px',
-              borderRadius: '16px',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-              border: '1px solid #e2e8f0',
-              transition: 'all 0.2s',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
-              e.currentTarget.style.transform = 'translateY(-4px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-            onClick={() => setSelectedRole(selectedRole === designation ? null : designation)}
-          >
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#1e293b' }}>
-                  {designation.name}
-                </h3>
-                <span style={{ padding: '4px 12px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: 'white', borderRadius: '12px', fontSize: '12px', fontWeight: '600' }}>
-                  {getPermissionCount(designation.permissions)} permissions
-                </span>
-              </div>
-              {designation.description && (
-                <p style={{ margin: '8px 0 0 0', fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>
-                  {designation.description}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 italic">
+          {company?.designations?.map((d, i) => (
+            <div key={i} onClick={() => setSelectedRole(selectedRole === d ? null : d)} className={`group bg-white p-12 rounded-[4.5rem] border border-slate-100 shadow-sm hover:shadow-24 hover:-translate-y-4 transition-all duration-1000 cursor-pointer overflow-hidden relative ${selectedRole === d ? 'ring-8 ring-indigo-50/50 border-indigo-200' : ''}`}>
+              <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 group-hover:bg-indigo-50/50 rounded-bl-[6rem] transition-colors" />
+              <div className="relative z-10 h-full flex flex-col">
+                <div className="flex justify-between items-start mb-10 translate-y-2">
+                  <div>
+                    <h3 className="text-2xl font-black text-slate-950 uppercase tracking-tighter group-hover:text-indigo-600 transition-colors mb-2 leading-tight">{d.name}</h3>
+                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] italic">AUTHORITY_PROFILE_{i + 1}</span>
+                  </div>
+                  <div className="w-16 h-16 bg-slate-50 rounded-[2rem] flex items-center justify-center text-3xl group-hover:rotate-12 transition-all duration-700 shadow-inner group-hover:bg-white group-hover:shadow-24">🛡️</div>
+                </div>
+                <p className="text-sm font-black text-slate-400 italic mb-12 flex-1 leading-relaxed uppercase tracking-widest line-clamp-3 opacity-60 group-hover:opacity-100 transition-opacity break-words">
+                  {d.description || 'MISSION_PROTOCOL_PARAMETER_NULL'}
                 </p>
-              )}
-            </div>
+                <div className="flex items-center justify-between pt-10 border-t border-slate-50 group-hover:border-indigo-50">
+                  <div className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all ${selectedRole === d ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-white shadow-lg'}`}> {getPermissionCount(d.permissions)} KEYS_GRANTED </div>
+                  <div className={`transition-all duration-700 ${selectedRole === d ? 'rotate-90 text-indigo-600 text-2xl scale-125' : 'group-hover:translate-x-3 opacity-20 text-xl'}`}>→</div>
+                </div>
+              </div>
 
-            {selectedRole === designation && designation.permissions && (
-              <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}>
-                <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Permissions
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {Object.entries(designation.permissions).map(([key, value]) => (
-                    value && (
-                      <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#10b981' }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        <span>{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                      </div>
-                    )
+              {selectedRole === d && <div className="mt-12 animate-in slide-in-from-top-12 duration-1000 space-y-8 pt-12 border-t-4 border-slate-50 border-dashed">
+                <div className="grid grid-cols-1 gap-5">
+                  {Object.entries(d.permissions).filter(([_, v]) => v).map(([k]) => (
+                    <div key={k} className="flex items-center gap-6 py-4 px-8 bg-indigo-50/50 rounded-[2rem] border-2 border-indigo-100/50 text-indigo-600 group/perm">
+                      <span className="text-xl animate-pulse">✓</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.3em]">{k.replace(/([A-Z])/g, ' $1').trim()}</span>
+                    </div>
                   ))}
                 </div>
+                <div className="flex gap-6 pt-10 border-t border-slate-50">
+                  {hasPermission(PERMISSIONS.EDIT_DESIGNATION) && <button onClick={(e) => { e.stopPropagation(); handleEditRole(d); }} className="flex-1 py-6 bg-indigo-600 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-[0.4em] hover:bg-slate-950 transition-all active:scale-95 shadow-24">MODIFY_MATRIX</button>}
+                  {hasPermission(PERMISSIONS.DELETE_DESIGNATION) && <button onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(d); }} className="w-20 h-20 bg-rose-50 text-rose-500 rounded-[2.5rem] flex items-center justify-center text-3xl hover:bg-rose-500 hover:text-white transition-all active:scale-95 shadow-sm">🗑</button>}
+                </div>
+              </div>}
+            </div>
+          ))}
 
-                {(hasPermission(PERMISSIONS.EDIT_DESIGNATION) || hasPermission(PERMISSIONS.DELETE_DESIGNATION)) && (
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
-                    {hasPermission(PERMISSIONS.EDIT_DESIGNATION) && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleEditRole(designation); }}
-                        style={{ flex: 1, padding: '10px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}
-                      >
-                        Edit
-                      </button>
-                    )}
-                    {hasPermission(PERMISSIONS.DELETE_DESIGNATION) && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(designation); }}
-                        style={{ flex: 1, padding: '10px', background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
+          {(!company?.designations || company.designations.length === 0) && (
+            <div className="col-span-full bg-white p-40 rounded-[6rem] border-4 border-dashed border-slate-50 text-center opacity-40 group hover:opacity-100 transition-opacity">
+              <div className="text-9xl mb-12 grayscale opacity-20 group-hover:grayscale-0 group-hover:scale-110 transition-transform duration-1000">🛡️</div>
+              <h3 className="text-4xl font-black text-slate-200 uppercase tracking-[0.5em] mb-4 group-hover:text-slate-950 transition-colors">REGISTRY_EMPTY</h3>
+              <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.4em] mb-16 italic opacity-50 underline decoration-slate-100 underline-offset-8">NO_AUTHORITY_NODES_DEFINED_IN_SECTOR</p>
+              <button onClick={() => navigate('/create-role')} className="px-16 py-7 bg-slate-950 text-white rounded-[3rem] font-black text-[11px] uppercase tracking-[0.5em] hover:bg-indigo-600 transition-all shadow-24 italic">INITIALIZE_FIRST_NODE</button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {(!company?.designations || company.designations.length === 0) && (
-        <div style={{ background: 'white', padding: '60px', borderRadius: '16px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
-          <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '600', color: '#1e293b' }}>No Roles Yet</h3>
-          <button
-            onClick={() => navigate('/create-role')}
-            style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '600' }}
-          >
-            Create First Role
-          </button>
-        </div>
-      )}
+      <DeleteConfirmModal isOpen={!!showDeleteConfirm} onClose={() => setShowDeleteConfirm(null)} onConfirm={() => handleDeleteRole(showDeleteConfirm?._id)} title="PROTOCOL_EXPUNGE_REGISTRY" message={`Confirmation required for permanent excision of profile "${showDeleteConfirm?.name}" from organogram organic registry. All assigned nodes will lose current clearance level access.`} itemName={showDeleteConfirm?.name?.toUpperCase()} />
 
-      <DeleteConfirmModal
-        isOpen={!!showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(null)}
-        onConfirm={() => handleDeleteRole(showDeleteConfirm?._id)}
-        title="Delete Role"
-        message={`Are you sure you want to delete "${showDeleteConfirm?.name}"? This action cannot be undone.`}
-        itemName={showDeleteConfirm?.name}
-      />
-
+      {/* Modern Permission Editor Modal */}
       {editingRole && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)', padding: '20px' }} onClick={() => { setEditingRole(null); setEditPermissions({}); }}>
-          <div style={{ background: 'white', borderRadius: '20px', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflow: 'hidden', boxShadow: '0 25px 80px rgba(0, 0, 0, 0.3)', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ padding: '24px 28px', borderBottom: '1px solid #e2e8f0', background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', color: 'white' }}>
-              <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '700' }}>Edit Permissions</h2>
-              <p style={{ margin: '4px 0 0 0', fontSize: '14px', opacity: 0.9 }}>{editingRole.name}</p>
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-3xl flex items-center justify-center z-[1000] p-10 animate-in fade-in duration-500 italic" onClick={() => { setEditingRole(null); setEditPermissions({}); }}>
+          <div className="bg-white rounded-[5rem] w-full max-w-6xl max-h-[90vh] flex flex-col shadow-24 border border-white/20 overflow-hidden animate-in zoom-in-95 slide-in-from-top-32 duration-1000" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute top-0 right-0 p-20 text-9xl font-black italic opacity-5 grayscale pointer-events-none select-none">MATRIX</div>
+            <div className="px-16 py-12 bg-slate-950 border-b border-white/10 relative overflow-hidden shrink-0 italic">
+              <div className="relative z-10 flex justify-between items-center">
+                <div>
+                  <h2 className="text-4xl font-black text-white uppercase tracking-tighter mb-2 italic">Matrix_Modification_Interface</h2>
+                  <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.6em] italic underline underline-offset-8 decoration-white/10">Editing: {editingRole.name.toUpperCase()} // SEC_MOD_AVAIL</p>
+                </div>
+                <button onClick={() => { setEditingRole(null); setEditPermissions({}); }} className="w-20 h-20 rounded-[2.5rem] bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white hover:text-slate-950 hover:scale-110 hover:rotate-90 transition-all text-4xl shadow-24 italic">×</button>
+              </div>
+              <div className="absolute top-0 right-0 w-[40%] h-full bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
             </div>
-            <div style={{ padding: '24px 28px', overflowY: 'auto', flex: 1 }}>
-              {permissionCategories.map((category, catIndex) => (
-                <div key={catIndex} style={{ marginBottom: '24px' }}>
-                  <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>{category.title}</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {category.permissions.map((perm) => (
-                      <div key={perm.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', background: editPermissions[perm.key] ? '#f0fdf4' : '#f8fafc', borderRadius: '10px', border: `1px solid ${editPermissions[perm.key] ? '#86efac' : '#e2e8f0'}` }}>
-                        <div>
-                          <div style={{ fontWeight: '600', fontSize: '14px' }}>{perm.label}</div>
-                          <div style={{ fontSize: '12px', color: '#64748b' }}>{perm.description}</div>
+
+            <div className="p-16 overflow-y-auto custom-scrollbar flex-1 space-y-20 bg-slate-50/10">
+              {permissionCategories.map((cat, ci) => (
+                <div key={ci} className="space-y-12 animate-in slide-in-from-bottom-12 duration-1000 italic" style={{ animationDelay: `${ci * 150}ms` }}>
+                  <div className="flex items-center gap-10">
+                    <span className="text-5xl grayscale opacity-30 select-none">{cat.icon}</span>
+                    <h3 className="text-lg font-black text-slate-950 uppercase tracking-[0.4em] flex-1 border-b-2 border-slate-100 pb-4">{cat.title}</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    {cat.permissions.map((p) => (
+                      <div key={p.key} className={`group p-10 rounded-[3rem] border-4 transition-all duration-700 cursor-pointer flex justify-between items-center italic ${editPermissions[p.key] ? 'border-indigo-600 bg-white shadow-24 shadow-indigo-100 scale-[1.02]' : 'border-slate-100/50 bg-white hover:bg-slate-50 hover:border-slate-200'}`} onClick={() => handlePermissionToggle(p.key)}>
+                        <div className="flex-1 pr-10">
+                          <div className={`text-sm font-black uppercase tracking-widest mb-3 transition-colors ${editPermissions[p.key] ? 'text-indigo-600' : 'text-slate-950'}`}>{p.label}</div>
+                          <div className="text-[10px] font-black text-slate-400 italic leading-relaxed uppercase pr-6 opacity-60 group-hover:opacity-100 transition-opacity">{p.description}</div>
                         </div>
-                        <button onClick={() => handlePermissionToggle(perm.key)} style={{ width: '48px', height: '26px', borderRadius: '13px', border: 'none', background: editPermissions[perm.key] ? '#10b981' : '#cbd5e1', cursor: 'pointer', position: 'relative' }}>
-                          <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'white', position: 'absolute', top: '2px', left: editPermissions[perm.key] ? '24px' : '2px', transition: 'all 0.2s' }}></div>
-                        </button>
+                        <div className={`w-20 h-10 rounded-full p-2 transition-all duration-700 flex items-center shadow-inner ${editPermissions[p.key] ? 'bg-indigo-600' : 'bg-slate-200'}`}>
+                          <div className={`w-6 h-6 rounded-full bg-white shadow-lg transform transition-transform duration-700 ${editPermissions[p.key] ? 'translate-x-10' : 'translate-x-0'}`}></div>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
               ))}
             </div>
-            <div style={{ padding: '20px 28px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '12px', justifyContent: 'flex-end', background: '#f8fafc' }}>
-              <button onClick={() => { setEditingRole(null); setEditPermissions({}); }} style={{ padding: '12px 24px', background: 'white', border: '1px solid #e2e8f0', borderRadius: '10px', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleSavePermissions} disabled={saving} style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '600' }}>{saving ? 'Saving...' : 'Save Changes'}</button>
+
+            <div className="px-16 py-12 bg-white border-t border-slate-100 flex justify-between items-center shrink-0">
+              <div className="text-[10px] font-black text-slate-300 uppercase italic tracking-widest">COMMIT_HASH: {editingRole._id?.slice(-12)}</div>
+              <div className="flex gap-10">
+                <button onClick={() => { setEditingRole(null); setEditPermissions({}); }} className="px-12 py-7 text-[11px] font-black uppercase tracking-[0.5em] text-slate-400 hover:text-rose-500 transition-all italic underline decoration-slate-100 underline-offset-8">X_ABORT_CHANGES</button>
+                <button onClick={handleSavePermissions} disabled={saving} className="px-16 py-7 bg-slate-950 text-white rounded-[3rem] font-black text-[11px] uppercase tracking-[0.4em] shadow-24 hover:bg-indigo-600 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 group relative overflow-hidden italic">
+                  <span className="relative z-10">{saving ? 'SYNCHRONIZING_MATRIX...' : 'AUTHORIZE_PROTOCOL_SYNC'}</span>
+                  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_3s_infinite]" />
+                </button>
+              </div>
             </div>
           </div>
         </div>

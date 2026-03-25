@@ -13,16 +13,11 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
       workingHoursStart: '09:00',
       workingHoursEnd: '17:00'
     },
-    workingDays: [1, 2, 3, 4, 5], // Monday to Friday
+    workingDays: [1, 2, 3, 4, 5],
     holidays: []
   });
 
-  const [holidayForm, setHolidayForm] = useState({
-    date: '',
-    name: '',
-    description: ''
-  });
-
+  const [holidayForm, setHolidayForm] = useState({ date: '', name: '', description: '' });
   const [showHolidayForm, setShowHolidayForm] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
   const [saving, setSaving] = useState(false);
@@ -46,10 +41,7 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
   const handleTimeTrackingChange = (field, value) => {
     setSettings(prev => ({
       ...prev,
-      timeTracking: {
-        ...prev.timeTracking,
-        [field]: value
-      }
+      timeTracking: { ...prev.timeTracking, [field]: value }
     }));
   };
 
@@ -58,11 +50,7 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
       const workingDays = prev.workingDays.includes(day)
         ? prev.workingDays.filter(d => d !== day)
         : [...prev.workingDays, day].sort();
-
-      return {
-        ...prev,
-        workingDays
-      };
+      return { ...prev, workingDays };
     });
   };
 
@@ -74,7 +62,7 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
       toast.success('Settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
-      toast.error('Failed to save settings. Please try again.');
+      toast.error('Failed to save settings.');
     } finally {
       setSaving(false);
     }
@@ -83,7 +71,6 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
   const handleAddHoliday = async (e) => {
     e.preventDefault();
     if (!holidayForm.date || !holidayForm.name) return;
-
     try {
       await projectAPI.addHoliday(projectId, holidayForm);
       await onRefresh();
@@ -91,17 +78,13 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
       setShowHolidayForm(false);
     } catch (error) {
       console.error('Error adding holiday:', error);
-      toast.error('Failed to add holiday. Please try again.');
+      toast.error('Failed to add holiday.');
     }
   };
 
   const handleRemoveHoliday = (holidayId) => {
     const holiday = settings.holidays.find(h => h._id === holidayId);
-    setDeleteModal({
-      isOpen: true,
-      id: holidayId,
-      name: holiday?.name || 'this holiday'
-    });
+    setDeleteModal({ isOpen: true, id: holidayId, name: holiday?.name || 'this holiday' });
   };
 
   const confirmRemoveHoliday = async () => {
@@ -111,408 +94,213 @@ const SettingsTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
       setDeleteModal({ isOpen: false, id: null, name: '' });
     } catch (error) {
       console.error('Error removing holiday:', error);
-      toast.error('Failed to remove holiday. Please try again.');
     }
   };
 
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   return (
-    <div style={{ maxWidth: '900px' }}>
-      {/* Time Tracking Settings */}
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-          ⏱️ Time Tracking Settings
-        </h3>
-
-        <div style={{ display: 'grid', gap: '20px' }}>
-          {/* Default Duration Unit */}
-          <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              Default Duration Unit
-            </label>
-            <select
-              value={settings.timeTracking.defaultDurationUnit}
-              onChange={(e) => handleTimeTrackingChange('defaultDurationUnit', e.target.value)}
-              disabled={!isProjectOwner}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                backgroundColor: 'white',
-                cursor: isProjectOwner ? 'pointer' : 'not-allowed'
-              }}
+    <div className="max-w-4xl space-y-8 p-1 animate-in fade-in duration-500 pb-20 font-sans">
+      {/* Time Tracking Section */}
+      <section className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-xl shadow-sm border border-slate-100">⏱️</div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Time Tracking Configuration</h3>
+              <p className="text-xs text-slate-500 font-medium">Define project defaults for duration and capacity planning.</p>
+            </div>
+          </div>
+          {isProjectOwner && (
+            <button
+              onClick={handleSaveSettings}
+              disabled={saving}
+              className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-all disabled:opacity-50"
             >
-              <option value="minutes">Minutes</option>
-              <option value="hours">Hours</option>
-              <option value="days">Days</option>
-              <option value="weeks">Weeks</option>
-            </select>
-          </div>
+              {saving ? 'Updating...' : 'Save Changes'}
+            </button>
+          )}
+        </div>
 
-          {/* Hours Per Day */}
-          <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              Hours Per Day
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="24"
-              value={settings.timeTracking.hoursPerDay}
-              onChange={(e) => handleTimeTrackingChange('hoursPerDay', parseInt(e.target.value))}
-              disabled={!isProjectOwner}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                cursor: isProjectOwner ? 'text' : 'not-allowed'
-              }}
-            />
-          </div>
-
-          {/* Days Per Week */}
-          <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              Days Per Week
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="7"
-              value={settings.timeTracking.daysPerWeek}
-              onChange={(e) => handleTimeTrackingChange('daysPerWeek', parseInt(e.target.value))}
-              disabled={!isProjectOwner}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                cursor: isProjectOwner ? 'text' : 'not-allowed'
-              }}
-            />
-          </div>
-
-          {/* Working Hours Start */}
-          <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              Working Hours Start
-            </label>
-            <input
-              type="time"
-              value={settings.timeTracking.workingHoursStart}
-              onChange={(e) => handleTimeTrackingChange('workingHoursStart', e.target.value)}
-              disabled={!isProjectOwner}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                cursor: isProjectOwner ? 'text' : 'not-allowed'
-              }}
-            />
-            <div style={{ fontSize: '12px', color: '#5e6c84', marginTop: '4px' }}>
-              Daily work start time (e.g., 09:00)
+        <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Default Duration Unit</label>
+              <select
+                value={settings.timeTracking.defaultDurationUnit}
+                onChange={(e) => handleTimeTrackingChange('defaultDurationUnit', e.target.value)}
+                disabled={!isProjectOwner}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:bg-white focus:border-indigo-400 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <option value="minutes">Minutes</option>
+                <option value="hours">Hours</option>
+                <option value="days">Days</option>
+                <option value="weeks">Weeks</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Hours / Day</label>
+                <input
+                  type="number" min="1" max="24"
+                  value={settings.timeTracking.hoursPerDay}
+                  onChange={(e) => handleTimeTrackingChange('hoursPerDay', parseInt(e.target.value))}
+                  disabled={!isProjectOwner}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:bg-white focus:border-indigo-400"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Days / Week</label>
+                <input
+                  type="number" min="1" max="7"
+                  value={settings.timeTracking.daysPerWeek}
+                  onChange={(e) => handleTimeTrackingChange('daysPerWeek', parseInt(e.target.value))}
+                  disabled={!isProjectOwner}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:bg-white focus:border-indigo-400"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Working Hours End */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sans">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Working Hours Start</label>
+                <input
+                  type="time"
+                  value={settings.timeTracking.workingHoursStart}
+                  onChange={(e) => handleTimeTrackingChange('workingHoursStart', e.target.value)}
+                  disabled={!isProjectOwner}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:bg-white focus:border-indigo-400"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Working Hours End</label>
+                <input
+                  type="time"
+                  value={settings.timeTracking.workingHoursEnd}
+                  onChange={(e) => handleTimeTrackingChange('workingHoursEnd', e.target.value)}
+                  disabled={!isProjectOwner}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:bg-white focus:border-indigo-400"
+                />
+              </div>
+            </div>
+
+            <div className="bg-indigo-600 rounded-2xl p-6 text-white shadow-lg overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16" />
+              <span className="text-[9px] font-bold uppercase tracking-widest opacity-60">Calculated Effective Capacity</span>
+              <div className="text-3xl font-bold mt-2 font-sans tracking-tight">
+                {(() => {
+                  const start = settings.timeTracking.workingHoursStart.split(':');
+                  const end = settings.timeTracking.workingHoursEnd.split(':');
+                  const totalMinutes = (parseInt(end[0]) * 60 + parseInt(end[1])) - (parseInt(start[0]) * 60 + parseInt(start[1]));
+                  return `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`;
+                })()}
+              </div>
+              <p className="text-[10px] opacity-60 mt-1 uppercase font-bold tracking-tighter">Per Standard Business Day</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Working Days Selection */}
+      <section className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden text-sans">
+        <div className="p-8 border-b border-slate-100">
+          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Working Calendar</h3>
+          <p className="text-xs text-slate-500 font-medium mt-1">Select the operational days for this project.</p>
+        </div>
+        <div className="p-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            {dayNames.map((day, index) => {
+              const isActive = settings.workingDays.includes(index);
+              return (
+                <button
+                  key={index}
+                  onClick={() => isProjectOwner && handleWorkingDayToggle(index)}
+                  disabled={!isProjectOwner}
+                  className={`py-3 px-4 rounded-xl text-xs font-bold transition-all border-2 ${isActive ? 'bg-indigo-50 border-indigo-600 text-indigo-700' : 'bg-slate-50 border-transparent text-slate-500 hover:border-slate-200'}`}
+                >
+                  {day.substring(0, 3).toUpperCase()}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Holidays List */}
+      <section className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden font-sans">
+        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-              Working Hours End
-            </label>
-            <input
-              type="time"
-              value={settings.timeTracking.workingHoursEnd}
-              onChange={(e) => handleTimeTrackingChange('workingHoursEnd', e.target.value)}
-              disabled={!isProjectOwner}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid #dfe1e6',
-                borderRadius: '3px',
-                fontSize: '14px',
-                cursor: isProjectOwner ? 'text' : 'not-allowed'
-              }}
-            />
-            <div style={{ fontSize: '12px', color: '#5e6c84', marginTop: '4px' }}>
-              Daily work end time (e.g., 17:00)
-            </div>
+            <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Project Holidays</h3>
+            <p className="text-xs text-slate-500 font-medium">Define non-working dates for deadline calculation.</p>
           </div>
-        </div>
-
-        {/* Total Working Hours Display */}
-        <div style={{
-          marginTop: '16px',
-          padding: '16px',
-          backgroundColor: '#f4f5f7',
-          borderRadius: '3px',
-          border: '1px solid #dfe1e6'
-        }}>
-          <div style={{ fontSize: '14px', fontWeight: '600', color: '#5e6c84', marginBottom: '8px' }}>
-            Total Working Hours per Day
-          </div>
-          <div style={{ fontSize: '24px', fontWeight: '700', color: '#0052cc' }}>
-            {(() => {
-              const start = settings.timeTracking.workingHoursStart.split(':');
-              const end = settings.timeTracking.workingHoursEnd.split(':');
-              const startMinutes = parseInt(start[0]) * 60 + parseInt(start[1]);
-              const endMinutes = parseInt(end[0]) * 60 + parseInt(end[1]);
-              const totalMinutes = endMinutes - startMinutes;
-              const hours = Math.floor(totalMinutes / 60);
-              const minutes = totalMinutes % 60;
-              return `${hours}h ${minutes}m`;
-            })()}
-          </div>
-        </div>
-      </div>
-
-      {/* Working Days */}
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-          📅 Working Days
-        </h3>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
-          {dayNames.map((day, index) => (
-            <div
-              key={index}
-              onClick={() => isProjectOwner && handleWorkingDayToggle(index)}
-              style={{
-                padding: '12px',
-                border: `2px solid ${settings.workingDays.includes(index) ? '#0052cc' : '#dfe1e6'}`,
-                borderRadius: '3px',
-                textAlign: 'center',
-                cursor: isProjectOwner ? 'pointer' : 'not-allowed',
-                backgroundColor: settings.workingDays.includes(index) ? '#deebff' : 'white',
-                transition: 'all 0.2s',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: settings.workingDays.includes(index) ? '#0052cc' : '#5e6c84'
-              }}
-            >
-              {day}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Holidays */}
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-            🎉 Holidays
-          </h3>
           {isProjectOwner && !showHolidayForm && (
             <button
               onClick={() => setShowHolidayForm(true)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#0052cc',
-                color: 'white',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
+              className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-100 transition-all font-sans"
             >
               + Add Holiday
             </button>
           )}
         </div>
 
-        {/* Holiday Form */}
-        {showHolidayForm && (
-          <form onSubmit={handleAddHoliday} style={{ marginBottom: '20px', padding: '16px', backgroundColor: '#f4f5f7', borderRadius: '3px' }}>
-            <div style={{ display: 'grid', gap: '12px' }}>
-              <input
-                type="date"
-                value={holidayForm.date}
-                onChange={(e) => setHolidayForm({ ...holidayForm, date: e.target.value })}
-                required
-                style={{
-                  padding: '10px 12px',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '3px',
-                  fontSize: '14px'
-                }}
-              />
-              <input
-                type="text"
-                placeholder="Holiday name *"
-                value={holidayForm.name}
-                onChange={(e) => setHolidayForm({ ...holidayForm, name: e.target.value })}
-                required
-                style={{
-                  padding: '10px 12px',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '3px',
-                  fontSize: '14px'
-                }}
-              />
-              <input
-                type="text"
-                placeholder="Description (optional)"
-                value={holidayForm.description}
-                onChange={(e) => setHolidayForm({ ...holidayForm, description: e.target.value })}
-                style={{
-                  padding: '10px 12px',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '3px',
-                  fontSize: '14px'
-                }}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-              <button
-                type="submit"
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#0052cc',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '3px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}
-              >
-                Add
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowHolidayForm(false);
-                  setHolidayForm({ date: '', name: '', description: '' });
-                }}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: 'transparent',
-                  color: '#5e6c84',
-                  border: 'none',
-                  borderRadius: '3px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        )}
+        <div className="p-8 space-y-6">
+          {showHolidayForm && (
+            <form onSubmit={handleAddHoliday} className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4 animate-in zoom-in-95">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Date</label>
+                  <input type="date" value={holidayForm.date} onChange={e => setHolidayForm({ ...holidayForm, date: e.target.value })} required className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold shadow-inner" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Event Name</label>
+                  <input type="text" placeholder="e.g. National Holiday" value={holidayForm.name} onChange={e => setHolidayForm({ ...holidayForm, name: e.target.value })} required className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold shadow-inner" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Description (Optional)</label>
+                <input type="text" placeholder="Details..." value={holidayForm.description} onChange={e => setHolidayForm({ ...holidayForm, description: e.target.value })} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium" />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button type="submit" className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-all">Add Event</button>
+                <button type="button" onClick={() => setShowHolidayForm(false)} className="px-6 py-2 text-slate-500 font-bold text-xs hover:bg-slate-100 rounded-lg">Cancel</button>
+              </div>
+            </form>
+          )}
 
-        {/* Holidays List */}
-        {settings.holidays && settings.holidays.length > 0 ? (
-          <div style={{ display: 'grid', gap: '12px' }}>
-            {settings.holidays.map((holiday, index) => (
-              <div
-                key={holiday._id || index}
-                style={{
-                  padding: '16px',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '3px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#172b4d', marginBottom: '4px' }}>
-                    {holiday.name}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sans">
+            {settings.holidays.length > 0 ? settings.holidays.map((holiday) => (
+              <div key={holiday._id} className="p-5 bg-white border border-slate-100 rounded-2xl flex justify-between items-center group shadow-sm hover:border-indigo-100 transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-xl shadow-inner italic border border-slate-50">🎉</div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight text-xs">{holiday.name}</h4>
+                    <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">{new Date(holiday.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
                   </div>
-                  <div style={{ fontSize: '13px', color: '#5e6c84' }}>
-                    {new Date(holiday.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                  </div>
-                  {holiday.description && (
-                    <div style={{ fontSize: '13px', color: '#5e6c84', marginTop: '4px' }}>
-                      {holiday.description}
-                    </div>
-                  )}
                 </div>
                 {isProjectOwner && (
-                  <button
-                    onClick={() => handleRemoveHoliday(holiday._id)}
-                    style={{
-                      padding: '6px 12px',
-                      backgroundColor: '#de350b',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      fontSize: '13px'
-                    }}
-                  >
-                    Remove
-                  </button>
+                  <button onClick={() => handleRemoveHoliday(holiday._id)} className="w-8 h-8 rounded-lg text-slate-300 hover:text-rose-500 transition-colors">🗑️</button>
                 )}
               </div>
-            ))}
+            )) : (
+              <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl">
+                <p className="text-sm text-slate-400 font-medium italic">No project-specific holidays registered.</p>
+              </div>
+            )}
           </div>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#5e6c84', fontSize: '14px' }}>
-            No holidays added yet
-          </div>
-        )}
-      </div>
-
-      {/* Save Button */}
-      {isProjectOwner && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            onClick={handleSaveSettings}
-            disabled={saving}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: saving ? '#dfe1e6' : '#0052cc',
-              color: 'white',
-              border: 'none',
-              borderRadius: '3px',
-              cursor: saving ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: '600'
-            }}
-          >
-            {saving ? 'Saving...' : 'Save Settings'}
-          </button>
         </div>
-      )}
+      </section>
+
       <DeleteConfirmModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
         onConfirm={confirmRemoveHoliday}
         title="Remove Holiday"
-        message="Are you sure you want to remove this holiday from the project?"
-        itemName={deleteModal.name}
+        message={`Remove "${deleteModal.name}" from the project calendar?`}
       />
     </div>
   );
 };
 
 export default SettingsTab;
-

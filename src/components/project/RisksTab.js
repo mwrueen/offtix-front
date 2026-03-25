@@ -84,33 +84,33 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
     }
   };
 
-  const getSeverityColor = (severity) => {
-    const colors = {
-      low: { bg: '#e7f5ff', text: '#0c5ba0', border: '#74c0fc' },
-      medium: { bg: '#fff3e0', text: '#e65100', border: '#ffb74d' },
-      high: { bg: '#ffe0e0', text: '#c62828', border: '#ef5350' },
-      critical: { bg: '#fce4ec', text: '#880e4f', border: '#f06292' }
+  const getSeverityBadge = (severity) => {
+    const severityMap = {
+      low: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      medium: 'bg-amber-50 text-amber-700 border-amber-200',
+      high: 'bg-orange-50 text-orange-700 border-orange-200 font-bold',
+      critical: 'bg-rose-50 text-rose-700 border-rose-200 font-black'
     };
-    return colors[severity] || colors.medium;
+    return severityMap[severity] || 'bg-slate-50 text-slate-700 border-slate-200';
   };
 
-  const getProbabilityColor = (probability) => {
-    const colors = {
-      low: { bg: '#e8f5e9', text: '#2e7d32', border: '#81c784' },
-      medium: { bg: '#fff3e0', text: '#e65100', border: '#ffb74d' },
-      high: { bg: '#ffe0e0', text: '#c62828', border: '#ef5350' }
+  const getProbabilityBadge = (probability) => {
+    const probabilityMap = {
+      low: 'bg-slate-50 text-slate-500 border-slate-200',
+      medium: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      high: 'bg-purple-50 text-purple-700 border-purple-200 font-bold'
     };
-    return colors[probability] || colors.medium;
+    return probabilityMap[probability] || 'bg-slate-50 text-slate-500 border-slate-200';
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      identified: { bg: '#fff3e0', text: '#e65100', border: '#ffb74d' },
-      monitoring: { bg: '#e0f2f1', text: '#00695c', border: '#4db6ac' },
-      mitigated: { bg: '#e8f5e9', text: '#2e7d32', border: '#81c784' },
-      occurred: { bg: '#ffe0e0', text: '#c62828', border: '#ef5350' }
+  const getStatusBadge = (status) => {
+    const statusMap = {
+      identified: 'bg-slate-100 text-slate-600',
+      monitoring: 'bg-indigo-50 text-indigo-700',
+      mitigated: 'bg-emerald-50 text-emerald-700 font-bold',
+      occurred: 'bg-rose-50 text-rose-700 font-black'
     };
-    return colors[status] || colors.identified;
+    return statusMap[status] || 'bg-slate-100 text-slate-600';
   };
 
   const filteredRisks = risks.filter(risk => {
@@ -119,169 +119,76 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
     const matchesSeverity = filterSeverity === 'all' || risk.severity === filterSeverity;
     const matchesProbability = filterProbability === 'all' || risk.probability === filterProbability;
     const matchesStatus = filterStatus === 'all' || risk.status === filterStatus;
-
     return matchesSearch && matchesSeverity && matchesProbability && matchesStatus;
   });
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#fafbfc', minHeight: '100vh' }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '24px',
-        padding: '0 4px'
-      }}>
+    <div className="p-6 bg-slate-50 min-h-screen">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 style={{
-            margin: '0 0 4px 0',
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#172b4d',
-            letterSpacing: '-0.5px'
-          }}>
-            Risks
-          </h1>
-          <p style={{
-            margin: 0,
-            fontSize: '16px',
-            color: '#5e6c84',
-            fontWeight: '400'
-          }}>
-            {filteredRisks.length} of {risks.length} risk{risks.length !== 1 ? 's' : ''}
+          <h1 className="text-2xl font-bold text-slate-900">Risk Registry</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {filteredRisks.length} active risks identified within project scope
           </p>
         </div>
         {isProjectOwner && (
           <button
             onClick={() => {
-              resetForm();
-              setShowForm(true);
+              if (showForm) resetForm();
+              else setShowForm(true);
             }}
-            style={{
-              padding: '14px 28px',
-              backgroundColor: '#0052cc',
-              color: 'white',
-              border: 'none',
-              borderRadius: '10px',
-              fontSize: '15px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(0, 82, 204, 0.3)',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#0747a6';
-              e.target.style.transform = 'translateY(-1px)';
-              e.target.style.boxShadow = '0 6px 16px rgba(0, 82, 204, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = '#0052cc';
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 12px rgba(0, 82, 204, 0.3)';
-            }}
+            className={`px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 ${showForm ? 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
           >
-            <span style={{ fontSize: '18px' }}>+</span>
-            Add Risk
+            {showForm ? 'Cancel' : '+ Create Risk'}
           </button>
         )}
       </div>
 
-      {/* Search and Filters */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        border: '2px solid #e1e5e9',
-        borderRadius: '12px',
-        padding: '20px',
-        marginBottom: '24px',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '50px' }}>
-          <div>
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="md:col-span-1 space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Search</label>
             <input
               type="text"
-              placeholder="🔍 Search risks..."
+              placeholder="Filter by title..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '10px',
-                fontSize: '15px',
-                outline: 'none',
-                transition: 'all 0.2s ease',
-                boxSizing: 'border-box'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#0052cc'}
-              onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 transition-all"
             />
           </div>
-
-          <div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Severity</label>
             <select
               value={filterSeverity}
               onChange={(e) => setFilterSeverity(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '10px',
-                fontSize: '14px',
-                backgroundColor: '#ffffff',
-                cursor: 'pointer',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 cursor-pointer"
             >
               <option value="all">All Severities</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="critical">Critical</option>
+              <option value="low">Low Impact</option>
+              <option value="medium">Medium Impact</option>
+              <option value="high">High Impact</option>
+              <option value="critical">Critical Impact</option>
             </select>
           </div>
-
-          <div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Probability</label>
             <select
               value={filterProbability}
               onChange={(e) => setFilterProbability(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '10px',
-                fontSize: '14px',
-                backgroundColor: '#ffffff',
-                cursor: 'pointer',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 cursor-pointer"
             >
               <option value="all">All Probabilities</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
+              <option value="low">Low Probability</option>
+              <option value="medium">Medium Probability</option>
+              <option value="high">High Probability</option>
             </select>
           </div>
-
-          <div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Status</label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '10px',
-                fontSize: '14px',
-                backgroundColor: '#ffffff',
-                cursor: 'pointer',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 cursor-pointer"
             >
               <option value="all">All Statuses</option>
               <option value="identified">Identified</option>
@@ -293,759 +200,219 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
         </div>
       </div>
 
-      {/* Form */}
       {showForm && (
-        <div style={{
-          backgroundColor: '#ffffff',
-          border: '2px solid #e1e5e9',
-          borderRadius: '16px',
-          padding: '40px',
-          marginBottom: '32px',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            marginBottom: '32px',
-            paddingBottom: '24px',
-            borderBottom: '2px solid #f4f5f7'
-          }}>
-            <div style={{
-              width: '56px',
-              height: '56px',
-              backgroundColor: '#ffe0e0',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '24px',
-              boxShadow: '0 2px 8px rgba(198, 40, 40, 0.1)'
-            }}>
-              ⚠️
-            </div>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#172b4d', letterSpacing: '-0.5px' }}>
-                {editingRisk ? 'Edit Risk' : 'Create New Risk'}
-              </h3>
-              <p style={{ margin: '6px 0 0 0', fontSize: '15px', color: '#5e6c84', lineHeight: '1.5' }}>
-                {editingRisk ? 'Update risk details and mitigation strategy' : 'Identify and document project risk'}
-              </p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 mb-8 shadow-md">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center text-xl">⚠️</div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-900">{editingRisk ? 'Edit Risk Profile' : 'Identify New Risk'}</h3>
+              <p className="text-sm text-slate-500 mt-1">Document potential project threats and mitigation strategies.</p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '40px' }}>
-              <div>
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Risk Title <span style={{ color: '#cf1322' }}>*</span>
-                  </label>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="md:col-span-2 space-y-6">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Risk Title <span className="text-rose-500">*</span></label>
                   <input
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     required
-                    placeholder="e.g., Budget overrun, Resource unavailability"
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      transition: 'all 0.2s ease',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    placeholder="e.g., Resources unavailable in Phase 2"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400"
                   />
                 </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Description
-                  </label>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Description & Impact</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows="4"
-                    placeholder="Describe the risk and its potential impact"
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      resize: 'vertical',
-                      fontFamily: 'inherit',
-                      transition: 'all 0.2s ease',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc',
-                      lineHeight: '1.6'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    rows="3"
+                    placeholder="Explain the risk and its potential impact..."
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 resize-none"
                   />
                 </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Mitigation Strategy
-                  </label>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Mitigation Strategy</label>
                   <textarea
                     value={formData.mitigation}
                     onChange={(e) => setFormData({ ...formData, mitigation: e.target.value })}
-                    rows="3"
-                    placeholder="How will this risk be mitigated or managed?"
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      resize: 'vertical',
-                      fontFamily: 'inherit',
-                      transition: 'all 0.2s ease',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc',
-                      lineHeight: '1.6'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    rows="4"
+                    placeholder="How will we prevent or handle this risk?"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400"
                   />
                 </div>
               </div>
 
-              <div>
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Severity
-                  </label>
+              <div className="space-y-6">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Severity / Impact</label>
                   <select
                     value={formData.severity}
                     onChange={(e) => setFormData({ ...formData, severity: e.target.value })}
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      backgroundColor: '#fafbfc',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none"
                   >
-                    <option value="low">🟢 Low</option>
-                    <option value="medium">🟡 Medium</option>
-                    <option value="high">🟠 High</option>
-                    <option value="critical">🔴 Critical</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
                   </select>
                 </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Probability
-                  </label>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Probability / Likelihood</label>
                   <select
                     value={formData.probability}
                     onChange={(e) => setFormData({ ...formData, probability: e.target.value })}
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      backgroundColor: '#fafbfc',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none"
                   >
-                    <option value="low">🟢 Low</option>
-                    <option value="medium">🟡 Medium</option>
-                    <option value="high">🔴 High</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
                   </select>
                 </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Status
-                  </label>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Status</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      backgroundColor: '#fafbfc',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none"
                   >
-                    <option value="identified">🔍 Identified</option>
-                    <option value="monitoring">👁️ Monitoring</option>
-                    <option value="mitigated">✅ Mitigated</option>
-                    <option value="occurred">🚨 Occurred</option>
+                    <option value="identified">Identified</option>
+                    <option value="monitoring">Monitoring</option>
+                    <option value="mitigated">Mitigated</option>
+                    <option value="occurred">Occurred</option>
                   </select>
                 </div>
               </div>
             </div>
 
-            <div style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '16px',
-              marginTop: '40px',
-              paddingTop: '32px',
-              borderTop: '2px solid #f4f5f7'
-            }}>
+            <div className="flex justify-end gap-3 pt-8 border-t border-slate-100">
               <button
                 type="button"
                 onClick={resetForm}
-                style={{
-                  padding: '14px 32px',
-                  backgroundColor: '#ffffff',
-                  color: '#5e6c84',
-                  border: '2px solid #dfe1e6',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  transition: 'all 0.2s ease',
-                  letterSpacing: '0.3px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#f4f5f7';
-                  e.target.style.borderColor = '#c1c7d0';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#ffffff';
-                  e.target.style.borderColor = '#dfe1e6';
-                }}
+                className="px-6 py-2 bg-white text-slate-500 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                style={{
-                  padding: '14px 32px',
-                  backgroundColor: '#0052cc',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  boxShadow: '0 4px 12px rgba(0, 82, 204, 0.3)',
-                  transition: 'all 0.2s ease',
-                  letterSpacing: '0.3px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#0747a6';
-                  e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = '0 6px 16px rgba(0, 82, 204, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#0052cc';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(0, 82, 204, 0.3)';
-                }}
+                className="px-8 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition-all"
               >
-                {editingRisk ? '✓ Update Risk' : '+ Create Risk'}
+                {editingRisk ? 'Update Risk' : 'Save Risk'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Risks List - Only show when form is not visible */}
       {!showForm && (
-        <>
-          {filteredRisks.length === 0 ? (
-            <div style={{
-              backgroundColor: '#ffffff',
-              border: '2px dashed #dfe1e6',
-              borderRadius: '16px',
-              padding: '80px 40px',
-              textAlign: 'center',
-              color: '#5e6c84'
-            }}>
-              <div style={{ fontSize: '64px', marginBottom: '16px', opacity: 0.5 }}>⚠️</div>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-                {searchTerm || filterSeverity !== 'all' || filterProbability !== 'all' || filterStatus !== 'all'
-                  ? 'No risks match your filters'
-                  : 'No risks identified yet'}
-              </h3>
-              <p style={{ margin: 0, fontSize: '14px' }}>
-                {searchTerm || filterSeverity !== 'all' || filterProbability !== 'all' || filterStatus !== 'all'
-                  ? 'Try adjusting your search or filter criteria'
-                  : 'Click "Add Risk" to identify and track project risks'}
-              </p>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gap: '16px' }}>
-              {filteredRisks.map((risk) => {
-                const severityColor = getSeverityColor(risk.severity);
-                const probabilityColor = getProbabilityColor(risk.probability);
-                const statusColor = getStatusColor(risk.status);
-
-                return (
-                  <div
-                    key={risk._id}
-                    style={{
-                      backgroundColor: '#ffffff',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '12px',
-                      padding: '24px',
-                      transition: 'all 0.2s ease',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-                    }}
-                    onClick={() => setViewingRisk(risk)}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#0052cc';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 82, 204, 0.15)';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = '#e1e5e9';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                      <div style={{ flex: 1 }}>
-                        <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700', color: '#172b4d' }}>
-                          {risk.title}
-                        </h3>
-                        {risk.description && (
-                          <p style={{ margin: 0, fontSize: '14px', color: '#5e6c84', lineHeight: '1.6' }}>
-                            {risk.description.length > 150 ? `${risk.description.substring(0, 150)}...` : risk.description}
-                          </p>
-                        )}
-                      </div>
-
-                      {isProjectOwner && (
-                        <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }} onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => handleEdit(risk)}
-                            style={{
-                              padding: '8px 16px',
-                              backgroundColor: '#f4f5f7',
-                              color: '#172b4d',
-                              border: '1px solid #dfe1e6',
-                              borderRadius: '8px',
-                              fontSize: '13px',
-                              fontWeight: '600',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#0052cc';
-                              e.target.style.color = '#ffffff';
-                              e.target.style.borderColor = '#0052cc';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = '#f4f5f7';
-                              e.target.style.color = '#172b4d';
-                              e.target.style.borderColor = '#dfe1e6';
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(risk._id)}
-                            style={{
-                              padding: '8px 16px',
-                              backgroundColor: '#ffffff',
-                              color: '#cf1322',
-                              border: '1px solid #ffccc7',
-                              borderRadius: '8px',
-                              fontSize: '13px',
-                              fontWeight: '600',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#cf1322';
-                              e.target.style.color = '#ffffff';
-                              e.target.style.borderColor = '#cf1322';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = '#ffffff';
-                              e.target.style.color = '#cf1322';
-                              e.target.style.borderColor = '#ffccc7';
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                      <span style={{
-                        padding: '6px 14px',
-                        borderRadius: '16px',
-                        fontSize: '12px',
-                        fontWeight: '700',
-                        backgroundColor: severityColor.bg,
-                        color: severityColor.text,
-                        border: `1.5px solid ${severityColor.border}`,
-                        textTransform: 'capitalize'
-                      }}>
-                        Severity: {risk.severity}
-                      </span>
-                      <span style={{
-                        padding: '6px 14px',
-                        borderRadius: '16px',
-                        fontSize: '12px',
-                        fontWeight: '700',
-                        backgroundColor: probabilityColor.bg,
-                        color: probabilityColor.text,
-                        border: `1.5px solid ${probabilityColor.border}`,
-                        textTransform: 'capitalize'
-                      }}>
-                        Probability: {risk.probability}
-                      </span>
-                      <span style={{
-                        padding: '6px 14px',
-                        borderRadius: '16px',
-                        fontSize: '12px',
-                        fontWeight: '700',
-                        backgroundColor: statusColor.bg,
-                        color: statusColor.text,
-                        border: `1.5px solid ${statusColor.border}`,
-                        textTransform: 'capitalize'
-                      }}>
-                        {risk.status}
-                      </span>
-                    </div>
-
-                    {risk.mitigation && (
-                      <div style={{
-                        marginTop: '16px',
-                        padding: '12px 16px',
-                        backgroundColor: '#f4f5f7',
-                        borderRadius: '8px',
-                        borderLeft: '4px solid #0052cc'
-                      }}>
-                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#172b4d', marginBottom: '4px' }}>
-                          Mitigation Strategy:
-                        </div>
-                        <div style={{ fontSize: '13px', color: '#5e6c84', lineHeight: '1.5' }}>
-                          {risk.mitigation.length > 100 ? `${risk.mitigation.substring(0, 100)}...` : risk.mitigation}
-                        </div>
-                      </div>
-                    )}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredRisks.map(risk => (
+            <div
+              key={risk._id}
+              className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all group cursor-pointer flex flex-col"
+              onClick={() => setViewingRisk(risk)}
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex gap-2">
+                  <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase border tracking-wider ${getSeverityBadge(risk.severity)}`}>
+                    {risk.severity} Impact
+                  </span>
+                  <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase border tracking-wider ${getProbabilityBadge(risk.probability)}`}>
+                    {risk.probability} Likely
+                  </span>
+                </div>
+                {isProjectOwner && (
+                  <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                    <button onClick={() => handleEdit(risk)} className="p-1 px-2 text-slate-400 hover:text-indigo-600 transition-colors text-xs">✎</button>
+                    <button onClick={() => handleDelete(risk._id)} className="p-1 px-2 text-slate-400 hover:text-rose-600 transition-colors text-xs">✕</button>
                   </div>
-                );
-              })}
+                )}
+              </div>
+
+              <h3 className="text-base font-bold text-slate-900 mb-2 line-clamp-1 group-hover:text-indigo-600 transition-colors">{risk.title}</h3>
+              <p className="text-xs text-slate-500 mb-6 line-clamp-2 h-8">{risk.description || 'No summary provided.'}</p>
+
+              <div className="mt-auto flex justify-between items-center pt-4 border-t border-slate-50">
+                <div className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${getStatusBadge(risk.status)}`}>
+                  {risk.status}
+                </div>
+                <div className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">See Details ⮕</div>
+              </div>
+            </div>
+          ))}
+
+          {filteredRisks.length === 0 && (
+            <div className="col-span-full py-24 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-center">
+              <div className="text-4xl mb-4">🛡️</div>
+              <h3 className="text-lg font-bold text-slate-900">No risks identified</h3>
+              <p className="text-sm text-slate-500 mt-1">Excellent! No threats currently match your filters.</p>
+              <button
+                onClick={() => { setSearchTerm(''); setFilterSeverity('all'); setFilterProbability('all'); setFilterStatus('all'); }}
+                className="mt-6 text-xs font-bold text-indigo-600 hover:underline uppercase tracking-widest"
+              >
+                Clear Filters
+              </button>
             </div>
           )}
-        </>
+        </div>
       )}
 
-      {/* View Modal */}
       {viewingRisk && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px'
-          }}
-          onClick={() => setViewingRisk(null)}
-        >
-          <div
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '16px',
-              maxWidth: '700px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflow: 'auto',
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{
-              padding: '32px',
-              borderBottom: '2px solid #f4f5f7'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '700', color: '#172b4d' }}>
-                    {viewingRisk.title}
-                  </h2>
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '12px' }}>
-                    <span style={{
-                      padding: '6px 14px',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '700',
-                      backgroundColor: getSeverityColor(viewingRisk.severity).bg,
-                      color: getSeverityColor(viewingRisk.severity).text,
-                      border: `1.5px solid ${getSeverityColor(viewingRisk.severity).border}`,
-                      textTransform: 'capitalize'
-                    }}>
-                      Severity: {viewingRisk.severity}
-                    </span>
-                    <span style={{
-                      padding: '6px 14px',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '700',
-                      backgroundColor: getProbabilityColor(viewingRisk.probability).bg,
-                      color: getProbabilityColor(viewingRisk.probability).text,
-                      border: `1.5px solid ${getProbabilityColor(viewingRisk.probability).border}`,
-                      textTransform: 'capitalize'
-                    }}>
-                      Probability: {viewingRisk.probability}
-                    </span>
-                    <span style={{
-                      padding: '6px 14px',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '700',
-                      backgroundColor: getStatusColor(viewingRisk.status).bg,
-                      color: getStatusColor(viewingRisk.status).text,
-                      border: `1.5px solid ${getStatusColor(viewingRisk.status).border}`,
-                      textTransform: 'capitalize'
-                    }}>
-                      {viewingRisk.status}
-                    </span>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[2000] p-4" onClick={() => setViewingRisk(null)}>
+          <div className="bg-white rounded-3xl p-10 w-full max-w-4xl shadow-2xl border border-slate-200 overflow-hidden relative max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-8 flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-2xl border border-rose-100 italic font-black text-rose-500">!</div>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 leading-none">{viewingRisk.title}</h2>
+                  <div className="flex items-center gap-3 mt-4">
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-widest ${getSeverityBadge(viewingRisk.severity)}`}>{viewingRisk.severity} Severity</span>
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-widest ${getProbabilityBadge(viewingRisk.probability)}`}>{viewingRisk.probability} Likelihood</span>
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase tracking-widest ${getStatusBadge(viewingRisk.status)}`}>{viewingRisk.status}</span>
                   </div>
                 </div>
-                <button
-                  onClick={() => setViewingRisk(null)}
-                  style={{
-                    padding: '8px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    fontSize: '24px',
-                    cursor: 'pointer',
-                    color: '#5e6c84',
-                    lineHeight: 1
-                  }}
-                >
-                  ×
-                </button>
+              </div>
+              <button onClick={() => setViewingRisk(null)} className="p-2 text-slate-400 hover:text-slate-900 text-2xl leading-none">✕</button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin space-y-10">
+              <div>
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Context & Impact</h4>
+                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-sm text-slate-700 leading-relaxed font-medium">
+                  {viewingRisk.description || 'No detailed documentation available.'}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Mitigation & Response</h4>
+                <div className="bg-indigo-50/30 p-6 rounded-2xl border border-indigo-100 text-sm font-bold text-slate-900 leading-relaxed">
+                  {viewingRisk.mitigation || 'No mitigation protocol has been established yet.'}
+                </div>
               </div>
             </div>
 
-            <div style={{ padding: '32px' }}>
-              {viewingRisk.description && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '700', color: '#172b4d', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Description
-                  </h4>
-                  <p style={{ margin: 0, fontSize: '15px', color: '#5e6c84', lineHeight: '1.6' }}>
-                    {viewingRisk.description}
-                  </p>
-                </div>
-              )}
-
-              {viewingRisk.mitigation && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '700', color: '#172b4d', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Mitigation Strategy
-                  </h4>
-                  <div style={{
-                    padding: '16px',
-                    backgroundColor: '#f4f5f7',
-                    borderRadius: '8px',
-                    borderLeft: '4px solid #0052cc'
-                  }}>
-                    <p style={{ margin: 0, fontSize: '15px', color: '#5e6c84', lineHeight: '1.6' }}>
-                      {viewingRisk.mitigation}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
             {isProjectOwner && (
-              <div style={{
-                padding: '24px 32px',
-                borderTop: '2px solid #f4f5f7',
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '12px'
-              }}>
-                <button
-                  onClick={() => {
-                    handleEdit(viewingRisk);
-                    setViewingRisk(null);
-                  }}
-                  style={{
-                    padding: '12px 24px',
-                    backgroundColor: '#0052cc',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#0747a6'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = '#0052cc'}
-                >
-                  Edit Risk
-                </button>
-                <button
-                  onClick={() => {
-                    setViewingRisk(null);
-                    handleDelete(viewingRisk._id);
-                  }}
-                  style={{
-                    padding: '12px 24px',
-                    backgroundColor: '#ffffff',
-                    color: '#cf1322',
-                    border: '2px solid #ffccc7',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#cf1322';
-                    e.target.style.color = '#ffffff';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#ffffff';
-                    e.target.style.color = '#cf1322';
-                  }}
-                >
-                  Delete Risk
-                </button>
+              <div className="mt-10 pt-8 border-t border-slate-100 flex gap-4 flex-shrink-0">
+                <button onClick={() => { handleEdit(viewingRisk); }} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-all uppercase tracking-widest">Edit Risk</button>
+                <button onClick={() => { setViewingRisk(null); handleDelete(viewingRisk._id); }} className="flex-1 py-3 bg-slate-50 text-rose-500 border border-slate-200 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all uppercase tracking-widest">Delete Risk</button>
               </div>
             )}
           </div>
         </div>
       )}
+
       <DeleteConfirmModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
         onConfirm={confirmDelete}
         title="Delete Risk"
-        message="Are you sure you want to delete this risk?"
-        itemName={deleteModal.name}
+        message={`Are you sure you want to permanently delete this risk: "${deleteModal.name}"? This action cannot be undone.`}
       />
     </div>
   );
 };
 
 export default RisksTab;
-

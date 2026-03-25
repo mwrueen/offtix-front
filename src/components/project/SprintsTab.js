@@ -67,8 +67,8 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
       description: sprint.description || '',
       phase: sprint.phase?._id || '',
       status: sprint.status,
-      startDate: new Date(sprint.startDate).toISOString().split('T')[0],
-      endDate: new Date(sprint.endDate).toISOString().split('T')[0],
+      startDate: sprint.startDate ? new Date(sprint.startDate).toISOString().split('T')[0] : '',
+      endDate: sprint.endDate ? new Date(sprint.endDate).toISOString().split('T')[0] : '',
       goal: sprint.goal || '',
       capacity: sprint.capacity || '',
       velocity: sprint.velocity || ''
@@ -96,25 +96,24 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
     }
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      'planning': { bg: '#fff4e6', text: '#d46b08', border: '#ffcc95' },
-      'active': { bg: '#e6f7ff', text: '#0052cc', border: '#91d5ff' },
-      'completed': { bg: '#f6ffed', text: '#389e0d', border: '#b7eb8f' },
-      'cancelled': { bg: '#fff1f0', text: '#cf1322', border: '#ffa39e' }
+  const getStatusBadge = (status) => {
+    const statusMap = {
+      'planning': 'bg-amber-50 text-amber-700 border-amber-200',
+      'active': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      'completed': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      'cancelled': 'bg-rose-50 text-rose-700 border-rose-200'
     };
-    return colors[status] || colors.planning;
+    return statusMap[status] || 'bg-slate-50 text-slate-700 border-slate-200';
   };
 
   const calculateDuration = (startDate, endDate) => {
+    if (!startDate || !endDate) return 0;
     const start = new Date(startDate);
     const end = new Date(endDate);
     const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  // Filter sprints
   const filteredSprints = sprints.filter(sprint => {
     const matchesSearch = sprint.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (sprint.description && sprint.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -125,118 +124,45 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
   });
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#fafbfc', minHeight: '100vh' }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '24px',
-        padding: '0 4px'
-      }}>
+    <div className="p-6 bg-slate-50 min-h-screen">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 style={{
-            margin: '0 0 4px 0',
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#172b4d',
-            letterSpacing: '-0.5px'
-          }}>
-            Sprints
-          </h1>
-          <p style={{
-            margin: 0,
-            fontSize: '16px',
-            color: '#5e6c84',
-            fontWeight: '400'
-          }}>
-            {filteredSprints.length} of {sprints.length} sprint{sprints.length !== 1 ? 's' : ''}
+          <h1 className="text-2xl font-bold text-slate-900">Project Sprints</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {filteredSprints.length} of {sprints.length} total sprints
           </p>
         </div>
         {isProjectOwner && (
           <button
-            onClick={() => setShowForm(!showForm)}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: showForm ? '#f4f5f7' : '#0052cc',
-              color: showForm ? '#5e6c84' : 'white',
-              border: showForm ? '1px solid #dfe1e6' : 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-              transition: 'all 0.2s ease',
-              boxShadow: showForm ? 'none' : '0 2px 4px rgba(0, 82, 204, 0.2)'
+            onClick={() => {
+              if (showForm) resetForm();
+              else setShowForm(true);
             }}
+            className={`px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 ${showForm ? 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
           >
-            {showForm ? '✕ Cancel' : '+ Add Sprint'}
+            {showForm ? 'Cancel' : '+ Add New Sprint'}
           </button>
         )}
       </div>
 
-      {/* Search and Filter Bar */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        border: '1px solid #e1e5e9',
-        borderRadius: '12px',
-        padding: '20px',
-        marginBottom: '24px',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '50px' }}>
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#5e6c84',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Search
-            </label>
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Search</label>
             <input
               type="text"
-              placeholder="Search sprints..."
+              placeholder="Filter by name or goal..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 16px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'border-color 0.2s ease'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#0052cc'}
-              onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 transition-all font-medium"
             />
           </div>
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#5e6c84',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Status
-            </label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Status</label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 16px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '8px',
-                fontSize: '14px',
-                backgroundColor: '#ffffff',
-                cursor: 'pointer'
-              }}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 transition-all cursor-pointer font-medium"
             >
               <option value="all">All Statuses</option>
               <option value="planning">Planning</option>
@@ -245,30 +171,12 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
               <option value="cancelled">Cancelled</option>
             </select>
           </div>
-          <div>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#5e6c84',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Phase
-            </label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Phase</label>
             <select
               value={filterPhase}
               onChange={(e) => setFilterPhase(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 16px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '8px',
-                fontSize: '14px',
-                backgroundColor: '#ffffff',
-                cursor: 'pointer'
-              }}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 transition-all cursor-pointer font-medium"
             >
               <option value="all">All Phases</option>
               {phases.map(phase => (
@@ -280,1033 +188,252 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
       </div>
 
       {showForm && (
-        <div style={{
-          backgroundColor: '#ffffff',
-          border: '2px solid #e1e5e9',
-          borderRadius: '16px',
-          padding: '40px',
-          marginBottom: '32px',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            marginBottom: '32px',
-            paddingBottom: '24px',
-            borderBottom: '2px solid #f4f5f7'
-          }}>
-            <div style={{
-              width: '56px',
-              height: '56px',
-              backgroundColor: '#e6f7ff',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '24px',
-              boxShadow: '0 2px 8px rgba(0, 82, 204, 0.1)'
-            }}>
-              🏃
-            </div>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#172b4d', letterSpacing: '-0.5px' }}>
-                {editingSprint ? 'Edit Sprint' : 'Create New Sprint'}
-              </h3>
-              <p style={{ margin: '6px 0 0 0', fontSize: '15px', color: '#5e6c84', lineHeight: '1.5' }}>
-                {editingSprint ? 'Update sprint details and timeline' : 'Define sprint goals and timeline'}
-              </p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 mb-8 shadow-md">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-xl">🏃</div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-900">{editingSprint ? 'Edit Sprint' : 'Create New Sprint'}</h3>
+              <p className="text-xs text-slate-500 font-medium font-sans">Define sprint goals, duration, and capacity.</p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '40px' }}>
-              <div>
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Sprint Name <span style={{ color: '#cf1322' }}>*</span>
-                  </label>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Sprint Name <span className="text-rose-500">*</span></label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
-                    placeholder="e.g., Sprint 1, Alpha Release Sprint"
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      transition: 'all 0.2s ease',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    placeholder="e.g., Development Sprint 1"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400"
                   />
                 </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Description
-                  </label>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 ml-1">Description</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows="3"
-                    placeholder="Brief description of the sprint"
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      resize: 'vertical',
-                      fontFamily: 'inherit',
-                      transition: 'all 0.2s ease',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc',
-                      lineHeight: '1.6'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Sprint Goal
-                  </label>
-                  <textarea
-                    value={formData.goal}
-                    onChange={(e) => setFormData({ ...formData, goal: e.target.value })}
-                    rows="2"
-                    placeholder="What is the main objective of this sprint?"
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      resize: 'vertical',
-                      fontFamily: 'inherit',
-                      transition: 'all 0.2s ease',
-                      outline: 'none',
-                      backgroundColor: '#fafbfc',
-                      lineHeight: '1.6'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                      e.target.style.boxShadow = 'none';
-                    }}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 resize-none"
+                    placeholder="Focus area..."
                   />
                 </div>
               </div>
 
-              <div>
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Phase
-                  </label>
-                  <select
-                    value={formData.phase}
-                    onChange={(e) => setFormData({ ...formData, phase: e.target.value })}
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      backgroundColor: '#fafbfc',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                    }}
-                  >
-                    <option value="">📂 No Phase</option>
-                    {phases.map(phase => (
-                      <option key={phase._id} value={phase._id}>📂 {phase.name}</option>
-                    ))}
-                  </select>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 ml-1">Phase</label>
+                    <select
+                      value={formData.phase}
+                      onChange={(e) => setFormData({ ...formData, phase: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 transition-all cursor-pointer"
+                    >
+                      <option value="">No Phase</option>
+                      {phases.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 ml-1">Status</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 transition-all cursor-pointer"
+                    >
+                      <option value="planning">Planning</option>
+                      <option value="active">Active</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#172b4d',
-                    letterSpacing: '0.2px'
-                  }}>
-                    Status
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    style={{
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      padding: '14px 16px',
-                      border: '2px solid #e1e5e9',
-                      borderRadius: '10px',
-                      fontSize: '15px',
-                      backgroundColor: '#fafbfc',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#0052cc';
-                      e.target.style.backgroundColor = '#ffffff';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#e1e5e9';
-                      e.target.style.backgroundColor = '#fafbfc';
-                    }}
-                  >
-                    <option value="planning">📋 Planning</option>
-                    <option value="active">🏃 Active</option>
-                    <option value="completed">✅ Completed</option>
-                    <option value="cancelled">❌ Cancelled</option>
-                  </select>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      marginBottom: '10px',
-                      fontSize: '14px',
-                      fontWeight: '700',
-                      color: '#172b4d',
-                      letterSpacing: '0.2px'
-                    }}>
-                      Start Date <span style={{ color: '#cf1322' }}>*</span>
-                    </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 ml-1">Start Date <span className="text-rose-500">*</span></label>
                     <input
                       type="date"
                       value={formData.startDate}
                       onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                       required
-                      style={{
-                        boxSizing: 'border-box',
-                        width: '100%',
-                        padding: '14px 12px',
-                        border: '2px solid #e1e5e9',
-                        borderRadius: '10px',
-                        fontSize: '14px',
-                        outline: 'none',
-                        backgroundColor: '#fafbfc',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#0052cc';
-                        e.target.style.backgroundColor = '#ffffff';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '#e1e5e9';
-                        e.target.style.backgroundColor = '#fafbfc';
-                        e.target.style.boxShadow = 'none';
-                      }}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-indigo-400"
                     />
                   </div>
-
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      marginBottom: '10px',
-                      fontSize: '14px',
-                      fontWeight: '700',
-                      color: '#172b4d',
-                      letterSpacing: '0.2px'
-                    }}>
-                      End Date <span style={{ color: '#cf1322' }}>*</span>
-                    </label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 ml-1">End Date <span className="text-rose-500">*</span></label>
                     <input
                       type="date"
                       value={formData.endDate}
                       onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                       required
-                      style={{
-                        boxSizing: 'border-box',
-                        width: '100%',
-                        padding: '14px 12px',
-                        border: '2px solid #e1e5e9',
-                        borderRadius: '10px',
-                        fontSize: '14px',
-                        outline: 'none',
-                        backgroundColor: '#fafbfc',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#0052cc';
-                        e.target.style.backgroundColor = '#ffffff';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '#e1e5e9';
-                        e.target.style.backgroundColor = '#fafbfc';
-                        e.target.style.boxShadow = 'none';
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      marginBottom: '10px',
-                      fontSize: '14px',
-                      fontWeight: '700',
-                      color: '#172b4d',
-                      letterSpacing: '0.2px'
-                    }}>
-                      Capacity (hours)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.capacity}
-                      onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                      placeholder="80"
-                      min="0"
-                      step="1"
-                      style={{
-                        boxSizing: 'border-box',
-                        width: '100%',
-                        padding: '14px 12px',
-                        border: '2px solid #e1e5e9',
-                        borderRadius: '10px',
-                        fontSize: '14px',
-                        outline: 'none',
-                        backgroundColor: '#fafbfc',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#0052cc';
-                        e.target.style.backgroundColor = '#ffffff';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '#e1e5e9';
-                        e.target.style.backgroundColor = '#fafbfc';
-                        e.target.style.boxShadow = 'none';
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      marginBottom: '10px',
-                      fontSize: '14px',
-                      fontWeight: '700',
-                      color: '#172b4d',
-                      letterSpacing: '0.2px'
-                    }}>
-                      Velocity (points)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.velocity}
-                      onChange={(e) => setFormData({ ...formData, velocity: e.target.value })}
-                      placeholder="20"
-                      min="0"
-                      step="1"
-                      style={{
-                        boxSizing: 'border-box',
-                        width: '100%',
-                        padding: '14px 12px',
-                        border: '2px solid #e1e5e9',
-                        borderRadius: '10px',
-                        fontSize: '14px',
-                        outline: 'none',
-                        backgroundColor: '#fafbfc',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#0052cc';
-                        e.target.style.backgroundColor = '#ffffff';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(0, 82, 204, 0.1)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '#e1e5e9';
-                        e.target.style.backgroundColor = '#fafbfc';
-                        e.target.style.boxShadow = 'none';
-                      }}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-indigo-400"
                     />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '16px',
-              marginTop: '40px',
-              paddingTop: '32px',
-              borderTop: '2px solid #f4f5f7'
-            }}>
+            <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
               <button
                 type="button"
                 onClick={resetForm}
-                style={{
-                  padding: '14px 32px',
-                  backgroundColor: '#ffffff',
-                  color: '#5e6c84',
-                  border: '2px solid #dfe1e6',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  transition: 'all 0.2s ease',
-                  letterSpacing: '0.3px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#f4f5f7';
-                  e.target.style.borderColor = '#c1c7d0';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#ffffff';
-                  e.target.style.borderColor = '#dfe1e6';
-                }}
+                className="px-8 py-2.5 bg-white text-slate-500 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
               >
-                Cancel
+                Discard
               </button>
               <button
                 type="submit"
-                style={{
-                  padding: '14px 32px',
-                  backgroundColor: '#0052cc',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  boxShadow: '0 4px 12px rgba(0, 82, 204, 0.3)',
-                  transition: 'all 0.2s ease',
-                  letterSpacing: '0.3px'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#0747a6';
-                  e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = '0 6px 16px rgba(0, 82, 204, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#0052cc';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(0, 82, 204, 0.3)';
-                }}
+                className="px-10 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition-all"
               >
-                {editingSprint ? '✓ Update Sprint' : '+ Create Sprint'}
+                {editingSprint ? 'Update Sprint' : 'Create Sprint'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Sprints List - Only show when form is not visible */}
       {!showForm && (
-        <div style={{ display: 'grid', gap: '16px' }}>
-          {filteredSprints.length === 0 && sprints.length > 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '64px 24px',
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              border: '1px solid #e1e5e9'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-                No Sprints Found
-              </h3>
-              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
-                Try adjusting your search or filter criteria.
-              </p>
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setFilterStatus('all');
-                  setFilterPhase('all');
-                }}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#f4f5f7',
-                  color: '#5e6c84',
-                  border: '1px solid #dfe1e6',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '600'
-                }}
-              >
-                Clear Filters
-              </button>
-            </div>
-          ) : sprints.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '64px 24px',
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              border: '1px solid #e1e5e9'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏃</div>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600', color: '#172b4d' }}>
-                No Sprints Yet
-              </h3>
-              <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#5e6c84' }}>
-                Create sprints to organize your development cycles and track progress.
-              </p>
-              {isProjectOwner && (
-                <button
-                  onClick={() => setShowForm(true)}
-                  style={{
-                    padding: '12px 24px',
-                    backgroundColor: '#0052cc',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    boxShadow: '0 2px 4px rgba(0, 82, 204, 0.2)'
-                  }}
-                >
-                  Create First Sprint
-                </button>
-              )}
-            </div>
-          ) : (
-            filteredSprints.map(sprint => {
-              const statusColor = getStatusColor(sprint.status);
-              const duration = calculateDuration(sprint.startDate, sprint.endDate);
-
-              return (
-                <div
-                  key={sprint._id}
-                  style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e1e5e9',
-                    borderRadius: '12px',
-                    padding: '24px',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.08)';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{
-                        margin: '0 0 8px 0',
-                        fontSize: '18px',
-                        fontWeight: '700',
-                        color: '#172b4d',
-                        lineHeight: '1.3'
-                      }}>
-                        {sprint.name}
-                        <span style={{
-                          fontSize: '14px',
-                          color: '#5e6c84',
-                          fontWeight: '500',
-                          marginLeft: '12px'
-                        }}>
-                          Sprint #{sprint.sprintNumber}
-                        </span>
-                      </h3>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
-                        <span style={{
-                          ...statusColor,
-                          padding: '4px 12px',
-                          borderRadius: '16px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          textTransform: 'capitalize',
-                          border: `1px solid ${statusColor.border}`
-                        }}>
-                          {sprint.status}
-                        </span>
-                        {sprint.phase && (
-                          <span style={{
-                            padding: '4px 12px',
-                            borderRadius: '16px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            backgroundColor: '#f4f5f7',
-                            color: '#5e6c84',
-                            border: '1px solid #dfe1e6'
-                          }}>
-                            📁 {sprint.phase.name}
-                          </span>
-                        )}
-                        <span style={{
-                          padding: '4px 12px',
-                          backgroundColor: '#e6f7ff',
-                          color: '#0052cc',
-                          borderRadius: '16px',
-                          fontSize: '12px',
-                          fontWeight: '600'
-                        }}>
-                          📅 {duration} day{duration !== 1 ? 's' : ''}
-                        </span>
-                      </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredSprints.map(sprint => (
+            <div key={sprint._id} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all group">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-lg border border-slate-100 shadow-inner">🏃</div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{sprint.name}</h3>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase ${getStatusBadge(sprint.status)}`}>{sprint.status}</span>
+                      {sprint.phase && <span className="text-[9px] font-bold px-2 py-0.5 rounded border border-slate-100 bg-slate-50 text-slate-400 uppercase">{sprint.phase.name}</span>}
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
-                      <button
-                        onClick={() => setViewingSprint(sprint)}
-                        style={{
-                          padding: '8px 12px',
-                          backgroundColor: '#e6f7ff',
-                          color: '#0052cc',
-                          border: '1px solid #91d5ff',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#0052cc';
-                          e.target.style.color = 'white';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = '#e6f7ff';
-                          e.target.style.color = '#0052cc';
-                        }}
-                      >
-                        View
-                      </button>
-                      {isProjectOwner && (
-                        <>
-                          <button
-                            onClick={() => handleEdit(sprint)}
-                            style={{
-                              padding: '8px 12px',
-                              backgroundColor: '#f4f5f7',
-                              color: '#5e6c84',
-                              border: '1px solid #dfe1e6',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#0052cc';
-                              e.target.style.color = 'white';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = '#f4f5f7';
-                              e.target.style.color = '#5e6c84';
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(sprint._id)}
-                            style={{
-                              padding: '8px 12px',
-                              backgroundColor: '#fff1f0',
-                              color: '#cf1322',
-                              border: '1px solid #ffa39e',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#cf1322';
-                              e.target.style.color = 'white';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = '#fff1f0';
-                              e.target.style.color = '#cf1322';
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {sprint.description && (
-                    <p style={{
-                      margin: '0 0 16px 0',
-                      color: '#5e6c84',
-                      fontSize: '14px',
-                      lineHeight: '1.6'
-                    }}>
-                      {sprint.description}
-                    </p>
-                  )}
-
-                  {sprint.goal && (
-                    <div style={{
-                      backgroundColor: '#f4f5f7',
-                      padding: '16px',
-                      borderRadius: '8px',
-                      marginBottom: '16px'
-                    }}>
-                      <h5 style={{
-                        margin: '0 0 8px 0',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        color: '#5e6c84',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px'
-                      }}>
-                        Sprint Goal
-                      </h5>
-                      <p style={{
-                        margin: 0,
-                        color: '#172b4d',
-                        fontSize: '14px',
-                        lineHeight: '1.6'
-                      }}>
-                        {sprint.goal}
-                      </p>
-                    </div>
-                  )}
-
-                  <div style={{ display: 'flex', gap: '12px', fontSize: '12px', flexWrap: 'wrap' }}>
-                    <span style={{
-                      padding: '6px 12px',
-                      backgroundColor: '#f4f5f7',
-                      color: '#5e6c84',
-                      borderRadius: '16px',
-                      fontWeight: '600'
-                    }}>
-                      📅 {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
-                    </span>
-                    {sprint.capacity && (
-                      <span style={{
-                        padding: '6px 12px',
-                        backgroundColor: '#fff4e6',
-                        color: '#d46b08',
-                        borderRadius: '16px',
-                        fontWeight: '600'
-                      }}>
-                        💪 {sprint.capacity}h capacity
-                      </span>
-                    )}
-                    {sprint.velocity && (
-                      <span style={{
-                        padding: '6px 12px',
-                        backgroundColor: '#f6ffed',
-                        color: '#389e0d',
-                        borderRadius: '16px',
-                        fontWeight: '600'
-                      }}>
-                        🚀 {sprint.velocity} points
-                      </span>
-                    )}
                   </div>
                 </div>
-              );
-            })
+                {isProjectOwner && (
+                  <div className="flex gap-1">
+                    <button onClick={() => handleEdit(sprint)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">✎</button>
+                    <button onClick={() => handleDelete(sprint._id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">✕</button>
+                  </div>
+                )}
+              </div>
+              <div className="pt-4 border-t border-slate-50 flex justify-between items-end">
+                <div>
+                  <div className="text-[9px] font-bold text-slate-400 uppercase mb-1 font-sans">Timeline</div>
+                  <div className="text-xs font-bold text-slate-700">
+                    {sprint.startDate ? new Date(sprint.startDate).toLocaleDateString() : 'N/A'} - {sprint.endDate ? new Date(sprint.endDate).toLocaleDateString() : 'N/A'}
+                  </div>
+                  <div className="text-[9px] text-slate-400 mt-0.5 font-medium">({calculateDuration(sprint.startDate, sprint.endDate)} days)</div>
+                </div>
+                <button
+                  onClick={() => setViewingSprint(sprint)}
+                  className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest hover:underline"
+                >
+                  View Details ⮕
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {filteredSprints.length === 0 && (
+            <div className="col-span-full py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-center">
+              <div className="text-4xl mb-4">🔍</div>
+              <h3 className="text-lg font-bold text-slate-900">No sprints found</h3>
+              <p className="text-sm text-slate-400 mt-1">Try adjusting your filters or create a new sprint.</p>
+              <button
+                onClick={() => { setSearchTerm(''); setFilterStatus('all'); setFilterPhase('all'); }}
+                className="mt-4 text-xs font-bold text-indigo-600 hover:text-indigo-800 underline uppercase tracking-widest"
+              >
+                Clear all filters
+              </button>
+            </div>
           )}
         </div>
       )}
 
-      {/* Details Modal */}
       {viewingSprint && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '24px'
-        }}
-          onClick={() => setViewingSprint(null)}
-        >
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            maxWidth: '900px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
-          }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{
-              padding: '32px',
-              borderBottom: '1px solid #e1e5e9',
-              position: 'sticky',
-              top: 0,
-              backgroundColor: '#ffffff',
-              zIndex: 1
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ margin: '0 0 12px 0', fontSize: '24px', fontWeight: '700', color: '#172b4d' }}>
-                    {viewingSprint.name}
-                    <span style={{ fontSize: '16px', color: '#5e6c84', fontWeight: '500', marginLeft: '12px' }}>
-                      Sprint #{viewingSprint.sprintNumber}
-                    </span>
-                  </h2>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    <span style={{
-                      ...getStatusColor(viewingSprint.status),
-                      padding: '4px 12px',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      textTransform: 'capitalize',
-                      border: `1px solid ${getStatusColor(viewingSprint.status).border}`
-                    }}>
-                      {viewingSprint.status}
-                    </span>
-                    {viewingSprint.phase && (
-                      <span style={{
-                        padding: '4px 12px',
-                        backgroundColor: '#f4f5f7',
-                        color: '#5e6c84',
-                        borderRadius: '16px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        border: '1px solid #dfe1e6'
-                      }}>
-                        📁 {viewingSprint.phase.name}
-                      </span>
-                    )}
-                    <span style={{
-                      padding: '4px 12px',
-                      backgroundColor: '#e6f7ff',
-                      color: '#0052cc',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '600'
-                    }}>
-                      📅 {calculateDuration(viewingSprint.startDate, viewingSprint.endDate)} day{calculateDuration(viewingSprint.startDate, viewingSprint.endDate) !== 1 ? 's' : ''}
-                    </span>
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[2000] p-4" onClick={() => setViewingSprint(null)}>
+          <div className="bg-white rounded-3xl p-10 w-full max-w-2xl shadow-2xl border border-slate-200 animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-8">
+              <div className="flex items-center gap-5">
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-3xl shadow-inner border border-slate-100">🏃</div>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">{viewingSprint.name}</h2>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border uppercase ${getStatusBadge(viewingSprint.status)}`}>{viewingSprint.status}</span>
+                    {viewingSprint.phase && <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg border border-slate-100 bg-slate-50 text-slate-400 uppercase">{viewingSprint.phase.name}</span>}
                   </div>
                 </div>
+              </div>
+              <button onClick={() => setViewingSprint(null)} className="p-2 text-slate-400 hover:text-slate-900 transition-colors text-2xl">✕</button>
+            </div>
+
+            <div className="space-y-8">
+              {viewingSprint.description && (
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Description</h4>
+                  <p className="text-sm text-slate-600 leading-relaxed font-medium bg-slate-50 p-6 rounded-2xl border border-slate-100">{viewingSprint.description}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Timeline</h4>
+                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                    <div className="text-sm font-bold text-slate-900">
+                      {new Date(viewingSprint.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      <br />
+                      <span className="text-slate-400 font-medium">to</span>
+                      <br />
+                      {new Date(viewingSprint.endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </div>
+                    <div className="text-[10px] font-bold text-indigo-600 mt-2 uppercase tracking-wider">{calculateDuration(viewingSprint.startDate, viewingSprint.endDate)} Day Cycle</div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Metrics</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
+                        <div className="text-lg font-black text-amber-900">{viewingSprint.capacity || '0'}h</div>
+                        <div className="text-[8px] font-bold text-amber-600 uppercase tracking-widest">Capacity</div>
+                      </div>
+                      <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
+                        <div className="text-lg font-black text-emerald-900">{viewingSprint.velocity || '0'}</div>
+                        <div className="text-[8px] font-bold text-emerald-600 uppercase tracking-widest">Velocity</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {isProjectOwner && (
+              <div className="mt-10 pt-8 border-t border-slate-100 flex gap-4">
                 <button
-                  onClick={() => setViewingSprint(null)}
-                  style={{
-                    padding: '8px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '24px',
-                    color: '#5e6c84',
-                    lineHeight: 1
-                  }}
+                  onClick={() => { handleEdit(viewingSprint); setViewingSprint(null); }}
+                  className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-all uppercase tracking-widest"
                 >
-                  ×
+                  Edit Sprint
+                </button>
+                <button
+                  onClick={() => { setViewingSprint(null); handleDelete(viewingSprint._id); }}
+                  className="flex-1 py-3 bg-slate-50 text-rose-500 border border-slate-200 rounded-xl text-xs font-bold hover:bg-rose-50 hover:border-rose-100 hover:text-rose-600 transition-all uppercase tracking-widest"
+                >
+                  Delete
                 </button>
               </div>
-            </div>
-
-            <div style={{ padding: '32px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
-                <div>
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                    Start Date
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '16px', color: '#172b4d', fontWeight: '600' }}>
-                    {new Date(viewingSprint.startDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                  </p>
-                </div>
-                <div>
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                    End Date
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '16px', color: '#172b4d', fontWeight: '600' }}>
-                    {new Date(viewingSprint.endDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                  </p>
-                </div>
-              </div>
-
-              {viewingSprint.description && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                    Description
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '16px', color: '#172b4d', lineHeight: '1.6' }}>
-                    {viewingSprint.description}
-                  </p>
-                </div>
-              )}
-
-              {viewingSprint.goal && (
-                <div style={{ marginBottom: '24px' }}>
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                    Sprint Goal
-                  </h3>
-                  <div style={{
-                    backgroundColor: '#f4f5f7',
-                    padding: '20px',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    color: '#172b4d',
-                    lineHeight: '1.8'
-                  }}>
-                    {viewingSprint.goal}
-                  </div>
-                </div>
-              )}
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
-                {viewingSprint.capacity && (
-                  <div>
-                    <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                      Capacity
-                    </h3>
-                    <p style={{ margin: 0, fontSize: '24px', color: '#172b4d', fontWeight: '700' }}>
-                      {viewingSprint.capacity} <span style={{ fontSize: '16px', fontWeight: '400', color: '#5e6c84' }}>hours</span>
-                    </p>
-                  </div>
-                )}
-                {viewingSprint.velocity && (
-                  <div>
-                    <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600', color: '#5e6c84', textTransform: 'uppercase' }}>
-                      Velocity
-                    </h3>
-                    <p style={{ margin: 0, fontSize: '24px', color: '#172b4d', fontWeight: '700' }}>
-                      {viewingSprint.velocity} <span style={{ fontSize: '16px', fontWeight: '400', color: '#5e6c84' }}>points</span>
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid #e1e5e9', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                {isProjectOwner && (
-                  <>
-                    <button
-                      onClick={() => {
-                        handleEdit(viewingSprint);
-                        setViewingSprint(null);
-                      }}
-                      style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#0052cc',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '600'
-                      }}
-                    >
-                      Edit Sprint
-                    </button>
-                    <button
-                      onClick={() => {
-                        setViewingSprint(null);
-                        handleDelete(viewingSprint._id);
-                      }}
-                      style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#fff1f0',
-                        color: '#cf1322',
-                        border: '1px solid #ffa39e',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '600'
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
+
       <DeleteConfirmModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
         onConfirm={confirmDelete}
         title="Delete Sprint"
-        message="Are you sure you want to delete this sprint? This action cannot be undone."
-        itemName={deleteModal.name}
+        message={`Are you sure you want to delete ${deleteModal.name}? This action cannot be undone.`}
       />
     </div>
   );

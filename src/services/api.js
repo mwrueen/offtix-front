@@ -2,6 +2,9 @@ import axios from 'axios';
 import { getCookie } from '../utils/cookies';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const BASE_SERVER_URL = API_BASE_URL.replace('/api', '');
+
+export { API_BASE_URL, BASE_SERVER_URL };
 
 const api = axios.create({
   baseURL: API_BASE_URL,

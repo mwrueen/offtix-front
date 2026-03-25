@@ -155,7 +155,6 @@ const GlobalChat = ({ onClose }) => {
                 socket.emit('leave-room', { type: selectedChat.type, id: selectedChat.id });
             }
         };
-        // Explicitly exclude unreadCounts from dependencies to prevent loop
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedChat?.id, selectedChat?.type, socket, markAsRead]);
 
@@ -191,72 +190,30 @@ const GlobalChat = ({ onClose }) => {
             <div
                 key={itemId}
                 onClick={() => setSelectedChat({ type, id: rawId, name: displayName })}
-                style={{
-                    padding: '12px 16px',
-                    cursor: 'pointer',
-                    backgroundColor: isSelected ? '#eff6ff' : 'transparent',
-                    borderLeft: isSelected ? '4px solid #3b82f6' : '4px solid transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    transition: 'all 0.2s'
-                }}
+                className={`flex items-center gap-4 px-6 py-4 cursor-pointer border-l-4 transition-all duration-300 relative group
+                   ${isSelected ? 'bg-indigo-50 border-indigo-600' : 'border-transparent hover:bg-slate-50'}`}
             >
-                <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: type === 'direct' ? '50%' : '8px',
-                    backgroundColor: isSelected ? '#3b82f6' : '#e2e8f0',
-                    color: isSelected ? 'white' : '#64748b',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    flexShrink: 0,
-                    overflow: 'hidden'
-                }}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shadow-inner overflow-hidden flex-shrink-0 transition-transform group-hover:scale-110
+                   ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
                     {item.profile?.profilePicture ? (
-                        <img src={item.profile.profilePicture} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={item.profile.profilePicture} alt="" className="w-full h-full object-cover" />
                     ) : (
                         displayName?.charAt(0).toUpperCase()
                     )}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                        fontSize: '14px',
-                        fontWeight: isSelected ? '700' : '500',
-                        color: isSelected ? '#1e40af' : '#1e293b',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '8px'
-                    }}>
-                        <span style={{
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            flex: 1,
-                            minWidth: 0
-                        }}>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 overflow-hidden">
+                        <span className={`text-[11px] font-black uppercase tracking-tight truncate flex-1 ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>
                             {displayName}
                         </span>
                         {unreadCount > 0 && (
-                            <span style={{
-                                backgroundColor: '#ef4444',
-                                color: 'white',
-                                fontSize: '10px',
-                                padding: '2px 6px',
-                                borderRadius: '10px',
-                                minWidth: '18px',
-                                textAlign: 'center'
-                            }}>
+                            <span className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-lg shadow-lg shadow-red-500/20 animate-pulse">
                                 {unreadCount}
                             </span>
                         )}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                        {type === 'direct' ? (item.role || 'User') : (item.status ? `Status: ${item.status}` : 'Project')}
+                    <div className="text-[9px] font-bold text-slate-400 uppercase italic truncate">
+                        {type === 'direct' ? (item.role || 'User') : (item.status ? `Status: ${item.status}` : 'Entity_Node')}
                     </div>
                 </div>
             </div>
@@ -264,224 +221,178 @@ const GlobalChat = ({ onClose }) => {
     };
 
     return (
-        <div style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            width: '900px',
-            height: '600px',
-            backgroundColor: 'white',
-            borderRadius: '24px',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.15)',
-            display: 'flex',
-            overflow: 'hidden',
-            zIndex: 1000,
-            border: '1px solid #e2e8f0'
-        }}>
+        <div className="fixed bottom-8 right-8 w-[1000px] h-[700px] bg-white rounded-[3rem] shadow-24 border border-slate-200/60 flex overflow-hidden z-[1000] animate-in slide-in-from-bottom-12 zoom-in-95 duration-500">
             {/* Sidebar */}
-            <div style={{
-                width: '280px',
-                borderRight: '1px solid #f1f5f9',
-                display: 'flex',
-                flexDirection: 'column',
-                backgroundColor: '#f8fafc'
-            }}>
-                <div style={{ padding: '24px', borderBottom: '1px solid #f1f5f9' }}>
-                    <h2 style={{ fontSize: '20px', fontWeight: '800', margin: 0, color: '#0f172a' }}>Messaging</h2>
+            <div className="w-[320px] bg-slate-50/50 border-r border-slate-100 flex flex-col shrink-0">
+                <div className="p-10 border-b border-slate-100 bg-white/50">
+                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-[0.2em] italic">Sub_Comm_Core</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Personnel_Sync_Module</p>
                 </div>
 
-                <div style={{ display: 'flex', padding: '12px', gap: '4px' }}>
+                <div className="flex p-4 gap-2 border-b border-slate-50 bg-white/20">
                     {[
-                        { id: 'direct', label: 'All Users', count: Object.values(unreadCounts.direct).reduce((a, b) => a + b, 0) },
-                        { id: 'projects', label: 'Projects', count: Object.values(unreadCounts.projects).reduce((a, b) => a + b, 0) }
+                        { id: 'direct', label: 'Nodes', icon: '👤', count: Object.values(unreadCounts.direct).reduce((a, b) => a + b, 0) },
+                        { id: 'projects', label: 'Entities', icon: '📁', count: Object.values(unreadCounts.projects).reduce((a, b) => a + b, 0) }
                     ].map(t => (
                         <button
                             key={t.id}
                             onClick={() => setActiveTab(t.id)}
-                            style={{
-                                flex: 1,
-                                padding: '8px 4px',
-                                borderRadius: '8px',
-                                border: 'none',
-                                backgroundColor: activeTab === t.id ? '#3b82f6' : 'transparent',
-                                color: activeTab === t.id ? 'white' : '#64748b',
-                                fontSize: '11px',
-                                fontWeight: '700',
-                                textTransform: 'uppercase',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px'
-                            }}
+                            className={`flex items-center justify-center gap-3 flex-1 py-4 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all
+                               ${activeTab === t.id ? 'bg-slate-900 text-white shadow-xl translate-y-[-2px]' : 'text-slate-400 hover:bg-white hover:text-slate-900'}`}
                         >
+                            <span>{t.icon}</span>
                             {t.label}
                             {t.count > 0 && (
-                                <span style={{
-                                    backgroundColor: activeTab === t.id ? 'rgba(255,255,255,0.2)' : '#ef4444',
-                                    color: 'white',
-                                    padding: '1px 6px',
-                                    borderRadius: '10px',
-                                    fontSize: '10px'
-                                }}>
-                                    {t.count}
-                                </span>
+                                <span className={`ml-1 w-2 h-2 rounded-full bg-red-500 animate-pulse`} />
                             )}
                         </button>
                     ))}
                 </div>
 
-                <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '20px' }}>
+                <div className="flex-1 overflow-y-auto custom-scrollbar-sidebar pb-10">
                     {loading ? (
-                        <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>Loading...</div>
+                        <div className="p-10 text-center animate-pulse space-y-4">
+                            <div className="w-10 h-10 bg-slate-200 rounded-full mx-auto" />
+                            <div className="text-[10px] font-black text-slate-300 uppercase italic">Parsing_Nodes...</div>
+                        </div>
                     ) : (
-                        <>
-                            {activeTab === 'direct' && (
-                                employees.length > 0 ? (
-                                    employees.map(e => renderSidebarItem(e, 'direct'))
-                                ) : (
-                                    <div style={{ padding: '40px 20px', textAlign: 'center', color: '#64748b' }}>
-                                        <div style={{ fontSize: '32px', marginBottom: '8px' }}>👥</div>
-                                        <div style={{ fontSize: '13px' }}>No users found</div>
-                                    </div>
+                        <div className="divide-y divide-slate-50/50">
+                            {activeTab === 'direct' ? (
+                                employees.length > 0 ? employees.map(e => renderSidebarItem(e, 'direct')) : (
+                                    <div className="p-20 text-center opacity-30 grayscale italic text-[10px] font-black uppercase tracking-widest">No_Active_Nodes</div>
+                                )
+                            ) : (
+                                projects.length > 0 ? projects.map(p => renderSidebarItem(p, 'project')) : (
+                                    <div className="p-20 text-center opacity-30 grayscale italic text-[10px] font-black uppercase tracking-widest">No_Defined_Entities</div>
                                 )
                             )}
-                            {activeTab === 'projects' && (
-                                projects.length > 0 ? (
-                                    projects.map(p => renderSidebarItem(p, 'project'))
-                                ) : (
-                                    <div style={{ padding: '40px 20px', textAlign: 'center', color: '#64748b' }}>
-                                        <div style={{ fontSize: '32px', marginBottom: '8px' }}>📁</div>
-                                        <div style={{ fontSize: '13px' }}>No projects found</div>
-                                    </div>
-                                )
-                            )}
-                        </>
+                        </div>
                     )}
                 </div>
             </div>
 
             {/* Main Chat Area */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div className="flex-1 flex flex-col bg-white relative">
                 {selectedChat ? (
                     <>
-                        <div style={{
-                            padding: '16px 24px',
-                            borderBottom: '1px solid #f1f5f9',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between'
-                        }}>
+                        <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10 shadow-sm shadow-slate-200/20">
                             <div>
-                                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>{selectedChat.name}</h3>
-                                <div style={{ fontSize: '12px', color: '#22c55e' }}>Online</div>
+                                <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight italic flex items-center gap-3">
+                                    {selectedChat.name}
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                                </h3>
+                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em] font-mono">SEC_LINK_ESTABLISHED // LEVEL_4</div>
                             </div>
-                            <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '20px' }}>✕</button>
+                            <button onClick={onClose} className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:rotate-90 transition-all font-black">✕</button>
                         </div>
 
-                        <div style={{ flex: 1, overflowY: 'auto', padding: '24px', backgroundColor: '#fdfdfd' }}>
+                        <div className="flex-1 overflow-y-auto p-10 space-y-6 bg-slate-50/30 custom-scrollbar relative">
                             {chatLoading ? (
-                                <div style={{ textAlign: 'center', marginTop: '40px' }}>Loading messages...</div>
-                            ) : messages.map((msg, i) => {
-                                const currentUserId = currentUser?.id || currentUser?._id;
-                                const senderId = msg.sender?._id || msg.sender?.id || (typeof msg.sender === 'string' ? msg.sender : null);
-                                const isOwn = senderId?.toString() === currentUserId?.toString();
-                                return (
-                                    <div key={msg._id} style={{
-                                        display: 'flex',
-                                        flexDirection: isOwn ? 'row-reverse' : 'row',
-                                        marginBottom: '16px',
-                                        gap: '12px'
-                                    }}>
-                                        <div style={{
-                                            width: '32px',
-                                            height: '32px',
-                                            borderRadius: '50%',
-                                            backgroundColor: '#e2e8f0',
-                                            color: '#64748b',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '12px',
-                                            fontWeight: '700',
-                                            flexShrink: 0,
-                                            overflow: 'hidden'
-                                        }}>
-                                            {msg.sender?.profile?.profilePicture ? (
-                                                <img src={msg.sender.profile.profilePicture} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                            ) : (
-                                                (msg.sender?.name || 'U').charAt(0).toUpperCase()
-                                            )}
-                                        </div>
-                                        <div style={{
-                                            maxWidth: '70%',
-                                            padding: '12px 16px',
-                                            borderRadius: isOwn ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                                            backgroundColor: isOwn ? '#3b82f6' : 'white',
-                                            border: isOwn ? 'none' : '1px solid #e2e8f0',
-                                            color: isOwn ? 'white' : '#1e293b',
-                                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                                        }}>
-                                            {!isOwn && <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '4px', opacity: 0.8 }}>{msg.sender?.name}</div>}
-                                            <div style={{ fontSize: '14px', lineHeight: '1.5' }}>{msg.content}</div>
-                                            <div style={{ fontSize: '10px', marginTop: '4px', textAlign: 'right', opacity: 0.6 }}>
-                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </div>
-                                        </div>
+                                <div className="flex flex-col items-center justify-center h-full space-y-4 animate-pulse">
+                                    <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-500 rounded-full animate-spin" />
+                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Fetching_Directives...</div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex flex-col gap-6">
+                                        {messages.map((msg, i) => {
+                                            const currentUserId = currentUser?.id || currentUser?._id;
+                                            const senderId = msg.sender?._id || msg.sender?.id || (typeof msg.sender === 'string' ? msg.sender : null);
+                                            const isOwn = senderId?.toString() === currentUserId?.toString();
+                                            return (
+                                                <div key={msg._id} className={`flex items-end gap-4 max-w-[85%] ${isOwn ? 'flex-row-reverse self-end' : 'self-start'}`}>
+                                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-black shadow-inner overflow-hidden shrink-0 border-2 border-white
+                                                   ${isOwn ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                                                        {msg.sender?.profile?.profilePicture ? (
+                                                            <img src={msg.sender.profile.profilePicture} alt="" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            (msg.sender?.name || 'U').charAt(0).toUpperCase()
+                                                        )}
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        {!isOwn && <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest italic ml-4">{msg.sender?.name}</div>}
+                                                        <div className={`p-6 rounded-[2rem] shadow-sm relative overflow-hidden transition-all
+                                                      ${isOwn
+                                                                ? 'bg-slate-950 text-white rounded-br-none'
+                                                                : 'bg-white text-slate-800 border border-slate-100 rounded-bl-none shadow-slate-200/50'}`}>
+                                                            <div className="text-[13px] leading-relaxed font-medium">{msg.content}</div>
+                                                            <div className={`text-[8px] font-bold mt-3 opacity-30 select-none ${isOwn ? 'text-right' : 'text-left'}`}>
+                                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </div>
+                                                            {isOwn && <div className="absolute top-0 right-0 w-12 h-12 bg-indigo-500/10 rounded-full blur-xl -translate-y-1/2 translate-x-1/2" />}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                );
-                            })}
-                            <div ref={messagesEndRef} />
+                                    <div ref={messagesEndRef} className="h-4" />
+                                </>
+                            )}
                         </div>
 
                         {typingUsers.length > 0 && (
-                            <div style={{ padding: '0 24px 8px', fontSize: '12px', color: '#64748b', fontStyle: 'italic' }}>
-                                {typingUsers[0].userName} is typing...
+                            <div className="px-10 py-3 bg-white/50 backdrop-blur-sm border-t border-slate-50 flex items-center gap-3">
+                                <div className="flex gap-1">
+                                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" />
+                                </div>
+                                <span className="text-[10px] font-black text-indigo-600 uppercase italic tracking-widest">{typingUsers[0].userName} typing_packet...</span>
                             </div>
                         )}
 
-                        <div style={{ padding: '24px', borderTop: '1px solid #f1f5f9' }}>
-                            <div style={{ display: 'flex', gap: '12px' }}>
+                        <div className="p-8 bg-white border-t border-slate-100">
+                            <div className="flex gap-4 bg-slate-50 p-3 rounded-[2.5rem] border border-slate-200 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-50 transition-all group">
                                 <input
                                     ref={inputRef}
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                    placeholder="Type a message..."
-                                    style={{
-                                        flex: 1,
-                                        padding: '12px 20px',
-                                        borderRadius: '12px',
-                                        border: '1px solid #e2e8f0',
-                                        outline: 'none',
-                                        fontSize: '14px'
-                                    }}
+                                    placeholder="Enter authorization packet content..."
+                                    className="flex-1 bg-transparent px-6 py-3 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400 placeholder:italic italic"
                                 />
                                 <button
                                     onClick={handleSendMessage}
-                                    style={{
-                                        padding: '12px 24px',
-                                        backgroundColor: '#3b82f6',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '12px',
-                                        fontWeight: '700',
-                                        cursor: 'pointer'
-                                    }}
+                                    className="px-10 py-4 bg-slate-900 hover:bg-black text-white rounded-[2.2rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-24 transition-all hover:scale-105 active:scale-95 group relative overflow-hidden"
                                 >
-                                    Send
+                                    <span className="relative z-10">Push_Comm</span>
+                                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-indigo-500/0 via-white/10 to-indigo-500/0 -translate-x-full group-hover:animate-[shimmer_2s_infinite] -z-0" />
                                 </button>
                             </div>
                         </div>
                     </>
                 ) : (
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
-                        <div style={{ fontSize: '64px', marginBottom: '16px' }}>💬</div>
-                        <h3>Select a conversation to start chatting</h3>
-                        <p>Direct messages or project channels</p>
+                    <div className="flex-1 flex flex-col items-center justify-center p-20 text-center animate-in fade-in zoom-in duration-1000">
+                        <div className="relative mb-12">
+                            <div className="text-[120px] grayscale opacity-10 animate-pulse">💬</div>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-4xl animate-bounce">📡</span>
+                            </div>
+                        </div>
+                        <h3 className="text-2xl font-black text-slate-900 uppercase tracking-[0.3em] italic mb-4">No_Sync_Target</h3>
+                        <p className="max-w-xs text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed italic">Select a nodal entry from the registry to initiate encrypted communication protocols.</p>
+
+                        <div className="mt-12 grid grid-cols-2 gap-4 w-full max-w-sm">
+                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                <div className="text-lg mb-1">🛡️</div>
+                                <div className="text-[8px] font-black uppercase text-slate-400 tracking-widest italic">128-bit Encryption</div>
+                            </div>
+                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                <div className="text-lg mb-1">⚡</div>
+                                <div className="text-[8px] font-black uppercase text-slate-400 tracking-widest italic">NRT Synchronization</div>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                .custom-scrollbar-sidebar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar-sidebar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar-sidebar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+            `}} />
         </div>
     );
 };
