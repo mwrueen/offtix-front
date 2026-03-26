@@ -52,95 +52,109 @@ const SignIn = () => {
   };
 
   return (
-    <AuthLayout
-      title="Access Portal"
-      subtitle="Sign in to your professional workspace to manage projects and personnel."
-    >
+    <AuthLayout title="Welcome back" subtitle="Sign in to your account to continue.">
       {error && (
-        <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 px-8 py-4 rounded-2xl mb-8 text-[11px] font-bold uppercase tracking-widest flex items-center gap-4 animate-in slide-in-from-top-4 duration-500 italic">
-          <span className="text-xl">!</span>
+        <div className="flex items-start gap-3 bg-rose-50 border border-rose-200 text-rose-600 px-4 py-3 rounded-xl mb-5 text-sm">
+          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          </svg>
           {error}
         </div>
       )}
 
       <SocialLoginButtons />
 
-      <div className="relative flex items-center my-12 opacity-30">
-        <div className="flex-1 h-px bg-gradient-to-r from-transparent to-white/20"></div>
-        <span className="px-6 text-[9px] font-bold text-white uppercase tracking-[0.4em] italic whitespace-nowrap">Secure Credentials</span>
-        <div className="flex-1 h-px bg-gradient-to-l from-transparent to-white/20"></div>
+      <div className="relative flex items-center my-6">
+        <div className="flex-1 h-px bg-slate-200" />
+        <span className="px-4 text-xs text-slate-400">or continue with email</span>
+        <div className="flex-1 h-px bg-slate-200" />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8 italic">
-        <div className="space-y-3">
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-4">Email Address</label>
-          <div className="relative group">
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              placeholder="name@organization.com"
-              className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[2.5rem] text-sm font-bold text-white outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/10 shadow-inner lowercase"
-            />
-            <div className="absolute right-8 top-1/2 -translate-y-1/2 text-xl grayscale group-hover:grayscale-0 transition-all opacity-20">✉️</div>
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-slate-700">Email address</label>
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            autoComplete="email"
+            placeholder="you@example.com"
+            className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+          />
         </div>
 
-        <div className="space-y-3">
-          <div className="flex justify-between items-center px-4">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Secret Password</label>
-            <Link to="/forgot-password" size="small" className="text-indigo-400 no-underline text-[9px] font-bold uppercase tracking-widest hover:text-indigo-300 transition-colors">Forgot?</Link>
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center">
+            <label className="text-sm font-medium text-slate-700">Password</label>
+            <Link to="/forgot-password" className="text-xs text-indigo-600 no-underline hover:text-indigo-500 transition-colors">
+              Forgot password?
+            </Link>
           </div>
-          <div className="relative group">
+          <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
               name="password"
               value={formData.password}
               onChange={handleChange}
               required
-              placeholder="••••••••••••"
-              className="w-full pl-8 pr-20 py-5 bg-white/5 border border-white/10 rounded-[2.5rem] text-sm font-bold text-indigo-300 tracking-[0.4em] outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/10 shadow-inner"
+              autoComplete="current-password"
+              placeholder="Enter your password"
+              className="w-full pl-4 pr-11 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-white/5 text-white/40 hover:text-white transition-all flex items-center justify-center text-lg"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
-              {showPassword ? '👁️' : '🔒'}
+              {showPassword ? (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              )}
             </button>
           </div>
         </div>
 
+        <label className="flex items-center gap-2.5 cursor-pointer group">
+          <input
+            type="checkbox"
+            className="w-4 h-4 rounded border-slate-300 bg-white text-indigo-600 focus:ring-indigo-500/30 focus:ring-2 cursor-pointer"
+          />
+          <span className="text-sm text-slate-500 group-hover:text-slate-700 transition-colors">Remember me for 30 days</span>
+        </label>
+
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full py-6 rounded-[2.5rem] font-bold text-[11px] uppercase tracking-[0.3em] transition-all duration-700 flex items-center justify-center gap-6 shadow-2xl active:scale-95 group overflow-hidden relative ${isLoading
-            ? 'bg-slate-900 text-slate-600 grayscale cursor-not-allowed border border-white/5'
-            : 'bg-indigo-600 text-white hover:bg-slate-950 hover:scale-[1.02] shadow-indigo-600/20 border border-white/10'
-            }`}
+          className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 mt-2 ${
+            isLoading
+              ? 'bg-indigo-400 text-white cursor-not-allowed'
+              : 'bg-indigo-600 text-white hover:bg-indigo-500 active:scale-[0.98] shadow-sm'
+          }`}
         >
-          <span className="relative z-10">{isLoading ? 'Authenticating...' : 'Sign In Now'}</span>
           {isLoading ? (
-            <div className="w-4 h-4 border-4 border-indigo-200 border-t-white rounded-full animate-spin" />
-          ) : (
-            <span className="text-xl group-hover:translate-x-4 transition-transform duration-700 opacity-60">➜</span>
-          )}
+            <>
+              <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              Signing in...
+            </>
+          ) : 'Sign in'}
         </button>
       </form>
 
-      <div className="text-center pt-10 space-y-4 font-sans italic">
-        <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest opacity-60">
-          New to the organization?
-        </p>
-        <Link
-          to="/signup"
-          className="inline-block text-white no-underline font-bold text-[10px] uppercase tracking-widest hover:text-indigo-400 transition-all border-b border-white/10 hover:border-indigo-500 pb-1"
-        >
-          Create New Account
+      <p className="text-center text-sm text-slate-500 mt-6">
+        Don't have an account?{' '}
+        <Link to="/signup" className="text-indigo-600 no-underline hover:text-indigo-500 transition-colors font-medium">
+          Create one
         </Link>
-      </div>
+      </p>
     </AuthLayout>
   );
 };

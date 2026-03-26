@@ -10,6 +10,8 @@ const SignUp = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const { state, dispatch } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -61,85 +63,138 @@ const SignUp = () => {
     }
   };
 
-  const getSColor = () => {
-    if (passwordStrength <= 2) return 'bg-rose-500';
-    if (passwordStrength <= 3) return 'bg-amber-500';
-    return 'bg-emerald-500';
-  };
+  const strengthColor = passwordStrength <= 2 ? 'bg-rose-500' : passwordStrength <= 3 ? 'bg-amber-400' : 'bg-emerald-500';
+  const strengthText = passwordStrength <= 2 ? 'Weak' : passwordStrength <= 3 ? 'Fair' : 'Strong';
+  const strengthTextColor = passwordStrength <= 2 ? 'text-rose-500' : passwordStrength <= 3 ? 'text-amber-500' : 'text-emerald-600';
 
-  const getSText = () => {
-    if (passwordStrength <= 2) return 'Weak / Simple';
-    if (passwordStrength <= 3) return 'Moderate Strength';
-    return 'Highly Secure';
-  };
+  const EyeIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  );
+
+  const EyeOffIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+    </svg>
+  );
+
+  const inputClass = "w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all";
 
   return (
-    <AuthLayout
-      title="Create Account"
-      subtitle="Register your professional profile to begin managing projects and teams."
-    >
+    <AuthLayout title="Create an account" subtitle="Sign up to get started with Offtix.">
       {error && (
-        <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 px-8 py-4 rounded-2xl mb-8 text-[11px] font-bold uppercase tracking-widest flex items-center gap-4 animate-in slide-in-from-top-4 duration-500 italic">
-          <span className="text-xl">!</span>
+        <div className="flex items-start gap-3 bg-rose-50 border border-rose-200 text-rose-600 px-4 py-3 rounded-xl mb-5 text-sm">
+          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          </svg>
           {error}
         </div>
       )}
 
       <SocialLoginButtons />
 
-      <div className="relative flex items-center my-12 opacity-30">
-        <div className="flex-1 h-px bg-gradient-to-r from-transparent to-white/20"></div>
-        <span className="px-6 text-[9px] font-bold text-white uppercase tracking-[0.4em] italic whitespace-nowrap">Profile Registration</span>
-        <div className="flex-1 h-px bg-gradient-to-l from-transparent to-white/20"></div>
+      <div className="relative flex items-center my-6">
+        <div className="flex-1 h-px bg-slate-200" />
+        <span className="px-4 text-xs text-slate-400">or sign up with email</span>
+        <div className="flex-1 h-px bg-slate-200" />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8 italic">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-3">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-4">Full Name</label>
-            <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Professional Name" className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[2.5rem] text-sm font-bold text-white outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/10 shadow-inner uppercase tracking-tight" />
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-700">Full name</label>
+            <input type="text" name="name" value={formData.name} onChange={handleChange} required autoComplete="name" placeholder="Jane Smith" className={inputClass} />
           </div>
-          <div className="space-y-3">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-4">Work Email</label>
-            <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="name@organization.com" className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[2.5rem] text-sm font-bold text-white outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/10 shadow-inner lowercase" />
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-700">Email</label>
+            <input type="email" name="email" value={formData.email} onChange={handleChange} required autoComplete="email" placeholder="you@example.com" className={inputClass} />
           </div>
         </div>
 
-        <div className="space-y-3">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-4">Account Password</label>
-          <input type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="••••••••••••••••" className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[2.5rem] text-sm font-bold text-indigo-300 tracking-[0.4em] outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/10 shadow-inner" />
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-slate-700">Password</label>
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              autoComplete="new-password"
+              placeholder="Create a password"
+              className={`${inputClass} pr-11`}
+            />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors" aria-label={showPassword ? 'Hide password' : 'Show password'}>
+              {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+            </button>
+          </div>
           {formData.password && (
-            <div className="pt-4 px-6 scale-95 origin-left">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic">Security Strength</span>
-                <span className={`text-[8px] font-bold uppercase tracking-widest italic ${passwordStrength <= 2 ? 'text-rose-500' : 'text-emerald-500'}`}>{getSText()}</span>
-              </div>
-              <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden flex gap-1">
+            <div className="pt-1 space-y-1.5">
+              <div className="flex gap-1">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className={`flex-1 h-full rounded-full transition-all duration-700 ${i < passwordStrength ? getSColor() : 'bg-white/5'}`}></div>
+                  <div key={i} className={`flex-1 h-1 rounded-full transition-all duration-300 ${i < passwordStrength ? strengthColor : 'bg-slate-200'}`} />
                 ))}
               </div>
+              <p className={`text-xs ${strengthTextColor}`}>{strengthText} password</p>
             </div>
           )}
         </div>
 
-        <div className="space-y-3">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-4">Confirm Password</label>
-          <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required placeholder="••••••••••••••••" className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[2.5rem] text-sm font-bold text-indigo-300 tracking-[0.4em] outline-none focus:bg-white/10 focus:border-indigo-500 transition-all placeholder:text-white/10 shadow-inner" />
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-slate-700">Confirm password</label>
+          <div className="relative">
+            <input
+              type={showConfirm ? 'text' : 'password'}
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+              autoComplete="new-password"
+              placeholder="Repeat your password"
+              className={`${inputClass} pr-11`}
+            />
+            <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors" aria-label={showConfirm ? 'Hide password' : 'Show password'}>
+              {showConfirm ? <EyeOffIcon /> : <EyeIcon />}
+            </button>
+          </div>
         </div>
 
-        <button type="submit" disabled={isLoading} className={`w-full py-6 mt-4 rounded-[2.5rem] font-bold text-[11px] uppercase tracking-[0.3em] transition-all duration-700 flex items-center justify-center gap-6 shadow-2xl active:scale-95 group overflow-hidden relative ${isLoading ? 'bg-slate-900 text-slate-600 grayscale' : 'bg-indigo-600 text-white hover:bg-slate-950 shadow-indigo-600/20 border border-white/10'}`}>
-          <span className="relative z-10">{isLoading ? 'Registering...' : 'Create My Account'}</span>
-          {!isLoading && <span className="text-xl group-hover:translate-x-4 transition-transform duration-700 opacity-60">➜</span>}
+        <label className="flex items-start gap-2.5 cursor-pointer group">
+          <input type="checkbox" required className="w-4 h-4 mt-0.5 rounded border-slate-300 bg-white text-indigo-600 focus:ring-indigo-500/30 focus:ring-2 cursor-pointer shrink-0" />
+          <span className="text-sm text-slate-500 group-hover:text-slate-700 transition-colors leading-snug">
+            I agree to the{' '}
+            <Link to="/terms" className="text-indigo-600 hover:text-indigo-500 no-underline">Terms of Service</Link>
+            {' '}and{' '}
+            <Link to="/privacy" className="text-indigo-600 hover:text-indigo-500 no-underline">Privacy Policy</Link>
+          </span>
+        </label>
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 mt-1 ${
+            isLoading
+              ? 'bg-indigo-400 text-white cursor-not-allowed'
+              : 'bg-indigo-600 text-white hover:bg-indigo-500 active:scale-[0.98] shadow-sm'
+          }`}
+        >
+          {isLoading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              Creating account...
+            </>
+          ) : 'Create account'}
         </button>
       </form>
 
-      <div className="text-center pt-10 space-y-4 font-sans italic">
-        <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest opacity-60">
-          Already have an account?
-        </p>
-        <Link to="/signin" className="inline-block text-white no-underline font-bold text-[10px] uppercase tracking-widest hover:text-indigo-400 transition-all border-b border-white/10 hover:border-indigo-500 pb-1">Sign In Instead</Link>
-      </div>
+      <p className="text-center text-sm text-slate-500 mt-6">
+        Already have an account?{' '}
+        <Link to="/signin" className="text-indigo-600 no-underline hover:text-indigo-500 transition-colors font-medium">
+          Sign in
+        </Link>
+      </p>
     </AuthLayout>
   );
 };
