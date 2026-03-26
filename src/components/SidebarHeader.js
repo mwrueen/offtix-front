@@ -10,12 +10,12 @@ const SidebarHeader = ({
 }) => {
   return (
     <div
-      className={`sidebar-header border-b border-white/10 flex relative transition-colors duration-200 ${sidebarCollapsed
+      className={`sidebar-header border-b border-slate-100 flex relative transition-colors duration-200 ${sidebarCollapsed
         ? 'p-5 px-3 items-center justify-between'
         : 'p-6 px-5 items-start justify-between'
         } ${isDropdownOpen
-          ? 'bg-slate-800'
-          : 'bg-transparent hover:bg-slate-800'
+          ? 'bg-slate-100'
+          : 'bg-transparent hover:bg-slate-50'
         }`}
     >
       {sidebarCollapsed ? (
@@ -37,7 +37,7 @@ const SidebarHeader = ({
       {/* Toggle Button */}
       <button
         onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-        className={`absolute w-8 h-8 rounded-lg bg-indigo-600 border border-slate-700 text-white cursor-pointer flex items-center justify-center transition-all duration-300 shadow-md z-10 hover:bg-indigo-700 ${sidebarCollapsed
+        className={`absolute w-8 h-8 rounded-lg bg-indigo-600 border border-slate-200 text-white cursor-pointer flex items-center justify-center transition-all duration-300 shadow-md z-10 hover:bg-indigo-700 ${sidebarCollapsed
           ? 'right-1/2 -bottom-4 translate-x-1/2'
           : 'right-5 top-6'
           }`}
@@ -155,7 +155,7 @@ const CompanyLogo = ({ isPersonal, logo, companyName }) => {
 const CompanyInfo = ({ companyName, isPersonal }) => {
   return (
     <div className="flex-1 min-w-0">
-      <h2 className="m-0 text-white text-lg font-bold tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
+      <h2 className="m-0 text-slate-800 text-lg font-bold tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
         {companyName || 'Offtix'}
       </h2>
       <p className="m-0 text-[10px] text-slate-400 font-bold uppercase tracking-wider">

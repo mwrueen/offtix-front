@@ -241,14 +241,19 @@ const MyTasksList = () => {
         </div>
 
         {actionModal && (
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[2000] p-6 animate-in fade-in duration-300">
-            <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20">
-              <div className="px-8 py-6 border-b border-slate-100 bg-slate-900 text-white flex items-center justify-between shrink-0">
-                <div>
-                  <h2 className="text-xl font-bold uppercase tracking-tight">{actionModal === 'complete' ? 'Submit Task Progress' : 'Return for Revision'}</h2>
-                  <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mt-1">ID: {activeTask?._id?.toUpperCase()}</p>
+          <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-[2000] p-6 animate-in fade-in duration-300">
+            <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-200">
+              <div className="px-8 py-6 border-b border-slate-100 bg-white flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${actionModal === 'complete' ? 'bg-indigo-100 text-indigo-600' : 'bg-rose-100 text-rose-600'}`}>
+                    {actionModal === 'complete' ? '✓' : '↩'}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800">{actionModal === 'complete' ? 'Submit Task Progress' : 'Return for Revision'}</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ID: {activeTask?._id?.slice(-8).toUpperCase()}</p>
+                  </div>
                 </div>
-                <button onClick={() => { setActionModal(null); setActiveTask(null); }} className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center text-xl hover:bg-rose-600 transition-all active:scale-90 font-bold">×</button>
+                <button onClick={() => { setActionModal(null); setActiveTask(null); }} className="w-10 h-10 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center text-xl hover:bg-rose-100 hover:text-rose-600 transition-all active:scale-90 font-bold">×</button>
               </div>
 
               <div className="p-8 lg:p-12 overflow-y-auto space-y-10 scrollbar-none flex-1 bg-white">
@@ -285,11 +290,11 @@ const MyTasksList = () => {
               </div>
 
               <div className="px-8 py-6 border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-4 bg-slate-50 shrink-0">
-                <button onClick={() => { setActionModal(null); setActiveTask(null); }} className="px-8 py-3 font-bold text-[11px] uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all">Cancel</button>
+                <button onClick={() => { setActionModal(null); setActiveTask(null); }} className="px-8 py-3 font-bold text-[11px] uppercase tracking-widest text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
                 <button
                   onClick={handleModalSubmit}
                   disabled={activeTask && actionLoading[activeTask._id]}
-                  className={`px-12 py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] text-white transition-all hover:scale-105 active:scale-95 shadow-lg min-w-[240px] ${actionModal === 'complete' ? 'bg-indigo-600' : 'bg-rose-600'} ${(activeTask && actionLoading[activeTask._id]) ? 'grayscale opacity-50 cursor-wait' : ''}`}
+                  className={`px-12 py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] text-white transition-all hover:scale-105 active:scale-95 shadow-lg min-w-[240px] ${actionModal === 'complete' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-rose-500 hover:bg-rose-600'} ${(activeTask && actionLoading[activeTask._id]) ? 'grayscale opacity-50 cursor-wait' : ''}`}
                 >
                   {(activeTask && actionLoading[activeTask._id]) ? 'Processing...' : (actionModal === 'complete' ? 'Finalize Submission' : 'Confirm Return')}
                 </button>

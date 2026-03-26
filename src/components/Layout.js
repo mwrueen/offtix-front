@@ -130,7 +130,7 @@ const Layout = ({ children }) => {
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden">
       {/* Sidebar */}
-      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-72'} h-screen bg-slate-900 text-slate-100 flex flex-col fixed left-0 top-0 transition-all duration-300 ease-in-out shadow-lg z-[1000]`}>
+      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-72'} h-screen bg-white text-slate-700 flex flex-col fixed left-0 top-0 transition-all duration-300 ease-in-out shadow-lg z-[1000] border-r border-slate-200`}>
         <SidebarHeader
           sidebarCollapsed={sidebarCollapsed}
           setSidebarCollapsed={setSidebarCollapsed}
@@ -168,8 +168,8 @@ const Layout = ({ children }) => {
             const showCat = !sidebarCollapsed && (idx === 0 || menuItems[idx - 1].category !== item.category);
             return (
               <React.Fragment key={item.path}>
-                {showCat && <div className="px-3 mt-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{item.category}</div>}
-                <div onClick={() => navigate(item.path)} className={`group flex items-center gap-4 cursor-pointer rounded-lg transition-all ${sidebarCollapsed ? 'p-3 justify-center' : 'p-3 px-4'} ${active ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                {showCat && <div className="px-3 mt-6 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.category}</div>}
+                <div onClick={() => navigate(item.path)} className={`group flex items-center gap-4 cursor-pointer rounded-lg transition-all ${sidebarCollapsed ? 'p-3 justify-center' : 'p-3 px-4'} ${active ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}>
                   <span className="text-xl">{item.icon}</span>
                   {!sidebarCollapsed && <span className="flex-1 text-sm font-medium">{item.label}</span>}
                 </div>
@@ -179,22 +179,22 @@ const Layout = ({ children }) => {
         </nav>
 
         {/* User Footer */}
-        <div className="p-4 bg-slate-950 border-t border-slate-800">
+        <div className="p-4 bg-slate-50 border-t border-slate-200">
           {!sidebarCollapsed ? (
             <div className="space-y-4">
-              <div onClick={() => navigate('/profile')} className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-slate-800 transition-colors">
-                <div className="w-10 h-10 rounded-lg bg-slate-800 text-white flex items-center justify-center font-bold text-lg">{state.user?.name?.charAt(0)}</div>
+              <div onClick={() => navigate('/profile')} className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                <div className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg">{state.user?.name?.charAt(0)}</div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm text-white truncate">{state.user?.name}</p>
-                  <p className="text-[10px] text-slate-500 uppercase font-bold">{state.user?.role}</p>
+                  <p className="font-bold text-sm text-slate-800 truncate">{state.user?.name}</p>
+                  <p className="text-[10px] text-slate-400 uppercase font-bold">{state.user?.role}</p>
                 </div>
               </div>
-              <button onClick={handleLogout} className="w-full py-2 bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white rounded-lg text-xs font-bold transition-colors"> Logout </button>
+              <button onClick={handleLogout} className="w-full py-2 bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 rounded-lg text-xs font-bold transition-colors"> Logout </button>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-4">
-              <div onClick={() => navigate('/profile')} className="w-10 h-10 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-lg cursor-pointer">{state.user?.name?.charAt(0)}</div>
-              <button onClick={handleLogout} className="text-xl text-slate-600 hover:text-rose-500 transition-colors">🔒</button>
+              <div onClick={() => navigate('/profile')} className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg cursor-pointer">{state.user?.name?.charAt(0)}</div>
+              <button onClick={handleLogout} className="text-xl text-slate-400 hover:text-rose-500 transition-colors">🔒</button>
             </div>
           )}
         </div>
