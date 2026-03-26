@@ -174,7 +174,7 @@ const TaskRowContent = ({ task, level, hasChildren, isExpanded, onToggleExpand, 
       </div>
 
       <div className="min-w-0 pr-4">
-        <h4 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
+        <h4 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors whitespace-normal break-words leading-5">
           {task.title}
           {task.children?.length > 0 && <span className="ml-2 text-[10px] font-medium text-slate-400">({task.children.length})</span>}
         </h4>

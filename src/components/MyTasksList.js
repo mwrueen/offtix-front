@@ -96,6 +96,16 @@ const MyTasksList = () => {
     return map[status] || 'bg-slate-100 text-slate-400 border-slate-200';
   };
 
+  const getPriorityClasses = (priority) => {
+    const map = {
+      urgent: 'bg-rose-50 text-rose-700 border border-rose-200',
+      high: 'bg-amber-50 text-amber-700 border border-amber-200',
+      medium: 'bg-sky-50 text-sky-700 border border-sky-200',
+      low: 'bg-slate-100 text-slate-600 border border-slate-200'
+    };
+    return map[priority] || 'bg-slate-100 text-slate-600 border border-slate-200';
+  };
+
   const getTaskStatus = (task) => {
     if (task.workflowType === 'sequential') return task.userAssignee?.status || 'pending';
     if (task.workflowType === 'role') return task.userStep?.status || 'pending';
@@ -114,7 +124,7 @@ const MyTasksList = () => {
         <button
           onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }}
           disabled={isLoading || !canStartTask}
-          className={`px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all active:scale-95 shadow-md flex items-center gap-2 ${canStartTask ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-100 text-slate-300 cursor-not-allowed opacity-50'}`}
+          className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-colors ${canStartTask ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-70'}`}
         >
           {isLoading === 'starting' ? 'Starting...' : 'Start Task'}
         </button>
@@ -123,17 +133,17 @@ const MyTasksList = () => {
 
     if (taskStatus === 'in_progress') {
       return (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {task.workflowType === 'sequential' && (
-            <button onClick={(e) => { e.stopPropagation(); handlePause(task._id); }} disabled={isLoading} className="px-6 py-3 bg-amber-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-amber-600 transition-all active:scale-95">
+            <button onClick={(e) => { e.stopPropagation(); handlePause(task._id); }} disabled={isLoading} className="px-4 py-2.5 bg-amber-500 text-white rounded-lg font-medium text-sm hover:bg-amber-600 transition-colors">
               Pause
             </button>
           )}
-          <button onClick={(e) => handleCompleteClick(e, task)} disabled={isLoading} className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95">
+          <button onClick={(e) => handleCompleteClick(e, task)} disabled={isLoading} className="px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium text-sm hover:bg-indigo-700 transition-colors">
             Complete
           </button>
           {task.workflowType === 'sequential' && (
-            <button onClick={(e) => handleSendBackClick(e, task)} disabled={isLoading} className="px-6 py-3 bg-white text-rose-600 border border-rose-100 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-95">Return</button>
+            <button onClick={(e) => handleSendBackClick(e, task)} disabled={isLoading} className="px-4 py-2.5 bg-white text-rose-700 border border-rose-200 rounded-lg font-medium text-sm hover:bg-rose-50 transition-colors">Return</button>
           )}
         </div>
       );
@@ -141,7 +151,7 @@ const MyTasksList = () => {
 
     if (taskStatus === 'paused') {
       return (
-        <button onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }} disabled={isLoading || !canStartTask} className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95">
+        <button onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }} disabled={isLoading || !canStartTask} className="px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium text-sm hover:bg-indigo-700 transition-colors">
           Resume
         </button>
       );
@@ -151,79 +161,81 @@ const MyTasksList = () => {
 
   if (loading) return (
     <Layout>
-      <div className="p-40 text-center animate-in fade-in space-y-8">
-        <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto" />
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading task stream...</p>
+      <div className="px-6 py-24 text-center space-y-4">
+        <div className="w-10 h-10 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin mx-auto" />
+        <p className="text-sm font-medium text-slate-500">Loading your tasks...</p>
       </div>
     </Layout>
   );
 
   if (error) return (
     <Layout>
-      <div className="max-w-xl mx-auto my-40 p-12 bg-white rounded-3xl border border-slate-200 text-center shadow-lg animate-in zoom-in-95">
-        <div className="text-6xl mb-6">⚠️</div>
-        <h3 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h3>
-        <p className="text-slate-500 text-sm mb-8">{error}</p>
-        <button onClick={fetchTasks} className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all">Retry Connection</button>
+      <div className="max-w-xl mx-auto my-24 p-8 bg-white rounded-2xl border border-slate-200 text-center shadow-sm">
+        <h3 className="text-xl font-semibold text-slate-900 mb-2">Unable to load tasks</h3>
+        <p className="text-slate-600 text-sm mb-6">{error}</p>
+        <button onClick={fetchTasks} className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-medium text-sm hover:bg-indigo-700 transition-colors">Retry</button>
       </div>
     </Layout>
   );
 
   return (
     <Layout>
-      <div className="space-y-12 animate-in fade-in duration-700 pb-40">
+      <div className="space-y-8 pb-24">
         <PageHeader
-          title="Personal Task Stream"
-          subtitle={`${tasks.length} active assignments requiring attention.`}
-          icon="📋"
+          title="My Tasks"
+          subtitle={`${tasks.length} assignment${tasks.length === 1 ? '' : 's'} currently in your queue.`}
+          icon="✅"
           stats={[
             { label: 'Pending', value: tasks.filter(t => ['pending', 'active'].includes(getTaskStatus(t))).length },
             { label: 'In Progress', value: tasks.filter(t => getTaskStatus(t) === 'in_progress').length }
           ]}
         />
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {tasks.length === 0 ? (
-            <div className="bg-white rounded-3xl p-32 text-center border border-slate-200 shadow-sm transition-all duration-500 hover:shadow-md">
-              <div className="text-7xl mb-6">🎯</div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">Queue Clear</h3>
-              <p className="text-slate-500 text-sm">All directives have been processed. Awaiting new assignments.</p>
+            <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-sm">
+              <h3 className="text-xl font-semibold text-slate-900 mb-2">No tasks assigned</h3>
+              <p className="text-slate-600 text-sm">You are all caught up. New tasks will appear here automatically.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6">
-              {tasks.map((task, idx) => {
+              {tasks.map((task) => {
                 const status = getTaskStatus(task);
                 return (
-                  <div key={task._id} onClick={() => navigate(`/my-tasks/${task._id}`)} className={`group bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden relative animate-in slide-in-from-bottom-8 [animation-delay:${idx * 50}ms]`}>
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
-                      <div className="flex-1 min-w-0 space-y-4">
+                  <div
+                    key={task._id}
+                    onClick={() => navigate(`/my-tasks/${task._id}`)}
+                    className="group bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                  >
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                      <div className="flex-1 min-w-0 space-y-3">
                         <div className="flex flex-wrap items-center gap-3">
                           {task.priority && (
-                            <span className={`px-4 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider ${task.priority === 'urgent' ? 'bg-rose-600 text-white' : task.priority === 'high' ? 'bg-amber-400 text-amber-900' : 'bg-slate-100 text-slate-600'}`}>
+                            <span className={`px-3 py-1 rounded-full text-[11px] font-semibold capitalize ${getPriorityClasses(task.priority)}`}>
                               {task.priority} Priority
                             </span>
                           )}
-                          <span className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-4 py-1 rounded-full border border-indigo-100 truncate max-w-xs">
+                          <span className="text-xs font-medium text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 truncate max-w-xs">
                             {task.project?.title || 'Global Workspace'}
                           </span>
                         </div>
 
                         <div className="space-y-1">
-                          <h3 className="text-xl font-bold text-slate-900 truncate group-hover:text-indigo-600 transition-colors">{task.title}</h3>
-                          <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">ID: {task._id.slice(-8).toUpperCase()}</p>
+                          <h3 className="text-lg font-semibold text-slate-900 truncate group-hover:text-indigo-700 transition-colors">{task.title}</h3>
+                          <p className="text-xs text-slate-500">Task ID: {task._id.slice(-8).toUpperCase()}</p>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-6 pt-2">
-                          <div className="flex items-center gap-3">
-                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all ${getStatusClasses(status)}`}>
+                        <div className="flex flex-wrap items-center gap-4 pt-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize border ${getStatusClasses(status)}`}>
                               {status.replace('_', ' ')}
                             </span>
                           </div>
 
                           {task.status && (
-                            <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
-                              <div className={`w-2.5 h-2.5 rounded-full bg-[${task.status.color || '#64748b'}]`} />
-                              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{task.status.name}</span>
+                            <div className="flex items-center gap-2 pl-4 border-l border-slate-200">
+                              <span className="text-xs font-medium text-slate-600">Workflow:</span>
+                              <span className="text-xs font-semibold text-slate-700">{task.status.name}</span>
                             </div>
                           )}
                         </div>
@@ -241,47 +253,46 @@ const MyTasksList = () => {
         </div>
 
         {actionModal && (
-          <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-[2000] p-6 animate-in fade-in duration-300">
-            <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-200">
-              <div className="px-8 py-6 border-b border-slate-100 bg-white flex items-center justify-between shrink-0">
+          <div className="fixed inset-0 bg-slate-900/35 backdrop-blur-sm flex items-center justify-center z-[2000] p-6">
+            <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-xl overflow-hidden border border-slate-200">
+              <div className="px-8 py-6 border-b border-slate-200 bg-white flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${actionModal === 'complete' ? 'bg-indigo-100 text-indigo-600' : 'bg-rose-100 text-rose-600'}`}>
+                  <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${actionModal === 'complete' ? 'bg-indigo-100 text-indigo-700' : 'bg-rose-100 text-rose-700'}`}>
                     {actionModal === 'complete' ? '✓' : '↩'}
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-slate-800">{actionModal === 'complete' ? 'Submit Task Progress' : 'Return for Revision'}</h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ID: {activeTask?._id?.slice(-8).toUpperCase()}</p>
+                    <h2 className="text-xl font-semibold text-slate-800">{actionModal === 'complete' ? 'Submit Task Progress' : 'Return for Revision'}</h2>
+                    <p className="text-xs text-slate-500 mt-1">Task ID: {activeTask?._id?.slice(-8).toUpperCase()}</p>
                   </div>
                 </div>
-                <button onClick={() => { setActionModal(null); setActiveTask(null); }} className="w-10 h-10 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center text-xl hover:bg-rose-100 hover:text-rose-600 transition-all active:scale-90 font-bold">×</button>
+                <button onClick={() => { setActionModal(null); setActiveTask(null); }} className="w-9 h-9 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center text-xl hover:bg-slate-200 transition-colors">×</button>
               </div>
 
-              <div className="p-8 lg:p-12 overflow-y-auto space-y-10 scrollbar-none flex-1 bg-white">
+              <div className="p-8 lg:p-10 overflow-y-auto space-y-8 flex-1 bg-white">
                 <div className="space-y-4">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Internal Note (Private)</label>
-                  <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm focus-within:border-indigo-400 transition-all p-2">
+                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider ml-1">Internal Note (Private)</label>
+                  <div className="rounded-xl border border-slate-200 overflow-hidden shadow-sm focus-within:border-indigo-400 transition-colors p-2">
                     <ReactQuill value={formData.note} onChange={(v) => setFormData({ ...formData, note: v })} className="min-h-[200px] border-none text-sm font-medium" theme="snow" placeholder="Document your progress or implementation details..." />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <div className="space-y-3">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Communication Log</label>
-                    <textarea value={formData.message} onChange={e => setFormData({ ...formData, message: e.target.value })} className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 transition-all min-h-[200px] resize-none" placeholder="Message for the next person in workflow..." />
+                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider ml-1">Communication Log</label>
+                    <textarea value={formData.message} onChange={e => setFormData({ ...formData, message: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 transition-colors min-h-[200px] resize-none" placeholder="Message for the next person in workflow..." />
                   </div>
                   <div className="space-y-6">
                     <div className="space-y-3">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Relevant Resource Link</label>
-                      <input type="text" value={formData.link} onChange={e => setFormData({ ...formData, link: e.target.value })} className="w-full px-6 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:border-indigo-400 transition-all" placeholder="https://resource-link.com" />
+                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider ml-1">Relevant Resource Link</label>
+                      <input type="text" value={formData.link} onChange={e => setFormData({ ...formData, link: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:bg-white focus:border-indigo-400 transition-colors" placeholder="https://resource-link.com" />
                     </div>
                     <div className="space-y-3">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Supporting Documents</label>
-                      <div className="border-2 border-dashed border-slate-200 rounded-2xl p-10 bg-slate-50 hover:bg-white hover:border-indigo-600 transition-all cursor-pointer relative flex flex-col items-center justify-center gap-4 min-h-[140px]">
-                        <div className="text-4xl grayscale">📎</div>
+                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider ml-1">Supporting Documents</label>
+                      <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 bg-slate-50 hover:bg-white hover:border-indigo-400 transition-colors cursor-pointer relative flex flex-col items-center justify-center gap-3 min-h-[140px]">
                         <input type="file" multiple onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer z-20" />
                         <div className="text-center px-4">
-                          <p className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-1">{selectedFiles.length > 0 ? `${selectedFiles.length} files selected` : 'Click to upload files'}</p>
-                          <p className="text-[10px] text-slate-400 font-medium">Max 50MB per file</p>
+                          <p className="text-sm font-medium text-slate-800 mb-1">{selectedFiles.length > 0 ? `${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'} selected` : 'Click to upload files'}</p>
+                          <p className="text-xs text-slate-500">Max 50MB per file</p>
                         </div>
                       </div>
                     </div>
@@ -289,14 +300,14 @@ const MyTasksList = () => {
                 </div>
               </div>
 
-              <div className="px-8 py-6 border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-4 bg-slate-50 shrink-0">
-                <button onClick={() => { setActionModal(null); setActiveTask(null); }} className="px-8 py-3 font-bold text-[11px] uppercase tracking-widest text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
+              <div className="px-8 py-5 border-t border-slate-200 flex flex-col sm:flex-row justify-end gap-3 bg-slate-50 shrink-0">
+                <button onClick={() => { setActionModal(null); setActiveTask(null); }} className="px-5 py-2.5 font-medium text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
                 <button
                   onClick={handleModalSubmit}
                   disabled={activeTask && actionLoading[activeTask._id]}
-                  className={`px-12 py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] text-white transition-all hover:scale-105 active:scale-95 shadow-lg min-w-[240px] ${actionModal === 'complete' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-rose-500 hover:bg-rose-600'} ${(activeTask && actionLoading[activeTask._id]) ? 'grayscale opacity-50 cursor-wait' : ''}`}
+                  className={`px-8 py-2.5 rounded-lg font-medium text-sm text-white transition-colors min-w-[200px] ${actionModal === 'complete' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-rose-600 hover:bg-rose-700'} ${(activeTask && actionLoading[activeTask._id]) ? 'opacity-50 cursor-wait' : ''}`}
                 >
-                  {(activeTask && actionLoading[activeTask._id]) ? 'Processing...' : (actionModal === 'complete' ? 'Finalize Submission' : 'Confirm Return')}
+                  {(activeTask && actionLoading[activeTask._id]) ? 'Processing...' : (actionModal === 'complete' ? 'Submit Update' : 'Confirm Return')}
                 </button>
               </div>
             </div>
