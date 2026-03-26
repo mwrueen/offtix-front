@@ -4,6 +4,7 @@ import { projectAPI, taskAPI, taskStatusAPI, sprintAPI, phaseAPI, taskRoleAPI, c
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import TaskDetailModal from './TaskDetailModal';
+import AssigneeModal from './AssigneeModal';
 import InlineTaskCreator from './InlineTaskCreator';
 import ListView from './views/ListView';
 import BoardView from './views/BoardView';
@@ -60,6 +61,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const [existingDurations, setExistingDurations] = useState({});
     const [isSubmittingDurations, setIsSubmittingDurations] = useState(false);
     const [deleteTaskModal, setDeleteTaskModal] = useState({ isOpen: false, taskId: null, taskTitle: '' });
+    const [assigneeModalTask, setAssigneeModalTask] = useState(null);
 
     useEffect(() => {
         if (isDurationEntryMode && durationContext.roleId && durationContext.userId) {
@@ -219,6 +221,10 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
         } else {
             setSelectedTask(task);
         }
+    };
+
+    const handleOpenAssigneeModal = (task) => {
+        setAssigneeModalTask(task);
     };
 
     const handleDeleteTask = async () => {
@@ -423,6 +429,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                         tasks={filteredTasks}
                         onEditTask={handleSelectTask}
                         onDeleteTask={t => setDeleteTaskModal({ isOpen: true, taskId: t._id, taskTitle: t.title })}
+                        onOpenAssigneeModal={handleOpenAssigneeModal}
                         onSelectTask={handleSelectTask}
                         onReorderTasks={handleReorderTasks}
                         taskCosts={taskCosts}
@@ -466,6 +473,21 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                     sprints={sprints}
                     phases={phases}
                     taskRoles={taskRoles}
+                />
+            )}
+
+            {assigneeModalTask && (
+                <AssigneeModal
+                    task={assigneeModalTask}
+                    projectId={id}
+                    users={users}
+                    taskRoles={taskRoles}
+                    onClose={() => setAssigneeModalTask(null)}
+                    onUpdate={() => {
+                        setAssigneeModalTask(null);
+                        fetchProjectData();
+                        if (onProjectRefresh) onProjectRefresh();
+                    }}
                 />
             )}
 

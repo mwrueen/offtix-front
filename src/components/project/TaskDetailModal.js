@@ -1,13 +1,29 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import TaskWorkflow from './TaskWorkflow';
 import { taskAPI } from '../../services/api';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
-const TaskDetailModal = ({ task, projectId, users, taskStatuses, sprints, phases, taskRoles, onUpdateTask, onClose, onDelete }) => {
+const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, onUpdateTask, onUpdate, onClose, onDelete }) => {
   const [formData, setFormData] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
   const [durationInputs, setDurationInputs] = useState({});
   const [savingDuration, setSavingDuration] = useState({});
   const [durationSaved, setDurationSaved] = useState({});
+  const [roleAssignments, setRoleAssignments] = useState([]);
+  const [hasRoleChanges, setHasRoleChanges] = useState(false);
+  const [showAssignForm, setShowAssignForm] = useState(false);
+  const [formRole, setFormRole] = useState('');
+  const [formSelectedUsers, setFormSelectedUsers] = useState([]);
+  const [formDuration, setFormDuration] = useState('');
+  const quillModules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['link', 'blockquote', 'code-block'],
+      ['clean']
+    ]
+  };
 
   useEffect(() => {
     if (task) {
@@ -16,10 +32,18 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, sprints, phases
         description: task.description || '',
         status: task.status?._id || task.status || '',
         priority: task.priority || '',
-        sprint: task.sprint?._id || '',
-        phase: task.phase?._id || '',
-        dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
       });
+      const initialAssignments = task.useRoleWorkflow
+        ? (task.roleAssignments || [])
+            .map(ra => ({
+              assignmentId: ra._id?.toString?.() || ra._id || null,
+              roleId: ra.role?._id || ra.role,
+              userIds: (ra.assignees || []).map(a => a._id || a),
+            }))
+            .filter(ra => ra.userIds.length > 0)
+        : [];
+      setRoleAssignments(initialAssignments);
+      setHasRoleChanges(false);
       setHasChanges(false);
     }
   }, [task]);
@@ -46,12 +70,67 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, sprints, phases
     setHasChanges(true);
   };
 
+  const removeRoleAssignment = (roleId) => {
+    setRoleAssignments(prev => prev.filter(ra => ra.roleId !== roleId));
+    setHasRoleChanges(true);
+    setHasChanges(true);
+  };
+
+  const removeUserFromRole = (roleId, userId) => {
+    setRoleAssignments(prev =>
+      prev
+        .map(ra => (ra.roleId === roleId ? { ...ra, userIds: ra.userIds.filter(id => id !== userId) } : ra))
+        .filter(ra => ra.userIds.length > 0 || ra.assignmentId)
+    );
+    setHasRoleChanges(true);
+    setHasChanges(true);
+  };
+
+  const handleAddAssignment = () => {
+    if (!formRole || formSelectedUsers.length === 0) return;
+    setRoleAssignments(prev => {
+      const existing = prev.find(ra => ra.roleId === formRole);
+      if (existing) {
+        return prev.map(ra =>
+          ra.roleId === formRole
+            ? { ...ra, userIds: [...new Set([...ra.userIds, ...formSelectedUsers])] }
+            : ra
+        );
+      }
+      return [...prev, { assignmentId: null, roleId: formRole, userIds: [...formSelectedUsers] }];
+    });
+    if (formDuration) {
+      formSelectedUsers.forEach(uid => {
+        setDurationInputs(prev => ({ ...prev, [`${formRole}_${uid}`]: formDuration }));
+      });
+    }
+    setHasRoleChanges(true);
+    setHasChanges(true);
+    setShowAssignForm(false);
+    setFormRole('');
+    setFormSelectedUsers([]);
+    setFormDuration('');
+  };
+
   const handleSave = async () => {
-    if (task && onUpdateTask && hasChanges) {
+    const updateHandler = onUpdateTask || onUpdate;
+    if (task && updateHandler && hasChanges) {
+      const formattedRoleAssignments = roleAssignments.map((ra, idx) => ({
+        role: ra.roleId,
+        assignees: ra.userIds,
+        order: idx + 1
+      }));
+      const flatAssignees = [...new Set(formattedRoleAssignments.flatMap(ra => ra.assignees))];
       const cleanedData = { ...formData };
-      ['priority', 'status', 'sprint', 'phase', 'dueDate'].forEach(k => { if (cleanedData[k] === '') delete cleanedData[k]; });
-      await onUpdateTask(task._id, cleanedData);
+      ['priority', 'status'].forEach(k => { if (cleanedData[k] === '') delete cleanedData[k]; });
+      if (hasRoleChanges) {
+        cleanedData.assignees = flatAssignees;
+        cleanedData.roleAssignments = formattedRoleAssignments;
+        cleanedData.useRoleWorkflow = formattedRoleAssignments.length > 0;
+      }
+      await updateHandler(task._id, cleanedData);
       setHasChanges(false);
+      setHasRoleChanges(false);
       onClose();
     }
   };
@@ -71,12 +150,9 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, sprints, phases
 
   return (
     <div className="fixed inset-0 bg-slate-700/50 backdrop-blur-sm flex items-center justify-center z-[2000] p-4" onClick={onClose}>
-      <div
-        className="bg-white rounded-2xl w-full max-w-6xl h-[85vh] shadow-2xl overflow-hidden flex flex-col md:flex-row border border-slate-200"
-        onClick={e => e.stopPropagation()}
-      >
+      <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[85vh] shadow-2xl overflow-hidden flex flex-col border border-slate-200" onClick={e => e.stopPropagation()}>
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white">
+        <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-white">
           {/* Header */}
           <div className="p-8 border-b border-slate-100 flex justify-between items-start shrink-0">
             <div className="min-w-0 flex-1 pr-6">
@@ -98,185 +174,272 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, sprints, phases
           </div>
 
           {/* Content Scrollable */}
-          <div className="flex-1 overflow-y-auto p-8 space-y-10">
+          <div className="flex-1 min-h-0 overflow-y-auto p-8 space-y-10">
             {/* Description Section */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
                 <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Description</h5>
               </div>
-              <textarea
-                value={formData.description}
-                onChange={e => handleFieldChange('description', e.target.value)}
-                className="w-full min-h-[160px] p-4 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 leading-relaxed outline-none focus:bg-white focus:border-indigo-400 transition-all placeholder:text-slate-300 resize-none"
-                placeholder="Add a detailed description for this task..."
-              />
+              <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                <ReactQuill
+                  theme="snow"
+                  modules={quillModules}
+                  value={formData.description || ''}
+                  onChange={(value) => handleFieldChange('description', value)}
+                  placeholder="Add a detailed description for this task..."
+                  className="min-h-[180px]"
+                />
+              </div>
             </div>
 
-            {/* Roles & Duration Section */}
-            <div className="space-y-6">
+            {/* ── Assign Member Section ── */}
+            <div className="space-y-4">
+              {/* Header */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Members & Duration</h5>
+                  <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Assign Member</h5>
+                  {roleAssignments.length > 0 && (
+                    <span className="bg-amber-100 text-amber-700 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">
+                      {roleAssignments.length} {roleAssignments.length === 1 ? 'Step' : 'Steps'}
+                    </span>
+                  )}
                 </div>
-                <span className="text-[10px] font-medium text-slate-400">Assignments: {task.roleAssignments?.length || '0'}</span>
+                {!showAssignForm && (
+                  <button
+                    onClick={() => setShowAssignForm(true)}
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-bold hover:bg-indigo-700 transition-colors shadow-sm"
+                  >
+                    <span className="text-sm leading-none">+</span> Assign Member
+                  </button>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {task.roleAssignments?.map(ra => {
-                  const raId = ra._id?.toString() || ra._id;
-                  const roleName = ra.role?.name || 'Assigned Role';
-                  return (
-                    <div key={raId} className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h6 className="text-[11px] font-bold text-slate-700 uppercase">{roleName}</h6>
-                        <div className="text-[9px] font-bold text-slate-400">{ra.assignees?.length || 0} Members</div>
+              {/* ── Existing assignments list ── */}
+              {roleAssignments.length > 0 && (
+                <div className="space-y-3">
+                  {roleAssignments.map((ra, idx) => {
+                    const role = taskRoles?.find(r => r._id === ra.roleId);
+                    const roleColor = role?.color || '#6366f1';
+                    const raId = ra.assignmentId;
+                    const roleUsers = ra.userIds.map(uid => users.find(u => u._id === uid)).filter(Boolean);
+                    return (
+                      <div key={ra.roleId} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" style={{ borderLeftColor: roleColor, borderLeftWidth: 3 }}>
+                        {/* Role header row */}
+                        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0" style={{ backgroundColor: roleColor }}>{idx + 1}</div>
+                          <span className="text-sm leading-none">{role?.icon || '👤'}</span>
+                          <span className="text-[11px] font-bold text-slate-800 flex-1 uppercase tracking-wide">{role?.name || 'Role'}</span>
+                          <span className="text-[9px] text-slate-400">{roleUsers.length} member{roleUsers.length !== 1 ? 's' : ''}</span>
+                          <button onClick={() => removeRoleAssignment(ra.roleId)} className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors text-base font-bold" title="Remove role step">×</button>
+                        </div>
+                        {/* Members with duration */}
+                        <div className="px-4 py-3 space-y-2">
+                          {roleUsers.length === 0 && <p className="text-[10px] text-slate-400 italic">No members yet.</p>}
+                          {roleUsers.map(assignee => {
+                            const uid = assignee._id?.toString() || assignee._id;
+                            const key = `${raId || ra.roleId}_${uid}`;
+                            const initials = assignee.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?';
+                            return (
+                              <div key={uid} className="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">
+                                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[10px] font-bold shrink-0 overflow-hidden" style={{ backgroundColor: roleColor }}>
+                                  {assignee.profile?.profilePicture ? <img src={assignee.profile.profilePicture} alt="" className="w-full h-full object-cover" /> : initials}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-[11px] font-bold text-slate-800 truncate">{assignee.name}</div>
+                                  {assignee.projectRole && <div className="text-[9px] text-slate-400">{assignee.projectRole}</div>}
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <div className="relative flex items-center">
+                                    <input type="number" step="0.5" min="0" placeholder="0" value={durationInputs[key] ?? ''} onChange={e => setDurationInputs(prev => ({ ...prev, [key]: e.target.value }))} className="w-14 pr-6 pl-2 py-1.5 bg-white border border-slate-200 rounded-lg text-center text-[10px] font-bold outline-none focus:border-indigo-400" />
+                                    <span className="absolute right-2 text-[9px] text-slate-400 font-bold pointer-events-none">h</span>
+                                  </div>
+                                  <button onClick={() => handleSaveDuration(raId, uid, durationInputs[key] ?? 0)} disabled={savingDuration[key] || !raId} title={!raId ? 'Save task first' : 'Save duration'} className={`px-2.5 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all ${durationSaved[key] ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed'}`}>
+                                    {savingDuration[key] ? '…' : durationSaved[key] ? '✓' : 'Save'}
+                                  </button>
+                                  <button onClick={() => removeUserFromRole(ra.roleId, uid)} className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 text-sm font-bold">×</button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div className="space-y-3">
-                        {ra.assignees?.map(assignee => {
-                          const uid = assignee._id?.toString() || assignee._id || assignee?.toString();
-                          const key = `${raId}_${uid}`;
-                          return (
-                            <div key={uid} className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                              <div className="w-8 h-8 rounded-lg bg-slate-200 border border-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600 shrink-0 overflow-hidden">
-                                {assignee.avatar ? <img src={assignee.avatar} alt="" className="w-full h-full object-cover" /> : assignee.name?.[0]}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="text-[11px] font-bold text-slate-900 truncate">{assignee.name}</div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="number" step="0.5"
-                                  value={durationInputs[key] ?? ''}
-                                  onChange={e => setDurationInputs(prev => ({ ...prev, [key]: e.target.value }))}
-                                  className="w-12 py-1.5 bg-slate-50 border border-slate-200 rounded text-center text-xs font-bold outline-none focus:border-indigo-400"
-                                  placeholder="0"
-                                />
-                                <button
-                                  onClick={() => handleSaveDuration(raId, uid, durationInputs[key] ?? 0)}
-                                  disabled={savingDuration[key]}
-                                  className={`px-3 py-1.5 rounded text-[9px] font-bold uppercase transition-all ${durationSaved[key] ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-white hover:bg-slate-950 disabled:opacity-50'}`}
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* ── Empty state ── */}
+              {roleAssignments.length === 0 && !showAssignForm && (
+                <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 p-8 text-center">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                    <span className="text-slate-400 text-lg">👥</span>
+                  </div>
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">No members assigned</p>
+                  <p className="text-[10px] text-slate-400">Click "Assign Member" to add role-based members sequentially.</p>
+                </div>
+              )}
+
+              {/* ── Assign Member form ── */}
+              {showAssignForm && (
+                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5 space-y-4">
+                  {/* 1. Select Role */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Select Role</label>
+                    <div className="relative">
+                      <select
+                        value={formRole}
+                        onChange={e => { setFormRole(e.target.value); setFormSelectedUsers([]); }}
+                        className="w-full appearance-none pl-4 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-indigo-400 cursor-pointer shadow-sm transition-colors"
+                      >
+                        <option value="">— Choose a role —</option>
+                        {taskRoles?.map(role => (
+                          <option key={role._id} value={role._id}>{role.icon || '👤'} {role.name}</option>
+                        ))}
+                      </select>
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">▾</span>
+                    </div>
+                  </div>
+
+                  {/* 2. Select Members (shown after role is picked) */}
+                  {formRole && (() => {
+                    const role = taskRoles?.find(r => r._id === formRole);
+                    const roleColor = role?.color || '#6366f1';
+                    const alreadyAssigned = roleAssignments.find(ra => ra.roleId === formRole)?.userIds || [];
+                    const available = users.filter(u => !alreadyAssigned.includes(u._id?.toString()) && !alreadyAssigned.includes(u._id));
+                    return (
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                          Select Member{available.length !== 1 ? 's' : ''}
+                          {formSelectedUsers.length > 0 && (
+                            <span className="ml-2 bg-indigo-100 text-indigo-700 text-[9px] px-2 py-0.5 rounded-full font-bold">{formSelectedUsers.length} selected</span>
+                          )}
+                        </label>
+                        {available.length === 0 ? (
+                          <p className="text-[10px] text-slate-400 italic px-1">All project members are already in this role.</p>
+                        ) : (
+                          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                            {available.map(u => {
+                              const uid = u._id?.toString() || u._id;
+                              const isSelected = formSelectedUsers.includes(uid);
+                              const initials = u.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?';
+                              return (
+                                <div
+                                  key={uid}
+                                  onClick={() => setFormSelectedUsers(prev => isSelected ? prev.filter(id => id !== uid) : [...prev, uid])}
+                                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 cursor-pointer border transition-all ${isSelected ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-100 hover:border-slate-200'}`}
                                 >
-                                  {savingDuration[key] ? '...' : durationSaved[key] ? 'Saved' : 'Save'}
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
+                                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[10px] font-bold shrink-0 overflow-hidden transition-colors" style={{ backgroundColor: isSelected ? roleColor : '#94a3b8' }}>
+                                    {u.profile?.profilePicture ? <img src={u.profile.profilePicture} alt="" className="w-full h-full object-cover" /> : initials}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-[11px] font-bold text-slate-800 truncate">{u.name}</div>
+                                    {u.projectRole && <div className="text-[9px] text-slate-400">{u.projectRole}</div>}
+                                  </div>
+                                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'}`}>
+                                    {isSelected && <span className="text-white text-[8px] font-bold leading-none">✓</span>}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* 3. Duration */}
+                  {formRole && formSelectedUsers.length > 0 && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Duration (hours)</label>
+                      <div className="relative flex items-center w-36">
+                        <input
+                          type="number" step="0.5" min="0" placeholder="0"
+                          value={formDuration}
+                          onChange={e => setFormDuration(e.target.value)}
+                          className="w-full pl-3 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-400 transition-colors"
+                        />
+                        <span className="absolute right-3 text-[10px] text-slate-400 font-bold pointer-events-none">h</span>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                  )}
 
-            {/* Workflow Section */}
-            {task && projectId && (
-              <div className="pt-8 border-t border-slate-100 space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                  <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Task Workflow</h5>
+                  {/* Actions */}
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      onClick={() => { setShowAssignForm(false); setFormRole(''); setFormSelectedUsers([]); setFormDuration(''); }}
+                      className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleAddAssignment}
+                      disabled={!formRole || formSelectedUsers.length === 0}
+                      className="flex items-center gap-1.5 px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    >
+                      + Add
+                    </button>
+                  </div>
                 </div>
-                <TaskWorkflow
-                  task={task}
-                  projectId={projectId}
-                  onTaskUpdate={async () => {
-                    await taskAPI.getTaskWithWorkflow(projectId, task._id);
-                    if (onUpdateTask) await onUpdateTask(task._id, {});
-                  }}
-                />
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Footer Action Bar */}
-          <div className="p-8 border-t border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
-            <button
-              onClick={() => onDelete?.(task)}
-              className="px-6 py-2.5 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all"
-            >
-              Delete Task
-            </button>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={onClose}
-                className="px-6 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-all font-bold"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={!hasChanges}
-                className={`px-8 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm ${hasChanges ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
-              >
-                Save Changes
-              </button>
+          <div className="p-6 border-t border-slate-100 bg-slate-50 space-y-4 shrink-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block ml-1">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={e => handleFieldChange('status', e.target.value)}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-400 transition-all cursor-pointer"
+                >
+                  <option value="">Select Status</option>
+                  {taskStatuses?.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block ml-1">Priority</label>
+                <select
+                  value={formData.priority}
+                  onChange={e => handleFieldChange('priority', e.target.value)}
+                  className={`w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-400 transition-all cursor-pointer ${formData.priority === 'urgent' ? 'text-rose-600' : formData.priority === 'high' ? 'text-orange-600' : ''}`}
+                >
+                  <option value="">No Priority</option>
+                  <option value="urgent">Urgent</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Sidebar Controls */}
-        <div className="w-full md:w-80 bg-slate-50 border-l border-slate-100 p-8 flex flex-col gap-8 shrink-0 overflow-y-auto">
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block ml-1">Status</label>
-            <select
-              value={formData.status}
-              onChange={e => handleFieldChange('status', e.target.value)}
-              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-400 transition-all cursor-pointer"
-            >
-              <option value="">Select Status</option>
-              {taskStatuses?.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block ml-1">Priority</label>
-            <select
-              value={formData.priority}
-              onChange={e => handleFieldChange('priority', e.target.value)}
-              className={`w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-400 transition-all cursor-pointer ${formData.priority === 'urgent' ? 'text-rose-600' : formData.priority === 'high' ? 'text-orange-600' : ''}`}
-            >
-              <option value="">No Priority</option>
-              <option value="urgent">Urgent</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block ml-1">Due Date</label>
-            <input
-              type="date"
-              value={formData.dueDate}
-              onChange={e => handleFieldChange('dueDate', e.target.value)}
-              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-400 transition-all"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block ml-1">Sprint</label>
-            <select
-              value={formData.sprint}
-              onChange={e => handleFieldChange('sprint', e.target.value)}
-              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-400 transition-all cursor-pointer"
-            >
-              <option value="">No Sprint</option>
-              {sprints?.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block ml-1">Phase</label>
-            <select
-              value={formData.phase}
-              onChange={e => handleFieldChange('phase', e.target.value)}
-              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-400 transition-all cursor-pointer"
-            >
-              <option value="">No Phase</option>
-              {phases?.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
-            </select>
+            <div className="flex justify-between items-center">
+              <button
+                onClick={() => onDelete?.(task)}
+                className="px-6 py-2.5 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold hover:bg-rose-50 transition-all"
+              >
+                Delete Task
+              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={onClose}
+                  className="px-6 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-all font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={!hasChanges}
+                  className={`px-8 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm ${hasChanges ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

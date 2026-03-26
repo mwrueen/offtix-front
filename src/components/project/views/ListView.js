@@ -9,6 +9,7 @@ const ListView = ({
   onEditTask,
   onDeleteTask,
   onAddSubtask,
+  onOpenAssigneeModal,
   selectedTaskId,
   onSelectTask,
   onReorderTasks,
@@ -108,6 +109,7 @@ const ListView = ({
                   pendingDurations={pendingDurations}
                   setPendingDurations={setPendingDurations}
                   existingDurations={existingDurations}
+                  onOpenAssigneeModal={onOpenAssigneeModal}
                 />
               ))
             )}
@@ -148,7 +150,7 @@ const SortableTaskRow = (props) => {
   );
 };
 
-const TaskRowContent = ({ task, level, hasChildren, isExpanded, onToggleExpand, onSelect, isSelected, isDragging, taskCosts, companyCurrency, isDurationEntryMode, durationContext, pendingDurations, setPendingDurations, existingDurations }) => {
+const TaskRowContent = ({ task, level, hasChildren, isExpanded, onToggleExpand, onSelect, isSelected, isDragging, taskCosts, companyCurrency, isDurationEntryMode, durationContext, pendingDurations, setPendingDurations, existingDurations, onOpenAssigneeModal }) => {
   const cost = taskCosts[task._id];
   const priorityColor = { urgent: 'bg-rose-500', high: 'bg-orange-500', medium: 'bg-amber-400', low: 'bg-emerald-500' }[task.priority] || 'bg-slate-300';
   const statusColor = task.status?.color ? { color: task.status.color, bg: `${task.status.color}10` } : { color: '#64748b', bg: '#f8fafc' };
@@ -192,14 +194,34 @@ const TaskRowContent = ({ task, level, hasChildren, isExpanded, onToggleExpand, 
         <span className="text-[10px] font-medium text-slate-600 capitalize">{task.priority}</span>
       </div>
 
-      <div className="flex -space-x-2 overflow-hidden">
+      <div
+        onClick={e => {
+          e.stopPropagation();
+          onOpenAssigneeModal?.(task);
+        }}
+        className="flex -space-x-2 overflow-hidden items-center cursor-pointer"
+        title="Manage members"
+      >
         {task.assignees?.slice(0, 3).map((a, i) => (
           <div key={i} className="w-7 h-7 rounded-lg border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-700 shrink-0 shadow-sm overflow-hidden" title={a.name}>
             {a.avatar ? <img src={a.avatar} alt="" className="w-full h-full object-cover" /> : a.name?.charAt(0)}
           </div>
         ))}
         {(task.assignees?.length > 3) && <div className="w-7 h-7 rounded-lg border-2 border-white bg-slate-800 text-white flex items-center justify-center text-[8px] font-bold shrink-0">+{task.assignees.length - 3}</div>}
-        {!task.assignees?.length && <div className="text-[10px] text-slate-300 font-medium">unassigned</div>}
+        {!task.assignees?.length && (
+          <button
+            type="button"
+            onClick={e => {
+              e.stopPropagation();
+              onOpenAssigneeModal?.(task);
+            }}
+            className="w-7 h-7 rounded-lg border border-dashed border-indigo-300 bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold hover:bg-indigo-100 transition-colors"
+            aria-label="Assign members"
+            title="Assign members"
+          >
+            +
+          </button>
+        )}
       </div>
 
       <div className="text-[11px] font-medium text-slate-600 tabular-nums">
