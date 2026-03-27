@@ -76,7 +76,7 @@ const AddEmployee = () => {
       }
     } catch (error) {
       console.error('Error fetching designations:', error);
-      toast?.showToast?.('Failed to load employee designations.', 'error');
+      toast.showToast('Failed to load organizational roles.', 'error');
     } finally {
       setLoadingDesignations(false);
       setCheckingPermission(false);
@@ -91,11 +91,11 @@ const AddEmployee = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.email.trim()) newErrors.email = 'Personnel email is required.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Please enter a valid email address.';
+    if (!formData.email.trim()) newErrors.email = 'Email address is required.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email format.';
 
-    if (!formData.designation) newErrors.designation = 'Professional designation is required.';
-    if (formData.salary && isNaN(formData.salary)) newErrors.salary = 'Compensation must be a numeric value.';
+    if (!formData.designation) newErrors.designation = 'Role selection is required.';
+    if (formData.salary && isNaN(formData.salary)) newErrors.salary = 'Must be a numeric value.';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -118,16 +118,15 @@ const AddEmployee = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        toast?.showToast?.(data.message || 'Invitation sent successfully.', 'success');
+        toast.showToast('Invitation dispatched successfully.', 'success');
         navigate('/employees');
       } else {
         const errorData = await response.json();
-        toast?.showToast?.(errorData.message || 'Failed to send invitation.', 'error');
+        toast.showToast(errorData.message || 'Transmission failed.', 'error');
       }
     } catch (error) {
       console.error('Error sending invitation:', error);
-      toast?.showToast?.('Network error occurred while sending invitation.', 'error');
+      toast.showToast('Network error occurred.', 'error');
     } finally {
       setLoading(false);
     }
@@ -136,11 +135,11 @@ const AddEmployee = () => {
   if (!selectedCompany || selectedCompany.id === 'personal') {
     return (
       <Layout>
-        <div className="max-w-4xl mx-auto my-40 bg-white rounded-3xl p-32 shadow-sm border border-slate-200 text-center space-y-12 animate-in zoom-in-95 duration-700">
-          <div className="text-9xl grayscale opacity-10">🏢</div>
-          <h2 className="text-4xl font-bold text-slate-900 uppercase italic tracking-tight underline underline-offset-[16px] decoration-slate-100">Organization Not Selected</h2>
-          <p className="text-lg font-medium text-slate-500 max-w-xl mx-auto italic leading-relaxed">Please select a valid organization from the company filter to initiate the professional onboarding process.</p>
-          <button onClick={() => navigate('/overview')} className="px-16 py-5 bg-indigo-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg hover:bg-slate-950 transition-all active:scale-95">Return to Dashboard</button>
+        <div className="max-w-4xl mx-auto my-32 bg-white rounded-3xl p-32 shadow-2xl border border-slate-100 text-center space-y-10 animate-in zoom-in-95 duration-700">
+          <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-5xl shadow-inner border border-slate-100">🏢</div>
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Organization Context Required</h2>
+          <p className="text-slate-500 max-w-sm mx-auto leading-relaxed font-medium">Please select a professional entity from the company filter to initiate the onboarding workflow.</p>
+          <button onClick={() => navigate('/overview')} className="px-12 py-4.5 bg-indigo-600 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-slate-950 transition-all active:scale-95">Go to Overview</button>
         </div>
       </Layout>
     );
@@ -149,9 +148,12 @@ const AddEmployee = () => {
   if (checkingPermission || loadingDesignations) {
     return (
       <Layout>
-        <div className="max-w-7xl mx-auto px-6 py-60 text-center animate-pulse space-y-12 italic">
-          <div className="w-16 h-16 border-8 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto shadow-sm" />
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em]">Authenticating corporate credentials...</p>
+        <div className="flex flex-col items-center justify-center py-60 animate-in fade-in space-y-8">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-slate-100 rounded-full" />
+            <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0" />
+          </div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] animate-pulse">Synchronizing access protocols...</p>
         </div>
       </Layout>
     );
@@ -160,11 +162,11 @@ const AddEmployee = () => {
   if (!hasPermission) {
     return (
       <Layout>
-        <div className="max-w-4xl mx-auto my-40 bg-white rounded-3xl p-32 shadow-sm border border-rose-100 text-center space-y-12 animate-in zoom-in-95 duration-700">
-          <div className="text-9xl grayscale opacity-10">🔒</div>
-          <h2 className="text-4xl font-bold text-slate-900 uppercase italic tracking-tight text-rose-600">Access Denied</h2>
-          <p className="text-lg font-medium text-slate-500 max-w-xl mx-auto italic leading-relaxed">Your professional clearance level is insufficient for personnel onboarding in this organization branch.</p>
-          <button onClick={() => navigate('/overview')} className="px-16 py-5 bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg hover:bg-rose-600 transition-all active:scale-95 italic">Abort Operation</button>
+        <div className="max-w-4xl mx-auto my-32 bg-white rounded-3xl p-32 shadow-2xl border border-slate-100 text-center space-y-10 animate-in zoom-in-95 duration-700">
+          <div className="w-24 h-24 bg-rose-50 rounded-full flex items-center justify-center mx-auto text-5xl shadow-inner border border-rose-100">🔒</div>
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight text-rose-600">Access Restricted</h2>
+          <p className="text-slate-500 max-w-sm mx-auto leading-relaxed font-medium">Your account lacks the necessary administrative clearance to invite new members to this organization.</p>
+          <button onClick={() => navigate('/overview')} className="px-12 py-4.5 bg-slate-950 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-rose-600 transition-all active:scale-95">Abort and Return</button>
         </div>
       </Layout>
     );
@@ -172,100 +174,146 @@ const AddEmployee = () => {
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto py-24 space-y-16 animate-in fade-in duration-1000 font-sans pb-40">
+      <div className="max-w-7xl mx-auto py-12 space-y-12 animate-in fade-in duration-700 pb-40">
         <PageHeader
-          title="Incorporate New Personnel"
-          subtitle={`Initiating formal professional invitation for ${selectedCompany.name.toUpperCase()}.`}
-          icon="👥"
-          stats={[
-            { label: 'Entity Status', value: 'ACTIVE' },
-            { label: 'Organization Node', value: selectedCompany.name.toUpperCase() }
-          ]}
-          actions={<button onClick={() => navigate(-1)} className="px-8 py-3 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all underline underline-offset-8 italic">Cancel Operation</button>}
+          title="Onboard New Talent"
+          subtitle={`Design and dispatch a formal invitation for ${selectedCompany.name}.`}
+          icon="✨"
+          actions={<button onClick={() => navigate(-1)} className="px-6 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-rose-600 transition-all flex items-center gap-2 group">
+            <span className="group-hover:-translate-x-1 transition-transform">←</span> Return
+          </button>}
         />
 
-        <div className="bg-white p-12 lg:p-20 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden group">
-          <form onSubmit={handleSubmit} className="space-y-16 relative z-10 font-sans italic">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-              <div className="space-y-4">
-                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Target Personnel Email Address</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="professional.identity@organization.net"
-                  required
-                  className={`w-full px-8 py-5 bg-slate-50 border-2 rounded-2xl text-sm font-bold text-indigo-600 outline-none focus:bg-white transition-all uppercase tracking-tight ${errors.email ? 'border-rose-400' : 'border-slate-100 focus:border-indigo-400'}`}
-                />
-                {errors.email && <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest ml-4">⚠️ {errors.email}</p>}
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-4 opacity-50">System will dispatch a formal professional invitation package.</p>
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start">
+          {/* Form Side */}
+          <div className="xl:col-span-7 bg-white p-10 lg:p-16 rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/40 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/30 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+
+            <form onSubmit={handleSubmit} className="space-y-12 relative z-10">
+              <div className="space-y-8">
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm shadow-sm border border-indigo-100">01</div>
+                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-900">Identity Details</h3>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Work Email Address</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="name@company.com"
+                    required
+                    className={`w-full px-8 py-5 bg-slate-50 border-2 rounded-2xl text-base font-bold text-slate-900 outline-none focus:bg-white transition-all shadow-sm ${errors.email ? 'border-rose-300 ring-4 ring-rose-50' : 'border-slate-50 focus:border-indigo-400 focus:shadow-indigo-100/30 focus:ring-4 focus:ring-indigo-50'}`}
+                  />
+                  {errors.email && <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest ml-4 animate-in slide-in-from-left-2 transition-all">⚠️ {errors.email}</p>}
+                </div>
               </div>
 
-              <div className="space-y-4">
-                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Professional Designation / Rank</label>
-                <select
-                  name="designation"
-                  value={formData.designation}
-                  onChange={handleChange}
-                  required
-                  disabled={loadingDesignations}
-                  className={`w-full px-8 py-5 bg-slate-50 border-2 rounded-2xl text-[10px] font-bold text-slate-950 uppercase tracking-widest outline-none focus:bg-white transition-all cursor-pointer ${errors.designation ? 'border-rose-400' : 'border-slate-100 focus:border-indigo-400'}`}
-                >
-                  <option value="">Select Professional Rank</option>
-                  {designations.map(d => <option key={d._id} value={d.name}>{d.name.toUpperCase()}</option>)}
-                </select>
-                {errors.designation && <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest ml-4">⚠️ {errors.designation}</p>}
-              </div>
-            </div>
+              <div className="space-y-8">
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm shadow-sm border border-indigo-100">02</div>
+                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-900">Role & Compensation</h3>
+                </div>
 
-            <div className="space-y-8">
-              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-[0.3em] italic ml-1">Annual Compensation Package / Fiscal Allocation</label>
-              <div className="relative group/salary">
-                <span className="absolute left-8 top-1/2 -translate-y-1/2 text-4xl font-bold text-slate-200 group-focus-within/salary:text-indigo-400 transition-all pointer-events-none z-10 italic">
-                  {getCurrencySymbol(companyCurrency)}
-                </span>
-                <input
-                  type="number"
-                  name="salary"
-                  value={formData.salary}
-                  onChange={handleChange}
-                  placeholder="0.00"
-                  className={`w-full py-12 pl-20 pr-12 bg-slate-50 border-2 rounded-[2.5rem] text-slate-950 font-bold text-6xl lg:text-8xl outline-none focus:bg-white italic transition-all shadow-inner tracking-tighter ${errors.salary ? 'border-rose-400 focus:border-rose-500' : 'border-slate-100 focus:border-indigo-400'}`}
-                />
-              </div>
-              {errors.salary && <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest ml-8">⚠️ {errors.salary}</p>}
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-8 opacity-40">Specify primary fiscal resource allocation for this individual role.</p>
-            </div>
-
-            <div className="p-12 bg-slate-900 rounded-[3rem] text-white space-y-10 group-hover:rotate-1 transition-transform duration-700 shadow-2xl">
-              <h4 className="text-sm font-bold uppercase tracking-[0.5em] text-indigo-400 border-b border-white/5 pb-4 italic">Onboarding Protocol Logs</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {[
-                  "Instant synchronization with corporate database hubs.",
-                  "Formal SMTP notification dispatch to target personnel.",
-                  "Onboarding identity verification required upon login.",
-                  "Full professional operational rights granted post-verification."
-                ].map((log, i) => (
-                  <div key={i} className="flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity">
-                    <span className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center italic text-xs shadow-lg">{i + 1}</span>
-                    {log}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Professional Role</label>
+                    <select
+                      name="designation"
+                      value={formData.designation}
+                      onChange={handleChange}
+                      required
+                      className={`w-full px-8 py-5 bg-slate-50 border-2 rounded-2xl text-[11px] font-bold text-slate-950 uppercase tracking-widest outline-none focus:bg-white transition-all cursor-pointer shadow-sm ${errors.designation ? 'border-rose-300 ring-4 ring-rose-50' : 'border-slate-50 focus:border-indigo-400 focus:shadow-indigo-100/30 focus:ring-4 focus:ring-indigo-50'}`}
+                    >
+                      <option value="">Select Position</option>
+                      {designations.map(d => <option key={d._id} value={d.name}>{d.name.toUpperCase()}</option>)}
+                    </select>
                   </div>
-                ))}
+
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Annual Package</label>
+                    <div className="relative group/salary">
+                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-xl font-bold text-slate-300 group-focus-within/salary:text-indigo-500 transition-all pointer-events-none">
+                        {getCurrencySymbol(companyCurrency)}
+                      </span>
+                      <input
+                        type="number"
+                        name="salary"
+                        value={formData.salary}
+                        onChange={handleChange}
+                        placeholder="0.00"
+                        className={`w-full py-5 pl-12 pr-8 bg-slate-50 border-2 rounded-2xl text-base font-bold text-slate-900 outline-none focus:bg-white transition-all shadow-sm ${errors.salary ? 'border-rose-300 ring-4 ring-rose-50' : 'border-slate-50 focus:border-indigo-400 focus:shadow-indigo-100/30 focus:ring-4 focus:ring-indigo-50'}`}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-10 border-t border-slate-100">
+                <button
+                  type="submit"
+                  disabled={loading || loadingDesignations}
+                  className="w-full py-6 bg-slate-950 text-white rounded-2xl font-bold text-[11px] uppercase tracking-[0.3em] shadow-2xl shadow-slate-300 hover:bg-indigo-600 transition-all active:scale-95 flex items-center justify-center gap-4 relative overflow-hidden group/btn"
+                >
+                  <span className="relative z-10">{loading ? 'Dispatching Invitation...' : 'Launch Invitation'}</span>
+                  {!loading && <svg className="relative z-10 group-hover:translate-x-2 transition-transform" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>}
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-indigo-700 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500" />
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Preview Side */}
+          <div className="xl:col-span-5 space-y-8 animate-in slide-in-from-right-8 duration-1000">
+            <div className="bg-slate-950 rounded-[2.5rem] p-10 lg:p-12 text-white shadow-2xl shadow-indigo-100/20 relative overflow-hidden border border-white/5 group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-indigo-500/40 transition-all duration-700" />
+
+              <div className="relative z-10 space-y-8">
+                <div className="flex justify-between items-start">
+                  <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 text-2xl">📧</div>
+                  <div className="bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest border border-emerald-500/20">Live Preview</div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Invitation Subject</h4>
+                    <p className="text-xl font-bold tracking-tight leading-tight">Join the {selectedCompany.name} Professional Network</p>
+                  </div>
+
+                  <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-4">
+                    <p className="text-sm font-medium text-slate-300 leading-relaxed italic">
+                      "You've been formally invited to join <span className="text-indigo-400 font-bold">{selectedCompany.name}</span> as a <span className="text-white font-bold">{formData.designation || '[Position]'}</span>. Your profile is ready for activation."
+                    </p>
+                    <div className="h-px bg-white/10 w-full" />
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold uppercase">{selectedCompany.name.charAt(0)}</div>
+                      <div>
+                        <p className="text-[10px] font-bold text-white uppercase tracking-widest">{selectedCompany.name}</p>
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Identity Verified</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 flex flex-col items-center">
+                  <div className="w-full h-12 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-indigo-600/30 group-hover:bg-indigo-500 transition-colors">
+                    Accept Invitation
+                  </div>
+                  <p className="mt-4 text-[9px] font-bold text-slate-600 uppercase tracking-widest text-center">This link will securely authenticate through corporate SSL protocols.</p>
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-6 pt-16 border-t border-slate-50">
-              <button
-                type="submit"
-                disabled={loading || loadingDesignations}
-                className="px-24 py-5 bg-indigo-600 text-white rounded-[2rem] font-bold text-xs uppercase tracking-[0.2em] shadow-2xl hover:bg-slate-950 transition-all active:scale-95 flex items-center gap-4 italic group/submit"
-              >
-                {loading ? 'Transmitting data...' : 'Authorize Onboarding Hub'}
-                {!loading && <span className="group-hover:translate-x-2 transition-transform">→</span>}
-              </button>
+            <div className="bg-indigo-600 rounded-3xl p-8 lg:p-10 text-white shadow-xl shadow-indigo-100 flex items-center gap-8 group">
+              <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-3xl shrink-0 border border-white/20 group-hover:rotate-12 transition-transform duration-500">🛡️</div>
+              <div className="space-y-2">
+                <h4 className="text-[11px] font-bold uppercase tracking-widest opacity-80">Security Protocol</h4>
+                <p className="text-sm font-medium leading-relaxed">Invitations are cryptographically signed and valid for 72 hours. Unauthorized access attempts are monitored.</p>
+              </div>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </Layout>
@@ -273,3 +321,5 @@ const AddEmployee = () => {
 };
 
 export default AddEmployee;
+
+
