@@ -274,7 +274,14 @@ export const chatAPI = {
   editMessage: (messageId, content) => api.put(`/chat/messages/${messageId}`, { content }),
 
   // Unread counts
-  getUnreadCounts: () => api.get('/chat/unread-counts'),
+  getUnreadCounts: (companyId = null) => {
+    const config = {};
+    if (companyId && companyId !== 'personal') {
+      config.headers = { 'X-Company-Id': companyId };
+      config.params = { companyId };
+    }
+    return api.get('/chat/unread-counts', config);
+  },
   // Mark as read
   markRead: (data) => api.post('/chat/mark-read', data),
 
@@ -287,9 +294,23 @@ export const chatAPI = {
 
 export const myTasksAPI = {
   // Get all tasks assigned to logged-in user
-  getAll: () => api.get('/my-tasks'),
+  getAll: (companyId = null) => {
+    const config = {};
+    if (companyId && companyId !== 'personal') {
+      config.headers = { 'X-Company-Id': companyId };
+      config.params = { companyId };
+    }
+    return api.get('/my-tasks', config);
+  },
   // Get single task details
-  getById: (taskId) => api.get(`/my-tasks/${taskId}`),
+  getById: (taskId, companyId = null) => {
+    const config = {};
+    if (companyId && companyId !== 'personal') {
+      config.headers = { 'X-Company-Id': companyId };
+      config.params = { companyId };
+    }
+    return api.get(`/my-tasks/${taskId}`, config);
+  },
   // Set/update user's duration
   setDuration: (taskId, durationMinutes) =>
     api.post(`/my-tasks/${taskId}/duration`, { duration_minutes: durationMinutes }),

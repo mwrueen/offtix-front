@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { myTasksAPI, BASE_SERVER_URL } from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useCompany } from '../context/CompanyContext';
 import Layout from './Layout';
 import PageHeader from './PageHeader';
 import ReactQuill from 'react-quill';
@@ -11,6 +12,8 @@ const MyTaskDetails = () => {
   const { id: taskId } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
+  const { state: companyState } = useCompany();
+  const selectedCompanyId = companyState.selectedCompany?.id || 'personal';
 
   const [taskData, setTaskData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -20,14 +23,10 @@ const MyTaskDetails = () => {
   const [formData, setFormData] = useState({ note: '', message: '', link: '' });
   const [selectedFiles, setSelectedFiles] = useState([]);
 
-  useEffect(() => {
-    fetchTaskDetails();
-  }, [taskId]);
-
-  const fetchTaskDetails = async () => {
+  const fetchTaskDetails = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await myTasksAPI.getById(taskId);
+      const response = await myTasksAPI.getById(taskId, selectedCompanyId);
       setTaskData(response.data);
       setError(null);
     } catch (err) {
@@ -36,7 +35,11 @@ const MyTaskDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [taskId, selectedCompanyId, toast]);
+
+  useEffect(() => {
+    fetchTaskDetails();
+  }, [fetchTaskDetails]);
 
   const handleStart = async () => {
     setActionLoading('starting');

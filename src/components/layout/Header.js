@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import { useChat } from '../../context/ChatContext';
+import { useCompany } from '../../context/CompanyContext';
 
 const pageTitles = {
   '/dashboard': 'Dashboard',
@@ -27,13 +28,14 @@ const Header = ({ onMenuToggle, sidebarCollapsed }) => {
   const navigate = useNavigate();
   const { state } = useAuth();
   const { unreadCount } = useSocket();
-  const { unreadCounts } = useChat();
+  const { selectedUnread } = useChat();
+  const { state: companyState } = useCompany();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const notifRef = useRef(null);
   const userMenuRef = useRef(null);
 
-  const totalChatUnread = Object.values(unreadCounts).reduce((sum, c) => sum + c, 0);
+  const totalChatUnread = selectedUnread?.total || 0;
 
   const getPageTitle = () => {
     if (location.pathname.startsWith('/employees/')) return 'Employee Details';

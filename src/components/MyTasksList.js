@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { myTasksAPI } from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useCompany } from '../context/CompanyContext';
 import Layout from './Layout';
 import PageHeader from './PageHeader';
 import ReactQuill from 'react-quill';
@@ -18,19 +19,21 @@ const MyTasksList = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const navigate = useNavigate();
   const toast = useToast();
+  const { state: companyState } = useCompany();
+  const selectedCompanyId = companyState.selectedCompany?.id || 'personal';
 
-  useEffect(() => { fetchTasks(); }, []);
-
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await myTasksAPI.getAll();
+      const response = await myTasksAPI.getAll(selectedCompanyId);
       setTasks(response.data || []);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.error || 'Unable to load task stream.');
     } finally { setLoading(false); }
-  };
+  }, [selectedCompanyId]);
+
+  useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
   const handleStart = async (taskId, workflowType) => {
     setActionLoading(prev => ({ ...prev, [taskId]: 'starting' }));

@@ -5,6 +5,7 @@ import { useCompany } from '../context/CompanyContext';
 import { useToast } from '../context/ToastContext';
 import Layout from './Layout';
 import CompanySettings from './company/CompanySettings';
+import PageHeader from './PageHeader';
 import { companyAPI } from '../services/api';
 
 const CompanySettingsPage = () => {
@@ -17,10 +18,14 @@ const CompanySettingsPage = () => {
   const [hasPermission, setHasPermission] = useState(false);
 
   useEffect(() => {
+    // On hard reload, selectedCompany is restored async in CompanyContext.
+    // Avoid redirecting until company state finished loading.
+    if (companyState.loading) return;
     fetchCompanyData();
-  }, [companyState.selectedCompany]);
+  }, [companyState.selectedCompany, companyState.loading]);
 
   const fetchCompanyData = async () => {
+    if (companyState.loading) return;
     if (!companyState.selectedCompany || companyState.selectedCompany.id === 'personal') {
       toast.error('Please select a company to manage settings');
       navigate('/overview');
@@ -34,18 +39,10 @@ const CompanySettingsPage = () => {
       setCompany(companyData);
 
       // Check if user has permission to manage company settings
-      const userId = authState.user?._id;
+      const userId = authState.user?._id || authState.user?.id;
       const ownerId = companyData.owner?._id || companyData.owner;
       const isOwner = ownerId?.toString() === userId?.toString();
       const isSuperAdmin = authState.user?.role === 'superadmin';
-
-      console.log('CompanySettingsPage permission check:', {
-        userId,
-        ownerId,
-        isOwner,
-        isSuperAdmin,
-        companyName: companyData.name
-      });
 
       // Find user's designation and check permissions
       let canManageSettings = false;
@@ -64,7 +61,6 @@ const CompanySettingsPage = () => {
         }
       }
 
-      console.log('Can manage settings:', canManageSettings);
       setHasPermission(canManageSettings);
 
       if (!canManageSettings) {
@@ -83,8 +79,9 @@ const CompanySettingsPage = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="flex justify-center items-center min-h-[400px] text-base text-slate-500">
-          Loading company settings...
+        <div className="flex flex-col items-center justify-center py-40 animate-in fade-in space-y-6">
+          <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto shadow-sm" />
+          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Loading company settings...</p>
         </div>
       </Layout>
     );
@@ -96,33 +93,22 @@ const CompanySettingsPage = () => {
 
   return (
     <Layout>
-      <div className="p-8 max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-8 text-white shadow-2xl shadow-indigo-500/30">
-          <div className="flex items-center gap-4 mb-3">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M12 1v6m0 6v6m5.66-13.66l-4.24 4.24m0 6l-4.24 4.24M23 12h-6m-6 0H1m18.66 5.66l-4.24-4.24m0-6l-4.24-4.24"></path>
-            </svg>
-            <h1 className="m-0 text-3xl font-bold tracking-tight">
-              Company Settings
-            </h1>
-          </div>
-          <p className="m-0 text-base opacity-95 font-normal">
-            Manage company-wide settings for {company.name}
-          </p>
-        </div>
+      <div className="space-y-8 animate-in fade-in duration-700 pb-20">
+ 
 
         {/* Settings Component */}
-        <CompanySettings
-          company={company}
-          isOwner={company.owner?._id === authState.user?._id}
-          onRefresh={fetchCompanyData}
-        />
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[600px]">
+          <CompanySettings
+            company={company}
+            isOwner={(company.owner?._id || company.owner)?.toString() === (authState.user?._id || authState.user?.id)?.toString()}
+            onRefresh={fetchCompanyData}
+          />
+        </div>
       </div>
     </Layout>
   );
 };
 
 export default CompanySettingsPage;
+
 

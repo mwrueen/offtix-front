@@ -21,149 +21,275 @@ const Organogram = () => {
   const [saving, setSaving] = useState(false);
   const [viewMode, setViewMode] = useState('tree');
 
-  useEffect(() => { if (selectedCompany && selectedCompany.id !== 'personal') fetchOrganogram(); }, [selectedCompany]);
+  useEffect(() => {
+    if (selectedCompany && selectedCompany.id !== 'personal') {
+      fetchOrganogram();
+    }
+  }, [selectedCompany]);
 
   const fetchOrganogram = async () => {
     try {
       setLoading(true);
       const token = getCookie('authToken');
-      const response = await fetch(`/api/companies/${selectedCompany.id}/organogram`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const response = await fetch(`/api/companies/${selectedCompany.id}/organogram`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (response.ok) {
         const data = await response.json();
-        setHierarchy(data.hierarchy || []); setEmployees(data.employees || []); setDesignations(data.designations || []);
+        setHierarchy(data.hierarchy || []);
+        setEmployees(data.employees || []);
+        setDesignations(data.designations || []);
       }
-    } catch { toast?.showToast?.('Failed to sync organizational map.', 'error'); }
-    finally { setLoading(false); }
+    } catch {
+      toast?.showToast?.('Failed to sync organizational map.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleUpdateManager = async () => {
-    if (!editingEmployee) return; setSaving(true);
+    if (!editingEmployee) return;
+    setSaving(true);
     try {
       const token = getCookie('authToken');
-      const response = await fetch(`/api/companies/${selectedCompany.id}/reporting-manager`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ memberId: editingEmployee.memberId, reportsTo: selectedManager || null }) });
-      if (response.ok) { toast?.showToast?.('Reporting structure updated.', 'success'); fetchOrganogram(); setEditingEmployee(null); setSelectedManager(''); }
-      else { const data = await response.json(); toast?.showToast?.(data.message || 'Update failed.', 'error'); }
-    } catch { toast?.showToast?.('Connection error.', 'error'); }
-    finally { setSaving(false); }
+      const response = await fetch(`/api/companies/${selectedCompany.id}/reporting-manager`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          memberId: editingEmployee.memberId,
+          reportsTo: selectedManager || null
+        })
+      });
+      if (response.ok) {
+        toast?.showToast?.('Reporting structure updated.', 'success');
+        fetchOrganogram();
+        setEditingEmployee(null);
+        setSelectedManager('');
+      } else {
+        const data = await response.json();
+        toast?.showToast?.(data.message || 'Update failed.', 'error');
+      }
+    } catch {
+      toast?.showToast?.('Connection error.', 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const getLevelColor = (l) => {
-    const cs = { 0: 'bg-rose-600', 1: 'bg-indigo-600', 2: 'bg-blue-600', 3: 'bg-cyan-600', 4: 'bg-emerald-600', 5: 'bg-slate-600' };
-    return cs[l] || cs[5];
+  const getLevelStyles = (l) => {
+    const configs = {
+      0: { border: 'border-indigo-500', bg: 'bg-indigo-600', text: 'text-indigo-600', lightBg: 'bg-indigo-50' },
+      1: { border: 'border-blue-500', bg: 'bg-blue-600', text: 'text-blue-600', lightBg: 'bg-blue-50' },
+      2: { border: 'border-cyan-500', bg: 'bg-cyan-600', text: 'text-cyan-600', lightBg: 'bg-cyan-50' },
+      3: { border: 'border-emerald-500', bg: 'bg-emerald-600', text: 'text-emerald-600', lightBg: 'bg-emerald-50' },
+      4: { border: 'border-slate-400', bg: 'bg-slate-500', text: 'text-slate-600', lightBg: 'bg-slate-50' },
+      5: { border: 'border-slate-300', bg: 'bg-slate-400', text: 'text-slate-500', lightBg: 'bg-slate-50' }
+    };
+    return configs[l] || configs[5];
   };
 
   const EmployeeNode = ({ node, depth = 0 }) => {
-    const hasC = node.children && node.children.length > 0;
-    const cl = getLevelColor(node.level);
+    const hasChildren = node.children && node.children.length > 0;
+    const styles = getLevelStyles(node.level);
+
     return (
-      <div className={`${depth > 0 ? 'ml-12 lg:ml-24 relative' : ''} animate-in fade-in slide-in-from-left-4 duration-700`} style={{ animationDelay: `${depth * 50}ms` }}>
-        {depth > 0 && <div className="absolute left-[-30px] lg:left-[-60px] top-8 w-8 lg:w-16 h-px bg-slate-200" />}
-        <div className={`group bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 mb-6 flex items-center gap-6 relative overflow-hidden ${editingEmployee?.id === node.id ? 'border-indigo-400 shadow-lg scale-105 z-10' : ''}`}>
-          <div className={`absolute top-0 left-0 w-1.5 h-full ${cl} group-hover:w-2.5 transition-all`} />
-          <div className={`w-12 h-12 rounded-2xl ${cl} text-white flex items-center justify-center text-xl font-bold shadow-md shrink-0 overflow-hidden relative`}>
-            {node.avatar ? <img src={node.avatar} alt="" className="w-full h-full object-cover" /> : node.name?.charAt(0).toUpperCase()}
+      <div className={`relative ${depth > 0 ? 'ml-16 lg:ml-24' : ''} mb-8 animate-in fade-in slide-in-from-left-4 duration-500`} style={{ animationDelay: `${depth * 50}ms` }}>
+        {/* Connection Lines */}
+        {depth > 0 && (
+          <>
+            <div className="absolute -left-10 lg:-left-16 top-10 w-10 lg:w-16 h-0.5 bg-slate-200" />
+            <div className="absolute -left-10 lg:-left-16 top-[-32px] bottom-10 w-0.5 bg-slate-200" />
+          </>
+        )}
+
+        <div className={`group relative bg-white rounded-2xl border border-slate-200 p-5 pl-7 shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-5 max-w-2xl ${editingEmployee?.id === node.id ? 'ring-2 ring-indigo-500 ring-offset-2 border-transparent' : ''}`}>
+          {/* Level Color Bar */}
+          <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-12 rounded-r-lg ${styles.bg}`} />
+
+          {/* Avatar / Initials */}
+          <div className={`w-14 h-14 rounded-xl ${styles.lightBg} border border-white shadow-sm flex items-center justify-center shrink-0 overflow-hidden relative group-hover:scale-105 transition-transform duration-300`}>
+            {node.avatar ? (
+              <img src={node.avatar} alt={node.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className={`text-xl font-bold ${styles.text}`}>{node.name?.charAt(0).toUpperCase()}</span>
+            )}
+            {node.isOwner && (
+              <div className="absolute top-0 right-0 p-1">
+                <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]"></div>
+              </div>
+            )}
           </div>
-          <div className="flex-1 min-w-0 font-sans">
-            <div className="flex items-center gap-3 mb-1">
-              <h4 className="text-lg font-bold text-slate-900 truncate group-hover:text-indigo-600 transition-colors uppercase italic tracking-tight">{node.name}</h4>
-              {node.isOwner && <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-bold uppercase rounded-full">Owner</span>}
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <h4 className="text-base font-bold text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
+                {node.name}
+              </h4>
+              {node.isOwner && (
+                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase rounded-md border border-amber-100">
+                  Founder
+                </span>
+              )}
             </div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic truncate">{node.designation || 'Staff'}</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide truncate">
+              {node.designation || 'Specialist'}
+            </p>
           </div>
-          <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0 pr-2">
-            <button onClick={() => { setEditingEmployee(node); setSelectedManager(node.reportsTo || ''); }} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-md active:scale-95 italic">Manage</button>
+
+          <div className="shrink-0 flex items-center gap-2 px-2">
+            <button
+              onClick={() => { setEditingEmployee(node); setSelectedManager(node.reportsTo || ''); }}
+              className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm border border-slate-100"
+              title="Edit Hierarchy"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+              </svg>
+            </button>
           </div>
         </div>
-        {hasC && <div className="border-l-2 border-slate-100 ml-6 pl-2"> {node.children.map((c) => <EmployeeNode key={c.id} node={c} depth={depth + 1} />)} </div>}
+
+        {/* Child Nodes */}
+        {hasChildren && (
+          <div className="mt-8">
+            {node.children.map((child) => (
+              <EmployeeNode key={child.id} node={child} depth={depth + 1} />
+            ))}
+          </div>
+        )}
       </div>
     );
   };
 
-  if (!selectedCompany || selectedCompany.id === 'personal') return (
-    <Layout>
-      <div className="max-w-3xl mx-auto my-32 p-16 bg-white rounded-3xl border-2 border-dashed border-slate-100 text-center shadow-sm font-sans animate-in fade-in duration-700">
-        <div className="text-8xl mb-8 opacity-20">🏢</div>
-        <h2 className="text-3xl font-bold text-slate-800 tracking-tight mb-4">No Organization Selected</h2>
-        <p className="text-sm font-medium text-slate-500 mb-10 max-w-sm mx-auto">Please select a company to view the organizational chart and reporting hierarchy.</p>
-        <button onClick={() => navigate('/dashboard')} className="px-10 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-md hover:bg-slate-950 transition-all">Go to Dashboard</button>
-      </div>
-    </Layout>
-  );
+  if (!selectedCompany || selectedCompany.id === 'personal') {
+    return (
+      <Layout>
+        <div className="max-w-xl mx-auto my-32 p-12 bg-white rounded-3xl border border-slate-200 text-center shadow-sm animate-in fade-in duration-500">
+          <div className="w-24 h-24 bg-slate-50 rounded-2xl flex items-center justify-center text-5xl mx-auto mb-8 border border-slate-100">🏢</div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">No Workspace Selected</h2>
+          <p className="text-slate-500 mb-10 text-sm">Please select a company workspace to view the organizational chart and reporting hierarchy.</p>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:shadow-indigo-300 transition-all active:scale-95"
+          >
+            Go to Dashboard
+          </button>
+        </div>
+      </Layout>
+    );
+  }
 
-  if (loading) return (
-    <Layout>
-      <div className="p-40 text-center animate-pulse space-y-8">
-        <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto shadow-sm" />
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest italic">Loading organization tree...</p>
-      </div>
-    </Layout>
-  );
+  if (loading) {
+    return (
+      <Layout>
+        <div className="py-40 text-center space-y-6">
+          <div className="w-16 h-16 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto" />
+          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest animate-pulse">Mapping Infrastructure...</p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
-      <div className="space-y-12 animate-in fade-in duration-700 pb-40">
+      <div className="space-y-8 pb-32">
         <PageHeader
-          title="Organizational Chart"
-          subtitle={`Full visual mapping of ${employees.length} personnel within the ${selectedCompany.name} directory.`}
-          icon="🕸️"
+          title="Organizational Structure"
+          subtitle={`Managing ${employees.length} personnel across ${designations.length} primary departments.`}
+          icon="📐"
           stats={[
-            { label: 'Total Personnel', value: employees.length },
-            { label: 'Designations', value: designations.length }
+            { label: 'Headcount', value: employees.length },
+            { label: 'Echelons', value: designations.length }
           ]}
           actions={
-            <div className="flex bg-slate-100 p-1.5 rounded-2xl gap-2 border border-slate-200 shadow-inner">
-              <button onClick={() => setViewMode('tree')} className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${viewMode === 'tree' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-950'}`}>Tree View</button>
-              <button onClick={() => setViewMode('list')} className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${viewMode === 'list' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-950'}`}>List View</button>
+            <div className="flex bg-slate-100/80 p-1 rounded-xl border border-slate-200 backdrop-blur-sm">
+              <button
+                onClick={() => setViewMode('tree')}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'tree' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.172-1.172a2 2 0 012.828 0l6.364 6.364a2 2 0 010 2.828l-1.172 1.172L11 7.343z" /></svg>
+                Tree View
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'list' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                Directory
+              </button>
             </div>
           }
         />
 
-        <div className="flex flex-wrap gap-6 p-8 bg-slate-950 rounded-3xl text-white shadow-xl relative overflow-hidden group border border-white/5">
-          <div className="relative z-10 flex flex-wrap gap-8 items-center">
-            <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest italic mr-2 flex items-center gap-2">Designation Levels: </h4>
+        {/* Legend */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-8 min-w-max">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-r border-slate-100 pr-8">Authority Levels</span>
             {designations.sort((a, b) => a.level - b.level).map((d, i) => (
-              <div key={i} className="flex items-center gap-2.5 border-l border-white/10 pl-6 h-4 first:border-0 first:pl-0">
-                <div className={`w-2.5 h-2.5 rounded-full ${getLevelColor(d.level)} shadow-sm group-hover:scale-110 transition-transform`} />
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{d.name}</span>
+              <div key={i} className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full ${getLevelStyles(d.level).bg} shadow-sm`} />
+                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">{d.name}</span>
               </div>
             ))}
           </div>
         </div>
 
         {viewMode === 'tree' ? (
-          <div className="p-8 lg:p-16 bg-white rounded-3xl border border-slate-200 relative overflow-hidden group shadow-sm">
-            <div className="relative z-10 max-w-5xl mx-auto">
-              {hierarchy.length > 0 ? hierarchy.map((node) => <EmployeeNode key={node.id} node={node} />) : (
-                <div className="py-20 text-center opacity-30 grayscale italic">
-                  <div className="text-8xl mb-8">🕸️</div>
-                  <h3 className="text-2xl font-bold text-slate-400 uppercase tracking-widest">No Mapping Available</h3>
+          <div className="p-8 lg:p-16 bg-slate-50/50 rounded-3xl border border-slate-200 shadow-inner min-h-[600px] relative overflow-hidden">
+            {/* Background Grid Pattern */}
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
+
+            <div className="relative z-10">
+              {hierarchy.length > 0 ? (
+                hierarchy.map((node) => <EmployeeNode key={node.id} node={node} />)
+              ) : (
+                <div className="flex flex-col items-center justify-center py-32 opacity-30 grayscale">
+                  <div className="text-8xl mb-6">🏜️</div>
+                  <h3 className="text-xl font-bold text-slate-900 uppercase tracking-widest">No Hierarchy Data</h3>
+                  <p className="text-sm">Establish reporting lines in the directory</p>
                 </div>
               )}
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden font-sans">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-slate-900 text-white">
-                  <th className="px-8 py-4 text-left text-[10px] font-bold uppercase tracking-widest opacity-60">Employee</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-bold uppercase tracking-widest opacity-60">Designation</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-bold uppercase tracking-widest opacity-60">Authentication</th>
-                  <th className="px-8 py-4 text-right text-[10px] font-bold uppercase tracking-widest opacity-60">Action</th>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-8 py-5 text-left text-[10px] font-bold uppercase tracking-widest text-slate-500">Personnel</th>
+                  <th className="px-8 py-5 text-left text-[10px] font-bold uppercase tracking-widest text-slate-500">Official Designation</th>
+                  <th className="px-8 py-5 text-left text-[10px] font-bold uppercase tracking-widest text-slate-500">Hierarchy Level</th>
+                  <th className="px-8 py-5 text-right text-[10px] font-bold uppercase tracking-widest text-slate-500">Management</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {employees.map((emp) => (
-                  <tr key={emp.id} className="group hover:bg-slate-50 transition-all font-sans">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-6">
-                        <div className={`w-12 h-12 rounded-xl ${getLevelColor(emp.level)} text-white flex items-center justify-center text-xl font-bold shadow-md`}>{emp.name.charAt(0)}</div>
-                        <span className="font-bold text-slate-900 uppercase italic tracking-tight leading-none text-lg group-hover:text-indigo-600 transition-colors">{emp.name}</span>
+                  <tr key={emp.id} className="group hover:bg-slate-50/80 transition-all">
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-lg ${getLevelStyles(emp.level).lightBg} flex items-center justify-center text-sm font-bold ${getLevelStyles(emp.level).text} border border-slate-100 shadow-sm`}>
+                          {emp.name.charAt(0)}
+                        </div>
+                        <span className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors leading-none">{emp.name}</span>
                       </div>
                     </td>
-                    <td className="px-8 py-6"> <span className="text-xs font-bold text-slate-500 uppercase tracking-widest italic">{emp.designation || 'Staff'}</span> </td>
-                    <td className="px-8 py-6"> <span className={`px-4 py-1.5 rounded-full text-[9px] font-bold text-white uppercase tracking-widest  ${getLevelColor(emp.level)}`}>Level {emp.level}</span> </td>
-                    <td className="px-8 py-6 text-right"> <button onClick={() => { setEditingEmployee(emp); setSelectedManager(emp.reportsTo || ''); }} className="px-6 py-2 bg-white border border-slate-200 text-slate-500 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-sm active:scale-95 italic">Update Reporting</button> </td>
+                    <td className="px-8 py-5 text-sm font-medium text-slate-500">{emp.designation || 'Specialist'}</td>
+                    <td className="px-8 py-5">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${getLevelStyles(emp.level).lightBg} ${getLevelStyles(emp.level).text} ${getLevelStyles(emp.level).border.replace('border-', 'border-')}/20 shadow-sm`}>
+                        Level {emp.level}
+                      </span>
+                    </td>
+                    <td className="px-8 py-5 text-right">
+                      <button
+                        onClick={() => { setEditingEmployee(emp); setSelectedManager(emp.reportsTo || ''); }}
+                        className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all shadow-sm active:scale-95"
+                      >
+                        Adjust Structure
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -171,29 +297,66 @@ const Organogram = () => {
           </div>
         )}
 
+        {/* Edit Hierarchy Modal */}
         {editingEmployee && (
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[1000] p-6 animate-in fade-in duration-300" onClick={() => setEditingEmployee(null)}>
-            <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl border border-white/20 overflow-hidden relative animate-in zoom-in-95 duration-500 font-sans" onClick={(e) => e.stopPropagation()}>
-              <div className="p-8 bg-slate-900 text-white flex justify-between items-center relative overflow-hidden">
-                <div className="relative z-10">
-                  <h3 className="text-2xl font-bold uppercase tracking-tight italic">Update Reporting Structure</h3>
-                  <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mt-1">Adjust direct manager for: {editingEmployee.name}</p>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[2000] p-6 animate-in fade-in duration-300" onClick={() => setEditingEmployee(null)}>
+            <div className="bg-white rounded-[2rem] w-full max-w-xl shadow-2xl border border-slate-200 overflow-hidden relative animate-in zoom-in-95 duration-400" onClick={(e) => e.stopPropagation()}>
+              <div className="p-10 pb-0 flex justify-between items-start">
+                <div>
+                  <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-sm border border-indigo-100">⚖️</div>
+                  <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Update Reporting Line</h3>
+                  <p className="text-slate-500 mt-2 text-sm leading-relaxed">
+                    Assign a direct supervisor for <span className="font-bold text-indigo-600 underline underline-offset-4 decoration-indigo-200">{editingEmployee.name}</span> to maintain organizational integrity.
+                  </p>
                 </div>
-                <button onClick={() => setEditingEmployee(null)} className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center text-3xl hover:bg-rose-600 transition-all font-bold">×</button>
+                <button onClick={() => setEditingEmployee(null)} className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-slate-100 hover:text-slate-900 transition-all font-bold">×</button>
               </div>
-              <div className="p-8 space-y-10">
-                <div className="space-y-4">
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Direct Reporting Manager</label>
-                  <select value={selectedManager} onChange={(e) => setSelectedManager(e.target.value)} className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-[12px] font-bold text-slate-950 focus:bg-white focus:border-indigo-400 transition-all outline-none shadow-sm italic uppercase tracking-widest">
-                    <option value="">Top Level (Head of Department)</option>
-                    {employees.filter(e => e.id !== editingEmployee.id && e.id !== editingEmployee.memberId).map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
-                  </select>
-                  <p className="text-[10px] font-bold text-amber-500 uppercase italic px-4 py-2 bg-amber-50 rounded-lg border-l-4 border-amber-300">Note: Changing the manager will update the reporting line in the organizational directory.</p>
+
+              <div className="p-10 space-y-8">
+                <div className="space-y-3">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Assigned Reporting Manager</label>
+                  <div className="relative group">
+                    <select
+                      value={selectedManager}
+                      onChange={(e) => setSelectedManager(e.target.value)}
+                      className="w-full appearance-none px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none shadow-sm cursor-pointer"
+                    >
+                      <option value="">Department Head (Top Level)</option>
+                      {employees.filter(e => e.id !== editingEmployee.id && e.id !== editingEmployee.memberId).map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.name} — {emp.designation}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-indigo-500 transition-colors">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-slate-100">
-                  <button onClick={() => setEditingEmployee(null)} className="flex-1 py-3.5 text-[11px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-950 transition-all italic underline underline-offset-8">Cancel</button>
-                  <button onClick={handleUpdateManager} disabled={saving} className="flex-[2] py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg hover:bg-slate-900 transition-all flex items-center justify-center gap-2">
-                    {saving ? 'Saving...' : 'Confirm Structure Update'}
+
+                <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex gap-4">
+                  <div className="text-2xl pt-1">💡</div>
+                  <p className="text-xs text-amber-700 leading-relaxed font-medium">
+                    Restructuring the hierarchy will immediately re-index the organizational mapping for all connected personnel.
+                  </p>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button
+                    onClick={() => setEditingEmployee(null)}
+                    className="flex-1 py-4 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all border border-transparent hover:border-slate-100 rounded-2xl"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpdateManager}
+                    disabled={saving}
+                    className="flex-[2] py-4 bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Processing...
+                      </>
+                    ) : 'Confirm Restructure'}
                   </button>
                 </div>
               </div>
@@ -206,3 +369,4 @@ const Organogram = () => {
 };
 
 export default Organogram;
+

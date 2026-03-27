@@ -8,11 +8,12 @@ import { useSocket } from '../context/SocketContext';
 import { useChat } from '../context/ChatContext';
 import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import GlobalChat from './chat/GlobalChat';
+import { myTasksAPI } from '../services/api';
 
 const Layout = ({ children }) => {
   const { state, dispatch } = useAuth();
   const { state: companyState, selectCompany } = useCompany();
-  const { unreadCount, clearUnreadCount, fetchUnreadCount } = useSocket();
+  const { unreadCount, unreadCountsByCompany, clearUnreadCount, fetchUnreadCount } = useSocket();
   const { hasPermission, companyData } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,7 +23,11 @@ const Layout = ({ children }) => {
   const [recentNotifications, setRecentNotifications] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const { unreadCounts } = useChat();
+  const { unreadCounts, unreadCountsByCompany: chatUnreadByCompany, fetchUnreadCounts } = useChat();
+  const [pendingTasksByCompany, setPendingTasksByCompany] = useState({});
+
+  const selectedCompanyId = companyState.selectedCompany?.id || 'personal';
+  const selectedCompanyHeaderId = selectedCompanyId === 'personal' ? null : selectedCompanyId;
 
   const canManageSettings = hasPermission(PERMISSIONS.MANAGE_COMPANY_SETTINGS);
   const canViewDesignations = hasPermission(PERMISSIONS.VIEW_DESIGNATIONS);
@@ -41,9 +46,11 @@ const Layout = ({ children }) => {
     setNotifLoading(true);
     try {
       const token = getCookie('authToken');
+      const headers = { Authorization: `Bearer ${token}` };
+      if (selectedCompanyHeaderId) headers['X-Company-Id'] = selectedCompanyHeaderId;
       const [nr, ir] = await Promise.all([
-        fetch('/api/notifications', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/invitations/my-invitations', { headers: { Authorization: `Bearer ${token}` } })
+        fetch('/api/notifications', { headers }),
+        fetch('/api/invitations/my-invitations', { headers })
       ]);
       let combined = [];
       if (nr.ok) combined = ((await nr.json()).notifications || []).slice(0, 8);
@@ -66,14 +73,64 @@ const Layout = ({ children }) => {
   const markNotifAsRead = async (id) => {
     try {
       const token = getCookie('authToken');
-      await fetch(`/api/notifications/${id}/read`, { method: 'PUT', headers: { Authorization: `Bearer ${token}` } });
+      const headers = { Authorization: `Bearer ${token}` };
+      if (selectedCompanyHeaderId) headers['X-Company-Id'] = selectedCompanyHeaderId;
+      await fetch(`/api/notifications/${id}/read`, { method: 'PUT', headers });
       setRecentNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
-      fetchUnreadCount();
+      fetchUnreadCount(selectedCompanyId);
     } catch { }
   };
 
-  useEffect(() => { if (location.pathname === '/notifications') clearUnreadCount(); }, [location.pathname]);
-  useEffect(() => { fetchUnreadCount(); }, [fetchUnreadCount]);
+  useEffect(() => { if (location.pathname === '/notifications') clearUnreadCount(); }, [location.pathname, clearUnreadCount]);
+  useEffect(() => { fetchUnreadCount(selectedCompanyId); }, [fetchUnreadCount, selectedCompanyId]);
+
+  // Preload counts for all companies so the dropdown can show badges
+  useEffect(() => {
+    const companies = Array.isArray(companyState.companies) ? companyState.companies : [];
+    if (!companies.length) return;
+    const ids = [...new Set(['personal', ...companies.map(c => c.id).filter(Boolean)])];
+    ids.forEach((id) => {
+      fetchUnreadCount(id);
+      fetchUnreadCounts(id);
+    });
+  }, [companyState.companies, fetchUnreadCount, fetchUnreadCounts]);
+
+  // Preload pending my-tasks counts per company for the dropdown
+  useEffect(() => {
+    const companies = Array.isArray(companyState.companies) ? companyState.companies : [];
+    const ids = [...new Set(['personal', ...companies.map(c => c.id).filter(Boolean)])];
+    if (!ids.length) return;
+
+    let cancelled = false;
+    const run = async () => {
+      const results = await Promise.allSettled(
+        ids.map(async (id) => {
+          const res = await myTasksAPI.getAll(id);
+          const tasks = res.data || [];
+          const pendingCount = tasks.filter(t => {
+            const s = t.workflowType === 'sequential'
+              ? (t.userAssignee?.status || 'pending')
+              : (t.userStep?.status || 'pending');
+            return s !== 'completed';
+          }).length;
+          return [id, pendingCount];
+        })
+      );
+
+      if (cancelled) return;
+      const next = {};
+      results.forEach(r => {
+        if (r.status === 'fulfilled') {
+          const [id, count] = r.value;
+          next[id] = count;
+        }
+      });
+      setPendingTasksByCompany(next);
+    };
+
+    run();
+    return () => { cancelled = true; };
+  }, [companyState.companies]);
 
   const handleLogout = () => { dispatch({ type: 'LOGOUT' }); navigate('/'); };
 
@@ -103,12 +160,29 @@ const Layout = ({ children }) => {
     ] : [])
   ];
 
-  const handleCompanySelect = (c) => {
-    if (c === 'Personal') selectCompany({ id: 'personal', name: 'Personal' });
-    else if (c === 'Create Company') navigate('/create-company');
-    else selectCompany(c);
+  const handleCompanySelect = async (c) => {
+    if (c === 'Create Company') {
+      navigate('/create-company');
+      setIsCompanyDropdownOpen(false);
+      return;
+    }
+
+    const nextCompany = c === 'Personal' ? { id: 'personal', name: 'Personal' } : c;
+    selectCompany(nextCompany);
+
+    const nextId = nextCompany?.id || 'personal';
+    await Promise.allSettled([
+      fetchUnreadCount(nextId),
+      fetchUnreadCounts(nextId),
+    ]);
+
     setIsCompanyDropdownOpen(false);
+    navigate('/dashboard', { replace: true });
   };
+
+  const getCompanyNotifCount = (companyId) => unreadCountsByCompany?.[companyId] || 0;
+  const getCompanyMsgCount = (companyId) => chatUnreadByCompany?.[companyId]?.total || 0;
+  const getCompanyPendingTasks = (companyId) => pendingTasksByCompany?.[companyId] || 0;
 
   const getPageTitle = () => {
     const titles = {
@@ -149,11 +223,45 @@ const Layout = ({ children }) => {
                 <div key={c.id} onClick={() => handleCompanySelect(c)} className={`flex items-center gap-3 p-3 cursor-pointer rounded-lg transition-colors ${companyState.selectedCompany?.id === c.id ? 'bg-indigo-50 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-600'}`}>
                   <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center flex-shrink-0 text-sm">{c.logo ? <img src={c.logo} alt="" className="w-full h-full object-cover rounded-md" /> : c.name.charAt(0)}</div>
                   <span className="flex-1 truncate text-sm">{c.name}</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {getCompanyPendingTasks(c.id) > 0 && (
+                      <span className="min-w-5 h-5 px-1.5 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                        {getCompanyPendingTasks(c.id) > 99 ? '99+' : getCompanyPendingTasks(c.id)}
+                      </span>
+                    )}
+                    {getCompanyMsgCount(c.id) > 0 && (
+                      <span className="min-w-5 h-5 px-1.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                        {getCompanyMsgCount(c.id) > 99 ? '99+' : getCompanyMsgCount(c.id)}
+                      </span>
+                    )}
+                    {getCompanyNotifCount(c.id) > 0 && (
+                      <span className="min-w-5 h-5 px-1.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                        {getCompanyNotifCount(c.id) > 99 ? '99+' : getCompanyNotifCount(c.id)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
               <div onClick={() => handleCompanySelect('Personal')} className={`flex items-center gap-3 p-3 cursor-pointer rounded-lg transition-colors ${companyState.selectedCompany?.id === 'personal' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-600'}`}>
                 <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center text-sm">👤</div>
                 <span className="flex-1 text-sm font-medium">Personal Account</span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {getCompanyPendingTasks('personal') > 0 && (
+                    <span className="min-w-5 h-5 px-1.5 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                      {getCompanyPendingTasks('personal') > 99 ? '99+' : getCompanyPendingTasks('personal')}
+                    </span>
+                  )}
+                  {getCompanyMsgCount('personal') > 0 && (
+                    <span className="min-w-5 h-5 px-1.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                      {getCompanyMsgCount('personal') > 99 ? '99+' : getCompanyMsgCount('personal')}
+                    </span>
+                  )}
+                  {getCompanyNotifCount('personal') > 0 && (
+                    <span className="min-w-5 h-5 px-1.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                      {getCompanyNotifCount('personal') > 99 ? '99+' : getCompanyNotifCount('personal')}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             <div className="p-3 border-t border-slate-100">

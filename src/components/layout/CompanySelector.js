@@ -1,24 +1,41 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCompany } from '../../context/CompanyContext';
+import { useSocket } from '../../context/SocketContext';
+import { useChat } from '../../context/ChatContext';
 
 const CompanySelector = ({ collapsed, isOpen, onToggle }) => {
   const navigate = useNavigate();
   const { state: companyState, selectCompany } = useCompany();
+  const { unreadCountsByCompany, fetchUnreadCount } = useSocket();
+  const { unreadCountsByCompany: chatUnreadByCompany, fetchUnreadCounts } = useChat();
 
   const handleCompanySelect = async (company) => {
     if (company === 'Personal') {
       selectCompany({ id: 'personal', name: 'Personal' });
+      await Promise.allSettled([
+        fetchUnreadCount('personal'),
+        fetchUnreadCounts('personal'),
+      ]);
+      navigate('/dashboard');
     } else if (company === 'Create Company') {
       navigate('/create-company');
     } else {
       selectCompany(company);
+      await Promise.allSettled([
+        fetchUnreadCount(company.id),
+        fetchUnreadCounts(company.id),
+      ]);
+      navigate('/dashboard');
     }
     onToggle();
   };
 
   const currentCompany = companyState.selectedCompany;
   const initial = currentCompany?.name?.charAt(0)?.toUpperCase() || 'C';
+
+  const getCompanyNotifCount = (companyId) => unreadCountsByCompany?.[companyId] || 0;
+  const getCompanyMsgCount = (companyId) => chatUnreadByCompany?.[companyId]?.total || 0;
 
   return (
     <div className="relative px-3 py-2 border-b border-slate-100">
@@ -68,6 +85,18 @@ const CompanySelector = ({ collapsed, isOpen, onToggle }) => {
                   {company.logo ? <img src={company.logo} alt={company.name} className="w-full h-full object-cover rounded-lg" /> : company.name?.charAt(0)?.toUpperCase()}
                 </div>
                 <span className={`text-sm font-medium flex-1 truncate ${currentCompany?.id === company.id ? 'text-indigo-700' : 'text-slate-700'}`}>{company.name}</span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {getCompanyMsgCount(company.id) > 0 && (
+                    <span className="min-w-5 h-5 px-1.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                      {getCompanyMsgCount(company.id) > 99 ? '99+' : getCompanyMsgCount(company.id)}
+                    </span>
+                  )}
+                  {getCompanyNotifCount(company.id) > 0 && (
+                    <span className="min-w-5 h-5 px-1.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                      {getCompanyNotifCount(company.id) > 99 ? '99+' : getCompanyNotifCount(company.id)}
+                    </span>
+                  )}
+                </div>
                 {currentCompany?.id === company.id && (
                   <svg className="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -89,6 +118,18 @@ const CompanySelector = ({ collapsed, isOpen, onToggle }) => {
               </svg>
             </div>
             <span className={`text-sm font-medium flex-1 ${currentCompany?.id === 'personal' ? 'text-indigo-700' : 'text-slate-700'}`}>Personal</span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {getCompanyMsgCount('personal') > 0 && (
+                <span className="min-w-5 h-5 px-1.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                  {getCompanyMsgCount('personal') > 99 ? '99+' : getCompanyMsgCount('personal')}
+                </span>
+              )}
+              {getCompanyNotifCount('personal') > 0 && (
+                <span className="min-w-5 h-5 px-1.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                  {getCompanyNotifCount('personal') > 99 ? '99+' : getCompanyNotifCount('personal')}
+                </span>
+              )}
+            </div>
             {currentCompany?.id === 'personal' && (
               <svg className="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

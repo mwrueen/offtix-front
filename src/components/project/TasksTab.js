@@ -259,9 +259,26 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
         finally { setIsAutoScheduling(false); }
     };
 
+    // When duration entry mode is active with a role selected, only show tasks that have that role
+    const durationRoleId = isDurationEntryMode ? durationContext.roleId : '';
+
+    // Users assigned to the selected duration role (for the User dropdown in duration mode)
+    const durationRoleUsers = durationRoleId
+        ? users.filter(u =>
+            tasks.some(t =>
+                t.roleAssignments?.some(ra =>
+                    (ra.role?._id || ra.role) === durationRoleId &&
+                    ra.assignees?.some(a => (a._id || a) === u._id)
+                )
+            )
+          )
+        : users;
+
     const filteredTasks = tasks.filter(task => {
         if (selectedSprint && task.sprint?._id !== selectedSprint) return false;
         if (selectedPhase && task.phase?._id !== selectedPhase) return false;
+        // Auto-filter by duration role when in bulk entry mode
+        if (durationRoleId && !task.roleAssignments?.some(ra => (ra.role?._id || ra.role) === durationRoleId)) return false;
         if (selectedTaskRole && !task.roleAssignments?.some(ra => (ra.role?._id || ra.role) === selectedTaskRole)) return false;
         if (selectedProjectRole) {
             const ids = users.filter(u => u.projectRole === selectedProjectRole).map(u => u._id);
@@ -408,8 +425,8 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                         <div className="flex items-center gap-3">
                             <span className="text-[10px] font-bold uppercase opacity-80">User:</span>
                             <select value={durationContext.userId} onChange={e => setDurationContext({ ...durationContext, userId: e.target.value })} className="bg-white/10 border-white/20 rounded-lg px-3 py-1.5 text-xs font-bold outline-none cursor-pointer">
-                                <option value="" className="text-slate-800">Select User</option>
-                                {users.map(u => <option key={u._id} value={u._id} className="text-slate-800">{u.name}</option>)}
+                                <option value="" className="text-slate-800">{durationRoleId && durationRoleUsers.length === 0 ? 'No users in role' : 'Select User'}</option>
+                                {durationRoleUsers.map(u => <option key={u._id} value={u._id} className="text-slate-800">{u.name}</option>)}
                             </select>
                         </div>
                     </div>

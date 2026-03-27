@@ -41,7 +41,7 @@ const Dashboard = () => {
 
       setStats({ activeProjects: projectsData.filter(p => p.status === 'running' || p.status === 'active').length, completedTasks, totalTasks, pendingTasks });
 
-      const tasksRes = await myTasksAPI.getAll();
+      const tasksRes = await myTasksAPI.getAll(selectedCompany?.id || 'personal');
       const allMyTasks = tasksRes.data || [];
       const upcoming = allMyTasks.filter(t => t.userStep?.status !== 'completed' && !t.status?.name?.toLowerCase().includes('done'));
       const completed = allMyTasks.filter(t => !upcoming.includes(t));

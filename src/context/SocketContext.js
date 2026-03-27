@@ -2,25 +2,31 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { getCookie } from '../utils/cookies';
+import { useCompany } from './CompanyContext';
 
 const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
     const { state } = useAuth();
+    const { state: companyState } = useCompany();
+    const selectedCompanyId = companyState.selectedCompany?.id || 'personal';
     const socketRef = useRef(null);
     const [isConnected, setIsConnected] = useState(false);
     const [notifications, setNotifications] = useState([]);  // in-app real-time toast queue
-    const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadCountsByCompany, setUnreadCountsByCompany] = useState({});
 
     // Fetch initial unread count from DB (notifications + pending invitations)
-    const fetchUnreadCount = useCallback(async () => {
+    const fetchUnreadCount = useCallback(async (companyId = selectedCompanyId) => {
         try {
             const token = getCookie('authToken');
             if (!token) return;
 
+            const headers = { Authorization: `Bearer ${token}` };
+            if (companyId && companyId !== 'personal') headers['X-Company-Id'] = companyId;
+
             const [notifRes, invRes] = await Promise.all([
-                fetch('/api/notifications', { headers: { Authorization: `Bearer ${token}` } }),
-                fetch('/api/invitations/my-invitations', { headers: { Authorization: `Bearer ${token}` } })
+                fetch('/api/notifications', { headers }),
+                fetch('/api/invitations/my-invitations', { headers })
             ]);
 
             let count = 0;
@@ -32,9 +38,9 @@ export const SocketProvider = ({ children }) => {
                 const invData = await invRes.json();
                 count += Array.isArray(invData) ? invData.length : 0;
             }
-            setUnreadCount(count);
+            setUnreadCountsByCompany(prev => ({ ...prev, [companyId]: count }));
         } catch (_) { }
-    }, []);
+    }, [selectedCompanyId]);
 
     useEffect(() => {
         const token = getCookie('authToken');
@@ -62,7 +68,7 @@ export const SocketProvider = ({ children }) => {
         socket.on('connect', () => {
             console.log('[Socket] Connected:', socket.id);
             setIsConnected(true);
-            fetchUnreadCount();
+            fetchUnreadCount(selectedCompanyId);
         });
 
         socket.on('disconnect', () => {
@@ -77,7 +83,8 @@ export const SocketProvider = ({ children }) => {
         // ─── TASK NOTIFICATIONS ───────────────────────────────────────────────
         const handleTaskNotification = (data) => {
             setNotifications(prev => [data, ...prev].slice(0, 20));
-            setUnreadCount(prev => prev + 1);
+            const cid = data?.companyId || data?.company?.id || selectedCompanyId;
+            setUnreadCountsByCompany(prev => ({ ...prev, [cid]: (prev[cid] || 0) + 1 }));
         };
 
         // Sequential workflow — task passed to next assignee
@@ -94,7 +101,7 @@ export const SocketProvider = ({ children }) => {
 
         // Chat notifications (already existed, just re-emit count bump)
         socket.on('chat-notification', () => {
-            setUnreadCount(prev => prev + 1);
+            setUnreadCountsByCompany(prev => ({ ...prev, [selectedCompanyId]: (prev[selectedCompanyId] || 0) + 1 }));
         });
 
         return () => {
@@ -106,19 +113,24 @@ export const SocketProvider = ({ children }) => {
             socket.disconnect();
             socketRef.current = null;
         };
-    }, [state.isAuthenticated, fetchUnreadCount]);
+    }, [state.isAuthenticated, fetchUnreadCount, selectedCompanyId]);
 
     const dismissNotification = useCallback((index) => {
         setNotifications(prev => prev.filter((_, i) => i !== index));
     }, []);
 
     const clearUnreadCount = useCallback(() => {
-        setUnreadCount(0);
-    }, []);
+        setUnreadCountsByCompany(prev => ({ ...prev, [selectedCompanyId]: 0 }));
+    }, [selectedCompanyId]);
 
     const decrementUnread = useCallback((by = 1) => {
-        setUnreadCount(prev => Math.max(0, prev - by));
-    }, []);
+        setUnreadCountsByCompany(prev => ({
+            ...prev,
+            [selectedCompanyId]: Math.max(0, (prev[selectedCompanyId] || 0) - by)
+        }));
+    }, [selectedCompanyId]);
+
+    const unreadCount = unreadCountsByCompany[selectedCompanyId] || 0;
 
     return (
         <SocketContext.Provider value={{
@@ -126,7 +138,7 @@ export const SocketProvider = ({ children }) => {
             isConnected,
             notifications,
             unreadCount,
-            setUnreadCount,
+            unreadCountsByCompany,
             dismissNotification,
             clearUnreadCount,
             decrementUnread,

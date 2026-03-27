@@ -221,178 +221,171 @@ const GlobalChat = ({ onClose }) => {
     };
 
     return (
-        <div className="fixed bottom-8 right-8 w-[1000px] h-[700px] bg-white rounded-[3rem] shadow-24 border border-slate-200/60 flex overflow-hidden z-[1000] animate-in slide-in-from-bottom-12 zoom-in-95 duration-500">
-            {/* Sidebar */}
-            <div className="w-[320px] bg-slate-50/50 border-r border-slate-100 flex flex-col shrink-0">
-                <div className="p-10 border-b border-slate-100 bg-white/50">
-                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-[0.2em] italic">Sub_Comm_Core</h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Personnel_Sync_Module</p>
-                </div>
+        <div className="fixed inset-0 z-[1000]">
+            {/* Backdrop */}
+            <div
+                onClick={onClose}
+                className="absolute inset-0 bg-slate-900/30 backdrop-blur-[1px]"
+            />
 
-                <div className="flex p-4 gap-2 border-b border-slate-50 bg-white/20">
-                    {[
-                        { id: 'direct', label: 'Nodes', icon: '👤', count: Object.values(unreadCounts.direct).reduce((a, b) => a + b, 0) },
-                        { id: 'projects', label: 'Entities', icon: '📁', count: Object.values(unreadCounts.projects).reduce((a, b) => a + b, 0) }
-                    ].map(t => (
-                        <button
-                            key={t.id}
-                            onClick={() => setActiveTab(t.id)}
-                            className={`flex items-center justify-center gap-3 flex-1 py-4 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all
-                               ${activeTab === t.id ? 'bg-slate-900 text-white shadow-xl translate-y-[-2px]' : 'text-slate-400 hover:bg-white hover:text-slate-900'}`}
-                        >
-                            <span>{t.icon}</span>
-                            {t.label}
-                            {t.count > 0 && (
-                                <span className={`ml-1 w-2 h-2 rounded-full bg-red-500 animate-pulse`} />
-                            )}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="flex-1 overflow-y-auto custom-scrollbar-sidebar pb-10">
-                    {loading ? (
-                        <div className="p-10 text-center animate-pulse space-y-4">
-                            <div className="w-10 h-10 bg-slate-200 rounded-full mx-auto" />
-                            <div className="text-[10px] font-black text-slate-300 uppercase italic">Parsing_Nodes...</div>
+            {/* Modal */}
+            <div className="absolute inset-x-4 bottom-4 top-4 md:inset-x-8 md:bottom-8 md:top-8 lg:inset-x-auto lg:right-8 lg:bottom-8 lg:top-8 lg:w-[980px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex overflow-hidden animate-in slide-in-from-bottom-6 duration-300">
+                {/* Sidebar */}
+                <div className="w-[320px] bg-slate-50 border-r border-slate-200 flex flex-col shrink-0">
+                    <div className="p-5 border-b border-slate-200 bg-white flex items-center justify-between">
+                        <div className="min-w-0">
+                            <h2 className="text-base font-semibold text-slate-900 truncate">Chat</h2>
+                            <p className="text-xs text-slate-500 truncate">Direct messages & project chat</p>
                         </div>
-                    ) : (
-                        <div className="divide-y divide-slate-50/50">
-                            {activeTab === 'direct' ? (
-                                employees.length > 0 ? employees.map(e => renderSidebarItem(e, 'direct')) : (
-                                    <div className="p-20 text-center opacity-30 grayscale italic text-[10px] font-black uppercase tracking-widest">No_Active_Nodes</div>
-                                )
-                            ) : (
-                                projects.length > 0 ? projects.map(p => renderSidebarItem(p, 'project')) : (
-                                    <div className="p-20 text-center opacity-30 grayscale italic text-[10px] font-black uppercase tracking-widest">No_Defined_Entities</div>
-                                )
+                        <button
+                            onClick={onClose}
+                            className="w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                            aria-label="Close chat"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <div className="flex p-3 gap-2 border-b border-slate-200 bg-white">
+                        {[
+                            { id: 'direct', label: 'People', count: Object.values(unreadCounts.direct || {}).reduce((a, b) => a + b, 0) },
+                            { id: 'projects', label: 'Projects', count: Object.values(unreadCounts.projects || {}).reduce((a, b) => a + b, 0) }
+                        ].map(t => (
+                            <button
+                                key={t.id}
+                                onClick={() => setActiveTab(t.id)}
+                                className={`flex-1 h-9 px-3 rounded-lg text-xs font-medium transition-colors border
+                                  ${activeTab === t.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                            >
+                                <span className="flex items-center justify-center gap-2">
+                                    {t.label}
+                                    {t.count > 0 && (
+                                        <span className={`${activeTab === t.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'} px-2 py-0.5 rounded-full text-[10px] font-bold`}>
+                                            {t.count > 99 ? '99+' : t.count}
+                                        </span>
+                                    )}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto custom-scrollbar-sidebar">
+                        {loading ? (
+                            <div className="p-6 text-center text-sm text-slate-500">Loading…</div>
+                        ) : (
+                            <div className="divide-y divide-slate-200">
+                                {activeTab === 'direct' ? (
+                                    employees.length > 0 ? employees.map(e => renderSidebarItem(e, 'direct')) : (
+                                        <div className="p-10 text-center text-sm text-slate-500">No people found</div>
+                                    )
+                                ) : (
+                                    projects.length > 0 ? projects.map(p => renderSidebarItem(p, 'project')) : (
+                                        <div className="p-10 text-center text-sm text-slate-500">No projects found</div>
+                                    )
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Main Chat Area */}
+                <div className="flex-1 flex flex-col bg-white">
+                    {selectedChat ? (
+                        <>
+                            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white">
+                                <div className="min-w-0">
+                                    <h3 className="text-sm font-semibold text-slate-900 truncate">{selectedChat.name}</h3>
+                                    <p className="text-xs text-slate-500">{selectedChat.type === 'project' ? 'Project chat' : 'Direct message'}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto px-6 py-4 bg-slate-50">
+                                {chatLoading ? (
+                                    <div className="h-full flex items-center justify-center text-sm text-slate-500">Loading messages…</div>
+                                ) : (
+                                    <>
+                                        <div className="flex flex-col gap-3">
+                                            {messages.map((msg) => {
+                                                const currentUserId = currentUser?.id || currentUser?._id;
+                                                const senderId = msg.sender?._id || msg.sender?.id || (typeof msg.sender === 'string' ? msg.sender : null);
+                                                const isOwn = senderId?.toString() === currentUserId?.toString();
+                                                return (
+                                                    <div key={msg._id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                                                        <div className={`max-w-[75%] rounded-2xl px-4 py-2 shadow-sm border text-sm leading-relaxed
+                                                            ${isOwn ? 'bg-indigo-600 text-white border-indigo-600 rounded-br-md' : 'bg-white text-slate-800 border-slate-200 rounded-bl-md'}`}
+                                                        >
+                                                            {!isOwn && (
+                                                                <div className="text-[11px] font-medium text-slate-500 mb-1">
+                                                                    {msg.sender?.name || 'User'}
+                                                                </div>
+                                                            )}
+                                                            <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+                                                            <div className={`mt-1 text-[10px] ${isOwn ? 'text-white/70' : 'text-slate-400'}`}>
+                                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <div ref={messagesEndRef} className="h-4" />
+                                    </>
+                                )}
+                            </div>
+
+                            {typingUsers.length > 0 && (
+                                <div className="px-6 py-2 border-t border-slate-200 bg-white text-xs text-slate-500">
+                                    {typingUsers[0].userName} is typing…
+                                </div>
                             )}
+
+                            <div className="p-4 bg-white border-t border-slate-200">
+                                <div className="flex items-end gap-3">
+                                    <textarea
+                                        ref={inputRef}
+                                        value={newMessage}
+                                        onChange={(e) => setNewMessage(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                handleSendMessage();
+                                            }
+                                        }}
+                                        placeholder="Type a message…"
+                                        rows={1}
+                                        className="flex-1 resize-none max-h-32 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-300"
+                                    />
+                                    <button
+                                        onClick={handleSendMessage}
+                                        className="h-11 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled={!newMessage.trim()}
+                                    >
+                                        Send
+                                    </button>
+                                </div>
+                                <div className="mt-2 text-[11px] text-slate-400">
+                                    Press Enter to send, Shift+Enter for a new line.
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex-1 flex items-center justify-center p-10 bg-slate-50">
+                            <div className="text-center">
+                                <div className="text-base font-semibold text-slate-900">Select a conversation</div>
+                                <div className="mt-1 text-sm text-slate-500">Choose a person or project from the left.</div>
+                            </div>
                         </div>
                     )}
                 </div>
+
+                <style dangerouslySetInnerHTML={{
+                    __html: `
+                    .custom-scrollbar-sidebar::-webkit-scrollbar { width: 6px; }
+                    .custom-scrollbar-sidebar::-webkit-scrollbar-track { background: transparent; }
+                    .custom-scrollbar-sidebar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+                    `
+                }} />
             </div>
-
-            {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col bg-white relative">
-                {selectedChat ? (
-                    <>
-                        <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10 shadow-sm shadow-slate-200/20">
-                            <div>
-                                <h3 className="text-xl font-black text-slate-950 uppercase tracking-tight italic flex items-center gap-3">
-                                    {selectedChat.name}
-                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                                </h3>
-                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em] font-mono">SEC_LINK_ESTABLISHED // LEVEL_4</div>
-                            </div>
-                            <button onClick={onClose} className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:rotate-90 transition-all font-black">✕</button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-10 space-y-6 bg-slate-50/30 custom-scrollbar relative">
-                            {chatLoading ? (
-                                <div className="flex flex-col items-center justify-center h-full space-y-4 animate-pulse">
-                                    <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-500 rounded-full animate-spin" />
-                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Fetching_Directives...</div>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="flex flex-col gap-6">
-                                        {messages.map((msg, i) => {
-                                            const currentUserId = currentUser?.id || currentUser?._id;
-                                            const senderId = msg.sender?._id || msg.sender?.id || (typeof msg.sender === 'string' ? msg.sender : null);
-                                            const isOwn = senderId?.toString() === currentUserId?.toString();
-                                            return (
-                                                <div key={msg._id} className={`flex items-end gap-4 max-w-[85%] ${isOwn ? 'flex-row-reverse self-end' : 'self-start'}`}>
-                                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-black shadow-inner overflow-hidden shrink-0 border-2 border-white
-                                                   ${isOwn ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
-                                                        {msg.sender?.profile?.profilePicture ? (
-                                                            <img src={msg.sender.profile.profilePicture} alt="" className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            (msg.sender?.name || 'U').charAt(0).toUpperCase()
-                                                        )}
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        {!isOwn && <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest italic ml-4">{msg.sender?.name}</div>}
-                                                        <div className={`p-6 rounded-[2rem] shadow-sm relative overflow-hidden transition-all
-                                                      ${isOwn
-                                                                ? 'bg-slate-950 text-white rounded-br-none'
-                                                                : 'bg-white text-slate-800 border border-slate-100 rounded-bl-none shadow-slate-200/50'}`}>
-                                                            <div className="text-[13px] leading-relaxed font-medium">{msg.content}</div>
-                                                            <div className={`text-[8px] font-bold mt-3 opacity-30 select-none ${isOwn ? 'text-right' : 'text-left'}`}>
-                                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            </div>
-                                                            {isOwn && <div className="absolute top-0 right-0 w-12 h-12 bg-indigo-500/10 rounded-full blur-xl -translate-y-1/2 translate-x-1/2" />}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                    <div ref={messagesEndRef} className="h-4" />
-                                </>
-                            )}
-                        </div>
-
-                        {typingUsers.length > 0 && (
-                            <div className="px-10 py-3 bg-white/50 backdrop-blur-sm border-t border-slate-50 flex items-center gap-3">
-                                <div className="flex gap-1">
-                                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" />
-                                </div>
-                                <span className="text-[10px] font-black text-indigo-600 uppercase italic tracking-widest">{typingUsers[0].userName} typing_packet...</span>
-                            </div>
-                        )}
-
-                        <div className="p-8 bg-white border-t border-slate-100">
-                            <div className="flex gap-4 bg-slate-50 p-3 rounded-[2.5rem] border border-slate-200 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-50 transition-all group">
-                                <input
-                                    ref={inputRef}
-                                    value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                    placeholder="Enter authorization packet content..."
-                                    className="flex-1 bg-transparent px-6 py-3 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400 placeholder:italic italic"
-                                />
-                                <button
-                                    onClick={handleSendMessage}
-                                    className="px-10 py-4 bg-slate-900 hover:bg-black text-white rounded-[2.2rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-24 transition-all hover:scale-105 active:scale-95 group relative overflow-hidden"
-                                >
-                                    <span className="relative z-10">Push_Comm</span>
-                                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-indigo-500/0 via-white/10 to-indigo-500/0 -translate-x-full group-hover:animate-[shimmer_2s_infinite] -z-0" />
-                                </button>
-                            </div>
-                        </div>
-                    </>
-                ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center p-20 text-center animate-in fade-in zoom-in duration-1000">
-                        <div className="relative mb-12">
-                            <div className="text-[120px] grayscale opacity-10 animate-pulse">💬</div>
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-4xl animate-bounce">📡</span>
-                            </div>
-                        </div>
-                        <h3 className="text-2xl font-black text-slate-900 uppercase tracking-[0.3em] italic mb-4">No_Sync_Target</h3>
-                        <p className="max-w-xs text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed italic">Select a nodal entry from the registry to initiate encrypted communication protocols.</p>
-
-                        <div className="mt-12 grid grid-cols-2 gap-4 w-full max-w-sm">
-                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                <div className="text-lg mb-1">🛡️</div>
-                                <div className="text-[8px] font-black uppercase text-slate-400 tracking-widest italic">128-bit Encryption</div>
-                            </div>
-                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                <div className="text-lg mb-1">⚡</div>
-                                <div className="text-[8px] font-black uppercase text-slate-400 tracking-widest italic">NRT Synchronization</div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                .custom-scrollbar-sidebar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar-sidebar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar-sidebar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-            `}} />
         </div>
     );
 };

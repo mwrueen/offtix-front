@@ -44,9 +44,9 @@ function App() {
   return (
     <ToastProvider>
       <AuthProvider>
-        <ChatProvider>
-          <UserProvider>
-            <CompanyProvider>
+        <UserProvider>
+          <CompanyProvider>
+            <ChatProvider>
               <PermissionsProvider>
                 <ProjectProvider>
                   <Router>
@@ -187,9 +187,9 @@ function App() {
                   </Router>
                 </ProjectProvider>
               </PermissionsProvider>
-            </CompanyProvider>
-          </UserProvider>
-        </ChatProvider>
+            </ChatProvider>
+          </CompanyProvider>
+        </UserProvider>
       </AuthProvider>
     </ToastProvider>
   );
