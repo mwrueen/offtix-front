@@ -39,6 +39,12 @@ import { SocketProvider } from './context/SocketContext';
 import RealTimeNotifications from './components/RealTimeNotifications';
 import { PermissionsProvider } from './context/PermissionsContext';
 import { ChatProvider } from './context/ChatContext';
+import RecruitmentOverview from './components/Recruitment/RecruitmentOverview';
+import CreateCircular from './components/Recruitment/CreateCircular';
+import ApplicantsList from './components/Recruitment/ApplicantsList';
+import PublicCareers from './components/Recruitment/PublicCareers';
+import JobDetails from './components/Recruitment/JobDetails';
+
 
 function App() {
   return (
@@ -57,6 +63,8 @@ function App() {
                         <Route path="/signin" element={<SignIn />} />
                         <Route path="/signup" element={<SignUp />} />
                         <Route path="/auth/callback" element={<AuthCallback />} />
+                        <Route path="/careers" element={<PublicCareers />} />
+                        <Route path="/careers/:id" element={<JobDetails />} />
                         <Route path="/dashboard" element={
                           <ProtectedRoute>
                             <Dashboard />
@@ -180,6 +188,21 @@ function App() {
                         <Route path="/team-activity" element={
                           <ProtectedRoute>
                             <TeamActivity />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/recruitment" element={
+                          <ProtectedRoute>
+                            <RecruitmentOverview />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/recruitment/create" element={
+                          <ProtectedRoute>
+                            <CreateCircular />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/recruitment/circulars/:id/applicants" element={
+                          <ProtectedRoute>
+                            <ApplicantsList />
                           </ProtectedRoute>
                         } />
                       </Routes>

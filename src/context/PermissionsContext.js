@@ -36,6 +36,7 @@ export const PERMISSIONS = {
 
     // Company Settings
     MANAGE_COMPANY_SETTINGS: 'manageCompanySettings',
+    MANAGE_RECRUITMENT: 'manageRecruitment',
 };
 
 /**
@@ -59,6 +60,7 @@ const ALL_PERMISSIONS = {
     editTask: true,
     deleteTask: true,
     manageCompanySettings: true,
+    manageRecruitment: true,
 };
 
 /**
@@ -82,6 +84,7 @@ const NO_PERMISSIONS = {
     editTask: false,
     deleteTask: false,
     manageCompanySettings: false,
+    manageRecruitment: false,
 };
 
 export const PermissionsProvider = ({ children }) => {

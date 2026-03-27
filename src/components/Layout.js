@@ -32,6 +32,7 @@ const Layout = ({ children }) => {
   const canManageSettings = hasPermission(PERMISSIONS.MANAGE_COMPANY_SETTINGS);
   const canViewDesignations = hasPermission(PERMISSIONS.VIEW_DESIGNATIONS);
   const canViewEmployees = hasPermission(PERMISSIONS.VIEW_EMPLOYEE_LIST);
+  const canManageRecruitment = hasPermission(PERMISSIONS.MANAGE_RECRUITMENT);
 
   useEffect(() => {
     const mu = (e) => {
@@ -147,6 +148,7 @@ const Layout = ({ children }) => {
         { path: '/employees', label: 'Employees', icon: '👥', category: 'Management' },
         { path: '/organogram', label: 'Organogram', icon: '📐', category: 'Management' }
       ] : []),
+      ...(canManageRecruitment ? [{ path: '/recruitment', label: 'Recruitment', icon: '🎯', category: 'Management' }] : []),
       ...(canViewDesignations ? [{ path: '/manage-roles', label: 'Roles & Access', icon: '🛡️', category: 'Management' }] : []),
       { path: '/leaves', label: 'Leaves', icon: '🗓️', category: 'Management' },
       { path: '/holidays', label: 'Holidays', icon: '🎁', category: 'Management' }
