@@ -74,7 +74,15 @@ const CreateCircular = () => {
     const handleSubmit = async () => {
         try {
             const token = getCookie('authToken');
-            await axios.post('/api/recruitment/circulars', formData, {
+            // Clean up empty options before submission
+            const cleanedFormData = {
+                ...formData,
+                questions: formData.questions.map(q => ({
+                    ...q,
+                    options: q.options.filter(o => o.trim() !== '')
+                }))
+            };
+            await axios.post('/api/recruitment/circulars', cleanedFormData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.showToast('Job circular published successfully', 'success');
@@ -116,22 +124,22 @@ const CreateCircular = () => {
                     {/* Form Section */}
                     <div className="lg:col-span-8 bg-white border border-slate-200 rounded-3xl shadow-sm p-10 space-y-10">
                         {step === 1 && (
-                            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2">
-                                <div className="grid grid-cols-2 gap-8">
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Internal Job Title</label>
+                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Internal Job Title</label>
                                         <input
                                             type="text"
-                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-bold text-slate-700"
+                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none transition-all font-bold text-slate-700 shadow-inner text-sm"
                                             placeholder="e.g. Senior Frontend Engineer"
                                             value={formData.title}
                                             onChange={e => setFormData({ ...formData, title: e.target.value })}
                                         />
                                     </div>
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Designation Level</label>
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Designation Level</label>
                                         <select
-                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold text-slate-700"
+                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 text-sm"
                                             value={formData.role}
                                             onChange={e => setFormData({ ...formData, role: e.target.value })}
                                         >
@@ -141,64 +149,63 @@ const CreateCircular = () => {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-8">
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Job Nature</label>
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Job Nature</label>
                                         <select
-                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold text-slate-700"
+                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 text-sm"
                                             value={formData.jobNature}
                                             onChange={e => setFormData({ ...formData, jobNature: e.target.value })}
                                         >
-                                            <option value="on-site">On-Site</option>
                                             <option value="remote">Remote</option>
+                                            <option value="on-site">On-Site</option>
                                             <option value="hybrid">Hybrid</option>
                                         </select>
                                     </div>
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Job Location</label>
-                                        <input
-                                            type="text"
-                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold text-slate-700"
-                                            placeholder="City, Country"
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Workplace Address</label>
+                                        <textarea
+                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 shadow-inner min-h-[80px] resize-none text-sm"
+                                            placeholder="Full Address / Venue Details..."
                                             value={formData.location}
                                             onChange={e => setFormData({ ...formData, location: e.target.value })}
                                         />
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Salary Range (Monthly)</label>
-                                    <div className="grid grid-cols-2 gap-6">
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Salary Range (Monthly)</label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <input
+                                                type="number"
+                                                className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold shadow-inner text-sm"
+                                                placeholder="Min"
+                                                value={formData.salaryRange.min}
+                                                onChange={e => setFormData({ ...formData, salaryRange: { ...formData.salaryRange, min: e.target.value } })}
+                                            />
+                                            <input
+                                                type="number"
+                                                className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold shadow-inner text-sm"
+                                                placeholder="Max"
+                                                value={formData.salaryRange.max}
+                                                onChange={e => setFormData({ ...formData, salaryRange: { ...formData.salaryRange, max: e.target.value } })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Min Experience (Years)</label>
                                         <input
                                             type="number"
-                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold"
-                                            placeholder="Min"
-                                            value={formData.salaryRange.min}
-                                            onChange={e => setFormData({ ...formData, salaryRange: { ...formData.salaryRange, min: e.target.value } })}
-                                        />
-                                        <input
-                                            type="number"
-                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold"
-                                            placeholder="Max"
-                                            value={formData.salaryRange.max}
-                                            onChange={e => setFormData({ ...formData, salaryRange: { ...formData.salaryRange, max: e.target.value } })}
+                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold shadow-inner text-sm"
+                                            value={formData.experience}
+                                            onChange={e => setFormData({ ...formData, experience: Number(e.target.value) })}
                                         />
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Min Experience (Years)</label>
-                                    <input
-                                        type="number"
-                                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold"
-                                        placeholder="Enter years of experience"
-                                        value={formData.experience}
-                                        onChange={e => setFormData({ ...formData, experience: Number(e.target.value) })}
-                                    />
-                                </div>
-
-                                <div className="flex gap-4 pt-6">
-                                    <button onClick={() => setStep(2)} className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all shadow-xl">Continue to Content</button>
+                                <div className="flex gap-4 pt-6 border-t border-slate-50">
+                                    <button onClick={() => setStep(2)} className="w-full bg-slate-900 text-white font-black py-4 rounded-xl text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all">Continue to Content</button>
                                 </div>
                             </div>
                         )}
@@ -299,17 +306,45 @@ const CreateCircular = () => {
 
                                             {['selection', 'radio', 'checkbox'].includes(q.type) && (
                                                 <div className="space-y-4 animate-in slide-in-from-top-2">
-                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Options (one per line)</label>
-                                                    <textarea
-                                                        className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none font-medium text-sm min-h-[100px]"
-                                                        placeholder="Option 1&#10;Option 2&#10;Option 3"
-                                                        value={q.options.join('\n')}
-                                                        onChange={e => {
-                                                            const qs = [...formData.questions];
-                                                            qs[i].options = e.target.value.split('\n').filter(o => o.trim() !== '');
-                                                            setFormData({ ...formData, questions: qs });
-                                                        }}
-                                                    />
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Options</label>
+                                                        <button
+                                                            onClick={() => {
+                                                                const qs = [...formData.questions];
+                                                                qs[i].options = [...qs[i].options, ''];
+                                                                setFormData({ ...formData, questions: qs });
+                                                            }}
+                                                            className="text-[9px] font-black uppercase text-indigo-600 hover:text-indigo-700 underline tracking-widest"
+                                                        >+ Add Option</button>
+                                                    </div>
+                                                    <div className="grid gap-3">
+                                                        {q.options.map((opt, optIdx) => (
+                                                            <div key={optIdx} className="flex gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    className="flex-1 bg-white border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 shadow-inner text-sm"
+                                                                    placeholder={`Option ${optIdx + 1}`}
+                                                                    value={opt}
+                                                                    onChange={e => {
+                                                                        const qs = [...formData.questions];
+                                                                        qs[i].options[optIdx] = e.target.value;
+                                                                        setFormData({ ...formData, questions: qs });
+                                                                    }}
+                                                                />
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const qs = [...formData.questions];
+                                                                        qs[i].options = qs[i].options.filter((_, idx) => idx !== optIdx);
+                                                                        setFormData({ ...formData, questions: qs });
+                                                                    }}
+                                                                    className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                                                                >🗑️</button>
+                                                            </div>
+                                                        ))}
+                                                        {q.options.length === 0 && (
+                                                            <p className="text-[10px] text-slate-400 italic">No options added. Click 'Add Option' to begin.</p>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
