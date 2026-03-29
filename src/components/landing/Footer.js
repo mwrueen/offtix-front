@@ -1,63 +1,83 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <footer className="bg-slate-800 text-white py-15 px-6 pb-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-10 mb-10">
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white font-bold">
-                T
+    <footer className="bg-slate-950 text-white pt-32 pb-16 px-10">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-24">
+          <div className="lg:col-span-1">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black italic shadow-lg shadow-indigo-600/20">
+                O
               </div>
-              <span className="text-2xl font-bold">
+              <span className="text-2xl font-black tracking-tighter">
                 Offtix
               </span>
             </div>
-            <p className="text-slate-400 leading-relaxed">
-              Professional project management made simple. Streamline your workflow and deliver projects on time.
+            <p className="text-slate-500 leading-relaxed text-sm font-medium pr-10">
+              The high-fidelity infrastructure for mission-critical project management and workforce orchestration.
             </p>
           </div>
 
           <div>
-            <h4 className="text-base font-semibold mb-4">
-              Product
+            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-500 mb-8">
+              Protocol
             </h4>
-            <ul className="list-none p-0 m-0">
-              <li className="mb-2">
-                <a href="#" className="text-slate-400 no-underline hover:text-white transition-colors">Features</a>
+            <ul className="space-y-4">
+              <li>
+                <a href="#features" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Architecture</a>
               </li>
-              <li className="mb-2">
-                <a href="#" className="text-slate-400 no-underline hover:text-white transition-colors">Pricing</a>
+              <li>
+                <Link to="/careers" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Career Node</Link>
               </li>
-              <li className="mb-2">
-                <a href="#" className="text-slate-400 no-underline hover:text-white transition-colors">Integrations</a>
+              <li>
+                <a href="#" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Deployment Log</a>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-base font-semibold mb-4">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-500 mb-8">
               Company
             </h4>
-            <ul className="list-none p-0 m-0">
-              <li className="mb-2">
-                <a href="#" className="text-slate-400 no-underline hover:text-white transition-colors">About</a>
+            <ul className="space-y-4">
+              <li>
+                <a href="#" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">The Lab</a>
               </li>
-              <li className="mb-2">
-                <a href="#" className="text-slate-400 no-underline hover:text-white transition-colors">Contact</a>
+              <li>
+                <a href="#" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Security protocol</a>
               </li>
-              <li className="mb-2">
-                <a href="#" className="text-slate-400 no-underline hover:text-white transition-colors">Privacy</a>
+              <li>
+                <a href="#" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Support sync</a>
               </li>
             </ul>
           </div>
+
+          <div>
+            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-500 mb-8">
+              System Status
+            </h4>
+            <div className="p-6 bg-white/5 border border-white/10 rounded-3xl">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Mainframe Online</span>
+              </div>
+              <p className="text-[10px] font-bold text-slate-500 leading-relaxed">
+                All global nodes operating at optimal velocity. (0.0ms delay)
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="border-t border-slate-600 pt-8 text-center text-slate-400">
-          <p className="m-0">
-            © 2024 Offtix. All rights reserved.
+        <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
+          <p>
+            © 2026 Offtix Analytics Protocol. Built for architectural precision.
           </p>
+          <div className="flex gap-10">
+            <a href="#" className="hover:text-white transition-colors">Privacy Infrastructure</a>
+            <a href="#" className="hover:text-white transition-colors">Service Terms</a>
+          </div>
         </div>
       </div>
     </footer>

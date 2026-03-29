@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Header from './landing/Header';
+import UnifiedHeader from './layout/UnifiedHeader';
 import Hero from './landing/Hero';
 import Features from './landing/Features';
 import Footer from './landing/Footer';
@@ -10,11 +10,9 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { state } = useAuth();
 
-  // Redirect to dashboard if user is already logged in
+  // Allow page even if user is logged in
   useEffect(() => {
-    if (state.isAuthenticated && !state.loading) {
-      navigate('/dashboard');
-    }
+    // No redirect anymore
   }, [state.isAuthenticated, state.loading, navigate]);
 
   // Show loading state while checking authentication
@@ -46,10 +44,12 @@ const LandingPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Header />
-      <Hero />
-      <Features />
+    <div className="min-h-screen bg-white text-slate-900 selection:bg-indigo-50 selection:text-indigo-900">
+      <UnifiedHeader />
+      <main className="pt-20">
+        <Hero />
+        <Features />
+      </main>
       <Footer />
     </div>
   );

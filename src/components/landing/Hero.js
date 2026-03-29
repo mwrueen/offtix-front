@@ -1,174 +1,150 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import './landing.css';
 
 const Hero = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="relative min-h-screen flex items-center bg-gradient-to-br from-indigo-700 via-indigo-800 to-purple-900 pt-20 overflow-hidden text-white">
+    <section className="relative min-h-screen flex items-center bg-white pt-32 overflow-hidden text-slate-900">
       {/* Dynamic Background Elements */}
-      <div className="absolute top-[10%] -right-20 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px] animate-pulse"></div>
-      <div className="absolute -bottom-[10%] -left-20 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px] animate-pulse delay-1000"></div>
+      <div className="absolute top-[10%] -right-20 w-[600px] h-[600px] bg-indigo-50 rounded-full blur-[120px] opacity-60"></div>
+      <div className="absolute -bottom-[10%] -left-20 w-[500px] h-[500px] bg-purple-50 rounded-full blur-[100px] opacity-60"></div>
 
-      {/* Decorative Floating Mesh */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] bg-[length:40px_40px]"></div>
+      {/* Grid Pattern */}
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none bg-[radial-gradient(#6366f1_1px,transparent_1px)] bg-[length:40px_40px]"></div>
 
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <div className="max-w-7xl mx-auto px-10 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
 
           {/* Left Content Column */}
           <div className="animate-in fade-in slide-in-from-left-10 duration-1000">
-            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 mb-8 border-l-4 border-l-amber-400">
-              <span className="flex h-2 w-2 rounded-full bg-amber-400 animate-ping"></span>
-              <span className="text-xs font-black uppercase tracking-[0.2em]">Next-Gen Orchestration</span>
+            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-indigo-50 border border-indigo-100 mb-10">
+              <span className="flex h-2 w-2 rounded-full bg-indigo-600 animate-ping"></span>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-600">Enterprise Orchestration</span>
             </div>
 
-            <h1 className="text-5xl lg:text-7xl font-black leading-[1.05] tracking-tight mb-8">
-              Engineer <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-200 to-amber-400">
-                Peak Output
-              </span>
+            <h1 className="text-6xl lg:text-8xl font-black leading-[0.9] tracking-tighter mb-10 text-slate-950">
+              Architecting <br />
+              <span className="text-indigo-600">Performance.</span>
             </h1>
 
-            <p className="text-lg lg:text-xl text-indigo-100/80 leading-relaxed mb-12 max-w-xl font-medium">
-              Offtix redefines project management with a high-fidelity interface designed for architectural precision. Track, analyze, and deploy objectives with surgical accuracy.
+            <p className="text-xl text-slate-500 leading-relaxed mb-12 max-w-xl font-medium">
+              The high-fidelity infrastructure for mission-critical project management. Standardize workflows, analyze velocity, and scale operations with surgical precision.
             </p>
 
             <div className="flex flex-wrap gap-6 items-center">
               <button
                 onClick={() => navigate('/signup')}
-                className="group relative px-10 py-5 bg-white text-indigo-900 rounded-2xl font-black text-sm uppercase tracking-widest shadow-24 hover:hover:shadow-indigo-500/20 active:scale-95 transition-all overflow-hidden"
+                className="group px-10 py-5 bg-slate-900 text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-indigo-200 hover:bg-indigo-600 transition-all active:scale-95"
               >
-                <span className="relative z-10 flex items-center gap-3">
-                  Initiate Deployment
-                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-amber-100 to-white opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                Start Deployment
               </button>
 
               <button
                 onClick={() => navigate('/signin')}
-                className="px-10 py-5 bg-indigo-900/30 backdrop-blur-md border-2 border-white/10 hover:border-white/30 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95"
+                className="px-10 py-5 bg-white border-2 border-slate-100 hover:border-indigo-600 text-slate-900 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-sm"
               >
-                Access Portal
+                Access Hub
               </button>
             </div>
 
-            <div className="mt-16 flex flex-wrap gap-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-700">
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"></path></svg></div>
-                <span className="text-[10px] font-black uppercase tracking-widest">Enterprise Encrypted</span>
+            <div className="mt-20 pt-10 border-t border-slate-100 flex flex-wrap gap-12 opacity-40">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold border-b-2 border-slate-900">ISO</span>
+                <span className="text-[10px] font-black uppercase tracking-widest leading-none">Compliant<br />Infrastructure</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"></path></svg></div>
-                <span className="text-[10px] font-black uppercase tracking-widest">Multi-Node Sync</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold border-b-2 border-slate-900">E2E</span>
+                <span className="text-[10px] font-black uppercase tracking-widest leading-none">Encrypted<br />Node Sync</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-md bg-white/20 flex items-center justify-center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"></path></svg></div>
-                <span className="text-[10px] font-black uppercase tracking-widest">Zero Latency</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold border-b-2 border-slate-900">24/7</span>
+                <span className="text-[10px] font-black uppercase tracking-widest leading-none">Uptime<br />Monitoring</span>
               </div>
             </div>
           </div>
 
           {/* Right Visual Column */}
-          <div className="relative group animate-in fade-in zoom-in duration-1000 delay-200">
-            {/* Background Glows */}
-            <div className="absolute -inset-10 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+          <div className="relative animate-in fade-in zoom-in duration-1000 delay-200">
+            {/* Dashboard Mockup */}
+            <div className="bg-slate-50 p-3 rounded-[3rem] border border-slate-200 shadow-2xl relative">
+              <div className="absolute -top-6 -right-6 w-32 h-32 bg-indigo-100 rounded-full blur-[60px] opacity-50" />
 
-            {/* Dashboard Mockup Container */}
-            <div className="relative bg-slate-900/40 backdrop-blur-3xl border border-white/10 p-2 rounded-[40px] shadow-2xl scale-110 lg:scale-100 origin-center transition-transform duration-700 group-hover:scale-105">
-              <div className="bg-white rounded-[38px] overflow-hidden shadow-inner">
-                {/* Mockup Top Bar */}
-                <div className="px-8 py-5 border-b-4 border-slate-50 flex justify-between items-center bg-slate-50/50">
+              <div className="bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-inner">
+                {/* Mockup Header */}
+                <div className="px-8 py-5 flex justify-between items-center border-b border-slate-50">
                   <div className="flex gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                    <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-                    <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
+                    <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
                   </div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 italic">Project_Architecture_v1.0</div>
+                  <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Protocol-Level Intelligence</div>
                 </div>
 
-                {/* Mockup Content Grid */}
-                <div className="p-8">
-                  <div className="grid grid-cols-3 gap-6 mb-10">
-                    <div className="p-5 bg-indigo-50 rounded-[28px] border-b-4 border-indigo-100">
-                      <div className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Velocity</div>
-                      <div className="text-2xl font-black text-indigo-600 tracking-tighter">142%</div>
+                <div className="p-10 space-y-10">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="p-6 bg-slate-50 rounded-3xl border-l-[6px] border-indigo-600">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Operational Health</p>
+                      <p className="text-3xl font-black text-slate-900 tracking-tight">99.8%</p>
                     </div>
-                    <div className="p-5 bg-emerald-50 rounded-[28px] border-b-4 border-emerald-100">
-                      <div className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Uptime</div>
-                      <div className="text-2xl font-black text-emerald-600 tracking-tighter">99.9</div>
-                    </div>
-                    <div className="p-5 bg-amber-50 rounded-[28px] border-b-4 border-amber-100">
-                      <div className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">Health</div>
-                      <div className="text-2xl font-black text-amber-600 tracking-tighter">Optimal</div>
+                    <div className="p-6 bg-slate-50 rounded-3xl border-l-[6px] border-emerald-500">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Team Velocity</p>
+                      <p className="text-3xl font-black text-slate-900 tracking-tight">High</p>
                     </div>
                   </div>
 
-                  <div className="space-y-6">
-                    <div className="animate-in slide-in-from-right duration-500 delay-300">
-                      <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                        <span>Core Engine Refactor</span>
-                        <span className="text-indigo-600 font-black">88%</span>
-                      </div>
-                      <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full w-[88%] shadow-lg shadow-indigo-100"></div>
+                  <div className="space-y-6 pt-4">
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-xl font-bold border border-indigo-100 italic">P</div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-end mb-2">
+                          <span className="text-[10px] font-black uppercase text-slate-600 tracking-widest">Nexus Development</span>
+                          <span className="text-[10px] font-black text-indigo-600">84%</span>
+                        </div>
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-600 rounded-full w-[84%] shadow-lg shadow-indigo-100" />
+                        </div>
                       </div>
                     </div>
-                    <div className="animate-in slide-in-from-right duration-500 delay-500">
-                      <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                        <span>Market Intel Sync</span>
-                        <span className="text-amber-600 font-black">42%</span>
-                      </div>
-                      <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full w-[42%] shadow-lg shadow-amber-100"></div>
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-xl font-bold border border-amber-100 italic">M</div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-end mb-2">
+                          <span className="text-[10px] font-black uppercase text-slate-600 tracking-widest">Growth Analytics</span>
+                          <span className="text-[10px] font-black text-amber-600">32%</span>
+                        </div>
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-amber-500 rounded-full w-[32%] shadow-lg shadow-amber-100" />
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-12 p-6 bg-slate-900 rounded-[32px] text-white flex items-center justify-between">
+                  <div className="mt-6 p-6 bg-slate-900 rounded-[2rem] text-white flex items-center justify-between shadow-2xl transition-transform hover:scale-[1.02] cursor-pointer">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-900/50">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v20M2 12h20"></path></svg>
-                      </div>
+                      <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">📡</div>
                       <div>
-                        <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-0.5">Active Project</div>
-                        <div className="text-sm font-black tracking-tight">Nexus Prime</div>
+                        <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Sync Active</p>
+                        <p className="text-xs font-bold leading-none">Engineering Hub</p>
                       </div>
                     </div>
-                    <div className="px-4 py-2 bg-indigo-500/20 text-indigo-300 rounded-xl text-[10px] font-black uppercase tracking-widest border border-indigo-500/30">
-                      Deploying
-                    </div>
+                    <span className="px-3 py-1 bg-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest border border-white/5">0.1ms Lag</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Floating Satellite Cards */}
-            <div className="absolute -top-12 -left-12 p-6 bg-white/95 backdrop-blur-xl rounded-[32px] shadow-2xl shadow-indigo-500/20 border border-white animate-bounce-slow max-w-[180px]">
-              <div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-3 flex items-center gap-2">
-                <span className="w-4 h-[2px] bg-indigo-600"></span> Alert Flux
-              </div>
-              <div className="text-xs font-bold text-slate-600 leading-relaxed">System bottleneck detected in node 04-A. Auto-rerouting...</div>
-            </div>
-
-            <div className="absolute -bottom-8 -right-8 p-6 bg-slate-900 rounded-[32px] shadow-2xl border border-white/10 animate-float">
+            {/* Floaties */}
+            <div className="absolute -bottom-10 -left-10 p-6 bg-white border border-slate-100 rounded-3xl shadow-2xl animate-float">
               <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-full border-2 border-indigo-500 p-0.5">
-                    <div className="w-full h-full bg-slate-800 rounded-full flex items-center justify-center text-xl">👤</div>
-                  </div>
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-slate-900 rounded-full"></div>
-                </div>
+                <div className="w-10 h-10 rounded-full bg-indigo-50 border-2 border-indigo-100 flex items-center justify-center text-indigo-600 font-black">AD</div>
                 <div>
-                  <div className="text-xs font-bold">Protocol Lead</div>
-                  <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mt-0.5">Connected</div>
+                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Session</p>
+                  <p className="text-xs font-bold text-slate-900 italic">Lead Designer</p>
                 </div>
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </section>
