@@ -73,18 +73,20 @@ export const ChatProvider = ({ children }) => {
         }
     }, [fetchUnreadCounts, selectedCompanyId]);
 
+    const value = useMemo(() => ({
+        // Back-compat: components like GlobalChat expect unreadCounts.direct/projects
+        unreadCounts: selectedUnread,
+        // New: full map for per-company rendering
+        unreadCountsByCompany: unreadCounts.byCompany || {},
+        selectedUnread,
+        selectedCompanyId,
+        fetchUnreadCounts,
+        markAsRead,
+        socket
+    }), [selectedUnread, unreadCounts.byCompany, selectedCompanyId, fetchUnreadCounts, markAsRead, socket]);
+
     return (
-        <ChatContext.Provider value={{
-            // Back-compat: components like GlobalChat expect unreadCounts.direct/projects
-            unreadCounts: selectedUnread,
-            // New: full map for per-company rendering
-            unreadCountsByCompany: unreadCounts.byCompany || {},
-            selectedUnread,
-            selectedCompanyId,
-            fetchUnreadCounts,
-            markAsRead,
-            socket
-        }}>
+        <ChatContext.Provider value={value}>
             {children}
         </ChatContext.Provider>
     );

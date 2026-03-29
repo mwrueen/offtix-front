@@ -2,21 +2,42 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 
 const JobDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const toast = useToast();
+    const { state: authState } = useAuth();
+    const { isAuthenticated, user } = authState;
+
     const [circular, setCircular] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
     const [formData, setFormData] = useState({
         applicant: {
-            name: '', email: '', phone: '', experience: '', skills: ''
+            name: user?.name || '',
+            email: user?.email || '',
+            phone: user?.phone || '',
+            experience: '',
+            skills: ''
         },
         answers: []
     });
+
+    useEffect(() => {
+        if (user) {
+            setFormData(prev => ({
+                ...prev,
+                applicant: {
+                    ...prev.applicant,
+                    name: user.name || '',
+                    email: user.email || '',
+                }
+            }));
+        }
+    }, [user]);
 
     useEffect(() => {
         const fetchCircular = async () => {
@@ -26,7 +47,7 @@ const JobDetails = () => {
                 const initialAnswers = res.data.questions.map(q => ({
                     questionId: q._id,
                     questionText: q.question,
-                    answer: ''
+                    answer: q.type === 'checkbox' ? [] : ''
                 }));
                 setFormData(prev => ({ ...prev, answers: initialAnswers }));
             } catch (error) {
@@ -39,9 +60,18 @@ const JobDetails = () => {
         fetchCircular();
     }, [id]);
 
-    const handleAnswerChange = (index, value) => {
+    const handleAnswerChange = (index, value, type) => {
         const newAnswers = [...formData.answers];
-        newAnswers[index].answer = value;
+        if (type === 'checkbox') {
+            const currentAnswers = Array.isArray(newAnswers[index].answer) ? newAnswers[index].answer : [];
+            if (currentAnswers.includes(value)) {
+                newAnswers[index].answer = currentAnswers.filter(a => a !== value);
+            } else {
+                newAnswers[index].answer = [...currentAnswers, value];
+            }
+        } else {
+            newAnswers[index].answer = value;
+        }
         setFormData({ ...formData, answers: newAnswers });
     };
 
@@ -55,7 +85,10 @@ const JobDetails = () => {
                     experience: Number(formData.applicant.experience),
                     skills: formData.applicant.skills.split(',').map(s => s.trim())
                 },
-                answers: formData.answers
+                answers: formData.answers.map(a => ({
+                    ...a,
+                    answer: Array.isArray(a.answer) ? a.answer.join(', ') : a.answer
+                }))
             };
 
             await axios.post(`/api/recruitment/public/apply/${id}`, payload);
@@ -81,55 +114,83 @@ const JobDetails = () => {
     );
 
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
-            <nav className="h-20 border-b border-slate-200 flex items-center px-10 bg-white sticky top-0 z-50">
-                <Link to="/careers" className="text-slate-500 hover:text-indigo-600 flex items-center gap-2 transition-all group font-bold text-sm">
-                    <span>←</span>
-                    <span className="uppercase tracking-widest text-xs">Back to Careers</span>
-                </Link>
+        <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-32">
+            <nav className="h-24 border-b border-slate-200 flex items-center px-10 bg-white/80 backdrop-blur-md sticky top-0 z-50">
+                <div className="flex-1">
+                    <Link to="/careers" className="text-slate-500 hover:text-indigo-600 flex items-center gap-2 transition-all group font-black uppercase text-[10px] tracking-widest">
+                        <span className="text-lg">←</span>
+                        <span>Back to Careers</span>
+                    </Link>
+                </div>
+                {isAuthenticated && (
+                    <Link to="/dashboard" className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-200">
+                        Go to Dashboard
+                    </Link>
+                )}
             </nav>
 
-            <div className="max-w-[1100px] mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div className="max-w-[1200px] mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-12 gap-12">
                 {/* Content */}
-                <div className="lg:col-span-7 space-y-12">
-                    <div className="space-y-4">
-                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-md border border-indigo-100/50">
-                            {circular.role}
-                        </span>
-                        <h1 className="text-4xl font-bold tracking-tight text-slate-900 leading-tight">
+                <div className="lg:col-span-7 space-y-16">
+                    <div className="space-y-6">
+                        <div className="flex flex-wrap gap-3">
+                            <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[9px] font-black uppercase tracking-widest rounded-lg border border-indigo-100">
+                                {circular.role}
+                            </span>
+                            <span className="px-3 py-1 bg-slate-100/50 text-slate-500 text-[9px] font-black uppercase tracking-widest rounded-lg border border-slate-200">
+                                {circular.jobNature}
+                            </span>
+                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-widest rounded-lg border border-emerald-100">
+                                Active
+                            </span>
+                        </div>
+                        <h1 className="text-5xl font-black tracking-tight text-slate-900 leading-tight">
                             {circular.title}
                         </h1>
-                        <div className="flex gap-6 pt-2">
-                            <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest">
-                                <span>$</span>
-                                {circular.salaryRange.min.toLocaleString()} — {circular.salaryRange.max.toLocaleString()}
+                        <div className="flex flex-wrap gap-8 pt-4">
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Expected Salary</p>
+                                <p className="font-bold text-slate-700">${Number(circular.salaryRange.min).toLocaleString()} — ${Number(circular.salaryRange.max).toLocaleString()}</p>
                             </div>
-                            <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest">
-                                <span>⚡</span>
-                                {circular.experience}+ Years
+                            <div className="space-y-1 border-l border-slate-200 pl-8">
+                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Location</p>
+                                <p className="font-bold text-slate-700">{circular.location || 'Remote'}</p>
+                            </div>
+                            <div className="space-y-1 border-l border-slate-200 pl-8">
+                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Experience</p>
+                                <p className="font-bold text-slate-700">{circular.experience}+ Years</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="prose prose-slate max-w-none">
-                        <h2 className="text-xl font-bold text-slate-900 border-b border-slate-100 pb-2 mb-6">About the Role</h2>
-                        <div dangerouslySetInnerHTML={{ __html: circular.description }} className="text-slate-600 leading-relaxed text-lg" />
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+                        <div className="prose prose-slate max-w-none">
+                            <h2 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] border-b-2 border-slate-900 pb-2 inline-block mb-10">Role Overview</h2>
+                            <div dangerouslySetInnerHTML={{ __html: circular.description }} className="text-slate-600 leading-relaxed text-lg font-medium" />
+                        </div>
+
+                        {circular.benefits && (
+                            <div className="pt-10">
+                                <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] border-b-2 border-slate-900 pb-2 inline-block mb-10">Perks & Benefits</h3>
+                                <div dangerouslySetInnerHTML={{ __html: circular.benefits }} className="text-slate-600 leading-relaxed text-lg font-medium" />
+                            </div>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
-                        <div className="bg-white rounded-2xl p-8 border border-slate-200">
-                            <h3 className="text-xs font-black text-indigo-500 mb-6 uppercase tracking-widest">Required Skills</h3>
+                        <div className="bg-white rounded-3xl p-10 border border-slate-200 shadow-sm">
+                            <h3 className="text-[10px] font-black text-indigo-600 mb-8 uppercase tracking-[0.2em]">Mandatory Competencies</h3>
                             <div className="flex flex-wrap gap-2">
                                 {circular.mandatorySkills.map((s, i) => (
-                                    <span key={i} className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold border border-indigo-100">#{s}</span>
+                                    <span key={i} className="px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100">#{s}</span>
                                 ))}
                             </div>
                         </div>
-                        <div className="bg-white rounded-2xl p-8 border border-slate-200">
-                            <h3 className="text-xs font-black text-slate-400 mb-6 uppercase tracking-widest">Optional Skills</h3>
+                        <div className="bg-white rounded-3xl p-10 border border-slate-200 shadow-sm">
+                            <h3 className="text-[10px] font-black text-slate-400 mb-8 uppercase tracking-[0.2em]">Bonus Competencies</h3>
                             <div className="flex flex-wrap gap-2">
                                 {circular.niceToHaveSkills.map((s, i) => (
-                                    <span key={i} className="px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-xs font-bold border border-slate-100">#{s}</span>
+                                    <span key={i} className="px-4 py-2 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100">#{s}</span>
                                 ))}
                             </div>
                         </div>
@@ -138,84 +199,124 @@ const JobDetails = () => {
 
                 {/* Apply Form */}
                 <div className="lg:col-span-5">
-                    <div className="sticky top-32">
-                        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl shadow-slate-200/50">
-                            <h2 className="text-2xl font-bold tracking-tight mb-8">Apply for this position</h2>
-                            <form onSubmit={handleApply} className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Full Name</label>
-                                    <input
-                                        type="text" required
-                                        className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:border-indigo-600 focus:bg-white outline-none font-medium transition-all"
-                                        placeholder="Your Name"
-                                        value={formData.applicant.name}
-                                        onChange={(e) => setFormData({ ...formData, applicant: { ...formData.applicant, name: e.target.value } })}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Email Address</label>
-                                    <input
-                                        type="email" required
-                                        className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:border-indigo-600 focus:bg-white outline-none font-medium transition-all"
-                                        placeholder="email@example.com"
-                                        value={formData.applicant.email}
-                                        onChange={(e) => setFormData({ ...formData, applicant: { ...formData.applicant, email: e.target.value } })}
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
+                    <div className="sticky top-36">
+                        <div className="bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-2xl shadow-slate-200/40 space-y-10">
+                            <div>
+                                <h2 className="text-3xl font-black tracking-tight text-slate-900">Application Entry</h2>
+                                <p className="text-slate-400 text-xs font-bold mt-1 uppercase tracking-widest">Complete the profile below</p>
+                            </div>
+
+                            <form onSubmit={handleApply} className="space-y-8">
+                                <div className="space-y-6">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Phone</label>
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Full Name</label>
                                         <input
                                             type="text" required
-                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-medium"
-                                            value={formData.applicant.phone}
-                                            onChange={(e) => setFormData({ ...formData, applicant: { ...formData.applicant, phone: e.target.value } })}
+                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold transition-all text-slate-700 shadow-inner"
+                                            placeholder="Your Name"
+                                            value={formData.applicant.name}
+                                            onChange={(e) => setFormData({ ...formData, applicant: { ...formData.applicant, name: e.target.value } })}
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Years of Exp</label>
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Email Connection</label>
                                         <input
-                                            type="number" required
-                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-medium text-center"
-                                            value={formData.applicant.experience}
-                                            onChange={(e) => setFormData({ ...formData, applicant: { ...formData.applicant, experience: e.target.value } })}
+                                            type="email" required
+                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold transition-all text-slate-700 shadow-inner"
+                                            placeholder="email@example.com"
+                                            value={formData.applicant.email}
+                                            onChange={(e) => setFormData({ ...formData, applicant: { ...formData.applicant, email: e.target.value } })}
                                         />
                                     </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Skills (Comma separated)</label>
-                                    <textarea
-                                        required
-                                        className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:border-indigo-600 outline-none font-medium min-h-[80px] resize-none"
-                                        placeholder="React, Node, etc."
-                                        value={formData.applicant.skills}
-                                        onChange={(e) => setFormData({ ...formData, applicant: { ...formData.applicant, skills: e.target.value } })}
-                                    />
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Contact No</label>
+                                            <input
+                                                type="text" required
+                                                className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold text-slate-700 shadow-inner"
+                                                value={formData.applicant.phone}
+                                                onChange={(e) => setFormData({ ...formData, applicant: { ...formData.applicant, phone: e.target.value } })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Total Exp</label>
+                                            <input
+                                                type="number" required
+                                                className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold text-slate-700 shadow-inner"
+                                                value={formData.applicant.experience}
+                                                onChange={(e) => setFormData({ ...formData, applicant: { ...formData.applicant, experience: e.target.value } })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Key Proficiencies (Comma split)</label>
+                                        <textarea
+                                            required
+                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold min-h-[100px] resize-none text-slate-700 shadow-inner"
+                                            placeholder="React, Node, etc."
+                                            value={formData.applicant.skills}
+                                            onChange={(e) => setFormData({ ...formData, applicant: { ...formData.applicant, skills: e.target.value } })}
+                                        />
+                                    </div>
                                 </div>
 
                                 {circular.questions.length > 0 && (
-                                    <div className="pt-4 space-y-6">
-                                        <h3 className="text-xs font-bold uppercase tracking-widest text-indigo-600">Additional Questions</h3>
+                                    <div className="pt-8 border-t border-slate-100 space-y-8">
+                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Prescreening Assessment</h3>
                                         {circular.questions.map((q, qIndex) => (
-                                            <div key={qIndex} className="space-y-2">
-                                                <label className="text-sm font-bold text-slate-700 leading-snug">{q.question}</label>
-                                                {['text', 'long-text'].includes(q.type) ? (
-                                                    <textarea
-                                                        required={q.required}
-                                                        className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-medium min-h-[100px]"
+                                            <div key={qIndex} className="space-y-4">
+                                                <label className="text-xs font-black text-slate-700 leading-snug uppercase tracking-tight">{q.question}</label>
+
+                                                {q.type === 'text' && (
+                                                    <input
+                                                        type="text" required={q.required}
+                                                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold text-slate-700 shadow-inner"
                                                         value={formData.answers[qIndex]?.answer}
                                                         onChange={(e) => handleAnswerChange(qIndex, e.target.value)}
                                                     />
-                                                ) : (
+                                                )}
+
+                                                {q.type === 'long-text' && (
+                                                    <textarea
+                                                        required={q.required}
+                                                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold min-h-[120px] text-slate-700 shadow-inner"
+                                                        value={formData.answers[qIndex]?.answer}
+                                                        onChange={(e) => handleAnswerChange(qIndex, e.target.value)}
+                                                    />
+                                                )}
+
+                                                {q.type === 'selection' && (
                                                     <select
                                                         required={q.required}
-                                                        className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-xs"
+                                                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold text-slate-700 shadow-inner"
                                                         value={formData.answers[qIndex]?.answer}
                                                         onChange={(e) => handleAnswerChange(qIndex, e.target.value)}
                                                     >
-                                                        <option value="">Select Option</option>
+                                                        <option value="">Select Response...</option>
                                                         {q.options.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
                                                     </select>
+                                                )}
+
+                                                {q.type === 'radio' && (
+                                                    <div className="space-y-2">
+                                                        {q.options.map((opt, i) => (
+                                                            <label key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-all border border-slate-200">
+                                                                <input type="radio" name={`q-${qIndex}`} required={q.required} value={opt} checked={formData.answers[qIndex]?.answer === opt} onChange={(e) => handleAnswerChange(qIndex, e.target.value)} className="w-4 h-4 text-indigo-600" />
+                                                                <span className="text-xs font-bold text-slate-600">{opt}</span>
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {q.type === 'checkbox' && (
+                                                    <div className="space-y-2">
+                                                        {q.options.map((opt, i) => (
+                                                            <label key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-all border border-slate-200">
+                                                                <input type="checkbox" checked={formData.answers[qIndex]?.answer?.includes(opt)} onChange={() => handleAnswerChange(qIndex, opt, 'checkbox')} className="w-4 h-4 rounded text-indigo-600" />
+                                                                <span className="text-xs font-bold text-slate-600">{opt}</span>
+                                                            </label>
+                                                        ))}
+                                                    </div>
                                                 )}
                                             </div>
                                         ))}
@@ -225,9 +326,9 @@ const JobDetails = () => {
                                 <button
                                     type="submit"
                                     disabled={submitting}
-                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-widest"
+                                    className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-black py-5 rounded-[2rem] shadow-2xl shadow-slate-300 transition-all flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em]"
                                 >
-                                    {submitting ? 'Submitting...' : 'Submit Application'}
+                                    {submitting ? 'Transmitting Data...' : 'Submit Final Application'}
                                 </button>
                             </form>
                         </div>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { useCompany } from './CompanyContext';
 import { getCookie } from '../utils/cookies';
@@ -225,7 +225,7 @@ export const PermissionsProvider = ({ children }) => {
         return permissionKeys.some(key => hasPermission(key));
     }, [hasPermission]);
 
-    const value = {
+    const value = useMemo(() => ({
         permissions,
         isOwner,
         isSuperAdmin,
@@ -236,7 +236,10 @@ export const PermissionsProvider = ({ children }) => {
         hasAnyPermission,
         refetchPermissions: fetchPermissions,
         PERMISSIONS,
-    };
+    }), [
+        permissions, isOwner, isSuperAdmin, companyData, loading,
+        hasPermission, hasAllPermissions, hasAnyPermission, fetchPermissions
+    ]);
 
     return (
         <PermissionsContext.Provider value={value}>

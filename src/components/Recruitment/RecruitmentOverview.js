@@ -148,9 +148,20 @@ const RecruitmentOverview = () => {
                                             View Applicants
                                             <svg className="w-3.5 h-3.5 group-hover/link:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                                         </Link>
-                                        <button className="p-3 bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:shadow-xl rounded-xl transition-all">
+                                        <Link
+                                            to={`/careers/${circular._id}`}
+                                            target="_blank"
+                                            className="p-3 bg-slate-50 border border-slate-100 text-slate-400 hover:text-indigo-600 rounded-xl transition-all"
+                                            title="View Public Listing"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                        </Link>
+                                        <Link
+                                            to={`/recruitment/circulars/${circular._id}/edit`}
+                                            className="p-3 bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:shadow-xl rounded-xl transition-all"
+                                        >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-5M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
-                                        </button>
+                                        </Link>
                                     </div>
                                 </div>
                             ))}

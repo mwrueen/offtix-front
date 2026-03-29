@@ -44,6 +44,7 @@ import CreateCircular from './components/Recruitment/CreateCircular';
 import ApplicantsList from './components/Recruitment/ApplicantsList';
 import PublicCareers from './components/Recruitment/PublicCareers';
 import JobDetails from './components/Recruitment/JobDetails';
+import EditCircular from './components/Recruitment/EditCircular';
 
 
 function App() {
@@ -203,6 +204,11 @@ function App() {
                         <Route path="/recruitment/circulars/:id/applicants" element={
                           <ProtectedRoute>
                             <ApplicantsList />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/recruitment/circulars/:id/edit" element={
+                          <ProtectedRoute>
+                            <EditCircular />
                           </ProtectedRoute>
                         } />
                       </Routes>

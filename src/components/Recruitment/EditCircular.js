@@ -1,32 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import Layout from '../Layout';
-import PageHeader from '../PageHeader';
 import SkillsSelector from './SkillsSelector';
 import { useCompanyFilter } from '../../hooks/useCompanyFilter';
 import { useToast } from '../../context/ToastContext';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 import { getCookie } from '../../utils/cookies';
 
-const CreateCircular = () => {
+const EditCircular = () => {
+    const { id } = useParams();
     const navigate = useNavigate();
     const { selectedCompany } = useCompanyFilter();
     const toast = useToast();
     const { hasPermission } = usePermissions();
     const [step, setStep] = useState(1);
     const [designations, setDesignations] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const canManageRecruitment = hasPermission(PERMISSIONS.MANAGE_RECRUITMENT);
-
-    useEffect(() => {
-        if (!canManageRecruitment && selectedCompany?.id !== 'personal') {
-            toast.showToast('You do not have permission to manage recruitment', 'error');
-            navigate('/recruitment');
-        }
-    }, [canManageRecruitment, navigate, selectedCompany]);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -39,18 +33,48 @@ const CreateCircular = () => {
         benefits: '',
         mandatorySkills: [],
         niceToHaveSkills: [],
-        questions: []
+        questions: [],
+        status: 'active'
     });
 
     useEffect(() => {
-        if (selectedCompany?.id && selectedCompany.id !== 'personal') {
-            fetchDesignations();
-            // Pre-fill location if company address exists
-            if (selectedCompany.address) {
-                setFormData(prev => ({ ...prev, location: selectedCompany.address }));
-            }
+        if (!canManageRecruitment && selectedCompany?.id !== 'personal') {
+            toast.showToast('You do not have permission to manage recruitment', 'error');
+            navigate('/recruitment');
         }
-    }, [selectedCompany]);
+    }, [canManageRecruitment, navigate, selectedCompany]);
+
+    useEffect(() => {
+        const fetchDetails = async () => {
+            try {
+                const res = await axios.get(`/api/recruitment/public/circulars/${id}`);
+                const data = res.data;
+                setFormData({
+                    title: data.title || '',
+                    role: data.role || '',
+                    salaryRange: data.salaryRange || { min: '', max: '' },
+                    experience: data.experience || 0,
+                    description: data.description || '',
+                    jobNature: data.jobNature || 'on-site',
+                    location: data.location || '',
+                    benefits: data.benefits || '',
+                    mandatorySkills: data.mandatorySkills || [],
+                    niceToHaveSkills: data.niceToHaveSkills || [],
+                    questions: data.questions || [],
+                    status: data.status || 'active'
+                });
+                if (selectedCompany?.id && selectedCompany.id !== 'personal') {
+                    fetchDesignations();
+                }
+            } catch (error) {
+                toast.showToast('Failed to load circular data', 'error');
+                navigate('/recruitment');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchDetails();
+    }, [id]);
 
     const fetchDesignations = async () => {
         try {
@@ -64,6 +88,19 @@ const CreateCircular = () => {
         }
     };
 
+    const handleSubmit = async () => {
+        try {
+            const token = getCookie('authToken');
+            await axios.put(`/api/recruitment/circulars/${id}`, formData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.showToast('Job circular updated successfully', 'success');
+            navigate('/recruitment');
+        } catch (error) {
+            toast.showToast(error.response?.data?.message || 'Failed to update circular', 'error');
+        }
+    };
+
     const addQuestion = () => {
         setFormData({
             ...formData,
@@ -71,18 +108,27 @@ const CreateCircular = () => {
         });
     };
 
-    const handleSubmit = async () => {
+    const handleDelete = async () => {
+        if (!window.confirm('Are you sure you want to delete this job circular?')) return;
         try {
             const token = getCookie('authToken');
-            await axios.post('/api/recruitment/circulars', formData, {
+            await axios.delete(`/api/recruitment/circulars/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            toast.showToast('Job circular published successfully', 'success');
+            toast.showToast('Circular deleted', 'success');
             navigate('/recruitment');
         } catch (error) {
-            toast.showToast(error.response?.data?.message || 'Failed to publish circular', 'error');
+            toast.showToast('Failed to delete', 'error');
         }
     };
+
+    if (loading) return (
+        <Layout>
+            <div className="flex h-screen items-center justify-center">
+                <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+        </Layout>
+    );
 
     const steps = [
         { id: 1, label: 'Job Info' },
@@ -95,41 +141,60 @@ const CreateCircular = () => {
             <div className="max-w-[1200px] mx-auto py-10 px-4 space-y-8 pb-32">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Create Job Circular</h1>
-                        <p className="text-slate-500 text-sm italic">Hiring for {selectedCompany?.name}</p>
+                        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Edit Job Circular</h1>
+                        <p className="text-slate-500 text-sm italic">Modifying {formData.title}</p>
                     </div>
 
-                    <div className="flex bg-slate-100 p-1.5 rounded-2xl shadow-inner border border-slate-200">
-                        {steps.map(s => (
-                            <button
-                                key={s.id}
-                                onClick={() => setStep(s.id)}
-                                className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${step === s.id ? 'bg-white text-indigo-600 shadow-xl border border-slate-100 scale-105' : 'text-slate-400 hover:text-slate-600'}`}
-                            >
-                                {s.label}
-                            </button>
-                        ))}
+                    <div className="flex items-center gap-6">
+                        <div className="flex bg-slate-100 p-1.5 rounded-2xl shadow-inner border border-slate-200">
+                            {steps.map(s => (
+                                <button
+                                    key={s.id}
+                                    onClick={() => setStep(s.id)}
+                                    className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${step === s.id ? 'bg-white text-indigo-600 shadow-xl border border-slate-100 scale-105' : 'text-slate-400 hover:text-slate-600'}`}
+                                >
+                                    {s.label}
+                                </button>
+                            ))}
+                        </div>
+                        <button onClick={handleDelete} className="p-3 bg-white text-rose-500 border border-slate-100 rounded-xl hover:bg-rose-50 hover:border-rose-100 transition-all shadow-sm">
+                            🗑️
+                        </button>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    {/* Form Section */}
                     <div className="lg:col-span-8 bg-white border border-slate-200 rounded-3xl shadow-sm p-10 space-y-10">
                         {step === 1 && (
                             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2">
                                 <div className="grid grid-cols-2 gap-8">
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Internal Job Title</label>
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Job Title</label>
                                         <input
                                             type="text"
-                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-bold text-slate-700"
-                                            placeholder="e.g. Senior Frontend Engineer"
+                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none transition-all font-bold text-slate-700 shadow-inner"
                                             value={formData.title}
                                             onChange={e => setFormData({ ...formData, title: e.target.value })}
                                         />
                                     </div>
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Designation Level</label>
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Status</label>
+                                        <select
+                                            className="w-full bg-slate-100/50 border border-slate-200 p-4 rounded-2xl outline-none font-black text-[10px] uppercase tracking-widest text-indigo-600 shadow-inner"
+                                            value={formData.status}
+                                            onChange={e => setFormData({ ...formData, status: e.target.value })}
+                                        >
+                                            <option value="active">Active Listing</option>
+                                            <option value="closed">Closed / Ended</option>
+                                            <option value="paused">Paused / Hidden</option>
+                                            <option value="draft">Internal Draft</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-8">
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Position Level</label>
                                         <select
                                             className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold text-slate-700"
                                             value={formData.role}
@@ -138,6 +203,15 @@ const CreateCircular = () => {
                                             <option value="">Select Level</option>
                                             {designations.map(d => <option key={d._id} value={d.name}>{d.name}</option>)}
                                         </select>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Required Exp (Years)</label>
+                                        <input
+                                            type="number"
+                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold"
+                                            value={formData.experience}
+                                            onChange={e => setFormData({ ...formData, experience: Number(e.target.value) })}
+                                        />
                                     </div>
                                 </div>
 
@@ -155,11 +229,10 @@ const CreateCircular = () => {
                                         </select>
                                     </div>
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Job Location</label>
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Location</label>
                                         <input
                                             type="text"
                                             className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold text-slate-700"
-                                            placeholder="City, Country"
                                             value={formData.location}
                                             onChange={e => setFormData({ ...formData, location: e.target.value })}
                                         />
@@ -167,18 +240,18 @@ const CreateCircular = () => {
                                 </div>
 
                                 <div className="space-y-4">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Salary Range (Monthly)</label>
-                                    <div className="grid grid-cols-2 gap-6">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Salary Range</label>
+                                    <div className="grid grid-cols-2 gap-6 p-6 bg-slate-50 rounded-3xl border border-slate-100">
                                         <input
                                             type="number"
-                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold"
+                                            className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none font-bold shadow-sm"
                                             placeholder="Min"
                                             value={formData.salaryRange.min}
                                             onChange={e => setFormData({ ...formData, salaryRange: { ...formData.salaryRange, min: e.target.value } })}
                                         />
                                         <input
                                             type="number"
-                                            className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold"
+                                            className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none font-bold shadow-sm"
                                             placeholder="Max"
                                             value={formData.salaryRange.max}
                                             onChange={e => setFormData({ ...formData, salaryRange: { ...formData.salaryRange, max: e.target.value } })}
@@ -186,25 +259,14 @@ const CreateCircular = () => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Min Experience (Years)</label>
-                                    <input
-                                        type="number"
-                                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold"
-                                        placeholder="Enter years of experience"
-                                        value={formData.experience}
-                                        onChange={e => setFormData({ ...formData, experience: Number(e.target.value) })}
-                                    />
-                                </div>
-
-                                <div className="flex gap-4 pt-6">
-                                    <button onClick={() => setStep(2)} className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all shadow-xl">Continue to Content</button>
+                                <div className="flex gap-4 pt-10 border-t border-slate-50">
+                                    <button onClick={() => setStep(2)} className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all">Next: Content & Perks</button>
                                 </div>
                             </div>
                         )}
 
                         {step === 2 && (
-                            <div className="space-y-8 animate-in fade-in">
+                            <div className="space-y-10 animate-in fade-in">
                                 <div className="grid grid-cols-1 gap-12">
                                     <div className="space-y-4">
                                         <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Job Description</label>
@@ -213,19 +275,19 @@ const CreateCircular = () => {
                                         </div>
                                     </div>
                                     <div className="space-y-4">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Perks & Benefits</label>
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Benefits & Compensation</label>
                                         <div className="h-64 mb-12">
-                                            <ReactQuill theme="snow" placeholder="Healthcare, Bonuses, Flexible hours..." value={formData.benefits} onChange={val => setFormData({ ...formData, benefits: val })} className="h-48" />
+                                            <ReactQuill theme="snow" value={formData.benefits} onChange={val => setFormData({ ...formData, benefits: val })} className="h-48" />
                                         </div>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-16 border-t border-slate-50">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-16 border-t border-slate-100">
                                     <SkillsSelector label="Mandatory Skills" selectedSkills={formData.mandatorySkills} setSelectedSkills={skills => setFormData({ ...formData, mandatorySkills: skills })} />
                                     <SkillsSelector label="Nice to Have" selectedSkills={formData.niceToHaveSkills} setSelectedSkills={skills => setFormData({ ...formData, niceToHaveSkills: skills })} />
                                 </div>
                                 <div className="flex gap-4 pt-10">
                                     <button onClick={() => setStep(1)} className="px-10 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-slate-100">Back</button>
-                                    <button onClick={() => setStep(3)} className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl">Review & Screening</button>
+                                    <button onClick={() => setStep(3)} className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl">Assessment & Screening</button>
                                 </div>
                             </div>
                         )}
@@ -234,20 +296,18 @@ const CreateCircular = () => {
                             <div className="space-y-10 animate-in fade-in">
                                 <div className="flex items-center justify-between border-b border-slate-100 pb-6">
                                     <div className="space-y-1">
-                                        <h3 className="font-bold text-slate-900">Screening Questions</h3>
-                                        <p className="text-xs text-slate-400 font-medium italic">Add questions to pre-filter candidates</p>
+                                        <h3 className="font-bold text-slate-900">Custom Screening</h3>
+                                        <p className="text-xs text-slate-400 font-medium italic">Define required information from candidates</p>
                                     </div>
-                                    <button
-                                        onClick={addQuestion}
-                                        className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100"
-                                    >+ New</button>
+                                    <button onClick={addQuestion} className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 font-bold">+ New Question</button>
                                 </div>
+
                                 <div className="grid gap-6">
                                     {formData.questions.map((q, i) => (
-                                        <div key={i} className="p-8 bg-slate-50 rounded-3xl border border-slate-100 space-y-6 relative group border-l-[6px] border-l-indigo-400 hover:border-l-indigo-600 transition-all">
+                                        <div key={i} className="p-8 bg-slate-50/50 rounded-3xl border border-slate-100 space-y-6 relative group border-l-[6px] border-l-slate-300 hover:border-l-indigo-500 transition-all">
                                             <button
                                                 onClick={() => setFormData({ ...formData, questions: formData.questions.filter((_, idx) => idx !== i) })}
-                                                className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center bg-white border border-slate-200 text-rose-500 rounded-lg hover:bg-rose-50 shadow-sm opacity-0 group-hover:opacity-100 transition-all"
+                                                className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center bg-white border border-slate-200 text-rose-500 rounded-lg hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-all"
                                             >×</button>
 
                                             <div className="space-y-3">
@@ -267,7 +327,7 @@ const CreateCircular = () => {
 
                                             <div className="grid grid-cols-2 gap-6">
                                                 <div className="space-y-3">
-                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Answer Type</label>
+                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Selection Type</label>
                                                     <select
                                                         className="w-full bg-white border border-slate-200 p-3 rounded-xl font-bold text-[10px] uppercase text-slate-500 outline-none"
                                                         value={q.type}
@@ -277,15 +337,15 @@ const CreateCircular = () => {
                                                             setFormData({ ...formData, questions: qs });
                                                         }}
                                                     >
-                                                        <option value="text">Short Input</option>
+                                                        <option value="text">Text Input</option>
                                                         <option value="long-text">Long Answer</option>
-                                                        <option value="selection">Selection List</option>
+                                                        <option value="selection">Dropdown List</option>
                                                         <option value="radio">Radio Buttons</option>
                                                         <option value="checkbox">Checkboxes</option>
                                                     </select>
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Requirement</label>
+                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Requirement</label>
                                                     <div className="flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-xl">
                                                         <input type="checkbox" className="w-4 h-4 rounded-md text-indigo-600" checked={q.required} onChange={e => {
                                                             const qs = [...formData.questions];
@@ -297,12 +357,11 @@ const CreateCircular = () => {
                                                 </div>
                                             </div>
 
-                                            {['selection', 'radio', 'checkbox'].includes(q.type) && (
-                                                <div className="space-y-4 animate-in slide-in-from-top-2">
-                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Options (one per line)</label>
+                                            {['radio', 'checkbox', 'selection'].includes(q.type) && (
+                                                <div className="space-y-3 animate-in fade-in">
+                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Options (One per line)</label>
                                                     <textarea
-                                                        className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none font-medium text-sm min-h-[100px]"
-                                                        placeholder="Option 1&#10;Option 2&#10;Option 3"
+                                                        className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none font-medium text-sm min-h-[100px] shadow-inner"
                                                         value={q.options.join('\n')}
                                                         onChange={e => {
                                                             const qs = [...formData.questions];
@@ -316,43 +375,50 @@ const CreateCircular = () => {
                                     ))}
                                 </div>
                                 <div className="flex gap-4 pt-10 border-t border-slate-100">
-                                    <button onClick={() => setStep(2)} className="px-10 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-[10px] uppercase tracking-widest">Back</button>
-                                    <button onClick={handleSubmit} className="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-indigo-100 hover:scale-[1.02] transition-all">Publish Circular</button>
+                                    <button onClick={() => setStep(2)} className="px-10 py-4 bg-slate-50 text-slate-400 font-bold rounded-2xl text-[10px] uppercase tracking-widest">Back</button>
+                                    <button onClick={handleSubmit} className="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-indigo-100 hover:bg-indigo-500 transition-all">Update Circular</button>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Simple Preview Card */}
                     <div className="lg:col-span-4 space-y-8">
-                        <div className="sticky top-10 space-y-8">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-4">Live Preview</p>
-                            <div className="bg-white border border-slate-200 rounded-[2.5rem] p-10 shadow-xl shadow-slate-200/50 space-y-8">
-                                <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-2xl font-black text-white shadow-lg rotate-3 overflow-hidden">
-                                    {formData.title ? formData.title.charAt(0) : '?'}
-                                </div>
-                                <div className="space-y-2">
-                                    <h2 className="text-2xl font-black text-slate-900 leading-tight">{formData.title || 'Job Title'}</h2>
-                                    <p className="text-indigo-600 font-black uppercase text-[10px] tracking-[0.2em]">{formData.role || 'Position'}</p>
-                                </div>
-                                <div className="flex flex-wrap gap-3">
-                                    <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-lg border border-slate-200">{formData.jobNature}</span>
-                                    {formData.location && <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-lg border border-slate-200">📍 {formData.location}</span>}
-                                </div>
-                                <div className="grid grid-cols-2 gap-6 pt-6 border-t border-slate-100">
-                                    <div className="space-y-1">
-                                        <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Experience</p>
-                                        <p className="font-bold text-sm">{formData.experience}y+</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Salary</p>
-                                        <p className="font-bold text-sm tracking-tight">
-                                            {formData.salaryRange.min ? `$${Number(formData.salaryRange.min).toLocaleString()}` : '—'}
-                                        </p>
-                                    </div>
-                                </div>
-                                <button className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-600 transition-all">Apply Now</button>
+                        <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white space-y-8 shadow-2xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -mr-16 -mt-16" />
+                            <div className="space-y-2">
+                                <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg ${formData.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'}`}>
+                                    {formData.status}
+                                </span>
+                                <h2 className="text-2xl font-bold leading-tight">{formData.title || 'Untitled Job'}</h2>
+                                <p className="text-indigo-400 font-bold uppercase text-[10px] tracking-[0.2em]">{formData.role || 'Designation'}</p>
                             </div>
+                            <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/10">
+                                <div className="space-y-1">
+                                    <p className="text-[9px] font-black uppercase text-white/30 tracking-widest">Experience</p>
+                                    <p className="font-bold text-sm tracking-tight">{formData.experience}y+</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[9px] font-black uppercase text-white/30 tracking-widest">Salary</p>
+                                    <p className="font-bold text-sm tracking-tight">${Number(formData.salaryRange.min).toLocaleString()} - ${Number(formData.salaryRange.max).toLocaleString()}</p>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <p className="text-[9px] font-black uppercase text-white/30 tracking-widest">Skills Overview</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {formData.mandatorySkills.slice(0, 4).map((s, i) => (
+                                        <span key={i} className="px-2 py-1 bg-white/5 rounded-md text-[9px] font-bold border border-white/10">#{s}</span>
+                                    ))}
+                                    {formData.mandatorySkills.length > 4 && <span className="text-[9px] font-bold text-white/30">+{formData.mandatorySkills.length - 4} more</span>}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-emerald-50 border border-emerald-100 p-8 rounded-3xl space-y-4">
+                            <div className="flex items-center gap-3">
+                                <span className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">✓</span>
+                                <h4 className="text-xs font-black text-emerald-900 uppercase tracking-widest">Up-to-Date</h4>
+                            </div>
+                            <p className="text-xs text-emerald-700 leading-relaxed font-medium">Updating this circular will immediately reflect on the careers page. Check recruitment stats to see how changes affect your applicant flow.</p>
                         </div>
                     </div>
                 </div>
@@ -361,4 +427,4 @@ const CreateCircular = () => {
     );
 };
 
-export default CreateCircular;
+export default EditCircular;

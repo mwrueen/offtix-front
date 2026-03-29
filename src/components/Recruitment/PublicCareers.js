@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const PublicCareers = () => {
+    const { state } = useAuth();
+    const { isAuthenticated } = state;
     const [circulars, setCirculars] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -28,10 +31,16 @@ const PublicCareers = () => {
                     <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-black italic shadow-lg shadow-indigo-600/20">O</div>
                     <span className="text-xl font-bold tracking-tighter">Offtix <span className="text-indigo-400">Careers</span></span>
                 </div>
-                <div className="flex space-x-8 text-sm font-medium text-slate-400">
+                <div className="flex space-x-8 text-sm font-medium text-slate-400 items-center">
                     <Link to="/" className="hover:text-white transition-colors">Home</Link>
-                    <Link to="/signin" className="hover:text-white transition-colors">Sign In</Link>
-                    <Link to="/signup" className="px-4 py-2 bg-indigo-600/10 text-indigo-400 border border-indigo-400/20 rounded-lg hover:bg-indigo-600/20 transition-all">Create Account</Link>
+                    {isAuthenticated ? (
+                        <Link to="/dashboard" className="px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20">Go to Dashboard</Link>
+                    ) : (
+                        <>
+                            <Link to="/signin" className="hover:text-white transition-colors">Sign In</Link>
+                            <Link to="/signup" className="px-4 py-2 bg-indigo-600/10 text-indigo-400 border border-indigo-400/20 rounded-lg hover:bg-indigo-600/20 transition-all">Create Account</Link>
+                        </>
+                    )}
                 </div>
             </nav>
 
@@ -85,25 +94,25 @@ const PublicCareers = () => {
                                     <div className="flex flex-wrap gap-4 text-sm text-slate-500 font-medium">
                                         <div className="flex items-center">
                                             <svg className="w-4 h-4 mr-1.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                            {circular.salaryRange.min.toLocaleString()} - {circular.salaryRange.max.toLocaleString()} {circular.salaryRange.currency}
+                                            ${circular.salaryRange.min.toLocaleString()} - ${circular.salaryRange.max.toLocaleString()}
                                         </div>
-                                        <div className="flex items-center">
+                                        <div className="flex items-center border-l border-slate-700/50 pl-4">
                                             <svg className="w-4 h-4 mr-1.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                                            {circular.experience}+ Years Exp.
+                                            {circular.experience}+ Years
                                         </div>
-                                        <div className="flex items-center">
+                                        <div className="flex items-center border-l border-slate-700/50 pl-4">
                                             <svg className="w-4 h-4 mr-1.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                                            Remote / On-site
+                                            <span className="capitalize">{circular.jobNature}</span> {circular.location && `• ${circular.location}`}
                                         </div>
                                     </div>
                                 </div>
                                 <div className="mt-8 md:mt-0 flex items-center">
-                                    <div className="hidden md:flex flex-wrap gap-2 mr-10 justify-end">
+                                    <div className="hidden md:flex flex-wrap gap-2 mr-10 justify-end max-w-[300px]">
                                         {circular.mandatorySkills.slice(0, 3).map((s, i) => (
-                                            <span key={i} className="px-3 py-1 bg-slate-900 border border-slate-700/50 rounded-lg text-xs font-bold text-slate-500 group-hover:text-indigo-400 group-hover:border-indigo-400/20 transition-all">{s}</span>
+                                            <span key={i} className="px-3 py-1 bg-slate-900 border border-slate-700/50 rounded-lg text-xs font-bold text-slate-500 group-hover:text-indigo-400 group-hover:border-indigo-400/20 transition-all uppercase tracking-widest">{s}</span>
                                         ))}
                                     </div>
-                                    <div className="h-14 w-14 bg-indigo-600 rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-all shadow-xl shadow-indigo-600/20 overflow-hidden relative">
+                                    <div className="h-14 w-14 bg-indigo-600 rounded-2xl flex items-center justify-center transform group-hover:rotate-12 transition-all shadow-xl shadow-indigo-600/20 overflow-hidden relative border border-indigo-400/50">
                                         <svg className="w-6 h-6 text-white stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                                         <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                     </div>

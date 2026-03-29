@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { getCookie } from '../utils/cookies';
@@ -133,18 +133,20 @@ export const SocketProvider = ({ children }) => {
 
     const unreadCount = unreadCountsByCompany[selectedCompanyId] || 0;
 
+    const value = useMemo(() => ({
+        socket: socketRef.current,
+        isConnected,
+        notifications,
+        unreadCount,
+        unreadCountsByCompany,
+        dismissNotification,
+        clearUnreadCount,
+        decrementUnread,
+        fetchUnreadCount
+    }), [isConnected, notifications, unreadCount, unreadCountsByCompany, dismissNotification, clearUnreadCount, decrementUnread, fetchUnreadCount]);
+
     return (
-        <SocketContext.Provider value={{
-            socket: socketRef.current,
-            isConnected,
-            notifications,
-            unreadCount,
-            unreadCountsByCompany,
-            dismissNotification,
-            clearUnreadCount,
-            decrementUnread,
-            fetchUnreadCount
-        }}>
+        <SocketContext.Provider value={value}>
             {children}
         </SocketContext.Provider>
     );

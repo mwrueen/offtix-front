@@ -94,16 +94,16 @@ const Layout = ({ children }) => {
 
   // Preload counts for all companies so the dropdown can show badges
   useEffect(() => {
-    if (!companyIds.length) return;
+    if (!companyIds.length || !isCompanyDropdownOpen) return;
     companyIds.forEach((id) => {
       fetchUnreadCount(id);
       fetchUnreadCounts(id);
     });
-  }, [companyIds, fetchUnreadCount, fetchUnreadCounts]);
+  }, [companyIds, fetchUnreadCount, fetchUnreadCounts, isCompanyDropdownOpen]);
 
   // Preload pending my-tasks counts per company for the dropdown
   useEffect(() => {
-    if (!companyIds.length) return;
+    if (!companyIds.length || !isCompanyDropdownOpen) return;
 
     let cancelled = false;
     const run = async () => {
@@ -134,7 +134,7 @@ const Layout = ({ children }) => {
 
     run();
     return () => { cancelled = true; };
-  }, [companyIds]);
+  }, [companyIds, isCompanyDropdownOpen]);
 
   const handleLogout = () => { dispatch({ type: 'LOGOUT' }); navigate('/'); };
 
