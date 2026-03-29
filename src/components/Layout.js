@@ -85,27 +85,30 @@ const Layout = ({ children }) => {
   useEffect(() => { if (location.pathname === '/notifications') clearUnreadCount(); }, [location.pathname, clearUnreadCount]);
   useEffect(() => { fetchUnreadCount(selectedCompanyId); }, [fetchUnreadCount, selectedCompanyId]);
 
+  // Memoized company IDs to avoid re-triggering effects on every layout render
+  const companyIds = React.useMemo(() => {
+    const companies = Array.isArray(companyState.companies) ? companyState.companies : [];
+    if (!companies.length) return ['personal'];
+    return [...new Set(['personal', ...companies.map(c => c.id).filter(Boolean)])];
+  }, [companyState.companies]);
+
   // Preload counts for all companies so the dropdown can show badges
   useEffect(() => {
-    const companies = Array.isArray(companyState.companies) ? companyState.companies : [];
-    if (!companies.length) return;
-    const ids = [...new Set(['personal', ...companies.map(c => c.id).filter(Boolean)])];
-    ids.forEach((id) => {
+    if (!companyIds.length) return;
+    companyIds.forEach((id) => {
       fetchUnreadCount(id);
       fetchUnreadCounts(id);
     });
-  }, [companyState.companies, fetchUnreadCount, fetchUnreadCounts]);
+  }, [companyIds, fetchUnreadCount, fetchUnreadCounts]);
 
   // Preload pending my-tasks counts per company for the dropdown
   useEffect(() => {
-    const companies = Array.isArray(companyState.companies) ? companyState.companies : [];
-    const ids = [...new Set(['personal', ...companies.map(c => c.id).filter(Boolean)])];
-    if (!ids.length) return;
+    if (!companyIds.length) return;
 
     let cancelled = false;
     const run = async () => {
       const results = await Promise.allSettled(
-        ids.map(async (id) => {
+        companyIds.map(async (id) => {
           const res = await myTasksAPI.getAll(id);
           const tasks = res.data || [];
           const pendingCount = tasks.filter(t => {
@@ -131,7 +134,7 @@ const Layout = ({ children }) => {
 
     run();
     return () => { cancelled = true; };
-  }, [companyState.companies]);
+  }, [companyIds]);
 
   const handleLogout = () => { dispatch({ type: 'LOGOUT' }); navigate('/'); };
 

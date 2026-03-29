@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useToast } from '../../context/ToastContext';
 
 const JobDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const toast = useToast();
     const [circular, setCircular] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -21,7 +23,6 @@ const JobDetails = () => {
             try {
                 const res = await axios.get(`/api/recruitment/public/circulars/${id}`);
                 setCircular(res.data);
-                // Initialize answers array
                 const initialAnswers = res.data.questions.map(q => ({
                     questionId: q._id,
                     questionText: q.question,
@@ -30,6 +31,7 @@ const JobDetails = () => {
                 setFormData(prev => ({ ...prev, answers: initialAnswers }));
             } catch (error) {
                 console.error('Error fetching circular:', error);
+                toast.showToast('Job details not found.', 'error');
             } finally {
                 setLoading(false);
             }
@@ -57,177 +59,161 @@ const JobDetails = () => {
             };
 
             await axios.post(`/api/recruitment/public/apply/${id}`, payload);
-            alert('Application submitted successfully!');
+            toast.showToast('Application submitted successfully!', 'success');
             navigate('/careers');
         } catch (error) {
-            console.error('Error applying:', error);
-            alert(error.response?.data?.message || 'Failed to submit application');
+            toast.showToast(error.response?.data?.message || 'Submission failed', 'error');
         } finally {
             setSubmitting(false);
         }
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+        <div className="min-h-screen bg-white flex items-center justify-center">
+            <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
         </div>
     );
 
     if (!circular) return (
-        <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">
-            Job not found.
+        <div className="min-h-screen bg-white flex items-center justify-center text-slate-400 font-bold uppercase tracking-widest italic">
+            Job Not Found
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-slate-900 text-slate-100 font-sans">
-            <nav className="h-20 border-b border-white/5 flex items-center px-10 sticky top-0 bg-slate-900/80 backdrop-blur-md z-50">
-                <Link to="/careers" className="text-slate-400 hover:text-white flex items-center space-x-2 transition-all">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                    <span className="font-medium text-sm">Back to Careers</span>
+        <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
+            <nav className="h-20 border-b border-slate-200 flex items-center px-10 bg-white sticky top-0 z-50">
+                <Link to="/careers" className="text-slate-500 hover:text-indigo-600 flex items-center gap-2 transition-all group font-bold text-sm">
+                    <span>←</span>
+                    <span className="uppercase tracking-widest text-xs">Back to Careers</span>
                 </Link>
             </nav>
 
-            <div className="max-w-6xl mx-auto px-10 py-20 grid grid-cols-1 lg:grid-cols-3 gap-16">
-                {/* Job Info */}
-                <div className="lg:col-span-2 space-y-12">
-                    <div>
-                        <div className="flex items-center space-x-3 mb-6">
-                            <span className="px-3 py-1 bg-indigo-500/10 text-indigo-400 text-xs font-bold uppercase tracking-widest rounded-lg border border-indigo-400/20">
-                                {circular.role}
-                            </span>
-                            <span className="text-slate-600 text-xs font-bold uppercase tracking-widest">• Engineering Team</span>
-                        </div>
-                        <h1 className="text-6xl font-black tracking-tight leading-tight mb-8">{circular.title}</h1>
-                        <div className="flex flex-wrap gap-8 text-slate-400 font-medium border-y border-white/5 py-8">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] uppercase tracking-widest text-slate-600 mb-1">Salary Range</span>
-                                <span className="text-slate-200">${circular.salaryRange.min.toLocaleString()} - {circular.salaryRange.max.toLocaleString()}</span>
+            <div className="max-w-[1100px] mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-12 gap-12">
+                {/* Content */}
+                <div className="lg:col-span-7 space-y-12">
+                    <div className="space-y-4">
+                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-md border border-indigo-100/50">
+                            {circular.role}
+                        </span>
+                        <h1 className="text-4xl font-bold tracking-tight text-slate-900 leading-tight">
+                            {circular.title}
+                        </h1>
+                        <div className="flex gap-6 pt-2">
+                            <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest">
+                                <span>$</span>
+                                {circular.salaryRange.min.toLocaleString()} — {circular.salaryRange.max.toLocaleString()}
                             </div>
-                            <div className="flex flex-col">
-                                <span className="text-[10px] uppercase tracking-widest text-slate-600 mb-1">Experience</span>
-                                <span className="text-slate-200">{circular.experience}+ Years</span>
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-[10px] uppercase tracking-widest text-slate-600 mb-1">Location</span>
-                                <span className="text-slate-200">Remote / Bangladesh</span>
+                            <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest">
+                                <span>⚡</span>
+                                {circular.experience}+ Years
                             </div>
                         </div>
                     </div>
 
-                    <div className="prose prose-invert prose-indigo max-w-none">
-                        <h2 className="text-3xl font-bold mb-6 text-slate-200">Role Overview</h2>
-                        <div dangerouslySetInnerHTML={{ __html: circular.description }} className="text-slate-400 leading-relaxed text-lg" />
+                    <div className="prose prose-slate max-w-none">
+                        <h2 className="text-xl font-bold text-slate-900 border-b border-slate-100 pb-2 mb-6">About the Role</h2>
+                        <div dangerouslySetInnerHTML={{ __html: circular.description }} className="text-slate-600 leading-relaxed text-lg" />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        <div>
-                            <h3 className="text-xl font-bold bg-indigo-500/10 text-indigo-400 p-3 mb-6 rounded-xl border border-indigo-500/20 shadow-lg shadow-indigo-500/10">Mandatory Skills</h3>
-                            <ul className="space-y-4">
-                                {circular.mandatorySkills.map((skill, i) => (
-                                    <li key={i} className="flex items-center text-slate-400 text-lg font-medium group">
-                                        <div className="w-2 h-2 bg-indigo-500 rounded-full mr-4 group-hover:scale-150 transition-transform"></div>
-                                        {skill}
-                                    </li>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
+                        <div className="bg-white rounded-2xl p-8 border border-slate-200">
+                            <h3 className="text-xs font-black text-indigo-500 mb-6 uppercase tracking-widest">Required Skills</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {circular.mandatorySkills.map((s, i) => (
+                                    <span key={i} className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold border border-indigo-100">#{s}</span>
                                 ))}
-                            </ul>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="text-xl font-bold bg-slate-800/10 text-slate-300 p-3 mb-6 rounded-xl border border-slate-700/50">Nice to Have</h3>
-                            <ul className="space-y-4">
-                                {circular.niceToHaveSkills.map((skill, i) => (
-                                    <li key={i} className="flex items-center text-slate-500 text-lg font-medium group">
-                                        <div className="w-2 h-2 bg-slate-700 rounded-full mr-4 group-hover:bg-indigo-400/50 transition-colors"></div>
-                                        {skill}
-                                    </li>
+                        <div className="bg-white rounded-2xl p-8 border border-slate-200">
+                            <h3 className="text-xs font-black text-slate-400 mb-6 uppercase tracking-widest">Optional Skills</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {circular.niceToHaveSkills.map((s, i) => (
+                                    <span key={i} className="px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-xs font-bold border border-slate-100">#{s}</span>
                                 ))}
-                            </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Apply Form */}
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-5">
                     <div className="sticky top-32">
-                        <div className="bg-slate-800/50 p-8 rounded-[2rem] border border-slate-700/50 backdrop-blur-xl shadow-2xl overflow-hidden relative group">
-                            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent"></div>
-                            <h2 className="text-2xl font-black mb-8 tracking-tight">Apply for this role</h2>
-                            <form onSubmit={handleApply} className="space-y-6 relative">
+                        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl shadow-slate-200/50">
+                            <h2 className="text-2xl font-bold tracking-tight mb-8">Apply for this position</h2>
+                            <form onSubmit={handleApply} className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Full Name</label>
+                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Full Name</label>
                                     <input
                                         type="text" required
-                                        className="w-full bg-slate-900/50 border border-slate-700 p-3.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium placeholder:text-slate-700"
-                                        placeholder="Enter your name"
+                                        className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:border-indigo-600 focus:bg-white outline-none font-medium transition-all"
+                                        placeholder="Your Name"
                                         value={formData.applicant.name}
                                         onChange={(e) => setFormData({ ...formData, applicant: { ...formData.applicant, name: e.target.value } })}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Email Address</label>
+                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Email Address</label>
                                     <input
                                         type="email" required
-                                        className="w-full bg-slate-900/50 border border-slate-700 p-3.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium placeholder:text-slate-700"
-                                        placeholder="name@example.com"
+                                        className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:border-indigo-600 focus:bg-white outline-none font-medium transition-all"
+                                        placeholder="email@example.com"
                                         value={formData.applicant.email}
                                         onChange={(e) => setFormData({ ...formData, applicant: { ...formData.applicant, email: e.target.value } })}
                                     />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Phone</label>
+                                        <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Phone</label>
                                         <input
                                             type="text" required
-                                            className="w-full bg-slate-900/50 border border-slate-700 p-3.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium placeholder:text-slate-700"
-                                            placeholder="+880..."
+                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-medium"
                                             value={formData.applicant.phone}
                                             onChange={(e) => setFormData({ ...formData, applicant: { ...formData.applicant, phone: e.target.value } })}
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Years Exp.</label>
+                                        <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Years of Exp</label>
                                         <input
                                             type="number" required
-                                            className="w-full bg-slate-900/50 border border-slate-700 p-3.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium placeholder:text-slate-700"
-                                            placeholder="0"
+                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-medium text-center"
                                             value={formData.applicant.experience}
                                             onChange={(e) => setFormData({ ...formData, applicant: { ...formData.applicant, experience: e.target.value } })}
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Your Skills (comma separated)</label>
+                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Skills (Comma separated)</label>
                                     <textarea
                                         required
-                                        className="w-full bg-slate-900/50 border border-slate-700 p-3.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium placeholder:text-slate-700 min-h-[80px]"
-                                        placeholder="React, Node.js..."
+                                        className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:border-indigo-600 outline-none font-medium min-h-[80px] resize-none"
+                                        placeholder="React, Node, etc."
                                         value={formData.applicant.skills}
                                         onChange={(e) => setFormData({ ...formData, applicant: { ...formData.applicant, skills: e.target.value } })}
                                     />
                                 </div>
 
-                                {/* Custom Questions */}
                                 {circular.questions.length > 0 && (
-                                    <div className="pt-8 border-t border-white/5 space-y-6">
-                                        <h3 className="text-sm font-bold uppercase tracking-widest text-indigo-400">Additional Questions</h3>
+                                    <div className="pt-4 space-y-6">
+                                        <h3 className="text-xs font-bold uppercase tracking-widest text-indigo-600">Additional Questions</h3>
                                         {circular.questions.map((q, qIndex) => (
-                                            <div key={qIndex} className="space-y-3">
-                                                <label className="text-sm font-medium text-slate-300">{q.question}</label>
+                                            <div key={qIndex} className="space-y-2">
+                                                <label className="text-sm font-bold text-slate-700 leading-snug">{q.question}</label>
                                                 {['text', 'long-text'].includes(q.type) ? (
                                                     <textarea
                                                         required={q.required}
-                                                        className="w-full bg-slate-900/50 border border-slate-700 p-3.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium min-h-[100px]"
+                                                        className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-medium min-h-[100px]"
                                                         value={formData.answers[qIndex]?.answer}
                                                         onChange={(e) => handleAnswerChange(qIndex, e.target.value)}
                                                     />
                                                 ) : (
                                                     <select
                                                         required={q.required}
-                                                        className="w-full bg-slate-900/50 border border-slate-700 p-3.5 rounded-xl focus:outline-none"
+                                                        className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-xs"
                                                         value={formData.answers[qIndex]?.answer}
                                                         onChange={(e) => handleAnswerChange(qIndex, e.target.value)}
                                                     >
-                                                        <option value="">Select an option</option>
+                                                        <option value="">Select Option</option>
                                                         {q.options.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
                                                     </select>
                                                 )}
@@ -239,20 +225,10 @@ const JobDetails = () => {
                                 <button
                                     type="submit"
                                     disabled={submitting}
-                                    className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:scale-[1.02] active:scale-[0.98] text-white font-black py-4 rounded-2xl shadow-2xl shadow-indigo-600/30 transition-all flex items-center justify-center space-x-3 text-lg mt-10 disabled:opacity-50"
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-widest"
                                 >
-                                    {submitting ? (
-                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                                    ) : (
-                                        <>
-                                            <span>Submit Application</span>
-                                            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                                        </>
-                                    )}
+                                    {submitting ? 'Submitting...' : 'Submit Application'}
                                 </button>
-                                <div className="text-center">
-                                    <p className="text-[10px] text-slate-600 font-bold uppercase tracking-[0.2em]">By applying, you agree to our recruitment terms</p>
-                                </div>
                             </form>
                         </div>
                     </div>

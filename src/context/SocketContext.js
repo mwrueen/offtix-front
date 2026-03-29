@@ -16,13 +16,14 @@ export const SocketProvider = ({ children }) => {
     const [unreadCountsByCompany, setUnreadCountsByCompany] = useState({});
 
     // Fetch initial unread count from DB (notifications + pending invitations)
-    const fetchUnreadCount = useCallback(async (companyId = selectedCompanyId) => {
+    const fetchUnreadCount = useCallback(async (companyId) => {
+        if (!companyId) return;
         try {
             const token = getCookie('authToken');
             if (!token) return;
 
             const headers = { Authorization: `Bearer ${token}` };
-            if (companyId && companyId !== 'personal') headers['X-Company-Id'] = companyId;
+            if (companyId !== 'personal') headers['X-Company-Id'] = companyId;
 
             const [notifRes, invRes] = await Promise.all([
                 fetch('/api/notifications', { headers }),
@@ -40,7 +41,7 @@ export const SocketProvider = ({ children }) => {
             }
             setUnreadCountsByCompany(prev => ({ ...prev, [companyId]: count }));
         } catch (_) { }
-    }, [selectedCompanyId]);
+    }, []);
 
     useEffect(() => {
         const token = getCookie('authToken');

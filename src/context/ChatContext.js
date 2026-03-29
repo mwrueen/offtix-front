@@ -17,8 +17,8 @@ export const ChatProvider = ({ children }) => {
     const [unreadCounts, setUnreadCounts] = useState({ byCompany: {} });
     const [socket, setSocket] = useState(null);
 
-    const fetchUnreadCounts = useCallback(async (companyId = selectedCompanyId) => {
-        if (!authState.isAuthenticated) return;
+    const fetchUnreadCounts = useCallback(async (companyId) => {
+        if (!companyId) return;
         try {
             const res = await chatAPI.getUnreadCounts(companyId);
             const payload = res.data || { direct: {}, projects: {}, total: 0 };
@@ -32,7 +32,7 @@ export const ChatProvider = ({ children }) => {
         } catch (err) {
             console.error('Error fetching unread counts:', err);
         }
-    }, [authState.isAuthenticated, selectedCompanyId]);
+    }, []);
 
     const selectedUnread = useMemo(() => {
         return (unreadCounts.byCompany && unreadCounts.byCompany[selectedCompanyId]) || { direct: {}, projects: {}, total: 0 };

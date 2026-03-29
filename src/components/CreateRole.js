@@ -36,7 +36,8 @@ const CreateRole = () => {
     viewProjectAnalytics: false,
     createTask: false,
     editTask: false,
-    deleteTask: false
+    deleteTask: false,
+    manageRecruitment: false
   });
 
   const [loading, setLoading] = useState(false);
@@ -134,6 +135,13 @@ const CreateRole = () => {
         { key: 'createTask', label: 'Add Deliverables', description: 'Create new tasks within projects.' },
         { key: 'editTask', label: 'Update Status', description: 'Modify task progress and deadlines.' },
         { key: 'deleteTask', label: 'Remove Tasks', description: 'Delete individual task entries.' }
+      ]
+    },
+    {
+      title: 'Recruitment & Hiring',
+      icon: '🎯',
+      permissions: [
+        { key: 'manageRecruitment', label: 'Manage Recruitment', description: 'Access to job creation and applicant lifecycle.' }
       ]
     }
   ];

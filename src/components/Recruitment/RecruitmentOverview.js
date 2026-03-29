@@ -2,129 +2,155 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import Layout from '../Layout';
+import PageHeader from '../PageHeader';
+import { useCompanyFilter } from '../../hooks/useCompanyFilter';
+import { getCookie } from '../../utils/cookies';
 
 const RecruitmentOverview = () => {
-    const [circulars, setCirculars] = useState([]);
-    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const { selectedCompany } = useCompanyFilter();
+    const [circulars, setCirculars] = useState([]);
+    const [stats, setStats] = useState({
+        totalCirculars: 0,
+        totalApplicants: 0,
+        shortlisted: 0,
+        interviewed: 0,
+        hired: 0
+    });
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchCirculars = async () => {
+        const fetchData = async () => {
+            if (!selectedCompany?.id || selectedCompany.id === 'personal') {
+                setLoading(false);
+                return;
+            }
+
+            setLoading(true);
             try {
-                const token = localStorage.getItem('token');
-                const res = await axios.get('/api/recruitment/public/circulars', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setCirculars(res.data);
+                const token = getCookie('authToken');
+                const headers = { Authorization: `Bearer ${token}` };
+
+                const [circRes, statsRes] = await Promise.all([
+                    axios.get('/api/recruitment/public/circulars', { headers }),
+                    axios.get('/api/recruitment/stats', { headers })
+                ]);
+
+                setCirculars(circRes.data);
+                setStats(statsRes.data);
             } catch (error) {
-                console.error('Error fetching circulars:', error);
+                console.error('Error fetching recruitment data:', error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchCirculars();
-    }, []);
+        fetchData();
+    }, [selectedCompany?.id]);
+
+    const statsConfig = [
+        { label: 'Active Jobs', value: stats.totalCirculars },
+        { label: 'Applicants', value: stats.totalApplicants },
+        { label: 'Shortlisted', value: stats.shortlisted },
+        { label: 'Hiring Rate', value: stats.totalApplicants > 0 ? `${Math.round((stats.hired / stats.totalApplicants) * 100)}%` : '0%' }
+    ];
+
+    if (!selectedCompany || selectedCompany.id === 'personal') {
+        return (
+            <Layout>
+                <div className="max-w-4xl mx-auto my-32 bg-white rounded-3xl p-32 shadow-2xl border border-slate-100 text-center space-y-10">
+                    <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-5xl shadow-inner border border-slate-100">🏢</div>
+                    <div className="space-y-4">
+                        <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Organization Required</h2>
+                        <p className="text-slate-500 max-w-sm mx-auto leading-relaxed font-medium">Please select a company to manage recruitment.</p>
+                    </div>
+                </div>
+            </Layout>
+        );
+    }
 
     return (
         <Layout>
-            <div className="space-y-8 pb-12">
-                {/* Header Section */}
-                <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-3xl shadow-inner border border-indigo-100">🎯</div>
-                        <div>
-                            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Recruitment Center</h1>
-                            <p className="text-slate-500 font-medium">Manage your job circulars and streamline your hiring process.</p>
-                        </div>
-                    </div>
-                    <Link
-                        to="/recruitment/create"
-                        className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200 flex items-center gap-2"
-                    >
-                        <span className="text-xl">+</span> Create New Circular
-                    </Link>
-                </div>
+            <div className="max-w-[1240px] mx-auto py-12 px-6 space-y-12 animate-in fade-in pb-40">
+                <PageHeader
+                    title="Recruitment"
+                    subtitle={`Hiring operations for ${selectedCompany.name}`}
+                    icon="🎯"
+                    stats={statsConfig}
+                    actions={
+                        <Link
+                            to="/recruitment/create"
+                            className="inline-flex px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl group items-center gap-3"
+                        >
+                            + Post New Job
+                        </Link>
+                    }
+                />
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow group">
-                        <div className="flex justify-between items-start">
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Active</p>
-                            <span className="text-xl group-hover:scale-125 transition-transform duration-300">💼</span>
+                <div className="space-y-8">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
+                            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Active Circulars</h2>
                         </div>
-                        <p className="text-4xl font-bold text-slate-800 mt-2 tracking-tighter">
-                            {loading ? <span className="text-slate-200 animate-pulse">---</span> : circulars.filter(c => c.status === 'active').length}
-                        </p>
-                    </div>
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow group">
-                        <div className="flex justify-between items-start">
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Applicants</p>
-                            <span className="text-xl group-hover:scale-125 transition-transform duration-300">👥</span>
+                        <div className="flex gap-2">
+                            {['All Roles', 'Recent'].map(t => (
+                                <button key={t} className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all">{t}</button>
+                            ))}
                         </div>
-                        <p className="text-4xl font-bold text-slate-800 mt-2 tracking-tighter">--</p>
                     </div>
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow group">
-                        <div className="flex justify-between items-start">
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Interviews</p>
-                            <span className="text-xl group-hover:scale-125 transition-transform duration-300">🗓️</span>
-                        </div>
-                        <p className="text-4xl font-bold text-slate-800 mt-2 tracking-tighter">--</p>
-                    </div>
-                </div>
-
-                {/* Main Section */}
-                <div className="space-y-6">
-                    <h2 className="text-lg font-bold text-slate-800 px-1 flex items-center gap-2">
-                        <span className="w-1.5 h-6 bg-indigo-500 rounded-full" />
-                        Active Circulars
-                    </h2>
 
                     {loading ? (
-                        <div className="flex justify-center p-20 bg-white rounded-3xl border border-slate-200 shadow-sm">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {[1, 2, 3].map(i => <div key={i} className="h-80 bg-white rounded-2xl border border-slate-100 animate-pulse shadow-sm" />)}
                         </div>
                     ) : circulars.length === 0 ? (
-                        <div className="p-20 text-center bg-white border-2 border-dashed border-slate-200 rounded-3xl">
-                            <div className="text-5xl mb-4 opacity-20">📁</div>
-                            <p className="text-slate-400 text-lg font-medium mb-4">No active job circulars found.</p>
-                            <Link to="/recruitment/create" className="px-6 py-2 bg-slate-100 text-slate-600 rounded-lg font-bold text-sm hover:bg-slate-200 transition-colors">
-                                Create your first one
+                        <div className="py-24 text-center bg-white border border-slate-200 rounded-3xl space-y-6">
+                            <div className="text-6xl opacity-20">📂</div>
+                            <div className="space-y-2">
+                                <h3 className="text-xl font-bold text-slate-900 tracking-tight">No active circulars</h3>
+                                <p className="text-slate-400 font-medium max-w-xs mx-auto text-sm">Post a new job to start receiving applications.</p>
+                            </div>
+                            <Link to="/recruitment/create" className="inline-flex px-8 py-3 bg-indigo-50 text-indigo-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">
+                                Post Job
                             </Link>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {circulars.map(circular => (
-                                <div key={circular._id} className="bg-white border border-slate-200 p-6 rounded-3xl hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col shadow-sm group">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="min-w-0">
-                                            <span className="inline-block px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 rounded-md border border-indigo-100 mb-2">
+                                <div key={circular._id} className="bg-white border border-slate-200 p-8 rounded-3xl hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col group relative overflow-hidden backdrop-blur-sm shadow-sm">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className="space-y-3">
+                                            <span className="px-3 py-1 text-[9px] font-black uppercase tracking-[0.1em] bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100/50">
                                                 {circular.role}
                                             </span>
-                                            <h3 className="text-xl font-bold text-slate-800 group-hover:text-indigo-600 transition-colors truncate">{circular.title}</h3>
+                                            <h3 className="text-xl font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors h-[50px] flex items-center">
+                                                {circular.title}
+                                            </h3>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4 flex-grow py-4 border-y border-slate-50 mt-2">
-                                        <div className="flex items-center text-slate-500 text-sm font-medium">
-                                            <span className="mr-3 opacity-60">💰</span>
-                                            <span>${circular.salaryRange.min.toLocaleString()} - {circular.salaryRange.max.toLocaleString()}</span>
+                                    <div className="space-y-3 py-6 border-y border-slate-50 my-2">
+                                        <div className="flex items-center text-slate-500 font-bold text-[10px] uppercase tracking-widest gap-4">
+                                            <span className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold border border-emerald-100 italic">P</span>
+                                            ${circular.salaryRange.min.toLocaleString()} — ${circular.salaryRange.max.toLocaleString()}
                                         </div>
-                                        <div className="flex items-center text-slate-500 text-sm font-medium">
-                                            <span className="mr-3 opacity-60">⏳</span>
-                                            <span>Min {circular.experience} Years Exp.</span>
+                                        <div className="flex items-center text-slate-500 font-bold text-[10px] uppercase tracking-widest gap-4">
+                                            <span className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold border border-indigo-100 italic">E</span>
+                                            Min {circular.experience} years exp
                                         </div>
                                     </div>
 
-                                    <div className="mt-6 flex justify-between items-center bg-slate-50/50 -mx-6 -mb-6 p-4 rounded-b-3xl border-t border-slate-100">
-                                        <Link to={`/recruitment/circulars/${circular._id}/applicants`} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1">
+                                    <div className="mt-6 flex items-center justify-between gap-3">
+                                        <Link
+                                            to={`/recruitment/circulars/${circular._id}/applicants`}
+                                            className="grow py-3 bg-slate-900 text-white text-center rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg flex items-center justify-center gap-2 group/link"
+                                        >
                                             View Applicants
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                            <svg className="w-3.5 h-3.5 group-hover/link:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                                         </Link>
-                                        <div className="flex gap-2">
-                                            <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-all border border-transparent hover:border-slate-200 shadow-sm hover:shadow">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-5M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
-                                            </button>
-                                        </div>
+                                        <button className="p-3 bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:shadow-xl rounded-xl transition-all">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-5M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
+                                        </button>
                                     </div>
                                 </div>
                             ))}
