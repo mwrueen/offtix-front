@@ -104,15 +104,15 @@ const CreateCircular = () => {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Create Job Circular</h1>
-                        <p className="text-slate-500 text-sm italic">Hiring for {selectedCompany?.name}</p>
+                        <p className="text-slate-400 text-sm font-medium">Hiring for {selectedCompany?.name || 'Offtix Organization'}</p>
                     </div>
 
-                    <div className="flex bg-slate-100 p-1.5 rounded-2xl shadow-inner border border-slate-200">
+                    <div className="flex bg-slate-100/50 p-1 rounded-xl border border-slate-200">
                         {steps.map(s => (
                             <button
                                 key={s.id}
                                 onClick={() => setStep(s.id)}
-                                className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${step === s.id ? 'bg-white text-indigo-600 shadow-xl border border-slate-100 scale-105' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${step === s.id ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                             >
                                 {s.label}
                             </button>
@@ -127,7 +127,7 @@ const CreateCircular = () => {
                             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Internal Job Title</label>
+                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Internal Job Title</label>
                                         <input
                                             type="text"
                                             className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none transition-all font-bold text-slate-700 shadow-inner text-sm"
@@ -137,7 +137,7 @@ const CreateCircular = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Designation Level</label>
+                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Designation Level</label>
                                         <select
                                             className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 text-sm"
                                             value={formData.role}
@@ -151,7 +151,7 @@ const CreateCircular = () => {
 
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Job Nature</label>
+                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Job Nature</label>
                                         <select
                                             className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 text-sm"
                                             value={formData.jobNature}
@@ -163,7 +163,7 @@ const CreateCircular = () => {
                                         </select>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Workplace Address</label>
+                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Workplace Address</label>
                                         <textarea
                                             className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 shadow-inner min-h-[80px] resize-none text-sm"
                                             placeholder="Full Address / Venue Details..."
@@ -175,7 +175,7 @@ const CreateCircular = () => {
 
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Salary Range (Monthly)</label>
+                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Salary Range (Monthly)</label>
                                         <div className="grid grid-cols-2 gap-3">
                                             <input
                                                 type="number"
@@ -194,7 +194,7 @@ const CreateCircular = () => {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Min Experience (Years)</label>
+                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Min Experience (Years)</label>
                                         <input
                                             type="number"
                                             className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold shadow-inner text-sm"
@@ -205,7 +205,7 @@ const CreateCircular = () => {
                                 </div>
 
                                 <div className="flex gap-4 pt-6 border-t border-slate-50">
-                                    <button onClick={() => setStep(2)} className="w-full bg-slate-900 text-white font-black py-4 rounded-xl text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all">Continue to Content</button>
+                                    <button onClick={() => setStep(2)} className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all">Continue to Content</button>
                                 </div>
                             </div>
                         )}
@@ -214,13 +214,13 @@ const CreateCircular = () => {
                             <div className="space-y-8 animate-in fade-in">
                                 <div className="grid grid-cols-1 gap-12">
                                     <div className="space-y-4">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Job Description</label>
+                                        <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Job Description</label>
                                         <div className="h-64 mb-12">
                                             <ReactQuill theme="snow" value={formData.description} onChange={val => setFormData({ ...formData, description: val })} className="h-48" />
                                         </div>
                                     </div>
                                     <div className="space-y-4">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Perks & Benefits</label>
+                                        <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Perks & Benefits</label>
                                         <div className="h-64 mb-12">
                                             <ReactQuill theme="snow" placeholder="Healthcare, Bonuses, Flexible hours..." value={formData.benefits} onChange={val => setFormData({ ...formData, benefits: val })} className="h-48" />
                                         </div>
@@ -231,8 +231,8 @@ const CreateCircular = () => {
                                     <SkillsSelector label="Nice to Have" selectedSkills={formData.niceToHaveSkills} setSelectedSkills={skills => setFormData({ ...formData, niceToHaveSkills: skills })} />
                                 </div>
                                 <div className="flex gap-4 pt-10">
-                                    <button onClick={() => setStep(1)} className="px-10 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-slate-100">Back</button>
-                                    <button onClick={() => setStep(3)} className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl">Review & Screening</button>
+                                    <button onClick={() => setStep(1)} className="px-10 py-4 bg-slate-50 text-slate-500 rounded-2xl font-bold text-[10px] uppercase tracking-widest border border-slate-100">Back</button>
+                                    <button onClick={() => setStep(3)} className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl">Review & Screening</button>
                                 </div>
                             </div>
                         )}
@@ -246,7 +246,7 @@ const CreateCircular = () => {
                                     </div>
                                     <button
                                         onClick={addQuestion}
-                                        className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100"
+                                        className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100"
                                     >+ New</button>
                                 </div>
                                 <div className="grid gap-6">
@@ -258,7 +258,7 @@ const CreateCircular = () => {
                                             >×</button>
 
                                             <div className="space-y-3">
-                                                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Question Text</label>
+                                                <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Question Text</label>
                                                 <input
                                                     type="text"
                                                     className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none font-bold text-slate-700 shadow-inner"
@@ -274,7 +274,7 @@ const CreateCircular = () => {
 
                                             <div className="grid grid-cols-2 gap-6">
                                                 <div className="space-y-3">
-                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Answer Type</label>
+                                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Answer Type</label>
                                                     <select
                                                         className="w-full bg-white border border-slate-200 p-3 rounded-xl font-bold text-[10px] uppercase text-slate-500 outline-none"
                                                         value={q.type}
@@ -292,14 +292,14 @@ const CreateCircular = () => {
                                                     </select>
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Requirement</label>
+                                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Requirement</label>
                                                     <div className="flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-xl">
                                                         <input type="checkbox" className="w-4 h-4 rounded-md text-indigo-600" checked={q.required} onChange={e => {
                                                             const qs = [...formData.questions];
                                                             qs[i].required = e.target.checked;
                                                             setFormData({ ...formData, questions: qs });
                                                         }} />
-                                                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Mandatory</span>
+                                                        <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Mandatory</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -351,42 +351,45 @@ const CreateCircular = () => {
                                     ))}
                                 </div>
                                 <div className="flex gap-4 pt-10 border-t border-slate-100">
-                                    <button onClick={() => setStep(2)} className="px-10 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-[10px] uppercase tracking-widest">Back</button>
-                                    <button onClick={handleSubmit} className="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-indigo-100 hover:scale-[1.02] transition-all">Publish Circular</button>
+                                    <button onClick={() => setStep(2)} className="px-10 py-4 bg-slate-50 text-slate-500 rounded-xl font-bold text-xs">Back</button>
+                                    <button onClick={handleSubmit} className="flex-1 bg-indigo-600 text-white py-4 rounded-xl font-bold text-xs shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">Publish Circular</button>
                                 </div>
                             </div>
                         )}
                     </div>
 
                     {/* Simple Preview Card */}
-                    <div className="lg:col-span-4 space-y-8">
-                        <div className="sticky top-10 space-y-8">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-4">Live Preview</p>
-                            <div className="bg-white border border-slate-200 rounded-[2.5rem] p-10 shadow-xl shadow-slate-200/50 space-y-8">
-                                <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-2xl font-black text-white shadow-lg rotate-3 overflow-hidden">
-                                    {formData.title ? formData.title.charAt(0) : '?'}
-                                </div>
-                                <div className="space-y-2">
-                                    <h2 className="text-2xl font-black text-slate-900 leading-tight">{formData.title || 'Job Title'}</h2>
-                                    <p className="text-indigo-600 font-black uppercase text-[10px] tracking-[0.2em]">{formData.role || 'Position'}</p>
-                                </div>
-                                <div className="flex flex-wrap gap-3">
-                                    <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-lg border border-slate-200">{formData.jobNature}</span>
-                                    {formData.location && <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-lg border border-slate-200">📍 {formData.location}</span>}
-                                </div>
-                                <div className="grid grid-cols-2 gap-6 pt-6 border-t border-slate-100">
-                                    <div className="space-y-1">
-                                        <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Experience</p>
-                                        <p className="font-bold text-sm">{formData.experience}y+</p>
+                    <div className="lg:col-span-4 space-y-6">
+                        <div className="sticky top-10 space-y-6">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Live Preview</p>
+                            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+                                <div className="flex gap-4">
+                                    <div className="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center text-xl font-bold text-white shadow-md">
+                                        {formData.title ? formData.title.charAt(0) : '?'}
                                     </div>
-                                    <div className="space-y-1">
-                                        <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Salary</p>
-                                        <p className="font-bold text-sm tracking-tight">
-                                            {formData.salaryRange.min ? `$${Number(formData.salaryRange.min).toLocaleString()}` : '—'}
-                                        </p>
+                                    <div className="flex-1 min-w-0">
+                                        <h2 className="text-lg font-bold text-indigo-600 line-clamp-1">{formData.title || 'Job Title'}</h2>
+                                        <p className="text-sm font-medium text-slate-900">{selectedCompany?.name || 'Offtix Organization'}</p>
+                                        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mt-0.5">
+                                            <span>{formData.location || 'Remote'}</span>
+                                            <span className="text-slate-300">•</span>
+                                            <span className="capitalize">{formData.jobNature}</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <button className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-600 transition-all">Apply Now</button>
+
+                                <div className="flex flex-wrap gap-2 pt-2">
+                                    {formData.mandatorySkills.slice(0, 2).map((s, i) => (
+                                        <span key={i} className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 italic">#{s}</span>
+                                    ))}
+                                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                                        💰 {formData.salaryRange.min ? `$${Number(formData.salaryRange.min).toLocaleString()}` : '—'}
+                                    </span>
+                                </div>
+
+                                <div className="pt-4 border-t border-slate-50">
+                                    <button className="w-full py-3 bg-slate-900 text-white rounded-full text-xs font-bold shadow-lg hover:bg-slate-800 transition-all">Preview Full Detail</button>
+                                </div>
                             </div>
                         </div>
                     </div>
