@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import { projectAPI, companyAPI, taskRoleAPI } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
@@ -7,6 +8,7 @@ import { useToast } from '../../context/ToastContext';
 import { Button, Badge } from '../ui';
 
 const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, onRefresh }) => {
+  const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const { showToast } = useToast();
   const [showAddMember, setShowAddMember] = useState(false);
@@ -245,7 +247,12 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
                 {project.owner?.name?.[0].toUpperCase()}
               </div>
               <div>
-                <h4 className="text-lg font-bold">{project.owner?.name}</h4>
+                <h4
+                  onClick={() => navigate(`/profile/view/${project.owner?._id || project.owner}`)}
+                  className="text-lg font-bold cursor-pointer hover:text-indigo-400 transition-colors"
+                >
+                  {project.owner?.name}
+                </h4>
                 <p className="text-xs text-slate-400 font-medium font-sans">{project.owner?.email}</p>
                 <div className="mt-2 text-[10px] font-bold uppercase tracking-widest text-indigo-400">Project Owner</div>
               </div>
@@ -264,7 +271,12 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
                     {member.user?.name?.[0].toUpperCase() || '?'}
                   </div>
                   <div>
-                    <h4 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{member.user?.name || 'Unknown User'}</h4>
+                    <h4
+                      onClick={() => navigate(`/profile/view/${member.user?._id || member.user}`)}
+                      className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors cursor-pointer hover:underline"
+                    >
+                      {member.user?.name || 'Unknown User'}
+                    </h4>
                     <p className="text-xs text-slate-400 font-medium mt-0.5">{member.user?.email}</p>
                     <div className="flex flex-wrap gap-2 mt-3">
                       {member.role?.split(',').map((r, idx) => (

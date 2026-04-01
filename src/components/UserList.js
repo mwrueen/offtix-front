@@ -103,10 +103,16 @@ const UserList = () => {
 
                   <div className="flex items-center gap-2">
                     <button
+                      onClick={() => navigate(`/profile/view/${user._id}`)}
+                      className="px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-indigo-600 transition-all border border-slate-800"
+                    >
+                      View CV
+                    </button>
+                    <button
                       onClick={() => navigate(`/users/${user._id}`)}
                       className="px-4 py-2 bg-slate-50 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors border border-slate-200"
                     >
-                      View Details
+                      Audit
                     </button>
                     <button
                       onClick={() => handleEditUser(user)}

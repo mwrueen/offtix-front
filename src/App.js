@@ -16,6 +16,7 @@ import ProjectDetails from './components/ProjectDetails';
 import Company from './components/Company';
 import UserList from './components/UserList';
 import Profile from './components/Profile';
+import ProfilePreview from './components/ProfilePreview';
 import UserDetails from './components/UserDetails';
 import CreateCompany from './components/CreateCompany';
 import AddEmployee from './components/AddEmployee';
@@ -104,6 +105,11 @@ function App() {
                         <Route path="/profile" element={
                           <ProtectedRoute>
                             <Profile />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/profile/view/:id" element={
+                          <ProtectedRoute>
+                            <ProfilePreview />
                           </ProtectedRoute>
                         } />
                         <Route path="/create-company" element={

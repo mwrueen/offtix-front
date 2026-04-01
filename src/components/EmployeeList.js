@@ -159,9 +159,15 @@ const EmployeeList = () => {
                         </span>
                       </div>
                     </div>
-                    <div className="flex justify-center opacity-0 group-hover:opacity-100 transition-all">
-                      <span className="text-xs font-bold text-indigo-600 flex items-center gap-1">
-                        View Profile <span>→</span>
+                    <div className="flex justify-between items-center opacity-0 group-hover:opacity-100 transition-all pt-2">
+                      <button
+                        onClick={(ev) => { ev.stopPropagation(); navigate(`/profile/view/${e._id}`); }}
+                        className="text-[10px] font-bold text-slate-900 uppercase tracking-widest hover:text-indigo-600 transition-colors"
+                      >
+                        📄 View CV
+                      </button>
+                      <span className="text-[10px] font-bold text-indigo-600 flex items-center gap-1 uppercase tracking-widest">
+                        Manage <span>→</span>
                       </span>
                     </div>
                   </div>
