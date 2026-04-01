@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import UnifiedHeader from '../layout/UnifiedHeader';
+import { BASE_SERVER_URL } from '../../services/api';
 
 const PublicCareers = () => {
     const { state } = useAuth();
@@ -69,24 +70,30 @@ const PublicCareers = () => {
         return `${diffInDays}d ago`;
     };
 
+    const getLogoUrl = (path) => {
+        if (!path) return null;
+        if (path.startsWith('http')) return path;
+        return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+    };
+
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-indigo-50">
+        <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col selection:bg-indigo-50 font-sans">
             <UnifiedHeader />
 
-            <div className="pt-24 pb-20 max-w-7xl mx-auto w-full px-4 lg:px-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="pt-28 pb-20 max-w-7xl mx-auto w-full px-4 lg:px-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
 
                 {/* Left Sidebar: Filters */}
-                <aside className="lg:col-span-3 sticky top-28 space-y-6 hidden lg:block">
-                    <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">Filter Protocol</h3>
-                        <div className="space-y-2">
+                <aside className="lg:col-span-3 sticky top-28 space-y-8 hidden lg:block">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
+                        <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-6 px-1">Job Nature</h3>
+                        <div className="space-y-1.5">
                             {['all', 'on-site', 'remote', 'hybrid'].map((nature) => (
                                 <button
                                     key={nature}
                                     onClick={() => setFilterNature(nature)}
-                                    className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${filterNature === nature
-                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
-                                            : 'text-slate-500 hover:bg-slate-50'
+                                    className={`w-full text-left px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${filterNature === nature
+                                        ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100'
+                                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent'
                                         }`}
                                 >
                                     {nature}
@@ -95,110 +102,112 @@ const PublicCareers = () => {
                         </div>
                     </div>
 
-                    <div className="bg-indigo-600 rounded-3xl p-8 text-white relative overflow-hidden group shadow-2xl shadow-indigo-200">
+                    <div className="bg-slate-900 rounded-3xl p-10 text-white relative overflow-hidden group shadow-2xl">
                         <div className="relative z-10">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-2 text-indigo-100">Growth Protocol</p>
-                            <h4 className="text-2xl font-black leading-tight mb-4 tracking-tighter">Ready to scale your career?</h4>
-                            <button className="bg-white text-indigo-600 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform shadow-xl">Join the Node</button>
+                            <h4 className="text-2xl font-bold leading-tight mb-6 tracking-tight">Expand your horizon with Offtix.</h4>
+                            <button className="bg-indigo-600 text-white px-8 py-3.5 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-xl active:scale-95">Career Hub</button>
                         </div>
-                        <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform" />
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700" />
                     </div>
                 </aside>
 
                 {/* Main Feed: Jobs */}
-                <main className="lg:col-span-6 space-y-6">
+                <main className="lg:col-span-6 space-y-8">
                     {/* Feed Header/Search */}
-                    <div className="bg-white border border-slate-200 rounded-[2rem] p-4 shadow-sm flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-xl shadow-inner border border-slate-50 cursor-pointer hover:bg-slate-200 transition-colors">👤</div>
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-lg shadow-inner border border-slate-700 cursor-pointer hover:bg-slate-700 transition-colors tracking-tighter">🔍</div>
                         <div className="flex-1 relative">
                             <input
                                 type="text"
-                                placeholder="Search the mission feed..."
+                                placeholder="Search for opportunities..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full bg-slate-50 border-none rounded-2xl py-3 px-5 text-sm font-bold placeholder:text-slate-400 focus:ring-0 focus:bg-slate-100 transition-all"
+                                className="w-full bg-transparent border-none rounded-2xl py-3 px-1 text-sm font-bold text-white placeholder:text-slate-500 focus:ring-0 transition-all"
                             />
                         </div>
                     </div>
 
                     {loading ? (
-                        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-20 flex flex-col items-center justify-center gap-6">
+                        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-32 flex flex-col items-center justify-center gap-6">
                             <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Synchronizing Feed...</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-300">Synchronizing Global Feed...</p>
                         </div>
                     ) : filteredCirculars.length === 0 ? (
-                        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-20 text-center space-y-4">
-                            <p className="text-3xl font-black text-slate-200 tracking-tighter">End of Node</p>
-                            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">No matching mission parameters found.</p>
+                        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-32 text-center space-y-4">
+                            <div className="text-6xl grayscale opacity-20 mb-8 select-none">📂</div>
+                            <p className="text-3xl font-bold text-slate-800 tracking-tight">No Active Results</p>
+                            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2 px-20">We couldn't find any circulars matching your current filter criteria.</p>
                         </div>
                     ) : (
                         filteredCirculars.map(circular => (
                             <Link
                                 key={circular._id}
                                 to={`/careers/${circular._id}`}
-                                className="block bg-white border border-slate-200 rounded-[2.5rem] hover:border-indigo-600 hover:shadow-2xl hover:shadow-indigo-100/30 transition-all duration-500 overflow-hidden group mb-8"
+                                className="block bg-white border border-slate-200 rounded-[2.5rem] hover:border-indigo-200 hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 overflow-hidden group mb-8 active:scale-[0.99]"
                             >
                                 {/* Card Header */}
-                                <div className="p-8 border-b border-slate-50 flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black italic shadow-lg shadow-indigo-600/20 transform -rotate-3 group-hover:rotate-0 transition-all overflow-hidden bg-center bg-cover">
+                                <div className="p-10 border-b border-slate-50 flex items-center justify-between bg-slate-50/20">
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-14 h-14 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-indigo-600 font-bold shadow-sm group-hover:scale-105 transition-all overflow-hidden relative">
+                                            <div className="absolute inset-0 bg-indigo-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                             {circular.company?.logo ? (
-                                                <img src={circular.company.logo} alt={circular.company.name} className="w-full h-full object-cover" />
+                                                <img src={getLogoUrl(circular.company.logo)} alt={circular.company.name} className="w-full h-full object-cover relative z-10" />
                                             ) : (
-                                                circular.company?.name?.charAt(0) || 'O'
+                                                <span className="relative z-10 text-xl font-black italic">{circular.company?.name?.charAt(0) || 'O'}</span>
                                             )}
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-black uppercase text-indigo-600 tracking-widest">
-                                                {circular.company?.name || 'Offtix Protocol'}
+                                            <p className="text-[11px] font-bold uppercase text-slate-400 tracking-widest group-hover:text-indigo-600 transition-colors">
+                                                {circular.company?.name || 'Offtix Organization'}
                                             </p>
-                                            <p className="text-xs font-bold text-slate-400 font-mono">posted {getTimeAge(circular.createdAt)}</p>
+                                            <p className="text-xs font-bold text-slate-400 mt-0.5">posted {getTimeAge(circular.createdAt)}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="hidden sm:flex -space-x-3 items-center">
-                                            {[1, 2, 3].map(i => <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[10px] font-bold">👤</div>)}
-                                            <span className="pl-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Active applicants</span>
+                                    <div className="hidden sm:block">
+                                        <div className="px-4 py-1.5 bg-white border border-slate-100 rounded-full text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                            {circular.location || 'Remote'}
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Card Content */}
-                                <div className="p-8 pb-4">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-indigo-100">
+                                <div className="p-10 pb-4">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[9px] font-black uppercase tracking-widest rounded-lg border border-indigo-100 italic">
                                             {circular.role}
                                         </span>
-                                        <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-emerald-100 capitalize">
+                                        <span className="px-3 py-1 bg-slate-100 text-slate-600 text-[9px] font-black uppercase tracking-widest rounded-lg border border-slate-200 capitalize">
                                             {circular.jobNature}
                                         </span>
                                     </div>
-                                    <h3 className="text-3xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors mb-4 tracking-tight leading-tight">{circular.title}</h3>
+                                    <h3 className="text-3xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mb-4 tracking-tight leading-tight">{circular.title}</h3>
 
-                                    <div className="flex flex-wrap gap-4 mt-6">
+                                    {/* Job Responsibilities (2 lines) */}
+                                    <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8 line-clamp-2 mt-4">
+                                        {circular.description}
+                                    </p>
+
+                                    <div className="flex flex-wrap gap-3 mt-4">
                                         {circular.mandatorySkills.slice(0, 4).map((s, i) => (
-                                            <span key={i} className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-black text-slate-400 group-hover:text-indigo-600 group-hover:border-indigo-600/30 transition-all uppercase tracking-widest lowercase">#{s.replace(/\s+/g, '')}</span>
+                                            <span key={i} className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-bold text-slate-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 group-hover:border-indigo-100 transition-all uppercase tracking-widest lowercase">#{s.replace(/\s+/g, '')}</span>
                                         ))}
                                     </div>
                                 </div>
 
                                 {/* Card Footer Interaction */}
-                                <div className="p-8 pt-4 flex items-center justify-between border-t border-slate-50 mt-4 bg-slate-50/30">
-                                    <div className="flex items-center gap-6">
-                                        <div className="flex items-center gap-2 text-slate-400 group-hover:text-indigo-600 transition-colors">
-                                            <span className="text-lg">💰</span>
-                                            <span className="text-[11px] font-black uppercase tracking-widest">${circular.salaryRange.min.toLocaleString()} - ${circular.salaryRange.max.toLocaleString()}</span>
+                                <div className="p-10 pt-4 flex items-center justify-between border-t border-slate-50 mt-4 bg-slate-50/10">
+                                    <div className="flex items-center gap-8">
+                                        <div className="flex items-center gap-3 text-slate-400 group-hover:text-indigo-600 transition-colors">
+                                            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-xs shadow-inner">💰</div>
+                                            <span className="text-[11px] font-bold uppercase tracking-widest leading-none">${circular.salaryRange.min.toLocaleString()} - ${circular.salaryRange.max.toLocaleString()}</span>
                                         </div>
-                                        <div className="hidden sm:flex items-center gap-2 text-slate-400">
-                                            <span className="text-lg">📍</span>
-                                            <span className="text-[11px] font-black uppercase tracking-widest">{circular.location || 'Global Protocol'}</span>
+                                        <div className="hidden sm:flex items-center gap-3 text-slate-400 group-hover:text-indigo-600 transition-colors">
+                                            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-xs shadow-inner">🎓</div>
+                                            <span className="text-[11px] font-bold uppercase tracking-widest leading-none">Min {circular.experience}Yrs Exp</span>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 rounded-full border border-slate-100 bg-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
-                                            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
-                                        </div>
-                                        <div className="h-12 px-6 bg-slate-900 text-white rounded-full flex items-center justify-center text-[10px] font-black uppercase tracking-widest group-hover:bg-indigo-600 transition-colors shadow-xl shadow-slate-200">View Node</div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-14 px-10 bg-indigo-600 text-white rounded-[2rem] flex items-center justify-center text-[11px] font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 active:scale-95">Explore Role</div>
                                     </div>
                                 </div>
                             </Link>

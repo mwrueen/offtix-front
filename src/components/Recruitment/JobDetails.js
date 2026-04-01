@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
+import UnifiedHeader from '../layout/UnifiedHeader';
 
 const JobDetails = () => {
     const { id } = useParams();
@@ -114,83 +115,77 @@ const JobDetails = () => {
     );
 
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-32">
-            <nav className="h-24 border-b border-slate-200 flex items-center px-10 bg-white/80 backdrop-blur-md sticky top-0 z-50">
-                <div className="flex-1">
-                    <Link to="/careers" className="text-slate-500 hover:text-indigo-600 flex items-center gap-2 transition-all group font-black uppercase text-[10px] tracking-widest">
-                        <span className="text-lg">←</span>
-                        <span>Back to Careers</span>
-                    </Link>
-                </div>
-                {isAuthenticated && (
-                    <Link to="/dashboard" className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-200">
-                        Go to Dashboard
-                    </Link>
-                )}
-            </nav>
+        <div className="min-h-screen bg-white text-slate-800 font-sans pb-32">
+            <UnifiedHeader />
 
-            <div className="max-w-[1200px] mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div className="max-w-[1200px] mx-auto px-6 pt-32 pb-16 grid grid-cols-1 lg:grid-cols-12 gap-12">
                 {/* Content */}
                 <div className="lg:col-span-7 space-y-16">
                     <div className="space-y-6">
                         <div className="flex flex-wrap gap-3">
-                            <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[9px] font-black uppercase tracking-widest rounded-lg border border-indigo-100">
+                            <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[9px] font-bold uppercase tracking-widest rounded-lg border border-indigo-100 italic">
                                 {circular.role}
                             </span>
-                            <span className="px-3 py-1 bg-slate-100/50 text-slate-500 text-[9px] font-black uppercase tracking-widest rounded-lg border border-slate-200">
+                            <span className="px-3 py-1 bg-slate-100/50 text-slate-500 text-[9px] font-bold uppercase tracking-widest rounded-lg border border-slate-200">
                                 {circular.jobNature}
                             </span>
-                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-widest rounded-lg border border-emerald-100">
+                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[9px] font-bold uppercase tracking-widest rounded-lg border border-emerald-100">
                                 Active
                             </span>
                         </div>
-                        <h1 className="text-5xl font-black tracking-tight text-slate-900 leading-tight">
+                        <h1 className="text-5xl font-bold tracking-tight text-slate-900 leading-tight">
                             {circular.title}
                         </h1>
-                        <div className="flex flex-wrap gap-8 pt-4">
+                        <div className="flex flex-wrap gap-10 pt-4">
                             <div className="space-y-1">
-                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Expected Salary</p>
-                                <p className="font-bold text-slate-700">${Number(circular.salaryRange.min).toLocaleString()} — ${Number(circular.salaryRange.max).toLocaleString()}</p>
+                                <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Expected Salary</p>
+                                <p className="text-lg font-bold text-slate-900 tracking-tight">${Number(circular.salaryRange.min).toLocaleString()} — ${Number(circular.salaryRange.max).toLocaleString()}</p>
                             </div>
-                            <div className="space-y-1 border-l border-slate-200 pl-8">
-                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Location</p>
-                                <p className="font-bold text-slate-700">{circular.location || 'Remote'}</p>
+                            <div className="space-y-1 sm:border-l border-slate-100 sm:pl-10">
+                                <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Location</p>
+                                <p className="text-lg font-bold text-slate-900 tracking-tight">{circular.location || 'Remote'}</p>
                             </div>
-                            <div className="space-y-1 border-l border-slate-200 pl-8">
-                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Experience</p>
-                                <p className="font-bold text-slate-700">{circular.experience}+ Years</p>
+                            <div className="space-y-1 sm:border-l border-slate-100 sm:pl-10">
+                                <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Experience</p>
+                                <p className="text-lg font-bold text-slate-900 tracking-tight">{circular.experience}+ Years</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-                        <div className="prose prose-slate max-w-none">
-                            <h2 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] border-b-2 border-slate-900 pb-2 inline-block mb-10">Role Overview</h2>
-                            <div dangerouslySetInnerHTML={{ __html: circular.description }} className="text-slate-600 leading-relaxed text-lg font-medium" />
+                    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <div className="max-w-none">
+                            <h2 className="text-[11px] font-bold text-slate-900 uppercase tracking-[0.2em] mb-10 flex items-center gap-4">
+                                <span className="w-8 h-[2px] bg-indigo-600"></span>
+                                Role Overview
+                            </h2>
+                            <div dangerouslySetInnerHTML={{ __html: circular.description }} className="text-slate-600 leading-relaxed text-lg font-medium space-y-4" />
                         </div>
 
                         {circular.benefits && (
                             <div className="pt-10">
-                                <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] border-b-2 border-slate-900 pb-2 inline-block mb-10">Perks & Benefits</h3>
-                                <div dangerouslySetInnerHTML={{ __html: circular.benefits }} className="text-slate-600 leading-relaxed text-lg font-medium" />
+                                <h3 className="text-[11px] font-bold text-slate-900 uppercase tracking-[0.2em] mb-10 flex items-center gap-4">
+                                    <span className="w-8 h-[2px] bg-emerald-500"></span>
+                                    Perks & Benefits
+                                </h3>
+                                <div dangerouslySetInnerHTML={{ __html: circular.benefits }} className="text-slate-600 leading-relaxed text-lg font-medium space-y-4" />
                             </div>
                         )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
-                        <div className="bg-white rounded-3xl p-10 border border-slate-200 shadow-sm">
-                            <h3 className="text-[10px] font-black text-indigo-600 mb-8 uppercase tracking-[0.2em]">Mandatory Competencies</h3>
+                        <div className="bg-slate-50/50 rounded-3xl p-10 border border-slate-100 shadow-sm">
+                            <h3 className="text-[11px] font-bold text-indigo-600 mb-8 uppercase tracking-[0.2em]">Mandatory Competencies</h3>
                             <div className="flex flex-wrap gap-2">
                                 {circular.mandatorySkills.map((s, i) => (
-                                    <span key={i} className="px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100">#{s}</span>
+                                    <span key={i} className="px-4 py-2 bg-white text-slate-600 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-slate-200">#{s}</span>
                                 ))}
                             </div>
                         </div>
-                        <div className="bg-white rounded-3xl p-10 border border-slate-200 shadow-sm">
-                            <h3 className="text-[10px] font-black text-slate-400 mb-8 uppercase tracking-[0.2em]">Bonus Competencies</h3>
+                        <div className="bg-white rounded-3xl p-10 border border-slate-100 shadow-sm">
+                            <h3 className="text-[11px] font-bold text-slate-400 mb-8 uppercase tracking-[0.2em]">Bonus Competencies</h3>
                             <div className="flex flex-wrap gap-2">
                                 {circular.niceToHaveSkills.map((s, i) => (
-                                    <span key={i} className="px-4 py-2 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100">#{s}</span>
+                                    <span key={i} className="px-4 py-2 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-slate-200">#{s}</span>
                                 ))}
                             </div>
                         </div>
@@ -200,10 +195,10 @@ const JobDetails = () => {
                 {/* Apply Form */}
                 <div className="lg:col-span-5">
                     <div className="sticky top-36">
-                        <div className="bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-2xl shadow-slate-200/40 space-y-10">
+                        <div className="bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-2xl shadow-slate-100 space-y-10">
                             <div>
-                                <h2 className="text-3xl font-black tracking-tight text-slate-900">Application Entry</h2>
-                                <p className="text-slate-400 text-xs font-bold mt-1 uppercase tracking-widest">Complete the profile below</p>
+                                <h2 className="text-3xl font-bold tracking-tight text-slate-900">Application Intent</h2>
+                                <p className="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-widest">Initialize recruitment protocol</p>
                             </div>
 
                             <form onSubmit={handleApply} className="space-y-8">
@@ -219,7 +214,7 @@ const JobDetails = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Email Connection</label>
+                                        <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Email Connection</label>
                                         <input
                                             type="email" required
                                             className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold transition-all text-slate-700 shadow-inner"
@@ -230,7 +225,7 @@ const JobDetails = () => {
                                     </div>
                                     <div className="grid grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Contact No</label>
+                                            <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Contact No</label>
                                             <input
                                                 type="text" required
                                                 className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold text-slate-700 shadow-inner"
@@ -239,7 +234,7 @@ const JobDetails = () => {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Total Exp</label>
+                                            <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Total Exp</label>
                                             <input
                                                 type="number" required
                                                 className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none font-bold text-slate-700 shadow-inner"
@@ -249,7 +244,7 @@ const JobDetails = () => {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Key Proficiencies (Comma split)</label>
+                                        <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Key Proficiencies (Comma split)</label>
                                         <textarea
                                             required
                                             className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold min-h-[100px] resize-none text-slate-700 shadow-inner"
@@ -262,10 +257,10 @@ const JobDetails = () => {
 
                                 {circular.questions.length > 0 && (
                                     <div className="pt-8 border-t border-slate-100 space-y-8">
-                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Prescreening Assessment</h3>
+                                        <h3 className="text-[10px] font-bold uppercase tracking-widest text-indigo-600">Prescreening Assessment</h3>
                                         {circular.questions.map((q, qIndex) => (
                                             <div key={qIndex} className="space-y-4">
-                                                <label className="text-xs font-black text-slate-700 leading-snug uppercase tracking-tight">{q.question}</label>
+                                                <label className="text-xs font-bold text-slate-700 leading-snug uppercase tracking-tight">{q.question}</label>
 
                                                 {q.type === 'text' && (
                                                     <input
@@ -326,7 +321,7 @@ const JobDetails = () => {
                                 <button
                                     type="submit"
                                     disabled={submitting}
-                                    className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-black py-5 rounded-[2rem] shadow-2xl shadow-slate-300 transition-all flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em]"
+                                    className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-bold py-5 rounded-[2rem] shadow-2xl shadow-slate-300 transition-all flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em]"
                                 >
                                     {submitting ? 'Transmitting Data...' : 'Submit Final Application'}
                                 </button>
