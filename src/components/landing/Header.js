@@ -20,9 +20,7 @@ const Header = () => {
         </div>
 
         <nav className="header-nav flex items-center gap-8">
-          <a href="#features" className="text-slate-500 no-underline font-medium transition-colors duration-200 hover:text-slate-800">
-            Features
-          </a>
+
           <a href="#pricing" className="text-slate-500 no-underline font-medium transition-colors duration-200 hover:text-slate-800">
             Pricing
           </a>

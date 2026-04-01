@@ -76,9 +76,8 @@ const UnifiedHeader = () => {
                     </Link>
 
                     <nav className="hidden md:flex items-center gap-8">
-                        <Link to="/" className={`text-[10px] font-black uppercase tracking-widest ${location.pathname === '/' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'} transition-colors`}>Home</Link>
-                        <Link to="/careers" className={`text-[10px] font-black uppercase tracking-widest ${location.pathname.startsWith('/careers') ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'} transition-colors`}>Careers</Link>
-                        <a href="#features" className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Features</a>
+                        <Link to="/" className={`text-sm font-semibold ${location.pathname === '/' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-800'} transition-all`}>Home</Link>
+                        <Link to="/careers" className={`text-sm font-semibold ${location.pathname.startsWith('/careers') ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-800'} transition-all`}>Careers</Link>
                     </nav>
                 </div>
 
@@ -96,7 +95,7 @@ const UnifiedHeader = () => {
                                         {isPersonal ? '👤' : selectedCompany?.name?.charAt(0)}
                                     </div>
                                     <div className="hidden sm:block">
-                                        <p className="text-[9px] font-black uppercase text-slate-400 leading-none">Workspace</p>
+                                        <p className="text-[10px] font-bold text-slate-500 leading-none">Workspace</p>
                                         <p className="text-[11px] font-bold text-slate-700 leading-tight truncate max-w-[120px]">{selectedCompany?.name || 'Personal'}</p>
                                     </div>
                                     <svg className={`w-3 h-3 text-slate-400 transition-transform ${isCompanyOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
@@ -104,7 +103,7 @@ const UnifiedHeader = () => {
 
                                 {isCompanyOpen && (
                                     <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 space-y-1 animate-in fade-in slide-in-from-top-2">
-                                        <div className="px-3 py-2 text-[8px] font-black uppercase text-slate-400 tracking-widest">Select Workspace</div>
+                                        <div className="px-3 py-2 text-[10px] font-bold text-slate-400">Select Workspace</div>
                                         {companyState.companies.map(c => (
                                             <button
                                                 key={c.id}
@@ -148,8 +147,8 @@ const UnifiedHeader = () => {
                                 {isNotifOpen && (
                                     <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
                                         <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
-                                            <span className="text-xs font-black uppercase text-slate-400 tracking-widest">Recent Activity</span>
-                                            <Link to="/notifications" onClick={() => setIsNotifOpen(false)} className="text-[10px] font-bold text-indigo-600 hover:underline">View All</Link>
+                                            <span className="text-xs font-bold text-slate-500">Recent Activity</span>
+                                            <Link to="/notifications" onClick={() => setIsNotifOpen(false)} className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700">View All</Link>
                                         </div>
                                         <div className="max-h-80 overflow-y-auto">
                                             {notifLoading ? (
@@ -187,19 +186,19 @@ const UnifiedHeader = () => {
                                     <div className="absolute top-full right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 animate-in fade-in slide-in-from-top-2">
                                         <div className="px-4 py-3 border-b border-slate-50 mb-1">
                                             <p className="text-xs font-black text-slate-800 truncate">{user?.name}</p>
-                                            <p className="text-[9px] font-bold text-slate-400 truncate uppercase mt-0.5">{user?.role}</p>
+                                            <p className="text-[10px] font-bold text-slate-400 truncate mt-0.5">{user?.role}</p>
                                         </div>
                                         <Link to="/dashboard" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-slate-50 transition-all text-slate-600">
                                             <span className="text-xs">🏠</span>
-                                            <span className="text-[10px] font-black uppercase tracking-widest">Dashboard</span>
+                                            <span className="text-sm font-semibold">Dashboard</span>
                                         </Link>
                                         <Link to="/profile" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-slate-50 transition-all text-slate-600">
                                             <span className="text-xs">👤</span>
-                                            <span className="text-[10px] font-black uppercase tracking-widest">My Profile</span>
+                                            <span className="text-sm font-semibold">My Profile</span>
                                         </Link>
                                         <button onClick={handleLogout} className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-rose-50 transition-all text-rose-500 mt-1">
                                             <span className="text-xs">🔒</span>
-                                            <span className="text-[10px] font-black uppercase tracking-widest">Sign Out</span>
+                                            <span className="text-sm font-semibold">Sign Out</span>
                                         </button>
                                     </div>
                                 )}
@@ -207,8 +206,8 @@ const UnifiedHeader = () => {
                         </>
                     ) : (
                         <div className="flex items-center gap-2">
-                            <Link to="/signin" className="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 transition-all">Sign In</Link>
-                            <Link to="/signup" className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/20">Get Started</Link>
+                            <Link to="/signin" className="px-5 py-2.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 transition-all">Sign In</Link>
+                            <Link to="/signup" className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/10">Get Started</Link>
                         </div>
                     )}
                 </div>

@@ -6,7 +6,7 @@
   body {
     @apply antialiased text-slate-900 bg-slate-50/50 min-h-screen selection:bg-indigo-100 selection:text-indigo-900;
     margin: 0;
-    font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
 }
 
