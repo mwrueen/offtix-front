@@ -9,6 +9,7 @@ import { useChat } from '../context/ChatContext';
 import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import GlobalChat from './chat/GlobalChat';
 import { myTasksAPI, BASE_SERVER_URL } from '../services/api';
+import { getIcon } from './layout/icons';
 
 const Layout = ({ children }) => {
   const { state, dispatch } = useAuth();
@@ -139,29 +140,29 @@ const Layout = ({ children }) => {
   const handleLogout = () => { dispatch({ type: 'LOGOUT' }); navigate('/'); };
 
   const menuItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: '📊', category: 'Main' },
-    { path: '/projects', label: 'Projects', icon: '📁', category: 'Main' },
+    { path: '/dashboard', label: 'Dashboard', icon: 'dashboard', category: 'Main' },
+    { path: '/projects', label: 'Projects', icon: 'projects', category: 'Main' },
     ...(state.user?.role !== 'superadmin' ? [
-      { path: '/my-tasks', label: 'My Tasks', icon: '✅', category: 'Main' },
-      { path: '/team-activity', label: 'Team Activity', icon: '📡', category: 'Main' }
+      { path: '/my-tasks', label: 'My Tasks', icon: 'tasks', category: 'Main' },
+      { path: '/team-activity', label: 'Team Activity', icon: 'team', category: 'Main' }
     ] : []),
     ...(companyState.selectedCompany?.id !== 'personal' ? [
-      { path: '/overview', label: 'Overview', icon: '🌍', category: 'Management' },
+      { path: '/overview', label: 'Overview', icon: 'overview', category: 'Management' },
       ...(canViewEmployees ? [
-        { path: '/employees', label: 'Employees', icon: '👥', category: 'Management' },
-        { path: '/organogram', label: 'Organogram', icon: '📐', category: 'Management' }
+        { path: '/employees', label: 'Employees', icon: 'employees', category: 'Management' },
+        { path: '/organogram', label: 'Organogram', icon: 'organogram', category: 'Management' }
       ] : []),
-      ...(canManageRecruitment ? [{ path: '/recruitment', label: 'Recruitment', icon: '🎯', category: 'Management' }] : []),
-      ...(canViewDesignations ? [{ path: '/manage-roles', label: 'Roles & Access', icon: '🛡️', category: 'Management' }] : []),
-      { path: '/leaves', label: 'Leaves', icon: '🗓️', category: 'Management' },
-      { path: '/holidays', label: 'Holidays', icon: '🎁', category: 'Management' }
+      ...(canManageRecruitment ? [{ path: '/recruitment', label: 'Recruitment', icon: 'careers', category: 'Management' }] : []),
+      ...(canViewDesignations ? [{ path: '/manage-roles', label: 'Roles & Access', icon: 'roles', category: 'Management' }] : []),
+      { path: '/leaves', label: 'Leaves', icon: 'leaves', category: 'Management' },
+      { path: '/holidays', label: 'Holidays', icon: 'holidays', category: 'Management' }
     ] : []),
     ...(state.user?.role === 'admin' || state.user?.role === 'superadmin' ? [
-      { path: '/users', label: 'Users', icon: '🆔', category: 'Administration' },
-      { path: '/companies', label: 'Companies', icon: '🏭', category: 'Administration' }
+      { path: '/users', label: 'Users', icon: 'users', category: 'Administration' },
+      { path: '/companies', label: 'Companies', icon: 'companies', category: 'Administration' }
     ] : []),
     ...(canManageSettings && companyState.selectedCompany?.id !== 'personal' ? [
-      { path: '/company-settings', label: 'Settings', icon: '⚙️', category: 'System' }
+      { path: '/company-settings', label: 'Settings', icon: 'settings', category: 'System' }
     ] : [])
   ];
 
@@ -274,23 +275,26 @@ const Layout = ({ children }) => {
           </div>
         )}
 
-        <nav className={`flex-1 overflow-y-auto scrollbar-none py-6 space-y-1 ${sidebarCollapsed ? 'px-3' : 'px-4'}`}>
+        <nav className={`flex-1 overflow-y-auto scrollbar-none pt-2 pb-6 space-y-1 ${sidebarCollapsed ? 'px-3' : 'px-4'}`}>
           {menuItems.map((item, idx) => {
             const active = location.pathname === item.path || (item.path === '/employees' && location.pathname.startsWith('/employees/')) || (item.path === '/projects' && location.pathname.startsWith('/projects/')) || (item.path === '/my-tasks' && location.pathname.startsWith('/my-tasks/'));
             const showCat = !sidebarCollapsed && (idx === 0 || menuItems[idx - 1].category !== item.category);
+            const Icon = getIcon(item.icon);
             return (
               <React.Fragment key={item.path}>
-                {showCat && <div className="px-4 mt-8 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-[2px]">{item.category}</div>}
+                {showCat && <div className={`px-4 ${idx === 0 ? 'mt-0' : 'mt-8'} mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-[2px]`}>{item.category}</div>}
                 <div
                   onClick={() => navigate(item.path)}
-                  className={`group flex items-center gap-4 cursor-pointer rounded-xl transition-all duration-200 ${sidebarCollapsed ? 'p-3 justify-center mb-1' : 'p-3.5 px-4 mb-0.5'} 
+                  className={`group flex items-center gap-4 cursor-pointer rounded-xl transition-all duration-200 relative ${sidebarCollapsed ? 'p-3 justify-center mb-1' : 'p-3 px-4 mb-0.5'} 
                     ${active
-                      ? 'bg-indigo-600 text-white shadow-[0_8px_20px_rgba(79,70,229,0.25)] ring-1 ring-indigo-700'
-                      : 'text-slate-500 hover:bg-slate-100/50 hover:text-slate-900'}`}
+                      ? 'bg-slate-100 text-slate-900 shadow-none'
+                      : 'text-slate-500 hover:bg-slate-50/80 hover:text-indigo-600'}`}
                 >
-                  <span className={`text-xl transition-transform duration-200 ${active ? 'scale-110' : 'group-hover:scale-110 group-hover:text-indigo-600 opacity-70 group-hover:opacity-100'}`}>{item.icon}</span>
-                  {!sidebarCollapsed && <span className={`flex-1 text-[13.5px] font-bold tracking-tight ${active ? 'text-white' : 'text-slate-700'}`}>{item.label}</span>}
-                  {!sidebarCollapsed && active && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                  <div className={`transition-transform duration-200 ${active ? 'scale-105 text-indigo-600' : 'group-hover:scale-105 text-slate-400 group-hover:text-indigo-600'}`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  {!sidebarCollapsed && <span className={`flex-1 text-[13px] tracking-tight ${active ? 'text-slate-900 font-black' : 'text-slate-600 font-medium group-hover:text-indigo-600'}`}>{item.label}</span>}
+                  {!sidebarCollapsed && active && <div className="w-1.5 h-6 rounded-l-full bg-indigo-600 absolute right-0" />}
                 </div>
               </React.Fragment>
             );
@@ -336,6 +340,15 @@ const Layout = ({ children }) => {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Careers Portal Link */}
+            <button
+              onClick={() => navigate('/careers')}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-all border border-indigo-100 shadow-sm"
+            >
+              <span>💼</span>
+              <span className="hidden sm:inline">Careers Portal</span>
+            </button>
+
             {/* Chat Icon */}
             <div onClick={() => setIsChatOpen(!isChatOpen)} className="relative w-10 h-10 flex items-center justify-center rounded-lg cursor-pointer hover:bg-slate-50 transition-colors border border-slate-100 text-xl shadow-sm">
               💬
@@ -380,7 +393,7 @@ const Layout = ({ children }) => {
         </header>
 
         {/* Content Portal */}
-        <main className="flex-1 overflow-y-auto p-6 lg:p-10">
+        <main className="flex-1 overflow-y-auto py-6 px-6 lg:px-10">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

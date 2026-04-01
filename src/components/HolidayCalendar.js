@@ -231,8 +231,8 @@ const HolidayCalendar = () => {
           onMouseDown={() => handleMouseDown(day)}
           onMouseEnter={() => handleMouseEnterDay(day)}
           onMouseUp={handleMouseUp}
-          className={`relative min-h-[140px] p-4 transition-all duration-200 group cursor-pointer border border-slate-100/50 
-            ${inDrag ? 'bg-indigo-600 ring-4 ring-indigo-500/20 z-10' :
+          className={`relative min-h-[120px] p-3 transition-all group cursor-pointer border border-slate-100/50 
+            ${inDrag ? 'bg-indigo-600 z-10' :
               isToday ? 'bg-indigo-50/50 border-indigo-200' :
                 isWeekend ? 'bg-slate-50/50' : 'bg-white hover:bg-slate-50'}`}
         >
@@ -261,7 +261,7 @@ const HolidayCalendar = () => {
     }
 
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in duration-700">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50">
           {weekDays.map((d, i) => (
             <div key={d} className={`py-4 text-center text-[10px] font-bold uppercase tracking-widest ${companySettings.weekends.includes(i) ? 'text-rose-500 bg-rose-50/30' : 'text-slate-400'}`}>
@@ -282,16 +282,16 @@ const HolidayCalendar = () => {
 
   if (loading) return (
     <Layout>
-      <div className="flex flex-col items-center justify-center py-40 animate-in fade-in space-y-6">
-        <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto shadow-sm" />
-        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Refreshing agenda...</p>
+      <div className="flex flex-col items-center justify-center py-40 space-y-6">
+        <div className="w-10 h-10 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto shadow-sm" />
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Refreshing agenda...</p>
       </div>
     </Layout>
   );
 
   return (
     <Layout>
-      <div className="space-y-8 pb-40 animate-in fade-in duration-700">
+      <div className="space-y-8 pb-40">
         <PageHeader
           title="Holiday Agenda"
           subtitle="Visualize and manage statutory holidays, corporate closures, and regional observations."
@@ -318,7 +318,7 @@ const HolidayCalendar = () => {
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
           <div className="xl:col-span-8 space-y-8">
             {renderCalendar()}
-            <div className="p-6 bg-slate-900 rounded-2xl text-white flex items-center gap-5 shadow-lg border border-white/5">
+            <div className="p-5 bg-slate-900 rounded-2xl text-white flex items-center gap-4 border border-white/5 shadow-md">
               <div className="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center text-white text-lg font-bold">💡</div>
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
                 <span className="text-white mr-2">Configuration Tip:</span> Click and drag across multiple dates to quickly register a contiguous holiday range or office closure.
@@ -327,7 +327,7 @@ const HolidayCalendar = () => {
           </div>
 
           <div className="xl:col-span-4 space-y-8">
-            <div className="bg-white p-10 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Regular Weekends</h3>
@@ -353,7 +353,7 @@ const HolidayCalendar = () => {
               </button>
             </div>
 
-            <div className="bg-white p-10 rounded-2xl border border-slate-200 shadow-sm h-fit">
+            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm h-fit">
               <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-8">Calendar Key</h3>
               <div className="space-y-4">
                 {[
@@ -457,8 +457,8 @@ const HolidayCalendar = () => {
 };
 
 const Modal = ({ title, children, onClose }) => (
-  <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 backdrop-blur-md bg-slate-900/40 animate-in fade-in duration-300">
-    <div className="bg-white rounded-3xl w-full max-w-xl p-10 lg:p-12 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-500 relative overflow-hidden">
+  <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 backdrop-blur-sm bg-slate-900/40">
+    <div className="bg-white rounded-2xl w-full max-w-xl p-8 lg:p-10 shadow-xl border border-slate-200 relative overflow-hidden">
       <div className="flex justify-between items-center mb-10 relative z-10">
         <h3 className="text-xl font-bold text-slate-900 uppercase tracking-tight">{title}</h3>
         <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-xl text-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all">

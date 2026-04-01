@@ -72,28 +72,28 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="space-y-8 pb-12">
+      <div className="space-y-6 pb-20">
         {/* Header Section */}
-        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="bg-white p-6 lg:p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex items-center gap-6">
-            <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-3xl shadow-inner border border-indigo-100">👋</div>
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-2xl shadow-inner border border-indigo-100">👋</div>
             <div>
-              <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Welcome, {state.user?.name}</h1>
-              <p className="text-slate-500 font-medium">Viewing overview for <span className="text-indigo-600 underline underline-offset-4 decoration-indigo-200">{selectedCompany?.name || 'All Organizations'}</span></p>
+              <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Welcome, {state.user?.name}</h1>
+              <p className="text-xs text-slate-500 font-medium tracking-tight">Overview for <span className="text-indigo-600 font-bold decoration-indigo-200">{selectedCompany?.name || 'All Organizations'}</span></p>
             </div>
           </div>
           <button
             onClick={() => navigate('/projects')}
-            className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200 flex items-center gap-2"
+            className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-bold text-[10px] uppercase tracking-widest hover:bg-slate-900 transition-all shadow-md flex items-center gap-2"
           >
-            <span className="text-xl">+</span> New Project
+            <span className="text-lg">+</span> New Project
           </button>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {overviewStats.map((stat, i) => (
-            <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow group">
+            <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
               <div className="flex justify-between items-start">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{stat.title}</p>
                 <span className="text-xl group-hover:scale-125 transition-transform duration-300">{stat.icon}</span>

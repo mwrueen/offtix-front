@@ -21,6 +21,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: 'dashboard', category: 'main' },
     { path: '/projects', label: 'Projects', icon: 'projects', category: 'main' },
+    { path: '/careers', label: 'Careers Portal', icon: 'careers', category: 'main' },
     ...(state.user?.role !== 'superadmin' ? [
       { path: '/my-tasks', label: 'My Tasks', icon: 'tasks', category: 'main' },
       { path: '/team-activity', label: 'Team Activity', icon: 'team', category: 'main' }

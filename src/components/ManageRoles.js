@@ -117,13 +117,13 @@ const ManageRoles = () => {
   if (!selectedCompany || selectedCompany.id === 'personal') {
     return (
       <Layout>
-        <div className="max-w-3xl mx-auto my-32 p-20 bg-white rounded-3xl border border-slate-200 text-center shadow-lg animate-in fade-in zoom-in-95 duration-500">
-          <div className="text-8xl mb-8 opacity-20">🛡️</div>
-          <h2 className="text-2xl font-bold text-slate-800 tracking-tight mb-4">No Organization Selected</h2>
-          <p className="text-sm font-medium text-slate-500 mb-10 max-w-sm mx-auto">
+        <div className="max-w-3xl mx-auto my-32 p-16 bg-white rounded-2xl border border-slate-200 text-center shadow-sm">
+          <div className="text-6xl mb-8 opacity-20">🛡️</div>
+          <h2 className="text-xl font-bold text-slate-800 tracking-tight mb-4">No Organization Selected</h2>
+          <p className="text-xs font-medium text-slate-500 mb-8 max-w-sm mx-auto">
             Please select an active company to manage user roles and permissions.
           </p>
-          <button onClick={() => navigate('/overview')} className="px-10 py-4 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg hover:bg-slate-900 transition-all active:scale-95">Go to Overview</button>
+          <button onClick={() => navigate('/overview')} className="px-10 py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-md hover:bg-slate-900 transition-all">Go to Overview</button>
         </div>
       </Layout>
     );
@@ -132,9 +132,9 @@ const ManageRoles = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="flex flex-col items-center justify-center py-40 animate-in fade-in space-y-6">
-          <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto shadow-sm" />
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Refreshing roles...</p>
+        <div className="flex flex-col items-center justify-center py-40 space-y-6">
+          <div className="w-10 h-10 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto shadow-sm" />
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Refreshing roles...</p>
         </div>
       </Layout>
     );
@@ -143,13 +143,13 @@ const ManageRoles = () => {
   if (!hasPermission(PERMISSIONS.VIEW_DESIGNATIONS)) {
     return (
       <Layout>
-        <div className="max-w-3xl mx-auto my-32 p-20 bg-white rounded-3xl text-center shadow-lg border border-slate-200 animate-in fade-in zoom-in-95 duration-500">
-          <div className="text-8xl mb-8 opacity-20 select-none">🔒</div>
-          <h2 className="text-2xl font-bold text-slate-800 tracking-tight mb-4">Access Denied</h2>
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-10">
+        <div className="max-w-3xl mx-auto my-32 p-16 bg-white rounded-2xl text-center shadow-sm border border-slate-200">
+          <div className="text-6xl mb-8 opacity-20 select-none">🔒</div>
+          <h2 className="text-xl font-bold text-slate-800 tracking-tight mb-4">Access Denied</h2>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-8">
             You do not have the required permissions to view organizational roles.
           </p>
-          <button onClick={() => navigate('/overview')} className="px-10 py-4 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-950 transition-all shadow-lg active:scale-95">Return to Overview</button>
+          <button onClick={() => navigate('/overview')} className="px-10 py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-900 transition-all shadow-md">Return to Overview</button>
         </div>
       </Layout>
     );
@@ -159,7 +159,7 @@ const ManageRoles = () => {
 
   return (
     <Layout>
-      <div className="space-y-12 animate-in fade-in duration-700 pb-40">
+      <div className="space-y-12 pb-40">
         <PageHeader
           title="Role Management"
           subtitle={`Configure access permissions and organizational hierarchy for ${company?.name || 'the company'}.`}
@@ -184,8 +184,8 @@ const ManageRoles = () => {
             <div
               key={role._id || i}
               onClick={() => setSelectedRole(selectedRole === role ? null : role)}
-              className={`group bg-white p-8 rounded-2xl border transition-all duration-300 cursor-pointer relative 
-                ${selectedRole === role ? 'border-indigo-400 shadow-xl ring-4 ring-indigo-50 translate-y-[-4px]' : 'border-slate-200 shadow-sm hover:border-indigo-200 hover:shadow-md'}`}
+              className={`group bg-white p-6 rounded-2xl border transition-all cursor-pointer relative 
+                ${selectedRole === role ? 'border-indigo-400 shadow-md ring-1 ring-indigo-400' : 'border-slate-200 shadow-sm hover:border-indigo-200 hover:shadow-md'}`}
             >
               <div className="relative z-10 flex flex-col">
                 <div className="flex justify-between items-start mb-6">
@@ -209,7 +209,7 @@ const ManageRoles = () => {
               </div>
 
               {selectedRole === role && (
-                <div className="mt-8 animate-in fade-in slide-in-from-top-4 duration-500 space-y-6 pt-6 border-t border-slate-100 border-dashed">
+                <div className="mt-6 space-y-6 pt-6 border-t border-slate-100 border-dashed">
                   <div className="grid grid-cols-1 gap-2">
                     {Object.entries(role.permissions).filter(([_, v]) => v).map(([key]) => (
                       <div key={key} className="flex items-center gap-3 py-2.5 px-4 bg-indigo-50/50 rounded-xl border border-indigo-100/50 text-indigo-700 hover:bg-indigo-100/50 transition-colors">
@@ -242,15 +242,15 @@ const ManageRoles = () => {
           ))}
 
           {designations.length === 0 && (
-            <div className="col-span-full bg-white p-20 rounded-3xl border border-slate-200 text-center">
-              <div className="text-7xl mb-6 opacity-10">🛡️</div>
-              <h3 className="text-xl font-bold text-slate-400 uppercase tracking-widest">No Roles Defined</h3>
-              <p className="text-sm font-medium text-slate-400 mb-8">
+            <div className="col-span-full bg-white p-20 rounded-2xl border border-slate-200 text-center">
+              <div className="text-6xl mb-6 opacity-10">🛡️</div>
+              <h3 className="text-lg font-bold text-slate-400 uppercase tracking-widest">No Roles Defined</h3>
+              <p className="text-xs font-medium text-slate-400 mb-8">
                 The organizational directory is currently empty.
               </p>
               <button
                 onClick={() => navigate('/create-role')}
-                className="px-10 py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-lg hover:bg-slate-900 transition-all"
+                className="px-10 py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-md hover:bg-slate-900 transition-all"
               >
                 Create First Role
               </button>
@@ -269,8 +269,8 @@ const ManageRoles = () => {
       />
 
       {editingRole && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-[2000] p-6 animate-in fade-in duration-300" onClick={() => { setEditingRole(null); setEditPermissions({}); }}>
-          <div className="bg-white rounded-3xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-500" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[2000] p-6" onClick={() => { setEditingRole(null); setEditPermissions({}); }}>
+          <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-xl border border-slate-200 overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="px-10 py-8 bg-slate-900 text-white flex justify-between items-center shrink-0">
               <div>
                 <h2 className="text-2xl font-bold tracking-tight">Edit Permissions</h2>
@@ -290,8 +290,8 @@ const ManageRoles = () => {
                     {cat.permissions.map((p) => (
                       <div
                         key={p.key}
-                        className={`group p-6 rounded-2xl border transition-all duration-300 cursor-pointer flex justify-between items-center 
-                          ${editPermissions[p.key] ? 'border-indigo-400 bg-white shadow-md ring-4 ring-indigo-50' : 'border-slate-200 bg-white hover:border-indigo-200 hover:shadow-sm'}`}
+                        className={`group p-5 rounded-xl border transition-all cursor-pointer flex justify-between items-center 
+                          ${editPermissions[p.key] ? 'border-indigo-400 bg-white shadow-sm ring-1 ring-indigo-400' : 'border-slate-200 bg-white hover:border-indigo-200 hover:shadow-sm'}`}
                         onClick={() => handlePermissionToggle(p.key)}
                       >
                         <div className="flex-1 pr-6">

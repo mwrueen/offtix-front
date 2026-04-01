@@ -96,16 +96,16 @@ const TeamActivity = () => {
 
   if (loading || companyState.loading || isInitializing) return (
     <Layout>
-      <div className="max-w-[1600px] mx-auto px-10 py-40 text-center animate-in fade-in space-y-8">
-        <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto shadow-sm" />
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest italic">Synchronizing team activity...</p>
+      <div className="max-w-[1600px] mx-auto px-10 py-40 text-center space-y-8">
+        <div className="w-10 h-10 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto shadow-sm" />
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[2px]">Synchronizing team activity...</p>
       </div>
     </Layout>
   );
 
   return (
     <Layout>
-      <div className="max-w-[1600px] mx-auto px-6 py-12 animate-in fade-in duration-700 space-y-12">
+      <div className="max-w-[1600px] mx-auto px-6 py-8 space-y-8">
         <PageHeader
           title="Team Activity"
           subtitle="Real-time overview of current active tasks and progress across the organization."
@@ -118,56 +118,56 @@ const TeamActivity = () => {
         />
 
         {/* Filters Bar */}
-        <div className="bg-white rounded-3xl p-6 flex items-center gap-8 shadow-sm flex-wrap border border-slate-200 animate-in slide-in-from-top-4 duration-700">
-          <div className="flex items-center gap-4">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic flex items-center gap-2">Project: </span>
-            <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)} className="px-6 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-900 outline-none focus:bg-white focus:border-indigo-400 transition-all min-w-[200px] shadow-inner">
+        <div className="bg-white rounded-2xl p-5 flex items-center gap-6 shadow-sm flex-wrap border border-slate-200">
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Project: </span>
+            <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-700 outline-none focus:bg-white focus:border-indigo-400 transition-all min-w-[200px]">
               <option value="">All Projects</option>
               {projects.map(p => <option key={p._id} value={p._id}>{p.title}</option>)}
             </select>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic flex items-center gap-2">Date: </span>
-            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="px-6 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-900 outline-none focus:bg-white focus:border-indigo-400 transition-all shadow-inner" />
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Date: </span>
+            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-700 outline-none focus:bg-white focus:border-indigo-400 transition-all" />
           </div>
-          {(selectedProject || selectedDate) && <button onClick={clearFilters} className="ml-auto px-6 py-2.5 bg-slate-100 text-slate-500 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-rose-50 hover:text-rose-600 transition-all active:scale-95 shadow-sm">Clear Filters</button>}
+          {(selectedProject || selectedDate) && <button onClick={clearFilters} className="ml-auto px-6 py-2 bg-slate-100 text-slate-500 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-rose-50 hover:text-rose-600 transition-all active:scale-95 shadow-sm">Clear Filters</button>}
         </div>
 
         {error ? (
-          <div className="bg-rose-50 border border-rose-100 p-12 rounded-2xl text-center text-rose-600 animate-pulse">
-            <p className="text-lg font-bold italic uppercase tracking-widest">{error}</p>
+          <div className="bg-rose-50 border border-rose-100 p-8 rounded-2xl text-center text-rose-600">
+            <p className="text-sm font-bold uppercase tracking-widest">{error}</p>
           </div>
         ) : teamMembers.length === 0 ? (
-          <div className="text-center px-10 py-32 bg-white rounded-3xl border border-dashed border-slate-200 opacity-60">
-            <div className="text-7xl mb-8">🔍</div>
-            <h3 className="text-2xl font-bold text-slate-400 uppercase tracking-widest">No Activity Logged</h3>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-6 italic max-w-xl mx-auto leading-relaxed">
+          <div className="text-center px-10 py-24 bg-white rounded-2xl border border-dashed border-slate-200 opacity-60">
+            <div className="text-5xl mb-6">🔍</div>
+            <h3 className="text-lg font-bold text-slate-400 uppercase tracking-widest">No Activity Logged</h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-4 max-w-md mx-auto leading-relaxed">
               No activity records found for the selected criteria.
             </p>
-            {(selectedProject || selectedDate) && <button onClick={clearFilters} className="mt-8 px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-lg hover:bg-slate-950 transition-all">Reset Filters</button>}
+            {(selectedProject || selectedDate) && <button onClick={clearFilters} className="mt-8 px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-md hover:bg-slate-900 transition-all">Reset Filters</button>}
           </div>
         ) : (
-          <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-slate-200 relative group font-sans">
-            <div className="grid grid-cols-[80px_2.5fr_1.5fr_2fr_1.5fr_120px] gap-6 px-10 py-5 bg-slate-900 text-white sticky top-0 z-20">
-              {['User', 'Name / Email', 'Status', 'Current Task', 'Project', 'Actions'].map(h => <div key={h} className="text-[10px] font-bold uppercase tracking-widest opacity-40">{h}</div>)}
+          <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 relative font-sans">
+            <div className="grid grid-cols-[70px_2.5fr_1.5fr_2fr_1.5fr_120px] gap-6 px-10 py-4 bg-slate-50 border-b border-slate-200 text-slate-500 sticky top-0 z-20">
+              {['User', 'Name / Email', 'Status', 'Current Task', 'Project', 'Actions'].map(h => <div key={h} className="text-[10px] font-bold uppercase tracking-widest opacity-60">{h}</div>)}
             </div>
             <div className="divide-y divide-slate-100 relative z-10">
-              {teamMembers.map((m, i) => (
-                <div key={m.user._id} className="grid grid-cols-[80px_2.5fr_1.5fr_2fr_1.5fr_120px] gap-6 items-center px-10 py-8 hover:bg-slate-50 transition-all duration-500 group">
+              {teamMembers.map((m) => (
+                <div key={m.user._id} className="grid grid-cols-[70px_2.5fr_1.5fr_2fr_1.5fr_120px] gap-6 items-center px-10 py-6 hover:bg-slate-50/50 transition-colors group">
                   <div>
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-900 flex items-center justify-center text-xl font-bold shadow-inner group-hover:scale-110 transition-transform"> {m.user.name.charAt(0)} </div>
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold shadow-sm"> {m.user.name.charAt(0)} </div>
                   </div>
                   <div className="min-w-0 pr-6">
-                    <div className="text-lg font-bold text-slate-950 truncate group-hover:text-indigo-600 transition-colors tracking-tight leading-tight"> {m.user.name} </div>
-                    <div className="text-[10px] text-slate-400 truncate font-bold mt-1 opacity-70"> {m.user.email} </div>
+                    <div className="text-base font-bold text-slate-900 truncate tracking-tight leading-tight"> {m.user.name} </div>
+                    <div className="text-[10px] text-slate-400 truncate font-semibold mt-0.5 opacity-80"> {m.user.email} </div>
                   </div>
                   <div> {getStatusBadge(m.status)} </div>
                   <div className="min-w-0 pr-6">
                     {(m.currentTask || m.lastTask) ? (
-                      <div className="space-y-1">
-                        <div className="text-sm font-bold text-slate-800 tracking-tight leading-tight group-hover:text-indigo-600 transition-colors cursor-pointer hover:underline underline-offset-4" onClick={() => navigate(`/my-tasks/${(m.currentTask || m.lastTask)._id}`)}> {(m.currentTask || m.lastTask).title} </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`w-1.5 h-1.5 rounded-full ${m.currentTask ? 'bg-indigo-600' : 'bg-slate-300'}`} />
+                      <div className="space-y-0.5">
+                        <div className="text-sm font-bold text-slate-700 truncate leading-tight hover:text-indigo-600 transition-colors cursor-pointer hover:underline underline-offset-4" onClick={() => navigate(`/my-tasks/${(m.currentTask || m.lastTask)._id}`)}> {(m.currentTask || m.lastTask).title} </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`w-1 h-1 rounded-full ${m.currentTask ? 'bg-indigo-600' : 'bg-slate-300'}`} />
                           <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest"> {m.currentTask ? 'Active Now' : 'Completed'} </span>
                         </div>
                       </div>
@@ -175,10 +175,10 @@ const TeamActivity = () => {
                   </div>
                   <div className="min-w-0">
                     {(m.currentTask || m.lastTask) ? (
-                      <div className="space-y-1">
+                      <div className="space-y-0.5">
                         <div className="text-xs text-slate-600 truncate flex items-center gap-2 font-bold uppercase tracking-tight"> {(m.currentTask || m.lastTask).project?.title || 'General'} </div>
                         <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                          {m.currentTask ? `Started: ${formatDate(m.currentTask.startedAt)}` : `Finished: ${formatDate(m.lastTask.completedAt)}`}
+                          {m.currentTask ? `${formatDate(m.currentTask.startedAt)}` : `${formatDate(m.lastTask.completedAt)}`}
                         </div>
                       </div>
                     ) : null}

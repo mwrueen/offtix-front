@@ -79,9 +79,9 @@ const CompanySettingsPage = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="flex flex-col items-center justify-center py-40 animate-in fade-in space-y-6">
-          <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto shadow-sm" />
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Loading company settings...</p>
+        <div className="flex flex-col items-center justify-center py-40 space-y-6">
+          <div className="w-10 h-10 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto shadow-sm" />
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Loading company settings...</p>
         </div>
       </Layout>
     );
@@ -93,8 +93,8 @@ const CompanySettingsPage = () => {
 
   return (
     <Layout>
-      <div className="space-y-8 animate-in fade-in duration-700 pb-20">
- 
+      <div className="space-y-8 pb-20">
+
 
         {/* Settings Component */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[600px]">
