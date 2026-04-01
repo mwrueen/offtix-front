@@ -358,9 +358,9 @@ const Profile = () => {
                           </div>
                           <div className="flex flex-wrap gap-6 items-center mb-8 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                             <div className="flex gap-4">
-                              <input type="date" value={exp.startDate} onChange={e => updateItem('experience', idx, 'startDate', e.target.value)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
+                              <input type="date" value={exp.startDate ? exp.startDate.split('T')[0] : ''} onChange={e => updateItem('experience', idx, 'startDate', e.target.value)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
                               <span className="text-slate-300 self-center">to</span>
-                              <input type="date" value={exp.endDate} disabled={exp.current} onChange={e => updateItem('experience', idx, 'endDate', e.target.value)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none disabled:opacity-30" />
+                              {!exp.current && <input type="date" value={exp.endDate ? exp.endDate.split('T')[0] : ''} onChange={e => updateItem('experience', idx, 'endDate', e.target.value)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />}
                             </div>
                             <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg cursor-pointer" onClick={() => updateItem('experience', idx, 'current', !exp.current)}>
                               <div className={`w-8 h-4 rounded-full p-1 transition-all flex ${exp.current ? 'bg-indigo-600' : 'bg-slate-200'}`}>
@@ -383,6 +383,103 @@ const Profile = () => {
                           </div>
                         </div>
                       ))}
+                      {profile.profile.experience.length === 0 && (
+                        <div className="py-20 text-center opacity-20 grayscale scale-150">💼</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {activeSection === 'education' && (
+                  <div className="space-y-12">
+                    <div className="flex justify-between items-center gap-4">
+                      <h2 className="text-3xl font-bold text-slate-900 uppercase tracking-tight">Academic History</h2>
+                      <button onClick={addEducation} className="px-6 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-[10px] uppercase tracking-wider hover:bg-slate-800 transition-all shadow-md">+ Add Record</button>
+                    </div>
+
+                    <div className="space-y-8">
+                      {profile.profile.education.map((edu, idx) => (
+                        <div key={idx} className="group/item bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-lg transition-all relative overflow-hidden">
+                          <button onClick={() => removeItem('education', idx)} className="absolute top-4 right-4 w-10 h-10 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center text-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm">✕</button>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Institution</label>
+                              <input type="text" value={edu.institution} onChange={e => updateItem('education', idx, 'institution', e.target.value)} placeholder="University / School Name" className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl text-lg font-bold text-slate-900 outline-none focus:bg-white focus:border-indigo-400 transition-all" />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Degree / Certification</label>
+                              <input type="text" value={edu.degree} onChange={e => updateItem('education', idx, 'degree', e.target.value)} placeholder="e.g. Bachelor of Science" className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl text-lg font-bold text-slate-900 outline-none focus:bg-white focus:border-indigo-400 transition-all" />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Field of Study</label>
+                              <input type="text" value={edu.field} onChange={e => updateItem('education', idx, 'field', e.target.value)} placeholder="e.g. Computer Science" className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl text-lg font-bold text-slate-900 outline-none focus:bg-white focus:border-indigo-400 transition-all" />
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-6 items-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                            <div className="flex gap-4">
+                              <input type="date" value={edu.startDate ? edu.startDate.split('T')[0] : ''} onChange={e => updateItem('education', idx, 'startDate', e.target.value)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
+                              <span className="text-slate-300 self-center">to</span>
+                              {!edu.current && <input type="date" value={edu.endDate ? edu.endDate.split('T')[0] : ''} onChange={e => updateItem('education', idx, 'endDate', e.target.value)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />}
+                            </div>
+                            <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg cursor-pointer" onClick={() => updateItem('education', idx, 'current', !edu.current)}>
+                              <div className={`w-8 h-4 rounded-full p-1 transition-all flex ${edu.current ? 'bg-indigo-600' : 'bg-slate-200'}`}>
+                                <div className={`w-2 h-2 rounded-full bg-white transition-all ${edu.current ? 'translate-x-4' : ''}`} />
+                              </div>
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Currently Enrolled</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {profile.profile.education.length === 0 && (
+                        <div className="py-20 text-center opacity-20 grayscale scale-150">🎓</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {activeSection === 'projects' && (
+                  <div className="space-y-12">
+                    <div className="flex justify-between items-center gap-4">
+                      <h2 className="text-3xl font-bold text-slate-900 uppercase tracking-tight">Key Projects</h2>
+                      <button onClick={addProject} className="px-6 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-[10px] uppercase tracking-wider hover:bg-slate-800 transition-all shadow-md">+ Add Record</button>
+                    </div>
+
+                    <div className="space-y-8">
+                      {profile.profile.projects.map((proj, idx) => (
+                        <div key={idx} className="group/item bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-lg transition-all relative overflow-hidden">
+                          <button onClick={() => removeItem('projects', idx)} className="absolute top-4 right-4 w-10 h-10 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center text-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm">✕</button>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Project Name</label>
+                              <input type="text" value={proj.name} onChange={e => updateItem('projects', idx, 'name', e.target.value)} placeholder="Project Title" className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl text-lg font-bold text-slate-900 outline-none focus:bg-white focus:border-indigo-400 transition-all" />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Project URL</label>
+                              <input type="text" value={proj.url} onChange={e => updateItem('projects', idx, 'url', e.target.value)} placeholder="https://github.com/..." className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl text-lg font-bold text-slate-900 outline-none focus:bg-white focus:border-indigo-400 transition-all" />
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-4 mb-8 bg-slate-50 p-4 rounded-2xl border border-slate-100 items-center">
+                            <input type="date" value={proj.startDate ? proj.startDate.split('T')[0] : ''} onChange={e => updateItem('projects', idx, 'startDate', e.target.value)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
+                            <span className="text-slate-300">to</span>
+                            <input type="date" value={proj.endDate ? proj.endDate.split('T')[0] : ''} onChange={e => updateItem('projects', idx, 'endDate', e.target.value)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none" />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Project Description</label>
+                            <div className="rounded-xl overflow-hidden border border-slate-100">
+                              <ReactQuill
+                                theme="snow"
+                                value={proj.description}
+                                onChange={val => updateItem('projects', idx, 'description', val)}
+                                placeholder="Summarize your work and the project's impact..."
+                                className="bg-white"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {profile.profile.projects.length === 0 && (
+                        <div className="py-20 text-center opacity-20 grayscale scale-150">⚛️</div>
+                      )}
                     </div>
                   </div>
                 )}
