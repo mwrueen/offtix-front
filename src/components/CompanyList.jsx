@@ -12,6 +12,12 @@ const CompanyList = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterIndustry, setFilterIndustry] = useState('all');
 
+    const getLogoUrl = (path) => {
+        if (!path) return null;
+        if (path.startsWith('http')) return path;
+        return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+    };
+
     useEffect(() => {
         // Check if user is admin or superadmin
         if (state.user?.role !== 'admin' && state.user?.role !== 'superadmin') {
@@ -141,8 +147,10 @@ const CompanyList = () => {
 
                             {/* Company Header */}
                             <div className="flex items-center gap-5 mb-8 relative z-10">
-                                <div className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-2xl font-black text-white shadow-xl shadow-indigo-100 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
-                                    {company.name?.charAt(0)?.toUpperCase() || 'C'}
+                                <div className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-2xl font-black text-white shadow-xl shadow-indigo-100 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500 overflow-hidden">
+                                    {company.logo ? (
+                                        <img src={getLogoUrl(company.logo)} alt="" className="w-full h-full object-cover" />
+                                    ) : company.name?.charAt(0)?.toUpperCase() || 'C'}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h3 className="text-xl font-black text-slate-800 tracking-tight truncate group-hover:text-indigo-600 transition-colors">

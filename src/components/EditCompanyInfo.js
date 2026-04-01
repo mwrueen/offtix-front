@@ -93,7 +93,8 @@ const EditCompanyInfo = () => {
           currency: data.currency || 'USD'
         });
         if (data.logo) {
-          setLogoPreview(data.logo);
+          const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
+          setLogoPreview(data.logo.startsWith('http') ? data.logo : `${baseUrl}${data.logo.startsWith('/') ? '' : '/'}${data.logo}`);
         }
       }
     } catch (error) {

@@ -13,6 +13,12 @@ const CompanyDetails = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'projects', 'employees'
 
+    const getLogoUrl = (path) => {
+        if (!path) return null;
+        if (path.startsWith('http')) return path;
+        return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+    };
+
     useEffect(() => {
         // Check if user is admin or superadmin
         if (state.user?.role !== 'admin' && state.user?.role !== 'superadmin') {
@@ -123,8 +129,10 @@ const CompanyDetails = () => {
                 </button>
 
                 <div className="flex flex-col lg:flex-row items-start lg:items-center gap-10 relative z-10">
-                    <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-[32px] bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-4xl lg:text-5xl font-black text-white shadow-2xl shadow-indigo-200 rotate-3 hover:rotate-0 transition-transform duration-500">
-                        {company.name?.charAt(0)?.toUpperCase()}
+                    <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-[32px] bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-4xl lg:text-5xl font-black text-white shadow-2xl shadow-indigo-200 rotate-3 hover:rotate-0 transition-transform duration-500 overflow-hidden">
+                        {company.logo ? (
+                            <img src={getLogoUrl(company.logo)} alt="" className="w-full h-full object-cover" />
+                        ) : company.name?.charAt(0)?.toUpperCase()}
                     </div>
 
                     <div className="flex-1">

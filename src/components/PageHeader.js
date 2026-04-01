@@ -18,7 +18,7 @@ const PageHeader = ({
                 <div className="flex-1">
                     <div className="flex items-center gap-6">
                         {icon && (
-                            <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-3xl shadow-sm border border-indigo-100/50 shrink-0">
+                            <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-3xl shadow-sm border border-indigo-100/50 shrink-0 overflow-hidden">
                                 {icon}
                             </div>
                         )}

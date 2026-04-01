@@ -8,7 +8,7 @@ import { useSocket } from '../context/SocketContext';
 import { useChat } from '../context/ChatContext';
 import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import GlobalChat from './chat/GlobalChat';
-import { myTasksAPI } from '../services/api';
+import { myTasksAPI, BASE_SERVER_URL } from '../services/api';
 
 const Layout = ({ children }) => {
   const { state, dispatch } = useAuth();
@@ -206,10 +206,18 @@ const Layout = ({ children }) => {
 
   const timeAgo = (d) => { if (!d) return ''; const df = Date.now() - new Date(d).getTime(); const m = Math.floor(df / 60000); if (m < 1) return 'Just now'; if (m < 60) return `${m}m ago`; const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`; return `${Math.floor(h / 24)}d ago`; };
 
+  const getLogoUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+  };
+
+  const baseServerUrl = BASE_SERVER_URL;
+
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden">
+    <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden">
       {/* Sidebar */}
-      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-72'} h-screen bg-white text-slate-700 flex flex-col fixed left-0 top-0 transition-all duration-300 ease-in-out shadow-lg z-[1000] border-r border-slate-200`}>
+      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-72'} h-screen bg-white text-slate-700 flex flex-col fixed left-0 top-0 transition-all duration-300 ease-in-out shadow-[0_0_20px_rgba(0,0,0,0.03)] z-[1000] border-r border-slate-200/60`}>
         <SidebarHeader
           sidebarCollapsed={sidebarCollapsed}
           setSidebarCollapsed={setSidebarCollapsed}
@@ -221,70 +229,68 @@ const Layout = ({ children }) => {
 
         {/* Workspace Dropdown */}
         {isCompanyDropdownOpen && (
-          <div className={`workspace-modal absolute ${sidebarCollapsed ? 'top-16 left-20 w-80' : 'top-20 left-4 right-4'} bg-white border border-slate-200 rounded-xl shadow-2xl z-[1001] max-h-[400px] overflow-y-auto scrollbar-none animate-in fade-in slide-in-from-top-2`}>
-            <div className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">Workspaces</div>
-            <div className="p-2 space-y-1">
+          <div className={`workspace-modal absolute ${sidebarCollapsed ? 'top-16 left-20 w-80' : 'top-24 left-4 right-4'} bg-white border border-slate-200 rounded-2xl shadow-2xl z-[1001] max-h-[450px] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300 ring-1 ring-slate-900/5`}>
+            <div className="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[2px] border-b border-slate-50 bg-slate-50/50">Your Workspaces</div>
+            <div className="p-2 space-y-1 overflow-y-auto max-h-[300px] scrollbar-thin">
               {companyState.companies.map((c) => (
-                <div key={c.id} onClick={() => handleCompanySelect(c)} className={`flex items-center gap-3 p-3 cursor-pointer rounded-lg transition-colors ${companyState.selectedCompany?.id === c.id ? 'bg-indigo-50 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-600'}`}>
-                  <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center flex-shrink-0 text-sm">{c.logo ? <img src={c.logo} alt="" className="w-full h-full object-cover rounded-md" /> : c.name.charAt(0)}</div>
-                  <span className="flex-1 truncate text-sm">{c.name}</span>
+                <div key={c.id} onClick={() => handleCompanySelect(c)} className={`group flex items-center gap-3.5 p-3 cursor-pointer rounded-xl transition-all duration-200 ${companyState.selectedCompany?.id === c.id ? 'bg-indigo-50/80 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-600'}`}>
+                  <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center flex-shrink-0 text-sm shadow-sm group-hover:scale-110 transition-transform overflow-hidden">
+                    {c.logo ? <img src={getLogoUrl(c.logo)} alt="" className="w-full h-full object-cover" /> : <span className="bg-indigo-500 w-full h-full flex items-center justify-center text-white font-bold">{c.name.charAt(0)}</span>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate leading-none mb-1">{c.name}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Professional Workspace</p>
+                  </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     {getCompanyPendingTasks(c.id) > 0 && (
-                      <span className="min-w-5 h-5 px-1.5 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
-                        {getCompanyPendingTasks(c.id) > 99 ? '99+' : getCompanyPendingTasks(c.id)}
+                      <span className="min-w-6 h-6 px-1.5 bg-indigo-600 text-white text-[10px] font-bold rounded-lg flex items-center justify-center shadow-sm">
+                        {getCompanyPendingTasks(c.id)}
                       </span>
                     )}
                     {getCompanyMsgCount(c.id) > 0 && (
-                      <span className="min-w-5 h-5 px-1.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
-                        {getCompanyMsgCount(c.id) > 99 ? '99+' : getCompanyMsgCount(c.id)}
-                      </span>
-                    )}
-                    {getCompanyNotifCount(c.id) > 0 && (
-                      <span className="min-w-5 h-5 px-1.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
-                        {getCompanyNotifCount(c.id) > 99 ? '99+' : getCompanyNotifCount(c.id)}
+                      <span className="min-w-6 h-6 p-1.5 bg-slate-100 text-slate-500 text-[10px] font-bold rounded-lg flex items-center justify-center">
+                        {getCompanyMsgCount(c.id)}
                       </span>
                     )}
                   </div>
                 </div>
               ))}
-              <div onClick={() => handleCompanySelect('Personal')} className={`flex items-center gap-3 p-3 cursor-pointer rounded-lg transition-colors ${companyState.selectedCompany?.id === 'personal' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-600'}`}>
-                <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center text-sm">👤</div>
-                <span className="flex-1 text-sm font-medium">Personal Account</span>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {getCompanyPendingTasks('personal') > 0 && (
-                    <span className="min-w-5 h-5 px-1.5 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
-                      {getCompanyPendingTasks('personal') > 99 ? '99+' : getCompanyPendingTasks('personal')}
-                    </span>
-                  )}
-                  {getCompanyMsgCount('personal') > 0 && (
-                    <span className="min-w-5 h-5 px-1.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
-                      {getCompanyMsgCount('personal') > 99 ? '99+' : getCompanyMsgCount('personal')}
-                    </span>
-                  )}
-                  {getCompanyNotifCount('personal') > 0 && (
-                    <span className="min-w-5 h-5 px-1.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
-                      {getCompanyNotifCount('personal') > 99 ? '99+' : getCompanyNotifCount('personal')}
-                    </span>
-                  )}
+              <div onClick={() => handleCompanySelect('Personal')} className={`group flex items-center gap-3.5 p-3 cursor-pointer rounded-xl transition-all duration-200 ${companyState.selectedCompany?.id === 'personal' ? 'bg-indigo-50/80 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-600'}`}>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-500 to-fuchsia-500 flex items-center justify-center text-sm shadow-md group-hover:scale-110 transition-transform overflow-hidden text-white font-bold">P</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate leading-none mb-1">Personal Workspace</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Private Projects</p>
                 </div>
+                {getCompanyPendingTasks('personal') > 0 && (
+                  <span className="min-w-6 h-6 px-1.5 bg-indigo-600 text-white text-[10px] font-bold rounded-lg flex items-center justify-center shadow-sm">
+                    {getCompanyPendingTasks('personal')}
+                  </span>
+                )}
               </div>
             </div>
-            <div className="p-3 border-t border-slate-100">
-              <button onClick={() => handleCompanySelect('Create Company')} className="w-full py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors"> + Add Company </button>
+            <div className="p-4 bg-slate-50/80 border-t border-slate-100 mt-1">
+              <button onClick={() => handleCompanySelect('Create Company')} className="w-full py-3 bg-white border border-slate-200 text-indigo-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm"> <span className="text-sm">+</span> Add New Organization </button>
             </div>
           </div>
         )}
 
-        <nav className={`flex-1 overflow-y-auto scrollbar-none py-6 space-y-1 ${sidebarCollapsed ? 'px-2' : 'px-4'}`}>
+        <nav className={`flex-1 overflow-y-auto scrollbar-none py-6 space-y-1 ${sidebarCollapsed ? 'px-3' : 'px-4'}`}>
           {menuItems.map((item, idx) => {
-            const active = location.pathname === item.path || (item.path === '/employees' && location.pathname.startsWith('/employees/'));
+            const active = location.pathname === item.path || (item.path === '/employees' && location.pathname.startsWith('/employees/')) || (item.path === '/projects' && location.pathname.startsWith('/projects/')) || (item.path === '/my-tasks' && location.pathname.startsWith('/my-tasks/'));
             const showCat = !sidebarCollapsed && (idx === 0 || menuItems[idx - 1].category !== item.category);
             return (
               <React.Fragment key={item.path}>
-                {showCat && <div className="px-3 mt-6 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.category}</div>}
-                <div onClick={() => navigate(item.path)} className={`group flex items-center gap-4 cursor-pointer rounded-lg transition-all ${sidebarCollapsed ? 'p-3 justify-center' : 'p-3 px-4'} ${active ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}>
-                  <span className="text-xl">{item.icon}</span>
-                  {!sidebarCollapsed && <span className="flex-1 text-sm font-medium">{item.label}</span>}
+                {showCat && <div className="px-4 mt-8 mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-[2px]">{item.category}</div>}
+                <div
+                  onClick={() => navigate(item.path)}
+                  className={`group flex items-center gap-4 cursor-pointer rounded-xl transition-all duration-200 ${sidebarCollapsed ? 'p-3 justify-center mb-1' : 'p-3.5 px-4 mb-0.5'} 
+                    ${active
+                      ? 'bg-indigo-600 text-white shadow-[0_8px_20px_rgba(79,70,229,0.25)] ring-1 ring-indigo-700'
+                      : 'text-slate-500 hover:bg-slate-100/50 hover:text-slate-900'}`}
+                >
+                  <span className={`text-xl transition-transform duration-200 ${active ? 'scale-110' : 'group-hover:scale-110 group-hover:text-indigo-600 opacity-70 group-hover:opacity-100'}`}>{item.icon}</span>
+                  {!sidebarCollapsed && <span className={`flex-1 text-[13.5px] font-bold tracking-tight ${active ? 'text-white' : 'text-slate-700'}`}>{item.label}</span>}
+                  {!sidebarCollapsed && active && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
                 </div>
               </React.Fragment>
             );
@@ -292,26 +298,35 @@ const Layout = ({ children }) => {
         </nav>
 
         {/* User Footer */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200">
+        <div className="p-5 mt-auto bg-slate-50/50 border-t border-slate-100 shadow-[0_-5px_15px_rgba(0,0,0,0.01)]">
           {!sidebarCollapsed ? (
             <div className="space-y-4">
-              <div onClick={() => navigate('/profile')} className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
-                <div className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg">{state.user?.name?.charAt(0)}</div>
+              <div
+                onClick={() => navigate('/profile')}
+                className="group flex items-center gap-3.5 p-2 rounded-xl cursor-pointer hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all"
+              >
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-indigo-700 text-white flex items-center justify-center font-bold text-lg shadow-md group-hover:scale-105 transition-transform">{state.user?.name?.charAt(0)}</div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm text-slate-800 truncate">{state.user?.name}</p>
-                  <p className="text-[10px] text-slate-400 uppercase font-bold">{state.user?.role}</p>
+                  <p className="font-bold text-sm text-slate-800 truncate leading-tight group-hover:text-indigo-600 transition-colors">{state.user?.name}</p>
+                  <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mt-1">{state.user?.role || 'Team Member'}</p>
                 </div>
               </div>
-              <button onClick={handleLogout} className="w-full py-2 bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 rounded-lg text-xs font-bold transition-colors"> Logout </button>
+              <button onClick={handleLogout} className="w-full py-3 bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-600 rounded-xl text-xs font-bold transition-all border border-slate-200/60 shadow-sm flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                Sign Out of Account
+              </button>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-4">
-              <div onClick={() => navigate('/profile')} className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg cursor-pointer">{state.user?.name?.charAt(0)}</div>
-              <button onClick={handleLogout} className="text-xl text-slate-400 hover:text-rose-500 transition-colors">🔒</button>
+              <div onClick={() => navigate('/profile')} className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-indigo-700 text-white flex items-center justify-center font-bold text-lg cursor-pointer hover:scale-110 transition-transform shadow-md">{state.user?.name?.charAt(0)}</div>
+              <button onClick={handleLogout} className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all shadow-sm group">
+                <span className="group-hover:scale-110 transition-transform">🔒</span>
+              </button>
             </div>
           )}
         </div>
       </aside>
+
 
       {/* Main Content Area */}
       <main className={`flex flex-col flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-72'} transition-all duration-300 ease-in-out h-screen overflow-hidden`}>

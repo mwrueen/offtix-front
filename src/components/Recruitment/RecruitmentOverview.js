@@ -5,10 +5,18 @@ import Layout from '../Layout';
 import PageHeader from '../PageHeader';
 import { useCompanyFilter } from '../../hooks/useCompanyFilter';
 import { getCookie } from '../../utils/cookies';
+import { BASE_SERVER_URL } from '../../services/api';
 
 const RecruitmentOverview = () => {
     const navigate = useNavigate();
     const { selectedCompany } = useCompanyFilter();
+
+    const getLogoUrl = (path) => {
+        if (!path) return null;
+        if (path.startsWith('http')) return path;
+        return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+    };
+
     const [circulars, setCirculars] = useState([]);
     const [stats, setStats] = useState({
         totalCirculars: 0,
@@ -74,7 +82,9 @@ const RecruitmentOverview = () => {
                 <PageHeader
                     title="Recruitment"
                     subtitle={`Hiring operations for ${selectedCompany.name}`}
-                    icon="🎯"
+                    icon={selectedCompany.logo ? (
+                        <img src={getLogoUrl(selectedCompany.logo)} alt="" className="w-full h-full object-cover" />
+                    ) : "🎯"}
                     stats={statsConfig}
                     actions={
                         <Link

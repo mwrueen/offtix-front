@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCookie } from '../utils/cookies';
 import Layout from './Layout';
 import PageHeader from './PageHeader';
-import { companyAPI } from '../services/api';
+import { companyAPI, BASE_SERVER_URL } from '../services/api';
 import { useToast } from '../context/ToastContext';
 
 const Company = () => {
@@ -83,6 +83,12 @@ const Company = () => {
 
   const userPermissions = getUserPermissions();
 
+  const getLogoUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+  };
+
   if (loading) return (
     <Layout>
       <div className="flex flex-col items-center justify-center py-40 animate-in fade-in space-y-6">
@@ -124,7 +130,9 @@ const Company = () => {
         <PageHeader
           title={company.name}
           subtitle={company.description || 'Managing core organizational profile and operational parameters.'}
-          icon={company.name?.charAt(0)}
+          icon={company.logo ? (
+            <img src={getLogoUrl(company.logo)} alt="" className="w-full h-full object-cover" />
+          ) : company.name?.charAt(0)}
           stats={[
             { label: 'Industry Sector', value: company.industry || 'General' },
             { label: 'Headcount', value: company.members?.length || '0' },

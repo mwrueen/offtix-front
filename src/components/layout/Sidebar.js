@@ -55,70 +55,80 @@ const Sidebar = ({ collapsed, onToggle }) => {
   const initials = user?.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
 
   return (
-    <div className={`fixed left-0 top-0 h-full bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-50 ${collapsed ? 'w-[70px]' : 'w-64'}`}>
+    <div className={`fixed left-0 top-0 h-full bg-slate-900 border-r border-slate-800 flex flex-col transition-all duration-300 z-50 shadow-2xl ${collapsed ? 'w-[70px]' : 'w-64'}`}>
 
-      {/* Logo */}
-      <div className={`flex items-center h-16 border-b border-slate-100 px-4 shrink-0 ${collapsed ? 'justify-center' : 'justify-between'}`}>
+      {/* Top Header with Toggle */}
+      <div className={`flex items-center h-16 px-4 shrink-0 ${collapsed ? 'justify-center' : 'justify-between'}`}>
         {!collapsed && (
-          <div onClick={() => navigate('/')} className="flex items-center gap-2.5 cursor-pointer">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0">O</div>
-            <span className="font-semibold text-slate-900 text-base">Offtix</span>
+          <div className="flex items-center gap-2 opacity-80 hover:opacity-100 transition-opacity cursor-default">
+            <div className="w-6 h-6 bg-indigo-500 rounded flex items-center justify-center text-white font-bold text-[10px]">OT</div>
+            <span className="font-bold text-slate-400 text-xs tracking-widest uppercase">Offtix Platform</span>
           </div>
         )}
-        {collapsed && (
-          <div onClick={() => navigate('/')} className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm cursor-pointer">O</div>
-        )}
-        {!collapsed && (
-          <button onClick={onToggle} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+
+        {!collapsed ? (
+          <button
+            onClick={onToggle}
+            className="group p-1.5 rounded-lg hover:bg-slate-800 text-slate-500 hover:text-slate-300 transition-all border border-transparent hover:border-slate-700"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
             </svg>
           </button>
-        )}
-        {collapsed && (
-          <button onClick={onToggle} className="absolute -right-3 top-[72px] w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 shadow-sm transition-colors">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        ) : (
+          <button
+            onClick={onToggle}
+            className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-indigo-600 transition-all shadow-lg border border-slate-700"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 5l7 7-7 7M6 5l7 7-7 7" />
             </svg>
           </button>
         )}
       </div>
 
-      {/* Company Selector */}
-      <CompanySelector
-        collapsed={collapsed}
-        isOpen={isCompanyDropdownOpen}
-        onToggle={() => setIsCompanyDropdownOpen(!isCompanyDropdownOpen)}
-      />
+      {/* Company Selector - Primary Branding */}
+      <div className="px-1 shadow-sm">
+        <CompanySelector
+          collapsed={collapsed}
+          isOpen={isCompanyDropdownOpen}
+          onToggle={() => setIsCompanyDropdownOpen(!isCompanyDropdownOpen)}
+          dark={true}
+        />
+      </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
         <SidebarNavigation
           menuItems={menuItems}
           collapsed={collapsed}
           currentPath={location.pathname}
           onNavigate={navigate}
+          dark={true}
         />
       </div>
 
       {/* User profile at bottom */}
-      <div className={`shrink-0 border-t border-slate-100 p-3`}>
+      <div className="shrink-0 p-4 bg-slate-900/50 backdrop-blur-sm border-t border-slate-800">
         <div
           onClick={() => navigate('/profile')}
-          className={`flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors group ${collapsed ? 'justify-center' : ''}`}
+          className={`flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800 cursor-pointer transition-all group border border-transparent hover:border-slate-700 ${collapsed ? 'justify-center' : ''}`}
         >
-          <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">
-            {initials}
+          <div className="relative">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-lg group-hover:scale-105 transition-transform">
+              {initials}
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></div>
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-800 truncate">{user?.name || 'User'}</p>
-              <p className="text-xs text-slate-400 truncate">{user?.email || ''}</p>
+              <p className="text-sm font-semibold text-slate-200 truncate group-hover:text-white transition-colors">{user?.name || 'User'}</p>
+              <p className="text-[11px] text-slate-500 truncate group-hover:text-slate-400 transition-colors uppercase tracking-tight font-medium">{user?.role || 'Member'}</p>
             </div>
           )}
           {!collapsed && (
-            <svg className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
             </svg>
           )}
         </div>

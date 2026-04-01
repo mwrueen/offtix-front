@@ -6,6 +6,7 @@ import { useSocket } from '../../context/SocketContext';
 import { useChat } from '../../context/ChatContext';
 import { usePermissions } from '../../context/PermissionsContext';
 import { getCookie } from '../../utils/cookies';
+import { BASE_SERVER_URL } from '../../services/api';
 
 const UnifiedHeader = () => {
     const navigate = useNavigate();
@@ -29,6 +30,12 @@ const UnifiedHeader = () => {
     const { isAuthenticated, user } = state;
     const selectedCompany = companyState.selectedCompany;
     const isPersonal = selectedCompany?.id === 'personal';
+
+    const getLogoUrl = (path) => {
+        if (!path) return null;
+        if (path.startsWith('http')) return path;
+        return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -91,8 +98,10 @@ const UnifiedHeader = () => {
                                     onClick={() => setIsCompanyOpen(!isCompanyOpen)}
                                     className="flex items-center gap-3 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-all text-left group"
                                 >
-                                    <div className="w-6 h-6 rounded-md bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700">
-                                        {isPersonal ? '👤' : selectedCompany?.name?.charAt(0)}
+                                    <div className="w-6 h-6 rounded-md bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700 overflow-hidden">
+                                        {isPersonal ? '👤' : (selectedCompany?.logo ? (
+                                            <img src={getLogoUrl(selectedCompany.logo)} alt="" className="w-full h-full object-cover" />
+                                        ) : selectedCompany?.name?.charAt(0))}
                                     </div>
                                     <div className="hidden sm:block">
                                         <p className="text-[10px] font-bold text-slate-500 leading-none">Workspace</p>
@@ -110,7 +119,11 @@ const UnifiedHeader = () => {
                                                 onClick={() => { selectCompany(c); setIsCompanyOpen(false); }}
                                                 className={`w-full flex items-center gap-3 p-2 rounded-xl text-left transition-all ${selectedCompany?.id === c.id ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-slate-50 text-slate-600'}`}
                                             >
-                                                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold">{c.name.charAt(0)}</div>
+                                                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold overflow-hidden">
+                                                    {c.logo ? (
+                                                        <img src={getLogoUrl(c.logo)} alt="" className="w-full h-full object-cover" />
+                                                    ) : c.name.charAt(0)}
+                                                </div>
                                                 <span className="text-xs font-bold">{c.name}</span>
                                             </button>
                                         ))}
