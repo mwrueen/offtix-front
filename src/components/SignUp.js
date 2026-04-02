@@ -6,8 +6,15 @@ import AuthLayout from './auth/AuthLayout';
 import SocialLoginButtons from './auth/SocialLoginButtons';
 
 const SignUp = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    acceptedTerms: false
+  });
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
@@ -39,20 +46,56 @@ const SignUp = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value
+    });
     if (name === 'password') setPasswordStrength(calculatePasswordStrength(value));
+
+    // Clear errors when user types
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: '' });
+    }
     setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) { setError('Passwords do not match.'); return; }
-    if (formData.password.length < 6) { setError('Password must be at least 6 characters.'); return; }
+    const newErrors = {};
+
+    if (!formData.name.trim()) newErrors.name = 'Full name is required';
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    }
+
+    if (formData.confirmPassword !== formData.password) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (!formData.acceptedTerms) {
+      newErrors.acceptedTerms = 'You must accept the terms and privacy policy';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setError('Please correct the highlighted errors below.');
+      return;
+    }
+
     setIsLoading(true);
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const { confirmPassword, ...signupData } = formData;
+      const { confirmPassword, acceptedTerms, ...signupData } = formData;
       const response = await authAPI.signup(signupData);
       dispatch({ type: 'LOGIN_SUCCESS', payload: response.data });
       navigate(from, { replace: true });
@@ -105,11 +148,30 @@ const SignUp = () => {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-slate-700">Full name</label>
-            <input type="text" name="name" value={formData.name} onChange={handleChange} required autoComplete="name" placeholder="Jane Smith" className={inputClass} />
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              autoComplete="name"
+              placeholder="Jane Smith"
+              className={`${inputClass} ${errors.name ? 'border-rose-300 ring-2 ring-rose-500/10 focus:border-rose-500 focus:ring-rose-500/20' : ''}`}
+            />
+            {errors.name && <p className="text-[11px] font-medium text-rose-500 mt-1">{errors.name}</p>}
           </div>
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-slate-700">Email</label>
-            <input type="email" name="email" value={formData.email} onChange={handleChange} required autoComplete="email" placeholder="you@example.com" className={inputClass} />
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              autoComplete="email"
+              placeholder="you@example.com"
+              className={`${inputClass} ${errors.email ? 'border-rose-300 ring-2 ring-rose-500/10 focus:border-rose-500 focus:ring-rose-500/20' : ''}`}
+            />
+            {errors.name && !errors.email && <div className="h-[15px]" />} {/* Spacer if only name has error */}
+            {errors.email && <p className="text-[11px] font-medium text-rose-500 mt-1">{errors.email}</p>}
           </div>
         </div>
 
@@ -121,16 +183,16 @@ const SignUp = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              required
               autoComplete="new-password"
               placeholder="Create a password"
-              className={`${inputClass} pr-11`}
+              className={`${inputClass} pr-11 ${errors.password ? 'border-rose-300 ring-2 ring-rose-500/10 focus:border-rose-500 focus:ring-rose-500/20' : ''}`}
             />
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors" aria-label={showPassword ? 'Hide password' : 'Show password'}>
               {showPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
-          {formData.password && (
+          {errors.password && <p className="text-[11px] font-medium text-rose-500 mt-1">{errors.password}</p>}
+          {formData.password && !errors.password && (
             <div className="pt-1 space-y-1.5">
               <div className="flex gap-1">
                 {[...Array(5)].map((_, i) => (
@@ -150,35 +212,43 @@ const SignUp = () => {
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              required
               autoComplete="new-password"
               placeholder="Repeat your password"
-              className={`${inputClass} pr-11`}
+              className={`${inputClass} pr-11 ${errors.confirmPassword ? 'border-rose-300 ring-2 ring-rose-500/10 focus:border-rose-500 focus:ring-rose-500/20' : ''}`}
             />
             <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors" aria-label={showConfirm ? 'Hide password' : 'Show password'}>
               {showConfirm ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
+          {errors.confirmPassword && <p className="text-[11px] font-medium text-rose-500 mt-1">{errors.confirmPassword}</p>}
         </div>
 
-        <label className="flex items-start gap-2.5 cursor-pointer group">
-          <input type="checkbox" required className="w-4 h-4 mt-0.5 rounded border-slate-300 bg-white text-indigo-600 focus:ring-indigo-500/30 focus:ring-2 cursor-pointer shrink-0" />
-          <span className="text-sm text-slate-500 group-hover:text-slate-700 transition-colors leading-snug">
-            I agree to the{' '}
-            <Link to="/terms" className="text-indigo-600 hover:text-indigo-500 no-underline">Terms of Service</Link>
-            {' '}and{' '}
-            <Link to="/privacy" className="text-indigo-600 hover:text-indigo-500 no-underline">Privacy Policy</Link>
-          </span>
+        <label className={`flex items-start gap-2.5 cursor-pointer group p-3 rounded-xl transition-all ${errors.acceptedTerms ? 'bg-rose-50 border border-rose-100' : 'hover:bg-slate-50'}`}>
+          <input
+            type="checkbox"
+            name="acceptedTerms"
+            checked={formData.acceptedTerms}
+            onChange={handleChange}
+            className={`w-4 h-4 mt-0.5 rounded border-slate-300 bg-white text-indigo-600 focus:ring-indigo-500/30 focus:ring-2 cursor-pointer shrink-0 transition-all ${errors.acceptedTerms ? 'border-rose-300 ring-2 ring-rose-500/20' : ''}`}
+          />
+          <div className="space-y-1">
+            <span className={`text-sm transition-colors leading-snug ${errors.acceptedTerms ? 'text-rose-600 font-medium' : 'text-slate-500 group-hover:text-slate-700'}`}>
+              I agree to the{' '}
+              <Link to="/terms" className="text-indigo-600 hover:text-indigo-500 no-underline font-medium">Terms of Service</Link>
+              {' '}and{' '}
+              <Link to="/privacy" className="text-indigo-600 hover:text-indigo-500 no-underline font-medium">Privacy Policy</Link>
+            </span>
+            {errors.acceptedTerms && <p className="text-[11px] font-medium text-rose-500">{errors.acceptedTerms}</p>}
+          </div>
         </label>
 
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 mt-1 ${
-            isLoading
-              ? 'bg-indigo-400 text-white cursor-not-allowed'
-              : 'bg-indigo-600 text-white hover:bg-indigo-500 active:scale-[0.98] shadow-sm'
-          }`}
+          className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 mt-1 ${isLoading
+            ? 'bg-indigo-400 text-white cursor-not-allowed'
+            : 'bg-indigo-600 text-white hover:bg-indigo-500 active:scale-[0.98] shadow-sm'
+            }`}
         >
           {isLoading ? (
             <>

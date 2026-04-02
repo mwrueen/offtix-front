@@ -74,6 +74,14 @@ const ApplicantsList = () => {
         }
     };
 
+    const handleViewProfile = (app) => {
+        if (app.user) {
+            window.open(`/profile/view/${app.user}`, '_blank');
+        } else {
+            toast.showToast('This applicant does not have a professional system profile yet.', 'info');
+        }
+    };
+
     return (
         <Layout>
             <div className="max-w-[1240px] mx-auto py-12 px-6 space-y-8 animate-in fade-in pb-40">
@@ -112,25 +120,30 @@ const ApplicantsList = () => {
                                         <td colSpan="5" className="px-8 py-20 text-center">
                                             <div className="flex flex-col items-center gap-3">
                                                 <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase">Loading Data...</p>
+                                                <div className="text-[10px] font-bold text-slate-400 uppercase">Loading Data...</div>
                                             </div>
                                         </td>
                                     </tr>
                                 ) : applicants.length === 0 ? (
                                     <tr>
                                         <td colSpan="5" className="px-8 py-20 text-center">
-                                            <p className="text-sm font-bold text-slate-400 italic">No applications detected yet.</p>
+                                            <div className="text-sm font-bold text-slate-400 italic">No applications detected yet.</div>
                                         </td>
                                     </tr>
                                 ) : applicants.map((app) => (
-                                    <tr key={app._id} className="hover:bg-slate-50 transition-all duration-200 group">
+                                    <tr key={app._id} className="hover:bg-slate-50 transition-all duration-200 group border-b border-slate-50 last:border-0">
                                         <td className="px-8 py-6">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center font-bold text-lg group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
                                                     {app.applicant.name.charAt(0)}
                                                 </div>
                                                 <div>
-                                                    <div className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors tracking-tight">{app.applicant.name}</div>
+                                                    <div
+                                                        className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors tracking-tight cursor-pointer"
+                                                        onClick={() => handleViewProfile(app)}
+                                                    >
+                                                        {app.applicant.name}
+                                                    </div>
                                                     <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{app.applicant.email}</div>
                                                 </div>
                                             </div>
@@ -156,11 +169,18 @@ const ApplicantsList = () => {
                                             </span>
                                         </td>
                                         <td className="px-8 py-6 text-right">
-                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
+                                            <div className="flex justify-end gap-2 transition-all duration-300">
                                                 {app._id === statusUpdating ? (
                                                     <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
                                                 ) : (
                                                     <>
+                                                        <button
+                                                            onClick={() => handleViewProfile(app)}
+                                                            className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm"
+                                                            title="View Profile"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                                        </button>
                                                         {app.status === 'pending' && (
                                                             <button
                                                                 onClick={() => updateStatus(app._id, 'shortlisted')}
