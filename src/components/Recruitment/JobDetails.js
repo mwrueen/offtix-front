@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import UnifiedHeader from '../layout/UnifiedHeader';
+import { getCookie } from '../../utils/cookies';
+
+const APPLIED_JOBS_KEY = 'offtix_careers_applied_jobs';
 
 const JobDetails = () => {
     const { id } = useParams();
@@ -15,6 +18,36 @@ const JobDetails = () => {
     const [circular, setCircular] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [alreadyApplied, setAlreadyApplied] = useState(false);
+
+    const authHeaders = useCallback(() => {
+        const token = getCookie('authToken');
+        return token ? { Authorization: `Bearer ${token}` } : {};
+    }, []);
+
+    const hasAppliedInBrowser = useCallback((jobId) => {
+        try {
+            const raw = localStorage.getItem(APPLIED_JOBS_KEY);
+            const ids = raw ? JSON.parse(raw) : [];
+            return Array.isArray(ids) && ids.includes(jobId);
+        } catch {
+            return false;
+        }
+    }, []);
+
+    const markAppliedInBrowser = useCallback((jobId) => {
+        try {
+            const raw = localStorage.getItem(APPLIED_JOBS_KEY);
+            const ids = raw ? JSON.parse(raw) : [];
+            const list = Array.isArray(ids) ? ids : [];
+            if (!list.includes(jobId)) {
+                list.push(jobId);
+                localStorage.setItem(APPLIED_JOBS_KEY, JSON.stringify(list));
+            }
+        } catch {
+            /* ignore */
+        }
+    }, []);
 
     const [formData, setFormData] = useState({
         applicant: {
@@ -46,9 +79,13 @@ const JobDetails = () => {
     useEffect(() => {
         const fetchCircular = async () => {
             try {
-                const res = await axios.get(`/api/recruitment/public/circulars/${id}`);
-                setCircular(res.data);
-                const initialAnswers = res.data.questions.map(q => ({
+                const res = await axios.get(`/api/recruitment/public/circulars/${id}`, {
+                    headers: authHeaders()
+                });
+                const { alreadyApplied: appliedFromApi, ...job } = res.data;
+                setCircular(job);
+                setAlreadyApplied(!!appliedFromApi || hasAppliedInBrowser(id));
+                const initialAnswers = job.questions.map(q => ({
                     questionId: q._id,
                     questionText: q.question,
                     answer: q.type === 'checkbox' ? [] : ''
@@ -62,7 +99,7 @@ const JobDetails = () => {
             }
         };
         fetchCircular();
-    }, [id]);
+    }, [id, isAuthenticated, authHeaders, hasAppliedInBrowser]);
 
     const handleAnswerChange = (index, value, type) => {
         const newAnswers = [...formData.answers];
@@ -84,11 +121,12 @@ const JobDetails = () => {
         setSubmitting(true);
         try {
             const payload = {
-                user: user?._id || null, // Link to internal user profile if authenticated
                 applicant: {
                     ...formData.applicant,
                     experience: Number(formData.applicant.experience) || 0,
-                    skills: formData.applicant.skills.split(',').map(s => s.trim())
+                    skills: typeof formData.applicant.skills === 'string'
+                        ? formData.applicant.skills.split(',').map(s => s.trim())
+                        : (formData.applicant.skills || [])
                 },
                 answers: formData.answers.map(a => ({
                     ...a,
@@ -96,11 +134,21 @@ const JobDetails = () => {
                 }))
             };
 
-            await axios.post(`/api/recruitment/public/apply/${id}`, payload);
+            await axios.post(`/api/recruitment/public/apply/${id}`, payload, {
+                headers: { ...authHeaders(), 'Content-Type': 'application/json' }
+            });
+            markAppliedInBrowser(id);
+            setAlreadyApplied(true);
             toast.showToast('Application submitted successfully!', 'success');
             navigate('/careers');
         } catch (error) {
-            toast.showToast(error.response?.data?.message || 'Submission failed', 'error');
+            if (error.response?.status === 409) {
+                markAppliedInBrowser(id);
+                setAlreadyApplied(true);
+                toast.showToast(error.response?.data?.message || 'You have already applied for this position.', 'info');
+            } else {
+                toast.showToast(error.response?.data?.message || 'Submission failed', 'error');
+            }
         } finally {
             setSubmitting(false);
         }
@@ -205,6 +253,21 @@ const JobDetails = () => {
                             </div>
 
                             <div className="p-6">
+                                {alreadyApplied ? (
+                                    <div className="space-y-4 text-center py-4">
+                                        <div className="w-12 h-12 mx-auto bg-emerald-100 rounded-full flex items-center justify-center">
+                                            <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                        </div>
+                                        <p className="text-sm font-bold text-slate-800">You have already applied for this role.</p>
+                                        <p className="text-xs text-slate-500 leading-relaxed">We have your application on file. You will hear from the team if there is a fit.</p>
+                                        <Link
+                                            to="/careers"
+                                            className="inline-block w-full text-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-lg text-sm transition-all"
+                                        >
+                                            Back to openings
+                                        </Link>
+                                    </div>
+                                ) : (
                                 <form onSubmit={handleApply} className="space-y-6">
                                     <div className="space-y-5">
                                         {isAuthenticated ? (
@@ -365,6 +428,7 @@ const JobDetails = () => {
                                         {submitting ? 'Submitting...' : 'Apply Now'}
                                     </button>
                                 </form>
+                                )}
                             </div>
                         </div>
                     </div>
