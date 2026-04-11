@@ -47,6 +47,7 @@ import ApplicantsList from './components/Recruitment/ApplicantsList';
 import PublicCareers from './components/Recruitment/PublicCareers';
 import JobDetails from './components/Recruitment/JobDetails';
 import EditCircular from './components/Recruitment/EditCircular';
+import JobOfferAccept from './components/Recruitment/JobOfferAccept';
 
 function GlobalChatPortal() {
   const { isGlobalChatOpen, closeGlobalChat } = useChat();
@@ -221,6 +222,11 @@ function App() {
                         <Route path="/recruitment/circulars/:id/edit" element={
                           <ProtectedRoute>
                             <EditCircular />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/recruitment/offer/:applicationId" element={
+                          <ProtectedRoute>
+                            <JobOfferAccept />
                           </ProtectedRoute>
                         } />
                       </Routes>

@@ -212,6 +212,8 @@ const Layout = ({ children }) => {
   };
 
   const baseServerUrl = BASE_SERVER_URL;
+  const ChatHeaderIcon = getIcon('chat');
+  const BellHeaderIcon = getIcon('bell');
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden">
@@ -349,7 +351,7 @@ const Layout = ({ children }) => {
 
             {/* Chat Icon */}
             <div onClick={() => toggleGlobalChat()} className="relative w-10 h-10 flex items-center justify-center rounded-xl cursor-pointer hover:bg-slate-50 transition-all border border-slate-200 text-slate-500 hover:text-indigo-600 shadow-sm active:scale-95 group">
-              <getIcon iconName="chat" className="w-5 h-5 transition-colors" />
+              <ChatHeaderIcon className="w-5 h-5 transition-colors" />
               {unreadCounts.total > 0 && (
                 <div className="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white font-bold text-[9px] min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white px-1 shadow-sm">
                   {unreadCounts.total > 99 ? '99+' : unreadCounts.total}
@@ -360,7 +362,7 @@ const Layout = ({ children }) => {
             {/* Notification Icon */}
             <div className="notif-dropdown-container relative">
               <div onClick={toggleNotifDropdown} className={`w-10 h-10 flex items-center justify-center rounded-xl cursor-pointer transition-all border shadow-sm active:scale-95 group ${isNotifDropdownOpen ? 'bg-slate-100 border-slate-300 text-indigo-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-indigo-600'}`}>
-                <getIcon iconName="bell" className="w-5 h-5 transition-colors" />
+                <BellHeaderIcon className="w-5 h-5 transition-colors" />
                 {unreadCount > 0 && (
                   <div className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white font-bold text-[9px] min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white px-1 shadow-sm">
                     {unreadCount}
@@ -379,7 +381,16 @@ const Layout = ({ children }) => {
                     ) : recentNotifications.length === 0 ? (
                       <div className="p-8 text-center text-slate-400 text-sm">No new notifications.</div>
                     ) : recentNotifications.map((n) => (
-                      <div key={n._id} onClick={() => { if (!n.isRead && !n._id.startsWith('inv_')) markNotifAsRead(n._id); setIsNotifDropdownOpen(false); const tid = n.metadata?.taskId || n.relatedId; navigate(tid ? `/my-tasks/${tid}` : '/notifications'); }} className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors ${!n.isRead && 'bg-indigo-50/30'}`}>
+                      <div key={n._id} onClick={() => {
+                        if (!n.isRead && !n._id.startsWith('inv_')) markNotifAsRead(n._id);
+                        setIsNotifDropdownOpen(false);
+                        if (n.type === 'job_offer' && n.relatedId) {
+                          navigate(`/recruitment/offer/${n.relatedId}`);
+                          return;
+                        }
+                        const tid = n.metadata?.taskId || n.relatedId;
+                        navigate(tid && (n.relatedModel === 'Task' || n.type?.startsWith('task_')) ? `/my-tasks/${tid}` : '/notifications');
+                      }} className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors ${!n.isRead && 'bg-indigo-50/30'}`}>
                         <p className="text-sm font-bold text-slate-800 truncate">{n.title}</p>
                         <p className="text-xs text-slate-500 line-clamp-2 mt-1">{n.message}</p>
                         <p className="text-[10px] text-slate-400 mt-2">{timeAgo(n.createdAt)}</p>

@@ -19,6 +19,8 @@ const typeConfig = {
   role_change: { icon: '👤', color: 'indigo', label: 'Role Shift' },
   general: { icon: '🔔', color: 'slate', label: 'Update' },
   invitation: { icon: '✉️', color: 'indigo', label: 'Invitation' },
+  job_offer: { icon: '📋', color: 'emerald', label: 'Job offer' },
+  job_application: { icon: '📥', color: 'slate', label: 'Application' },
 };
 
 const getConfig = (type) => typeConfig[type] || typeConfig.general;
@@ -115,6 +117,10 @@ const Notifications = () => {
 
   const handleNotifClick = (notif) => {
     if (!notif.isRead) markAsRead(notif._id);
+    if (notif.type === 'job_offer' && notif.relatedId) {
+      navigate(`/recruitment/offer/${notif.relatedId}`);
+      return;
+    }
     const taskId = notif.metadata?.taskId || notif.relatedId;
     if (taskId && (notif.relatedModel === 'Task' || notif.type?.startsWith('task_'))) {
       navigate(`/my-tasks/${taskId}`);

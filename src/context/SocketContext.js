@@ -105,12 +105,41 @@ export const SocketProvider = ({ children }) => {
             setUnreadCountsByCompany(prev => ({ ...prev, [selectedCompanyId]: (prev[selectedCompanyId] || 0) + 1 }));
         });
 
+        // DB notifications (job offer, job application, invitations, etc.)
+        const handleNewNotification = (data) => {
+            if (!data) return;
+            setNotifications((prev) =>
+                [
+                    {
+                        type: data.type,
+                        title: data.title,
+                        message: data.message,
+                        taskId:
+                            data.relatedModel === 'Task' && data.relatedId
+                                ? data.relatedId
+                                : data.taskId,
+                        applicationId:
+                            data.relatedModel === 'Application' && data.relatedId
+                                ? data.relatedId
+                                : undefined,
+                    },
+                    ...prev,
+                ].slice(0, 20)
+            );
+            fetchUnreadCount(selectedCompanyId);
+            if (data.companyId && String(data.companyId) !== String(selectedCompanyId)) {
+                fetchUnreadCount(String(data.companyId));
+            }
+        };
+        socket.on('notification:new', handleNewNotification);
+
         return () => {
             socket.off('task:ready');
             socket.off('task:sent_back');
             socket.off('task:role_handoff');
             socket.off('task:assigned');
             socket.off('chat-notification');
+            socket.off('notification:new', handleNewNotification);
             socket.disconnect();
             socketRef.current = null;
         };

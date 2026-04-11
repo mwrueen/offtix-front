@@ -11,6 +11,9 @@ const iconFor = (type) => {
         task_role_assignment: '🎯',
         'chat-notification': '💬',
         mention: '📣',
+        job_offer: '📋',
+        job_application: '📥',
+        invitation: '✉️',
     };
     return map[type] || '🔔';
 };
@@ -22,6 +25,9 @@ const configFor = (type) => {
         task_role_handoff: { bg: 'bg-indigo-50', border: 'border-indigo-200', title: 'text-indigo-900', iconBg: 'bg-indigo-100', progress: 'bg-indigo-500' },
         task_assigned: { bg: 'bg-purple-50', border: 'border-purple-200', title: 'text-purple-900', iconBg: 'bg-purple-100', progress: 'bg-purple-500' },
         task_role_assignment: { bg: 'bg-violet-50', border: 'border-violet-200', title: 'text-violet-900', iconBg: 'bg-violet-100', progress: 'bg-violet-500' },
+        job_offer: { bg: 'bg-emerald-50', border: 'border-emerald-200', title: 'text-emerald-900', iconBg: 'bg-emerald-100', progress: 'bg-emerald-500' },
+        job_application: { bg: 'bg-slate-50', border: 'border-slate-200', title: 'text-slate-900', iconBg: 'bg-slate-100', progress: 'bg-slate-500' },
+        invitation: { bg: 'bg-indigo-50', border: 'border-indigo-200', title: 'text-indigo-900', iconBg: 'bg-indigo-100', progress: 'bg-indigo-500' },
     };
     return map[type] || { bg: 'bg-slate-50', border: 'border-slate-200', title: 'text-slate-900', iconBg: 'bg-slate-100', progress: 'bg-slate-500' };
 };
@@ -46,7 +52,9 @@ const ToastItem = ({ notification, index, onDismiss }) => {
     };
 
     const handleClick = () => {
-        if (notification.taskId) {
+        if (notification.type === 'job_offer' && notification.applicationId) {
+            navigate(`/recruitment/offer/${notification.applicationId}`);
+        } else if (notification.taskId) {
             navigate(`/my-tasks/${notification.taskId}`);
         } else {
             navigate('/notifications');
