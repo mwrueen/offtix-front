@@ -84,16 +84,16 @@ const ApplicantsList = () => {
 
     return (
         <Layout>
-            <div className="max-w-[1240px] mx-auto py-12 px-6 space-y-8 animate-in fade-in pb-40">
-                <div className="flex items-center gap-6">
+            <div className="space-y-8 animate-in fade-in pb-20">
+                <div className="flex items-center gap-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                     <button
                         onClick={() => navigate('/recruitment')}
-                        className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-all shadow-sm"
+                        className="w-10 h-10 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-all"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{circular?.title || 'Loading...'}</h1>
+                        <h1 className="text-xl font-bold text-slate-900 tracking-tight">{circular?.title || 'Loading...'}</h1>
                         <div className="flex items-center gap-3 mt-1">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{applicants.length} Applicants Received</span>
                             <span className="w-1 h-1 bg-slate-300 rounded-full" />

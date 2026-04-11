@@ -16,6 +16,11 @@ export const ChatProvider = ({ children }) => {
     // new shape: { byCompany: { [companyId]: { direct: {}, projects: {}, total } } }
     const [unreadCounts, setUnreadCounts] = useState({ byCompany: {} });
     const [socket, setSocket] = useState(null);
+    const [isGlobalChatOpen, setIsGlobalChatOpen] = useState(false);
+
+    const openGlobalChat = useCallback(() => setIsGlobalChatOpen(true), []);
+    const closeGlobalChat = useCallback(() => setIsGlobalChatOpen(false), []);
+    const toggleGlobalChat = useCallback(() => setIsGlobalChatOpen((v) => !v), []);
 
     const fetchUnreadCounts = useCallback(async (companyId) => {
         if (!companyId) return;
@@ -82,8 +87,12 @@ export const ChatProvider = ({ children }) => {
         selectedCompanyId,
         fetchUnreadCounts,
         markAsRead,
-        socket
-    }), [selectedUnread, unreadCounts.byCompany, selectedCompanyId, fetchUnreadCounts, markAsRead, socket]);
+        socket,
+        isGlobalChatOpen,
+        openGlobalChat,
+        closeGlobalChat,
+        toggleGlobalChat
+    }), [selectedUnread, unreadCounts.byCompany, selectedCompanyId, fetchUnreadCounts, markAsRead, socket, isGlobalChatOpen, openGlobalChat, closeGlobalChat, toggleGlobalChat]);
 
     return (
         <ChatContext.Provider value={value}>

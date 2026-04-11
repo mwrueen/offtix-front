@@ -100,19 +100,19 @@ const CreateCircular = () => {
 
     return (
         <Layout>
-            <div className="max-w-[1200px] mx-auto py-10 px-4 space-y-8 pb-32">
-                <div className="flex items-center justify-between">
+            <div className="space-y-8 animate-in fade-in pb-20">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Create Job Circular</h1>
-                        <p className="text-slate-400 text-sm font-medium">Hiring for {selectedCompany?.name || 'Offtix Organization'}</p>
+                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Create Job Circular</h1>
+                        <p className="text-slate-400 text-sm font-medium mt-1">Hiring for {selectedCompany?.name || 'Offtix Organization'}</p>
                     </div>
 
-                    <div className="flex bg-slate-100/50 p-1 rounded-xl border border-slate-200">
+                    <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200 shrink-0">
                         {steps.map(s => (
                             <button
                                 key={s.id}
                                 onClick={() => setStep(s.id)}
-                                className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${step === s.id ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${step === s.id ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                             >
                                 {s.label}
                             </button>
@@ -120,9 +120,9 @@ const CreateCircular = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* Form Section */}
-                    <div className="lg:col-span-8 bg-white border border-slate-200 rounded-3xl shadow-sm p-10 space-y-10">
+                    <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl shadow-sm p-8 space-y-8">
                         {step === 1 && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
                                 <div className="grid grid-cols-2 gap-6">

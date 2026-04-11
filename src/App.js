@@ -39,7 +39,8 @@ import TeamActivity from './components/TeamActivity';
 import { SocketProvider } from './context/SocketContext';
 import RealTimeNotifications from './components/RealTimeNotifications';
 import { PermissionsProvider } from './context/PermissionsContext';
-import { ChatProvider } from './context/ChatContext';
+import { ChatProvider, useChat } from './context/ChatContext';
+import GlobalChat from './components/chat/GlobalChat';
 import RecruitmentOverview from './components/Recruitment/RecruitmentOverview';
 import CreateCircular from './components/Recruitment/CreateCircular';
 import ApplicantsList from './components/Recruitment/ApplicantsList';
@@ -47,6 +48,11 @@ import PublicCareers from './components/Recruitment/PublicCareers';
 import JobDetails from './components/Recruitment/JobDetails';
 import EditCircular from './components/Recruitment/EditCircular';
 
+function GlobalChatPortal() {
+  const { isGlobalChatOpen, closeGlobalChat } = useChat();
+  if (!isGlobalChatOpen) return null;
+  return <GlobalChat onClose={closeGlobalChat} />;
+}
 
 function App() {
   return (
@@ -218,6 +224,7 @@ function App() {
                           </ProtectedRoute>
                         } />
                       </Routes>
+                      <GlobalChatPortal />
                     </SocketProvider>
                   </Router>
                 </ProjectProvider>

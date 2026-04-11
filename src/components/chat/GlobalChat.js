@@ -190,10 +190,10 @@ const GlobalChat = ({ onClose }) => {
             <div
                 key={itemId}
                 onClick={() => setSelectedChat({ type, id: rawId, name: displayName })}
-                className={`flex items-center gap-4 px-6 py-4 cursor-pointer border-l-4 transition-all duration-300 relative group
-                   ${isSelected ? 'bg-indigo-50 border-indigo-600' : 'border-transparent hover:bg-slate-50'}`}
+                className={`flex items-center gap-4 px-5 py-3 cursor-pointer transition-all duration-200
+                   ${isSelected ? 'bg-indigo-50 border-r-2 border-indigo-600' : 'hover:bg-slate-100'}`}
             >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shadow-inner overflow-hidden flex-shrink-0 transition-transform group-hover:scale-110
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden
                    ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
                     {item.profile?.profilePicture ? (
                         <img src={item.profile.profilePicture} alt="" className="w-full h-full object-cover" />
@@ -203,17 +203,17 @@ const GlobalChat = ({ onClose }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 overflow-hidden">
-                        <span className={`text-[11px] font-black uppercase tracking-tight truncate flex-1 ${isSelected ? 'text-indigo-900' : 'text-slate-800'}`}>
+                        <span className={`text-sm font-semibold truncate flex-1 ${isSelected ? 'text-indigo-900' : 'text-slate-900'}`}>
                             {displayName}
                         </span>
                         {unreadCount > 0 && (
-                            <span className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-lg shadow-lg shadow-red-500/20 animate-pulse">
+                            <span className="bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                                 {unreadCount}
                             </span>
                         )}
                     </div>
-                    <div className="text-[9px] font-bold text-slate-400 uppercase italic truncate">
-                        {type === 'direct' ? (item.role || 'User') : (item.status ? `Status: ${item.status}` : 'Entity_Node')}
+                    <div className="text-[11px] font-medium text-slate-500 truncate">
+                        {type === 'direct' ? (item.role || 'Member') : (item.status ? `Project Status: ${item.status}` : 'Project Team')}
                     </div>
                 </div>
             </div>
@@ -221,126 +221,55 @@ const GlobalChat = ({ onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[1000]">
-            {/* Backdrop */}
-            <div
-                onClick={onClose}
-                className="absolute inset-0 bg-slate-900/30 backdrop-blur-[1px]"
-            />
+        <div className="fixed bottom-0 right-4 md:right-8 z-[1000] flex flex-col items-end pointer-events-none">
+            {/* Docked Chat Widget */}
+            <div className="pointer-events-auto w-full max-w-[700px] h-[550px] bg-white rounded-t-2xl shadow-[0_-8px_30px_rgb(0,0,0,0.12)] border border-slate-200 flex overflow-hidden animate-in slide-in-from-bottom-6 duration-300">
 
-            {/* Modal */}
-            <div className="absolute inset-x-4 bottom-4 top-4 md:inset-x-8 md:bottom-8 md:top-8 lg:inset-x-auto lg:right-8 lg:bottom-8 lg:top-8 lg:w-[980px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex overflow-hidden animate-in slide-in-from-bottom-6 duration-300">
-                {/* Sidebar */}
-                <div className="w-[320px] bg-slate-50 border-r border-slate-200 flex flex-col shrink-0">
-                    <div className="p-5 border-b border-slate-200 bg-white flex items-center justify-between">
-                        <div className="min-w-0">
-                            <h2 className="text-base font-semibold text-slate-900 truncate">Chat</h2>
-                            <p className="text-xs text-slate-500 truncate">Direct messages & project chat</p>
-                        </div>
-                        <button
-                            onClick={onClose}
-                            className="w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-                            aria-label="Close chat"
-                        >
-                            ✕
-                        </button>
-                    </div>
-
-                    <div className="flex p-3 gap-2 border-b border-slate-200 bg-white">
-                        {[
-                            { id: 'direct', label: 'People', count: Object.values(unreadCounts.direct || {}).reduce((a, b) => a + b, 0) },
-                            { id: 'projects', label: 'Projects', count: Object.values(unreadCounts.projects || {}).reduce((a, b) => a + b, 0) }
-                        ].map(t => (
-                            <button
-                                key={t.id}
-                                onClick={() => setActiveTab(t.id)}
-                                className={`flex-1 h-9 px-3 rounded-lg text-xs font-medium transition-colors border
-                                  ${activeTab === t.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
-                            >
-                                <span className="flex items-center justify-center gap-2">
-                                    {t.label}
-                                    {t.count > 0 && (
-                                        <span className={`${activeTab === t.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'} px-2 py-0.5 rounded-full text-[10px] font-bold`}>
-                                            {t.count > 99 ? '99+' : t.count}
-                                        </span>
-                                    )}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto custom-scrollbar-sidebar">
-                        {loading ? (
-                            <div className="p-6 text-center text-sm text-slate-500">Loading…</div>
-                        ) : (
-                            <div className="divide-y divide-slate-200">
-                                {activeTab === 'direct' ? (
-                                    employees.length > 0 ? employees.map(e => renderSidebarItem(e, 'direct')) : (
-                                        <div className="p-10 text-center text-sm text-slate-500">No people found</div>
-                                    )
-                                ) : (
-                                    projects.length > 0 ? projects.map(p => renderSidebarItem(p, 'project')) : (
-                                        <div className="p-10 text-center text-sm text-slate-500">No projects found</div>
-                                    )
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Main Chat Area */}
-                <div className="flex-1 flex flex-col bg-white">
+                {/* Main Chat Area (Left) */}
+                <div className="flex-1 flex flex-col bg-white min-w-0">
                     {selectedChat ? (
                         <>
-                            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white">
+                            <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-white flex-shrink-0">
                                 <div className="min-w-0">
-                                    <h3 className="text-sm font-semibold text-slate-900 truncate">{selectedChat.name}</h3>
-                                    <p className="text-xs text-slate-500">{selectedChat.type === 'project' ? 'Project chat' : 'Direct message'}</p>
+                                    <h3 className="text-sm font-bold text-slate-900 truncate">{selectedChat.name}</h3>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{selectedChat.type === 'project' ? 'Team Channel' : 'Direct Message'}</p>
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto px-6 py-4 bg-slate-50">
+                            <div className="flex-1 overflow-y-auto px-4 py-4 bg-slate-50 flex flex-col gap-3">
                                 {chatLoading ? (
-                                    <div className="h-full flex items-center justify-center text-sm text-slate-500">Loading messages…</div>
+                                    <div className="h-full flex items-center justify-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Syning Messages...</div>
                                 ) : (
                                     <>
-                                        <div className="flex flex-col gap-3">
-                                            {messages.map((msg) => {
-                                                const currentUserId = currentUser?.id || currentUser?._id;
-                                                const senderId = msg.sender?._id || msg.sender?.id || (typeof msg.sender === 'string' ? msg.sender : null);
-                                                const isOwn = senderId?.toString() === currentUserId?.toString();
-                                                return (
-                                                    <div key={msg._id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                                                        <div className={`max-w-[75%] rounded-2xl px-4 py-2 shadow-sm border text-sm leading-relaxed
-                                                            ${isOwn ? 'bg-indigo-600 text-white border-indigo-600 rounded-br-md' : 'bg-white text-slate-800 border-slate-200 rounded-bl-md'}`}
-                                                        >
-                                                            {!isOwn && (
-                                                                <div className="text-[11px] font-medium text-slate-500 mb-1">
-                                                                    {msg.sender?.name || 'User'}
-                                                                </div>
-                                                            )}
-                                                            <div className="whitespace-pre-wrap break-words">{msg.content}</div>
-                                                            <div className={`mt-1 text-[10px] ${isOwn ? 'text-white/70' : 'text-slate-400'}`}>
-                                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            </div>
+                                        {messages.map((msg) => {
+                                            const currentUserId = currentUser?.id || currentUser?._id;
+                                            const senderId = msg.sender?._id || msg.sender?.id || (typeof msg.sender === 'string' ? msg.sender : null);
+                                            const isOwn = senderId?.toString() === currentUserId?.toString();
+                                            return (
+                                                <div key={msg._id} className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                                                    <div className={`max-w-[85%] px-3 py-2 rounded-xl text-xs transition-all shadow-sm
+                                                        ${isOwn ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none'}`}
+                                                    >
+                                                        <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+                                                        <div className={`mt-1 text-[8px] font-bold ${isOwn ? 'text-white/60' : 'text-slate-400 text-right'}`}>
+                                                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         </div>
                                                     </div>
-                                                );
-                                            })}
-                                        </div>
-                                        <div ref={messagesEndRef} className="h-4" />
+                                                </div>
+                                            );
+                                        })}
+                                        <div ref={messagesEndRef} className="h-1" />
                                     </>
                                 )}
                             </div>
 
-                            {typingUsers.length > 0 && (
-                                <div className="px-6 py-2 border-t border-slate-200 bg-white text-xs text-slate-500">
-                                    {typingUsers[0].userName} is typing…
-                                </div>
-                            )}
-
-                            <div className="p-4 bg-white border-t border-slate-200">
-                                <div className="flex items-end gap-3">
+                            <div className="p-3 bg-white border-t border-slate-100 flex-shrink-0">
+                                {typingUsers.length > 0 && (
+                                    <div className="mb-2 text-[9px] font-bold text-indigo-500">
+                                        {typingUsers[0].userName} is typing…
+                                    </div>
+                                )}
+                                <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-xl p-1.5 focus-within:border-indigo-400 transition-all">
                                     <textarea
                                         ref={inputRef}
                                         value={newMessage}
@@ -351,40 +280,76 @@ const GlobalChat = ({ onClose }) => {
                                                 handleSendMessage();
                                             }
                                         }}
-                                        placeholder="Type a message…"
+                                        placeholder="Write a message..."
                                         rows={1}
-                                        className="flex-1 resize-none max-h-32 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-300"
+                                        className="flex-1 resize-none bg-transparent border-none px-2 py-1 text-xs text-slate-800 outline-none placeholder:text-slate-400"
                                     />
                                     <button
                                         onClick={handleSendMessage}
-                                        className="h-11 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="h-7 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold transition-all disabled:opacity-20 shadow-sm"
                                         disabled={!newMessage.trim()}
                                     >
                                         Send
                                     </button>
                                 </div>
-                                <div className="mt-2 text-[11px] text-slate-400">
-                                    Press Enter to send, Shift+Enter for a new line.
-                                </div>
                             </div>
                         </>
                     ) : (
-                        <div className="flex-1 flex items-center justify-center p-10 bg-slate-50">
-                            <div className="text-center">
-                                <div className="text-base font-semibold text-slate-900">Select a conversation</div>
-                                <div className="mt-1 text-sm text-slate-500">Choose a person or project from the left.</div>
+                        <div className="flex-1 flex items-center justify-center bg-slate-50 text-center p-6">
+                            <div className="space-y-1">
+                                <div className="text-3xl opacity-10">💬</div>
+                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-tighter">Secure Communication</h3>
                             </div>
                         </div>
                     )}
                 </div>
 
-                <style dangerouslySetInnerHTML={{
-                    __html: `
-                    .custom-scrollbar-sidebar::-webkit-scrollbar { width: 6px; }
-                    .custom-scrollbar-sidebar::-webkit-scrollbar-track { background: transparent; }
-                    .custom-scrollbar-sidebar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-                    `
-                }} />
+                {/* Sidebar / Conversation List (Right) */}
+                <div className="w-[260px] bg-slate-50 border-l border-slate-200 flex flex-col shrink-0">
+                    <div className="p-4 border-b border-slate-200 bg-white flex items-center justify-between">
+                        <h2 className="text-sm font-bold text-slate-900">Messaging</h2>
+                        <button
+                            onClick={onClose}
+                            className="text-slate-400 hover:text-slate-900 transition-colors"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <div className="flex p-1.5 gap-1 border-b border-slate-100 bg-white">
+                        {[
+                            { id: 'direct', label: 'Direct' },
+                            { id: 'projects', label: 'Teams' }
+                        ].map(t => (
+                            <button
+                                key={t.id}
+                                onClick={() => setActiveTab(t.id)}
+                                className={`flex-1 py-1 rounded-md text-[10px] font-bold transition-all
+                                  ${activeTab === t.id ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
+                            >
+                                {t.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto">
+                        {loading ? (
+                            <div className="p-8 text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest">Loading...</div>
+                        ) : (
+                            <div className="divide-y divide-slate-100">
+                                {activeTab === 'direct' ? (
+                                    employees.length > 0 ? employees.map(e => renderSidebarItem(e, 'direct')) : (
+                                        <div className="p-6 text-center text-[10px] text-slate-400 font-bold uppercase">No Contacts</div>
+                                    )
+                                ) : (
+                                    projects.length > 0 ? projects.map(p => renderSidebarItem(p, 'project')) : (
+                                        <div className="p-6 text-center text-[10px] text-slate-400 font-bold uppercase">No Teams</div>
+                                    )
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );

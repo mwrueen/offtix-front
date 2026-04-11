@@ -7,7 +7,6 @@ import SidebarHeader from './SidebarHeader';
 import { useSocket } from '../context/SocketContext';
 import { useChat } from '../context/ChatContext';
 import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
-import GlobalChat from './chat/GlobalChat';
 import { myTasksAPI, BASE_SERVER_URL } from '../services/api';
 import { getIcon } from './layout/icons';
 
@@ -23,8 +22,7 @@ const Layout = ({ children }) => {
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
   const [recentNotifications, setRecentNotifications] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const { unreadCounts, unreadCountsByCompany: chatUnreadByCompany, fetchUnreadCounts } = useChat();
+  const { unreadCounts, unreadCountsByCompany: chatUnreadByCompany, fetchUnreadCounts, toggleGlobalChat } = useChat();
   const [pendingTasksByCompany, setPendingTasksByCompany] = useState({});
 
   const selectedCompanyId = companyState.selectedCompany?.id || 'personal';
@@ -339,27 +337,35 @@ const Layout = ({ children }) => {
             <h1 className="text-xl font-bold text-slate-800"> {getPageTitle()} </h1>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* Careers Portal Link */}
             <button
               onClick={() => navigate('/careers')}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-all border border-indigo-100 shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-all border border-indigo-100 shadow-sm mr-2"
             >
               <span>💼</span>
               <span className="hidden sm:inline">Careers Portal</span>
             </button>
 
             {/* Chat Icon */}
-            <div onClick={() => setIsChatOpen(!isChatOpen)} className="relative w-10 h-10 flex items-center justify-center rounded-lg cursor-pointer hover:bg-slate-50 transition-colors border border-slate-100 text-xl shadow-sm">
-              💬
-              {unreadCounts.total > 0 && <div className="absolute -top-1 -right-1 bg-rose-600 text-white font-bold text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">{unreadCounts.total > 99 ? '99' : unreadCounts.total}</div>}
+            <div onClick={() => toggleGlobalChat()} className="relative w-10 h-10 flex items-center justify-center rounded-xl cursor-pointer hover:bg-slate-50 transition-all border border-slate-200 text-slate-500 hover:text-indigo-600 shadow-sm active:scale-95 group">
+              <getIcon iconName="chat" className="w-5 h-5 transition-colors" />
+              {unreadCounts.total > 0 && (
+                <div className="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white font-bold text-[9px] min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white px-1 shadow-sm">
+                  {unreadCounts.total > 99 ? '99+' : unreadCounts.total}
+                </div>
+              )}
             </div>
 
             {/* Notification Icon */}
             <div className="notif-dropdown-container relative">
-              <div onClick={toggleNotifDropdown} className={`w-10 h-10 flex items-center justify-center rounded-lg cursor-pointer transition-colors border shadow-sm text-xl ${isNotifDropdownOpen ? 'bg-slate-100 border-slate-200' : 'bg-white border-slate-100 hover:bg-slate-50'}`}>
-                🔔
-                {unreadCount > 0 && <div className="absolute -top-1 -right-1 bg-amber-500 text-white font-bold text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white animate-pulse">{unreadCount}</div>}
+              <div onClick={toggleNotifDropdown} className={`w-10 h-10 flex items-center justify-center rounded-xl cursor-pointer transition-all border shadow-sm active:scale-95 group ${isNotifDropdownOpen ? 'bg-slate-100 border-slate-300 text-indigo-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-indigo-600'}`}>
+                <getIcon iconName="bell" className="w-5 h-5 transition-colors" />
+                {unreadCount > 0 && (
+                  <div className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white font-bold text-[9px] min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white px-1 shadow-sm">
+                    {unreadCount}
+                  </div>
+                )}
               </div>
               {isNotifDropdownOpen && (
                 <div className="absolute top-full mt-2 right-0 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-[1000] animate-in fade-in zoom-in-95 duration-200 origin-top-right">
@@ -399,8 +405,6 @@ const Layout = ({ children }) => {
           </div>
         </main>
       </main>
-
-      {isChatOpen && <GlobalChat onClose={() => setIsChatOpen(false)} />}
 
       <style dangerouslySetInnerHTML={{
         __html: `

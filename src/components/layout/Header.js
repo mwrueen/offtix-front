@@ -28,7 +28,7 @@ const Header = ({ onMenuToggle, sidebarCollapsed }) => {
   const navigate = useNavigate();
   const { state } = useAuth();
   const { unreadCount } = useSocket();
-  const { selectedUnread } = useChat();
+  const { selectedUnread, toggleGlobalChat } = useChat();
   const { state: companyState } = useCompany();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -70,7 +70,8 @@ const Header = ({ onMenuToggle, sidebarCollapsed }) => {
 
         {/* Chat */}
         <button
-          onClick={() => navigate('/team-activity')}
+          type="button"
+          onClick={() => toggleGlobalChat()}
           className="relative w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

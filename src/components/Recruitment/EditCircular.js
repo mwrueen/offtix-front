@@ -146,33 +146,33 @@ const EditCircular = () => {
 
     return (
         <Layout>
-            <div className="max-w-[1200px] mx-auto py-10 px-4 space-y-8 pb-32">
-                <div className="flex items-center justify-between">
+            <div className="space-y-8 animate-in fade-in pb-20">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Edit Job Circular</h1>
-                        <p className="text-slate-500 text-sm italic">Modifying {formData.title}</p>
+                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Edit Job Circular</h1>
+                        <p className="text-slate-500 text-sm font-medium mt-1">Modifying {formData.title}</p>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                        <div className="flex bg-slate-100 p-1.5 rounded-2xl shadow-inner border border-slate-200">
+                    <div className="flex items-center gap-4 shrink-0">
+                        <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200">
                             {steps.map(s => (
                                 <button
                                     key={s.id}
                                     onClick={() => setStep(s.id)}
-                                    className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${step === s.id ? 'bg-white text-indigo-600 shadow-xl border border-slate-100 scale-105' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${step === s.id ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                                 >
                                     {s.label}
                                 </button>
                             ))}
                         </div>
-                        <button onClick={handleDelete} className="p-3 bg-white text-rose-500 border border-slate-100 rounded-xl hover:bg-rose-50 hover:border-rose-100 transition-all shadow-sm">
+                        <button onClick={handleDelete} className="p-2.5 bg-white text-rose-500 border border-slate-200 rounded-xl hover:bg-rose-50 hover:border-rose-100 transition-all shadow-sm">
                             🗑️
                         </button>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    <div className="lg:col-span-8 bg-white border border-slate-200 rounded-3xl shadow-sm p-10 space-y-10">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl shadow-sm p-8 space-y-8">
                         {step === 1 && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
                                 <div className="grid grid-cols-2 gap-6">
