@@ -77,8 +77,10 @@ const UnifiedHeader = () => {
             <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
                 {/* Logo & Main Nav */}
                 <div className="flex items-center gap-10">
-                    <Link to="/" className="flex items-center gap-2 group">
-                        <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black italic shadow-lg shadow-indigo-600/20 group-hover:scale-110 transition-transform">O</div>
+                    <Link to="/" className="flex items-center gap-3 group">
+                        <div className="w-10 h-10 flex items-center justify-center transition-transform group-hover:scale-105">
+                            <img src="/offtix-logo.png" alt="Offtix Logo" className="w-full h-full object-contain" />
+                        </div>
                         <span className="text-xl font-bold tracking-tight text-slate-900">Offtix</span>
                     </Link>
 

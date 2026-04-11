@@ -150,7 +150,7 @@ const EditCircular = () => {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Edit Job Circular</h1>
-                        <p className="text-slate-500 text-sm font-medium mt-1">Modifying {formData.title}</p>
+                        <p className="text-slate-400 text-sm font-medium mt-1">Modifying {formData.title || 'Untitled'}</p>
                     </div>
 
                     <div className="flex items-center gap-4 shrink-0">
@@ -159,7 +159,7 @@ const EditCircular = () => {
                                 <button
                                     key={s.id}
                                     onClick={() => setStep(s.id)}
-                                    className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${step === s.id ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                                    className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${step === s.id ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                                 >
                                     {s.label}
                                 </button>
@@ -177,18 +177,18 @@ const EditCircular = () => {
                             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Job Title</label>
+                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Job Title</label>
                                         <input
                                             type="text"
-                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none transition-all font-bold text-slate-700 shadow-inner text-sm"
+                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none transition-all font-bold text-slate-700 text-sm"
                                             value={formData.title}
                                             onChange={e => setFormData({ ...formData, title: e.target.value })}
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Status</label>
+                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Status</label>
                                         <select
-                                            className="w-full bg-slate-100/50 border border-slate-200 p-3 rounded-xl outline-none font-black text-[9px] uppercase tracking-widest text-indigo-600 shadow-inner"
+                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-sm text-slate-700 uppercase tracking-wider"
                                             value={formData.status}
                                             onChange={e => setFormData({ ...formData, status: e.target.value })}
                                         >
@@ -202,7 +202,7 @@ const EditCircular = () => {
 
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Position Level</label>
+                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Position Level</label>
                                         <select
                                             className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 text-sm"
                                             value={formData.role}
@@ -213,10 +213,10 @@ const EditCircular = () => {
                                         </select>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Required Exp (Years)</label>
+                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Required Exp (Years)</label>
                                         <input
                                             type="number"
-                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-sm shadow-inner"
+                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-sm"
                                             value={formData.experience}
                                             onChange={e => setFormData({ ...formData, experience: Number(e.target.value) })}
                                         />
@@ -225,21 +225,21 @@ const EditCircular = () => {
 
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Job Nature</label>
+                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Job Nature</label>
                                         <select
                                             className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 text-sm"
                                             value={formData.jobNature}
                                             onChange={e => setFormData({ ...formData, jobNature: e.target.value })}
                                         >
-                                            <option value="on-site">On-Site</option>
                                             <option value="remote">Remote</option>
+                                            <option value="on-site">On-Site</option>
                                             <option value="hybrid">Hybrid</option>
                                         </select>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Workplace Address</label>
+                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Workplace Address</label>
                                         <textarea
-                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 shadow-inner min-h-[80px] resize-none text-sm"
+                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 min-h-[80px] resize-none text-sm"
                                             placeholder="Full Address / Venue Details..."
                                             value={formData.location}
                                             onChange={e => setFormData({ ...formData, location: e.target.value })}
@@ -248,7 +248,7 @@ const EditCircular = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Salary Range</label>
+                                    <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Salary Range</label>
                                     <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                                         <input
                                             type="number"
@@ -268,7 +268,7 @@ const EditCircular = () => {
                                 </div>
 
                                 <div className="flex gap-4 pt-6 border-t border-slate-50">
-                                    <button onClick={() => setStep(2)} className="w-full bg-slate-900 text-white font-black py-4 rounded-xl text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all">Next: Content & Perks</button>
+                                    <button onClick={() => setStep(2)} className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800 transition-all">Next: Content & Perks</button>
                                 </div>
                             </div>
                         )}
@@ -277,13 +277,13 @@ const EditCircular = () => {
                             <div className="space-y-10 animate-in fade-in">
                                 <div className="grid grid-cols-1 gap-12">
                                     <div className="space-y-4">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Job Description</label>
+                                        <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Job Description</label>
                                         <div className="h-64 mb-12">
                                             <ReactQuill theme="snow" value={formData.description} onChange={val => setFormData({ ...formData, description: val })} className="h-48" />
                                         </div>
                                     </div>
                                     <div className="space-y-4">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Benefits & Compensation</label>
+                                        <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Benefits & Compensation</label>
                                         <div className="h-64 mb-12">
                                             <ReactQuill theme="snow" value={formData.benefits} onChange={val => setFormData({ ...formData, benefits: val })} className="h-48" />
                                         </div>
@@ -294,8 +294,8 @@ const EditCircular = () => {
                                     <SkillsSelector label="Nice to Have" selectedSkills={formData.niceToHaveSkills} setSelectedSkills={skills => setFormData({ ...formData, niceToHaveSkills: skills })} />
                                 </div>
                                 <div className="flex gap-4 pt-10">
-                                    <button onClick={() => setStep(1)} className="px-10 py-4 bg-slate-50 text-slate-500 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-slate-100">Back</button>
-                                    <button onClick={() => setStep(3)} className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl">Assessment & Screening</button>
+                                    <button onClick={() => setStep(1)} className="px-10 py-4 bg-slate-50 text-slate-500 rounded-2xl font-bold text-[10px] uppercase tracking-widest border border-slate-100">Back</button>
+                                    <button onClick={() => setStep(3)} className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl">Assessment & Screening</button>
                                 </div>
                             </div>
                         )}
@@ -304,25 +304,28 @@ const EditCircular = () => {
                             <div className="space-y-10 animate-in fade-in">
                                 <div className="flex items-center justify-between border-b border-slate-100 pb-6">
                                     <div className="space-y-1">
-                                        <h3 className="font-bold text-slate-900">Custom Screening</h3>
+                                        <h3 className="font-bold text-slate-900">Screening Questions</h3>
                                         <p className="text-xs text-slate-400 font-medium italic">Define required information from candidates</p>
                                     </div>
-                                    <button onClick={addQuestion} className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 font-bold">+ New Question</button>
+                                    <button
+                                        onClick={addQuestion}
+                                        className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100"
+                                    >+ New</button>
                                 </div>
 
                                 <div className="grid gap-6">
                                     {formData.questions.map((q, i) => (
-                                        <div key={i} className="p-8 bg-slate-50/50 rounded-3xl border border-slate-100 space-y-6 relative group border-l-[6px] border-l-slate-300 hover:border-l-indigo-500 transition-all">
+                                        <div key={i} className="p-8 bg-slate-50 rounded-3xl border border-slate-100 space-y-6 relative group border-l-[6px] border-l-indigo-400 hover:border-l-indigo-600 transition-all">
                                             <button
                                                 onClick={() => setFormData({ ...formData, questions: formData.questions.filter((_, idx) => idx !== i) })}
-                                                className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center bg-white border border-slate-200 text-rose-500 rounded-lg hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-all"
+                                                className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center bg-white border border-slate-200 text-rose-500 rounded-lg hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-all shadow-sm"
                                             >×</button>
 
                                             <div className="space-y-3">
-                                                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Question Text</label>
+                                                <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Question Text</label>
                                                 <input
                                                     type="text"
-                                                    className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none font-bold text-slate-700 shadow-inner"
+                                                    className="w-full bg-white border border-slate-200 p-4 rounded-2xl outline-none font-bold text-slate-700"
                                                     placeholder="Ask something..."
                                                     value={q.question}
                                                     onChange={e => {
@@ -335,7 +338,7 @@ const EditCircular = () => {
 
                                             <div className="grid grid-cols-2 gap-6">
                                                 <div className="space-y-3">
-                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Selection Type</label>
+                                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Selection Type</label>
                                                     <select
                                                         className="w-full bg-white border border-slate-200 p-3 rounded-xl font-bold text-[10px] uppercase text-slate-500 outline-none"
                                                         value={q.type}
@@ -353,14 +356,14 @@ const EditCircular = () => {
                                                     </select>
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Requirement</label>
+                                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Requirement</label>
                                                     <div className="flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-xl">
                                                         <input type="checkbox" className="w-4 h-4 rounded-md text-indigo-600" checked={q.required} onChange={e => {
                                                             const qs = [...formData.questions];
                                                             qs[i].required = e.target.checked;
                                                             setFormData({ ...formData, questions: qs });
                                                         }} />
-                                                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Mandatory</span>
+                                                        <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Mandatory</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -368,14 +371,14 @@ const EditCircular = () => {
                                             {['radio', 'checkbox', 'selection'].includes(q.type) && (
                                                 <div className="space-y-4 animate-in slide-in-from-top-2">
                                                     <div className="flex items-center justify-between">
-                                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Options</label>
+                                                        <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Options</label>
                                                         <button
                                                             onClick={() => {
                                                                 const qs = [...formData.questions];
                                                                 qs[i].options = [...qs[i].options, ''];
                                                                 setFormData({ ...formData, questions: qs });
                                                             }}
-                                                            className="text-[9px] font-black uppercase text-indigo-600 hover:text-indigo-700 underline tracking-widest"
+                                                            className="text-[9px] font-bold uppercase text-indigo-600 hover:text-indigo-700 underline tracking-widest"
                                                         >+ Add Option</button>
                                                     </div>
                                                     <div className="grid gap-3">
@@ -383,7 +386,7 @@ const EditCircular = () => {
                                                             <div key={optIdx} className="flex gap-2">
                                                                 <input
                                                                     type="text"
-                                                                    className="flex-1 bg-white border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 shadow-inner text-sm"
+                                                                    className="flex-1 bg-white border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 text-sm"
                                                                     placeholder={`Option ${optIdx + 1}`}
                                                                     value={opt}
                                                                     onChange={e => {
@@ -412,50 +415,47 @@ const EditCircular = () => {
                                     ))}
                                 </div>
                                 <div className="flex gap-4 pt-10 border-t border-slate-100">
-                                    <button onClick={() => setStep(2)} className="px-10 py-4 bg-slate-50 text-slate-400 font-bold rounded-2xl text-[10px] uppercase tracking-widest">Back</button>
-                                    <button onClick={handleSubmit} className="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-indigo-100 hover:bg-indigo-500 transition-all">Update Circular</button>
+                                    <button onClick={() => setStep(2)} className="px-10 py-4 bg-slate-50 text-slate-500 rounded-xl font-bold text-[10px] uppercase tracking-widest">Back</button>
+                                    <button onClick={handleSubmit} className="flex-1 bg-indigo-600 text-white py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">Update Circular</button>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <div className="lg:col-span-4 space-y-8">
-                        <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white space-y-8 shadow-2xl relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -mr-16 -mt-16" />
-                            <div className="space-y-2">
-                                <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg ${formData.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'}`}>
-                                    {formData.status}
-                                </span>
-                                <h2 className="text-2xl font-bold leading-tight">{formData.title || 'Untitled Job'}</h2>
-                                <p className="text-indigo-400 font-bold uppercase text-[10px] tracking-[0.2em]">{formData.role || 'Designation'}</p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/10">
-                                <div className="space-y-1">
-                                    <p className="text-[9px] font-black uppercase text-white/30 tracking-widest">Experience</p>
-                                    <p className="font-bold text-sm tracking-tight">{formData.experience}y+</p>
+                    {/* Simple Preview Card */}
+                    <div className="lg:col-span-4 space-y-6">
+                        <div className="sticky top-10 space-y-6">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Live Preview</p>
+                            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+                                <div className="flex gap-4">
+                                    <div className="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center text-xl font-bold text-white shadow-md">
+                                        {formData.title ? formData.title.charAt(0) : '?'}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h2 className="text-lg font-bold text-indigo-600 line-clamp-1">{formData.title || 'Job Title'}</h2>
+                                        <p className="text-sm font-medium text-slate-900">{selectedCompany?.name || 'Offtix Organization'}</p>
+                                        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mt-0.5">
+                                            <span>{formData.location || 'Remote'}</span>
+                                            <span className="text-slate-300">•</span>
+                                            <span className="capitalize">{formData.jobNature}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-[9px] font-black uppercase text-white/30 tracking-widest">Salary</p>
-                                    <p className="font-bold text-sm tracking-tight">${Number(formData.salaryRange.min).toLocaleString()} - ${Number(formData.salaryRange.max).toLocaleString()}</p>
-                                </div>
-                            </div>
-                            <div className="space-y-4">
-                                <p className="text-[9px] font-black uppercase text-white/30 tracking-widest">Skills Overview</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {formData.mandatorySkills.slice(0, 4).map((s, i) => (
-                                        <span key={i} className="px-2 py-1 bg-white/5 rounded-md text-[9px] font-bold border border-white/10">#{s}</span>
-                                    ))}
-                                    {formData.mandatorySkills.length > 4 && <span className="text-[9px] font-bold text-white/30">+{formData.mandatorySkills.length - 4} more</span>}
-                                </div>
-                            </div>
-                        </div>
 
-                        <div className="bg-emerald-50 border border-emerald-100 p-8 rounded-3xl space-y-4">
-                            <div className="flex items-center gap-3">
-                                <span className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">✓</span>
-                                <h4 className="text-xs font-black text-emerald-900 uppercase tracking-widest">Up-to-Date</h4>
+                                <div className="flex flex-wrap gap-2 pt-2">
+                                    {formData.mandatorySkills.slice(0, 2).map((s, i) => (
+                                        <span key={i} className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 italic">#{s}</span>
+                                    ))}
+                                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                                        💰 {formData.salaryRange.min ? `$${Number(formData.salaryRange.min).toLocaleString()}` : '—'}
+                                    </span>
+                                </div>
+                                <div className="pt-2">
+                                    <span className={`px-2 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md ${formData.status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-50 text-slate-500 border border-slate-200'}`}>
+                                        {formData.status}
+                                    </span>
+                                </div>
                             </div>
-                            <p className="text-xs text-emerald-700 leading-relaxed font-medium">Updating this circular will immediately reflect on the careers page. Check recruitment stats to see how changes affect your applicant flow.</p>
                         </div>
                     </div>
                 </div>

@@ -17,8 +17,8 @@ const AuthLayout = ({ children, title, subtitle }) => {
           onClick={() => navigate('/')}
           className="cursor-pointer flex items-center gap-3 relative z-10 w-fit"
         >
-          <div className="w-10 h-10 bg-white/15 backdrop-blur rounded-xl flex items-center justify-center text-white text-lg font-black border border-white/20">
-            O
+          <div className="w-10 h-10 flex items-center justify-center transition-transform hover:scale-110">
+            <img src="/offtix-logo.png" alt="Offtix Logo" className="w-full h-full object-contain" />
           </div>
           <span className="text-white text-xl font-bold tracking-wide">Offtix</span>
         </div>
@@ -48,8 +48,8 @@ const AuthLayout = ({ children, title, subtitle }) => {
             onClick={() => navigate('/')}
             className="lg:hidden cursor-pointer flex items-center gap-3 mb-10"
           >
-            <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-base font-black">
-              O
+            <div className="w-10 h-10 flex items-center justify-center">
+              <img src="/offtix-logo.png" alt="Offtix Logo" className="w-full h-full object-contain" />
             </div>
             <span className="text-slate-900 text-lg font-bold">Offtix</span>
           </div>

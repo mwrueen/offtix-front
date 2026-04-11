@@ -20,14 +20,14 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
   const getStatusConfig = (status) => {
     const configs = {
       'not_started': { dot: 'bg-slate-400', accent: 'bg-slate-300', badgeCls: 'bg-slate-100 text-slate-600 border-slate-200', label: 'Not Started' },
-      'running':     { dot: 'bg-emerald-500', accent: 'bg-emerald-500', badgeCls: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Active' },
-      'paused':      { dot: 'bg-amber-500', accent: 'bg-amber-500', badgeCls: 'bg-amber-50 text-amber-700 border-amber-200', label: 'Paused' },
-      'cancelled':   { dot: 'bg-rose-500', accent: 'bg-rose-500', badgeCls: 'bg-rose-50 text-rose-700 border-rose-200', label: 'Cancelled' },
-      'closed':      { dot: 'bg-indigo-500', accent: 'bg-indigo-500', badgeCls: 'bg-indigo-50 text-indigo-700 border-indigo-200', label: 'Completed' },
-      'planning':    { dot: 'bg-slate-400', accent: 'bg-slate-300', badgeCls: 'bg-slate-100 text-slate-600 border-slate-200', label: 'Planning' },
-      'active':      { dot: 'bg-emerald-500', accent: 'bg-emerald-500', badgeCls: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Active' },
-      'completed':   { dot: 'bg-indigo-500', accent: 'bg-indigo-500', badgeCls: 'bg-indigo-50 text-indigo-700 border-indigo-200', label: 'Completed' },
-      'on-hold':     { dot: 'bg-amber-500', accent: 'bg-amber-500', badgeCls: 'bg-amber-50 text-amber-700 border-amber-200', label: 'On Hold' },
+      'running': { dot: 'bg-emerald-500', accent: 'bg-emerald-500', badgeCls: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Active' },
+      'paused': { dot: 'bg-amber-500', accent: 'bg-amber-500', badgeCls: 'bg-amber-50 text-amber-700 border-amber-200', label: 'Paused' },
+      'cancelled': { dot: 'bg-rose-500', accent: 'bg-rose-500', badgeCls: 'bg-rose-50 text-rose-700 border-rose-200', label: 'Cancelled' },
+      'closed': { dot: 'bg-indigo-500', accent: 'bg-indigo-500', badgeCls: 'bg-indigo-50 text-indigo-700 border-indigo-200', label: 'Completed' },
+      'planning': { dot: 'bg-slate-400', accent: 'bg-slate-300', badgeCls: 'bg-slate-100 text-slate-600 border-slate-200', label: 'Planning' },
+      'active': { dot: 'bg-emerald-500', accent: 'bg-emerald-500', badgeCls: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Active' },
+      'completed': { dot: 'bg-indigo-500', accent: 'bg-indigo-500', badgeCls: 'bg-indigo-50 text-indigo-700 border-indigo-200', label: 'Completed' },
+      'on-hold': { dot: 'bg-amber-500', accent: 'bg-amber-500', badgeCls: 'bg-amber-50 text-amber-700 border-amber-200', label: 'On Hold' },
     };
     return configs[status] || configs.not_started;
   };
@@ -88,10 +88,10 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
 
   const statusOptions = [
     { id: 'not_started', label: 'Not Started', desc: 'Project is in setup phase.' },
-    { id: 'active',      label: 'Active',       desc: 'Work is currently in progress.' },
-    { id: 'on-hold',     label: 'On Hold',      desc: 'Project is temporarily suspended.' },
-    { id: 'cancelled',   label: 'Cancelled',    desc: 'Project has been terminated.' },
-    { id: 'completed',   label: 'Completed',    desc: 'All objectives have been met.' },
+    { id: 'active', label: 'Active', desc: 'Work is currently in progress.' },
+    { id: 'on-hold', label: 'On Hold', desc: 'Project is temporarily suspended.' },
+    { id: 'cancelled', label: 'Cancelled', desc: 'Project has been terminated.' },
+    { id: 'completed', label: 'Completed', desc: 'All objectives have been met.' },
   ];
 
   return (
@@ -126,9 +126,16 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
                   </Badge>
                 </div>
               </div>
-              <p className="text-slate-500 text-sm leading-relaxed max-w-2xl">
-                {project.description || 'No description provided for this project.'}
-              </p>
+              {project.description ? (
+                <div
+                  className="text-slate-500 text-sm leading-relaxed max-w-2xl prose prose-slate prose-sm"
+                  dangerouslySetInnerHTML={{ __html: project.description }}
+                />
+              ) : (
+                <p className="text-slate-500 text-sm leading-relaxed max-w-2xl italic">
+                  No description provided for this project.
+                </p>
+              )}
             </div>
 
             {/* Right: progress ring + action */}
