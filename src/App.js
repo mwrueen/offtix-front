@@ -45,6 +45,7 @@ import GlobalChat from './components/chat/GlobalChat';
 import RecruitmentOverview from './components/Recruitment/RecruitmentOverview';
 import CreateCircular from './components/Recruitment/CreateCircular';
 import ApplicantsList from './components/Recruitment/ApplicantsList';
+import ApplicantProfile from './components/Recruitment/ApplicantProfile';
 import PublicCareers from './components/Recruitment/PublicCareers';
 import JobDetails from './components/Recruitment/JobDetails';
 import EditCircular from './components/Recruitment/EditCircular';
@@ -223,6 +224,11 @@ function App() {
                         <Route path="/recruitment/circulars/:id/applicants" element={
                           <ProtectedRoute>
                             <ApplicantsList />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/recruitment/applications/:id" element={
+                          <ProtectedRoute>
+                            <ApplicantProfile />
                           </ProtectedRoute>
                         } />
                         <Route path="/recruitment/circulars/:id/edit" element={

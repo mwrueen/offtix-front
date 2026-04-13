@@ -11,7 +11,7 @@ import { myTasksAPI, BASE_SERVER_URL } from '../services/api';
 import { getIcon } from './layout/icons';
 import { invitationIdsCoveredByNotifications } from '../utils/invitationNotificationDedupe';
 
-const Layout = ({ children }) => {
+const Layout = ({ children, wide }) => {
   const { state, dispatch } = useAuth();
   const { state: companyState, selectCompany } = useCompany();
   const { unreadCount, unreadCountsByCompany, clearUnreadCount, fetchUnreadCount } = useSocket();
@@ -441,7 +441,7 @@ const Layout = ({ children }) => {
 
         {/* Content Portal */}
         <main className="flex-1 overflow-y-auto py-6 px-6 lg:px-10">
-          <div className="max-w-7xl mx-auto">
+          <div className={wide ? 'w-full max-w-none' : 'max-w-7xl mx-auto'}>
             {children}
           </div>
         </main>
