@@ -7,13 +7,14 @@ import { useChat } from '../../context/ChatContext';
 import { usePermissions } from '../../context/PermissionsContext';
 import { getCookie } from '../../utils/cookies';
 import { BASE_SERVER_URL } from '../../services/api';
+import { getTypeLabel, timeAgo } from '../../utils/notifications';
 
 const UnifiedHeader = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { state, dispatch } = useAuth();
     const { state: companyState, selectCompany } = useCompany();
-    const { unreadCount, fetchUnreadCount } = useSocket();
+    const { totalUnreadCount, unreadCount, fetchUnreadCount } = useSocket();
     const { unreadCounts, fetchUnreadCounts, toggleGlobalChat } = useChat();
     const { companyData } = usePermissions();
 
@@ -51,16 +52,34 @@ const UnifiedHeader = () => {
         setNotifLoading(true);
         try {
             const token = getCookie('authToken');
-            const res = await fetch('/api/notifications', {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'X-Company-Id': !isPersonal ? selectedCompany?.id : undefined
-                }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setRecentNotifs(data.notifications?.slice(0, 5) || []);
+            const headers = { Authorization: `Bearer ${token}` };
+            const [nr, ir] = await Promise.all([
+                fetch('/api/notifications', { headers }),
+                fetch('/api/invitations/my-invitations', { headers })
+            ]);
+            let combined = [];
+            let dbNotifs = [];
+            if (nr.ok) dbNotifs = (await nr.json()).notifications || [];
+
+            // Import utility inside component or use it if available
+            // Since I'll add imports at the top later, I'll just use it here.
+            
+            if (ir.ok) {
+                const invs = await ir.json();
+                const ins = (Array.isArray(invs) ? invs : []).map(i => ({
+                    _id: `inv_${i._id}`,
+                    type: 'invitation',
+                    title: `Invitation: ${i.company?.name}`,
+                    message: `Invited as ${i.designation}`,
+                    isRead: false,
+                    createdAt: i.createdAt,
+                    _invitationId: i._id
+                }));
+                combined = [...ins, ...dbNotifs].slice(0, 10);
+            } else {
+                combined = dbNotifs.slice(0, 10);
             }
+            setRecentNotifs(combined);
         } catch (err) { console.error(err); }
         finally { setNotifLoading(false); }
     };
@@ -158,43 +177,57 @@ const UnifiedHeader = () => {
                                     className="relative w-10 h-10 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all border border-slate-100"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                                    {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+                                    {totalUnreadCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">{totalUnreadCount > 9 ? '9+' : totalUnreadCount}</span>}
                                 </button>
 
                                 {isNotifOpen && (
-                                    <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
-                                        <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
-                                            <span className="text-xs font-bold text-slate-500">Recent Activity</span>
+                                    <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 origin-top-right">
+                                        <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                                            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Recent Activity</span>
                                             <Link to="/notifications" onClick={() => setIsNotifOpen(false)} className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700">View All</Link>
                                         </div>
-                                        <div className="max-h-80 overflow-y-auto">
+                                        <div className="max-h-80 overflow-y-auto divide-y divide-slate-50">
                                             {notifLoading ? (
-                                                <div className="p-8 text-center text-[10px] font-bold text-slate-300 uppercase animate-pulse">Synchronizing...</div>
+                                                <div className="p-10 text-center text-[10px] font-bold text-slate-400 uppercase animate-pulse tracking-widest">Synchronizing...</div>
                                             ) : recentNotifs.length === 0 ? (
-                                                <div className="p-10 text-center space-y-2">
+                                                <div className="p-10 text-center space-y-1">
                                                     <p className="text-sm font-bold text-slate-300">No new alerts</p>
-                                                    <p className="text-[10px] text-slate-400 leading-relaxed">We'll notify you when something important happens.</p>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Everything caught up</p>
                                                 </div>
                                             ) : (
-                                                recentNotifs.map(n => (
-                                                    <button
-                                                        key={n._id}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setIsNotifOpen(false);
-                                                            if (n.type === 'invitation' && n.relatedId &&
-                                                                (n.relatedModel === 'Invitation' || !n.relatedModel)) {
-                                                                navigate(`/invitations/${n.relatedId}`);
-                                                                return;
-                                                            }
-                                                            navigate('/notifications');
-                                                        }}
-                                                        className="w-full text-left p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer"
-                                                    >
-                                                        <p className="text-xs font-bold text-slate-700 line-clamp-1">{n.title}</p>
-                                                        <p className="text-[10px] text-slate-400 line-clamp-2 mt-0.5">{n.message}</p>
-                                                    </button>
-                                                ))
+                                                recentNotifs.map(n => {
+                                                    const label = getTypeLabel(n.type);
+                                                    return (
+                                                        <button
+                                                            key={n._id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setIsNotifOpen(false);
+                                                                if (n.type === 'invitation' && n.relatedId &&
+                                                                    (n.relatedModel === 'Invitation' || !n.relatedModel)) {
+                                                                    navigate(`/invitations/${n.relatedId}`);
+                                                                    return;
+                                                                }
+                                                                if (n.type === 'job_offer' && n.relatedId) {
+                                                                    navigate(`/recruitment/offer/${n.relatedId}`);
+                                                                    return;
+                                                                }
+                                                                navigate('/notifications');
+                                                            }}
+                                                            className={`w-full text-left p-4 hover:bg-slate-50 transition-colors cursor-pointer relative ${!n.isRead ? 'bg-indigo-50/40' : ''}`}
+                                                        >
+                                                            {!n.isRead && (
+                                                                <span className="absolute left-2 top-5 w-1.5 h-1.5 bg-indigo-600 rounded-full shadow-sm shadow-indigo-200" />
+                                                            )}
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-1.5 py-0.5 bg-white rounded border border-slate-200/50">{label}</span>
+                                                                <span className="text-[10px] font-bold text-slate-400">{timeAgo(n.createdAt)}</span>
+                                                            </div>
+                                                            <p className={`text-[13px] font-bold truncate ${!n.isRead ? 'text-slate-900' : 'text-slate-600'}`}>{n.title}</p>
+                                                            <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{n.message}</p>
+                                                        </button>
+                                                    );
+                                                })
                                             )}
                                         </div>
                                     </div>

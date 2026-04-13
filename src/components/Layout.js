@@ -10,11 +10,12 @@ import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import { myTasksAPI, BASE_SERVER_URL } from '../services/api';
 import { getIcon } from './layout/icons';
 import { invitationIdsCoveredByNotifications } from '../utils/invitationNotificationDedupe';
+import { getTypeLabel, timeAgo } from '../utils/notifications';
 
 const Layout = ({ children, wide }) => {
   const { state, dispatch } = useAuth();
   const { state: companyState, selectCompany } = useCompany();
-  const { unreadCount, unreadCountsByCompany, clearUnreadCount, fetchUnreadCount } = useSocket();
+  const { totalUnreadCount, unreadCountsByCompany, clearUnreadCount, fetchUnreadCount } = useSocket();
   const { hasPermission, companyData } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,7 +49,7 @@ const Layout = ({ children, wide }) => {
     try {
       const token = getCookie('authToken');
       const headers = { Authorization: `Bearer ${token}` };
-      if (selectedCompanyHeaderId) headers['X-Company-Id'] = selectedCompanyHeaderId;
+      // Remove company-specific filtering to match global Notifications page
       const [nr, ir] = await Promise.all([
         fetch('/api/notifications', { headers }),
         fetch('/api/invitations/my-invitations', { headers })
@@ -70,9 +71,9 @@ const Layout = ({ children, wide }) => {
             createdAt: i.createdAt,
             _invitationId: i._id
           }));
-        combined = [...ins, ...dbNotifs].slice(0, 8);
+        combined = [...ins, ...dbNotifs].slice(0, 10); // Show more in dropdown
       } else {
-        combined = dbNotifs.slice(0, 8);
+        combined = dbNotifs.slice(0, 10);
       }
       setRecentNotifications(combined);
     } catch (err) { console.error('Notification_Error', err); }
@@ -217,8 +218,6 @@ const Layout = ({ children, wide }) => {
     if (location.pathname.startsWith('/employees/')) return 'Employee Details';
     return titles[location.pathname] || 'Offtix';
   };
-
-  const timeAgo = (d) => { if (!d) return ''; const df = Date.now() - new Date(d).getTime(); const m = Math.floor(df / 60000); if (m < 1) return 'Just now'; if (m < 60) return `${m}m ago`; const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`; return `${Math.floor(h / 24)}d ago`; };
 
   const getLogoUrl = (path) => {
     if (!path) return null;
@@ -386,46 +385,58 @@ const Layout = ({ children, wide }) => {
             <div className="notif-dropdown-container relative">
               <div onClick={toggleNotifDropdown} className={`w-10 h-10 flex items-center justify-center rounded-xl cursor-pointer transition-all border shadow-sm active:scale-95 group ${isNotifDropdownOpen ? 'bg-slate-100 border-slate-300 text-indigo-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-indigo-600'}`}>
                 <BellHeaderIcon className="w-5 h-5 transition-colors" />
-                {unreadCount > 0 && (
+                {totalUnreadCount > 0 && (
                   <div className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white font-bold text-[9px] min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white px-1 shadow-sm">
-                    {unreadCount}
+                    {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
                   </div>
                 )}
               </div>
               {isNotifDropdownOpen && (
                 <div className="absolute top-full mt-2 right-0 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-[1000] animate-in fade-in zoom-in-95 duration-200 origin-top-right">
-                  <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                    <h4 className="font-bold text-slate-800">Notifications</h4>
-                    <button onClick={() => { setIsNotifDropdownOpen(false); navigate('/notifications'); }} className="text-[10px] font-bold text-indigo-600 hover:underline">View All</button>
+                  <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Recent Activity</h4>
+                    <button onClick={() => { setIsNotifDropdownOpen(false); navigate('/notifications'); }} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors">View All</button>
                   </div>
                   <div className="max-h-96 overflow-y-auto divide-y divide-slate-50">
                     {notifLoading ? (
-                      <div className="p-8 text-center text-slate-400 text-sm animate-pulse">Loading updates...</div>
+                      <div className="p-10 text-center text-slate-400 text-xs font-bold animate-pulse uppercase tracking-widest">Synchronizing...</div>
                     ) : recentNotifications.length === 0 ? (
-                      <div className="p-8 text-center text-slate-400 text-sm">No new notifications.</div>
-                    ) : recentNotifications.map((n) => (
-                      <div key={n._id} onClick={() => {
-                        setIsNotifDropdownOpen(false);
-                        const syntheticInvite = String(n._id).startsWith('inv_');
-                        const invId = n._invitationId || (n.type === 'invitation' && n.relatedId && (n.relatedModel === 'Invitation' || !n.relatedModel) ? String(n.relatedId) : null);
-                        if (invId && (syntheticInvite || n.type === 'invitation')) {
-                          if (!n.isRead && !syntheticInvite) markNotifAsRead(n._id);
-                          navigate(`/invitations/${invId}`);
-                          return;
-                        }
-                        if (!n.isRead && !syntheticInvite) markNotifAsRead(n._id);
-                        if (n.type === 'job_offer' && n.relatedId) {
-                          navigate(`/recruitment/offer/${n.relatedId}`);
-                          return;
-                        }
-                        const tid = n.metadata?.taskId || n.relatedId;
-                        navigate(tid && (n.relatedModel === 'Task' || n.type?.startsWith('task_')) ? `/my-tasks/${tid}` : '/notifications');
-                      }} className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors ${!n.isRead && 'bg-indigo-50/30'}`}>
-                        <p className="text-sm font-bold text-slate-800 truncate">{n.title}</p>
-                        <p className="text-xs text-slate-500 line-clamp-2 mt-1">{n.message}</p>
-                        <p className="text-[10px] text-slate-400 mt-2">{timeAgo(n.createdAt)}</p>
+                      <div className="p-10 text-center">
+                        <p className="text-sm font-bold text-slate-300">No new alerts</p>
+                        <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Everything caught up</p>
                       </div>
-                    ))}
+                    ) : recentNotifications.map((n) => {
+                      const label = getTypeLabel(n.type);
+                      return (
+                        <div key={n._id} onClick={() => {
+                          setIsNotifDropdownOpen(false);
+                          const syntheticInvite = String(n._id).startsWith('inv_');
+                          const invId = n._invitationId || (n.type === 'invitation' && n.relatedId && (n.relatedModel === 'Invitation' || !n.relatedModel) ? String(n.relatedId) : null);
+                          if (invId && (syntheticInvite || n.type === 'invitation')) {
+                            if (!n.isRead && !syntheticInvite) markNotifAsRead(n._id);
+                            navigate(`/invitations/${invId}`);
+                            return;
+                          }
+                          if (!n.isRead && !syntheticInvite) markNotifAsRead(n._id);
+                          if (n.type === 'job_offer' && n.relatedId) {
+                            navigate(`/recruitment/offer/${n.relatedId}`);
+                            return;
+                          }
+                          const tid = n.metadata?.taskId || n.relatedId;
+                          navigate(tid && (n.relatedModel === 'Task' || n.type?.startsWith('task_')) ? `/my-tasks/${tid}` : '/notifications');
+                        }} className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors relative ${!n.isRead && 'bg-indigo-50/40'}`}>
+                          {!n.isRead && (
+                             <span className="absolute left-2 top-5 w-1.5 h-1.5 bg-indigo-600 rounded-full shadow-sm shadow-indigo-200" />
+                          )}
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-1.5 py-0.5 bg-slate-100 rounded border border-slate-200/50">{label}</span>
+                            <span className="text-[10px] font-bold text-slate-400">{timeAgo(n.createdAt)}</span>
+                          </div>
+                          <p className={`text-[13px] font-bold truncate ${!n.isRead ? 'text-slate-900' : 'text-slate-600'}`}>{n.title}</p>
+                          <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{n.message}</p>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

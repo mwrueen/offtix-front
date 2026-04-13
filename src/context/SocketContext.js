@@ -161,6 +161,10 @@ export const SocketProvider = ({ children }) => {
         setUnreadCountsByCompany(prev => ({ ...prev, [selectedCompanyId]: 0 }));
     }, [selectedCompanyId]);
 
+    const resetAllUnreadCounts = useCallback(() => {
+        setUnreadCountsByCompany({});
+    }, []);
+
     const decrementUnread = useCallback((by = 1) => {
         setUnreadCountsByCompany(prev => ({
             ...prev,
@@ -169,18 +173,23 @@ export const SocketProvider = ({ children }) => {
     }, [selectedCompanyId]);
 
     const unreadCount = unreadCountsByCompany[selectedCompanyId] || 0;
+    const totalUnreadCount = useMemo(() => {
+        return Object.values(unreadCountsByCompany).reduce((acc, count) => acc + count, 0);
+    }, [unreadCountsByCompany]);
 
     const value = useMemo(() => ({
         socket: socketRef.current,
         isConnected,
         notifications,
         unreadCount,
+        totalUnreadCount,
         unreadCountsByCompany,
         dismissNotification,
         clearUnreadCount,
+        resetAllUnreadCounts,
         decrementUnread,
         fetchUnreadCount
-    }), [isConnected, notifications, unreadCount, unreadCountsByCompany, dismissNotification, clearUnreadCount, decrementUnread, fetchUnreadCount]);
+    }), [isConnected, notifications, unreadCount, totalUnreadCount, unreadCountsByCompany, dismissNotification, clearUnreadCount, resetAllUnreadCounts, decrementUnread, fetchUnreadCount]);
 
     return (
         <SocketContext.Provider value={value}>
