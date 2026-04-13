@@ -77,11 +77,12 @@ const UnifiedHeader = () => {
             <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
                 {/* Logo & Main Nav */}
                 <div className="flex items-center gap-10">
-                    <Link to="/" className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 flex items-center justify-center transition-transform group-hover:scale-105">
-                            <img src="/offtix-logo.png" alt="Offtix Logo" className="w-full h-full object-contain" />
-                        </div>
-                        <span className="text-xl font-bold tracking-tight text-slate-900">Offtix</span>
+                    <Link to="/" className="flex items-center group">
+                        <img
+                            src="/offtix-logo.png"
+                            alt="Offtix Logo"
+                            className="h-9 w-auto object-contain transition-transform group-hover:scale-105"
+                        />
                     </Link>
 
                     <nav className="hidden md:flex items-center gap-8">
@@ -193,9 +194,11 @@ const UnifiedHeader = () => {
                             <div className="relative" ref={userRef}>
                                 <button
                                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                                    className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs hover:ring-4 hover:ring-indigo-50 transition-all border-2 border-white shadow-sm"
+                                    className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs hover:ring-4 hover:ring-indigo-50 transition-all border-2 border-white shadow-sm overflow-hidden"
                                 >
-                                    {initials}
+                                    {(user?.profilePicture || user?.profile?.profilePicture) ? (
+                                        <img src={getLogoUrl(user.profilePicture || user.profile?.profilePicture)} alt="" className="w-full h-full object-cover" />
+                                    ) : initials}
                                 </button>
 
                                 {isUserMenuOpen && (

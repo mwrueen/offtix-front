@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCompany } from '../../context/CompanyContext';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
+import { BASE_SERVER_URL } from '../../services/api';
 import CompanySelector from './CompanySelector';
 import SidebarNavigation from './SidebarNavigation';
 
@@ -13,6 +14,12 @@ const Sidebar = ({ collapsed, onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
+
+  const getUserImageUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+  };
 
   const canManageSettings = hasPermission(PERMISSIONS.MANAGE_COMPANY_SETTINGS);
   const canViewDesignations = hasPermission(PERMISSIONS.VIEW_DESIGNATIONS);
@@ -116,8 +123,10 @@ const Sidebar = ({ collapsed, onToggle }) => {
           className={`flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-800 cursor-pointer transition-all group border border-transparent hover:border-slate-700 ${collapsed ? 'justify-center' : ''}`}
         >
           <div className="relative">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-lg group-hover:scale-105 transition-transform">
-              {initials}
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-lg group-hover:scale-105 transition-transform overflow-hidden">
+              {(user?.profilePicture || user?.profile?.profilePicture) ? (
+                <img src={getUserImageUrl(user.profilePicture || user.profile?.profilePicture)} alt="" className="w-full h-full object-cover" />
+              ) : initials}
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></div>
           </div>

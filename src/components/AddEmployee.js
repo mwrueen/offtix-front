@@ -5,7 +5,6 @@ import { useCompanyFilter } from '../hooks/useCompanyFilter';
 import { useToast } from '../context/ToastContext';
 import { getCookie } from '../utils/cookies';
 import Layout from './Layout';
-import PageHeader from './PageHeader';
 import { getCurrencySymbol } from '../utils/currency';
 
 const AddEmployee = () => {
@@ -132,14 +131,28 @@ const AddEmployee = () => {
     }
   };
 
+  const inputBase =
+    'w-full rounded-lg border px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-shadow focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500';
+  const inputOk = `${inputBase} border-slate-300 bg-white`;
+  const inputErr = `${inputBase} border-rose-400 bg-white ring-2 ring-rose-100`;
+
   if (!selectedCompany || selectedCompany.id === 'personal') {
     return (
       <Layout>
-        <div className="max-w-4xl mx-auto my-32 bg-white rounded-3xl p-32 shadow-2xl border border-slate-100 text-center space-y-10 animate-in zoom-in-95 duration-700">
-          <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-5xl shadow-inner border border-slate-100">🏢</div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Organization Context Required</h2>
-          <p className="text-slate-500 max-w-sm mx-auto leading-relaxed font-medium">Please select a professional entity from the company filter to initiate the onboarding workflow.</p>
-          <button onClick={() => navigate('/overview')} className="px-12 py-4.5 bg-indigo-600 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-slate-950 transition-all active:scale-95">Go to Overview</button>
+        <div className="max-w-lg mx-auto py-16 px-4">
+          <div className="rounded-lg border border-slate-200 bg-white p-8 shadow-sm text-center">
+            <h1 className="text-lg font-semibold text-slate-900">Select an organization</h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Choose a company from the header to invite someone to that team.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/overview')}
+              className="mt-6 inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              Go to overview
+            </button>
+          </div>
         </div>
       </Layout>
     );
@@ -148,12 +161,9 @@ const AddEmployee = () => {
   if (checkingPermission || loadingDesignations) {
     return (
       <Layout>
-        <div className="flex flex-col items-center justify-center py-60 animate-in fade-in space-y-8">
-          <div className="relative">
-            <div className="w-16 h-16 border-4 border-slate-100 rounded-full" />
-            <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0" />
-          </div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] animate-pulse">Synchronizing access protocols...</p>
+        <div className="flex flex-col items-center justify-center py-24 text-slate-600">
+          <div className="h-9 w-9 rounded-full border-2 border-slate-200 border-t-indigo-600 animate-spin" />
+          <p className="mt-4 text-sm">Loading…</p>
         </div>
       </Layout>
     );
@@ -162,11 +172,20 @@ const AddEmployee = () => {
   if (!hasPermission) {
     return (
       <Layout>
-        <div className="max-w-4xl mx-auto my-32 bg-white rounded-3xl p-32 shadow-2xl border border-slate-100 text-center space-y-10 animate-in zoom-in-95 duration-700">
-          <div className="w-24 h-24 bg-rose-50 rounded-full flex items-center justify-center mx-auto text-5xl shadow-inner border border-rose-100">🔒</div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight text-rose-600">Access Restricted</h2>
-          <p className="text-slate-500 max-w-sm mx-auto leading-relaxed font-medium">Your account lacks the necessary administrative clearance to invite new members to this organization.</p>
-          <button onClick={() => navigate('/overview')} className="px-12 py-4.5 bg-slate-950 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-rose-600 transition-all active:scale-95">Abort and Return</button>
+        <div className="max-w-lg mx-auto py-16 px-4">
+          <div className="rounded-lg border border-slate-200 bg-white p-8 shadow-sm text-center">
+            <h1 className="text-lg font-semibold text-slate-900">You cannot invite members</h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Your role does not include permission to add employees for this organization.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/overview')}
+              className="mt-6 inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Back to overview
+            </button>
+          </div>
         </div>
       </Layout>
     );
@@ -174,152 +193,104 @@ const AddEmployee = () => {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto py-12 space-y-12 animate-in fade-in duration-700 pb-40">
-        <PageHeader
-          title="Onboard New Talent"
-          subtitle={`Design and dispatch a formal invitation for ${selectedCompany.name}.`}
-          icon="✨"
-          actions={<button onClick={() => navigate(-1)} className="px-6 py-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-rose-600 transition-all flex items-center gap-2 group">
-            <span className="group-hover:-translate-x-1 transition-transform">←</span> Return
-          </button>}
-        />
-
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start">
-          {/* Form Side */}
-          <div className="xl:col-span-7 bg-white p-10 lg:p-16 rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/40 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/30 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
-
-            <form onSubmit={handleSubmit} className="space-y-12 relative z-10">
-              <div className="space-y-8">
-                <div className="flex items-center gap-4 mb-2">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm shadow-sm border border-indigo-100">01</div>
-                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-900">Identity Details</h3>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Work Email Address</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="name@company.com"
-                    required
-                    className={`w-full px-8 py-5 bg-slate-50 border-2 rounded-2xl text-base font-bold text-slate-900 outline-none focus:bg-white transition-all shadow-sm ${errors.email ? 'border-rose-300 ring-4 ring-rose-50' : 'border-slate-50 focus:border-indigo-400 focus:shadow-indigo-100/30 focus:ring-4 focus:ring-indigo-50'}`}
-                  />
-                  {errors.email && <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest ml-4 animate-in slide-in-from-left-2 transition-all">⚠️ {errors.email}</p>}
-                </div>
-              </div>
-
-              <div className="space-y-8">
-                <div className="flex items-center gap-4 mb-2">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm shadow-sm border border-indigo-100">02</div>
-                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-900">Role & Compensation</h3>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Professional Role</label>
-                    <select
-                      name="designation"
-                      value={formData.designation}
-                      onChange={handleChange}
-                      required
-                      className={`w-full px-8 py-5 bg-slate-50 border-2 rounded-2xl text-[11px] font-bold text-slate-950 uppercase tracking-widest outline-none focus:bg-white transition-all cursor-pointer shadow-sm ${errors.designation ? 'border-rose-300 ring-4 ring-rose-50' : 'border-slate-50 focus:border-indigo-400 focus:shadow-indigo-100/30 focus:ring-4 focus:ring-indigo-50'}`}
-                    >
-                      <option value="">Select Position</option>
-                      {designations.map(d => <option key={d._id} value={d.name}>{d.name.toUpperCase()}</option>)}
-                    </select>
-                  </div>
-
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Annual Package</label>
-                    <div className="relative group/salary">
-                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-xl font-bold text-slate-300 group-focus-within/salary:text-indigo-500 transition-all pointer-events-none">
-                        {getCurrencySymbol(companyCurrency)}
-                      </span>
-                      <input
-                        type="number"
-                        name="salary"
-                        value={formData.salary}
-                        onChange={handleChange}
-                        placeholder="0.00"
-                        className={`w-full py-5 pl-12 pr-8 bg-slate-50 border-2 rounded-2xl text-base font-bold text-slate-900 outline-none focus:bg-white transition-all shadow-sm ${errors.salary ? 'border-rose-300 ring-4 ring-rose-50' : 'border-slate-50 focus:border-indigo-400 focus:shadow-indigo-100/30 focus:ring-4 focus:ring-indigo-50'}`}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-10 border-t border-slate-100">
-                <button
-                  type="submit"
-                  disabled={loading || loadingDesignations}
-                  className="w-full py-6 bg-slate-950 text-white rounded-2xl font-bold text-[11px] uppercase tracking-[0.3em] shadow-2xl shadow-slate-300 hover:bg-indigo-600 transition-all active:scale-95 flex items-center justify-center gap-4 relative overflow-hidden group/btn"
-                >
-                  <span className="relative z-10">{loading ? 'Dispatching Invitation...' : 'Launch Invitation'}</span>
-                  {!loading && <svg className="relative z-10 group-hover:translate-x-2 transition-transform" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>}
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-indigo-700 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500" />
-                </button>
-              </div>
-            </form>
+      <div className="mx-auto max-w-xl px-4 py-10 pb-16">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Add employee</h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Send an invitation to join <span className="font-medium text-slate-800">{selectedCompany.name}</span>.
+            </p>
           </div>
-
-          {/* Preview Side */}
-          <div className="xl:col-span-5 space-y-8 animate-in slide-in-from-right-8 duration-1000">
-            <div className="bg-slate-950 rounded-[2.5rem] p-10 lg:p-12 text-white shadow-2xl shadow-indigo-100/20 relative overflow-hidden border border-white/5 group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-indigo-500/40 transition-all duration-700" />
-
-              <div className="relative z-10 space-y-8">
-                <div className="flex justify-between items-start">
-                  <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 text-2xl">📧</div>
-                  <div className="bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest border border-emerald-500/20">Live Preview</div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Invitation Subject</h4>
-                    <p className="text-xl font-bold tracking-tight leading-tight">Join the {selectedCompany.name} Professional Network</p>
-                  </div>
-
-                  <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-4">
-                    <p className="text-sm font-medium text-slate-300 leading-relaxed italic">
-                      "You've been formally invited to join <span className="text-indigo-400 font-bold">{selectedCompany.name}</span> as a <span className="text-white font-bold">{formData.designation || '[Position]'}</span>. Your profile is ready for activation."
-                    </p>
-                    <div className="h-px bg-white/10 w-full" />
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold uppercase">{selectedCompany.name.charAt(0)}</div>
-                      <div>
-                        <p className="text-[10px] font-bold text-white uppercase tracking-widest">{selectedCompany.name}</p>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Identity Verified</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4 flex flex-col items-center">
-                  <div className="w-full h-12 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-indigo-600/30 group-hover:bg-indigo-500 transition-colors">
-                    Accept Invitation
-                  </div>
-                  <p className="mt-4 text-[9px] font-bold text-slate-600 uppercase tracking-widest text-center">This link will securely authenticate through corporate SSL protocols.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-indigo-600 rounded-3xl p-8 lg:p-10 text-white shadow-xl shadow-indigo-100 flex items-center gap-8 group">
-              <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-3xl shrink-0 border border-white/20 group-hover:rotate-12 transition-transform duration-500">🛡️</div>
-              <div className="space-y-2">
-                <h4 className="text-[11px] font-bold uppercase tracking-widest opacity-80">Security Protocol</h4>
-                <p className="text-sm font-medium leading-relaxed">Invitations are cryptographically signed and valid for 72 hours. Unauthorized access attempts are monitored.</p>
-              </div>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="shrink-0 self-start text-sm font-medium text-slate-600 hover:text-slate-900"
+          >
+            Cancel
+          </button>
         </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="add-emp-email" className="block text-sm font-medium text-slate-700">
+                Work email
+              </label>
+              <input
+                id="add-emp-email"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="name@company.com"
+                required
+                className={errors.email ? inputErr : inputOk}
+                autoComplete="email"
+              />
+              {errors.email && <p className="mt-1.5 text-sm text-rose-600">{errors.email}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="add-emp-role" className="block text-sm font-medium text-slate-700">
+                Role
+              </label>
+              <select
+                id="add-emp-role"
+                name="designation"
+                value={formData.designation}
+                onChange={handleChange}
+                required
+                className={errors.designation ? inputErr : `${inputOk} cursor-pointer`}
+              >
+                <option value="">Select a role</option>
+                {designations.map(d => (
+                  <option key={d._id} value={d.name}>{d.name}</option>
+                ))}
+              </select>
+              {errors.designation && <p className="mt-1.5 text-sm text-rose-600">{errors.designation}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="add-emp-salary" className="block text-sm font-medium text-slate-700">
+                Annual salary <span className="font-normal text-slate-500">(optional)</span>
+              </label>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">
+                  {getCurrencySymbol(companyCurrency)}
+                </span>
+                <input
+                  id="add-emp-salary"
+                  type="number"
+                  name="salary"
+                  value={formData.salary}
+                  onChange={handleChange}
+                  placeholder="0"
+                  min="0"
+                  step="any"
+                  className={`${errors.salary ? inputErr : inputOk} pl-9`}
+                />
+              </div>
+              {errors.salary && <p className="mt-1.5 text-sm text-rose-600">{errors.salary}</p>}
+            </div>
+
+            <div className="border-t border-slate-100 pt-6">
+              <button
+                type="submit"
+                disabled={loading || loadingDesignations}
+                className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? 'Sending…' : 'Send invitation'}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <p className="mt-4 text-center text-xs text-slate-500">
+          Invitations expire after 72 hours. The recipient will set up their account from the email link.
+        </p>
       </div>
     </Layout>
   );
 };
 
 export default AddEmployee;
-
-

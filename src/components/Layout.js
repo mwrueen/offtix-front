@@ -309,7 +309,11 @@ const Layout = ({ children }) => {
                 onClick={() => navigate('/profile')}
                 className="group flex items-center gap-3.5 p-2 rounded-xl cursor-pointer hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all"
               >
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-indigo-700 text-white flex items-center justify-center font-bold text-lg shadow-md group-hover:scale-105 transition-transform">{state.user?.name?.charAt(0)}</div>
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-indigo-700 text-white flex items-center justify-center font-bold text-lg shadow-md group-hover:scale-105 transition-transform overflow-hidden">
+                  {(state.user?.profilePicture || state.user?.profile?.profilePicture) ? (
+                    <img src={getLogoUrl(state.user.profilePicture || state.user.profile?.profilePicture)} alt="" className="w-full h-full object-cover" />
+                  ) : state.user?.name?.charAt(0)}
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-sm text-slate-800 truncate leading-tight group-hover:text-indigo-600 transition-colors">{state.user?.name}</p>
                   <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mt-1">{state.user?.role || 'Team Member'}</p>
@@ -322,7 +326,11 @@ const Layout = ({ children }) => {
             </div>
           ) : (
             <div className="flex flex-col items-center gap-4">
-              <div onClick={() => navigate('/profile')} className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-indigo-700 text-white flex items-center justify-center font-bold text-lg cursor-pointer hover:scale-110 transition-transform shadow-md">{state.user?.name?.charAt(0)}</div>
+              <div onClick={() => navigate('/profile')} className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-indigo-700 text-white flex items-center justify-center font-bold text-lg cursor-pointer hover:scale-110 transition-transform shadow-md overflow-hidden">
+                {(state.user?.profilePicture || state.user?.profile?.profilePicture) ? (
+                  <img src={getLogoUrl(state.user.profilePicture || state.user.profile?.profilePicture)} alt="" className="w-full h-full object-cover" />
+                ) : state.user?.name?.charAt(0)}
+              </div>
               <button onClick={handleLogout} className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all shadow-sm group">
                 <span className="group-hover:scale-110 transition-transform">🔒</span>
               </button>

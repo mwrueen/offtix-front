@@ -7,14 +7,13 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-24">
           <div className="lg:col-span-1">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black italic shadow-lg shadow-indigo-600/20">
-                O
-              </div>
-              <span className="text-2xl font-black tracking-tighter">
-                Offtix
-              </span>
-            </div>
+            <Link to="/" className="flex items-center mb-8 group">
+              <img
+                src="/offtix-logo.png"
+                alt="Offtix Logo"
+                className="h-10 w-auto object-contain transition-opacity group-hover:opacity-80 brightness-0 invert"
+              />
+            </Link>
             <p className="text-slate-500 leading-relaxed text-sm font-medium pr-10">
               The high-fidelity infrastructure for mission-critical project management and workforce orchestration.
             </p>

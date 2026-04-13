@@ -31,6 +31,12 @@ const authReducer = (state, action) => {
         token: action.payload.token,
         loading: false
       };
+    case 'UPDATE_USER':
+      setAuthCookies(state.token, action.payload);
+      return {
+        ...state,
+        user: action.payload
+      };
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
     case 'SET_ERROR':

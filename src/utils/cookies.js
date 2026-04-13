@@ -22,7 +22,15 @@ export const deleteCookie = (name) => {
 
 export const setAuthCookies = (token, user) => {
   setCookie('authToken', token, 7);
-  setCookie('userData', JSON.stringify(user), 7);
+  // Store only essential user data in cookies to avoid size limits
+  const essentialUser = {
+    id: user.id || user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    profilePicture: user.profilePicture || user.profile?.profilePicture || user.avatar
+  };
+  setCookie('userData', JSON.stringify(essentialUser), 7);
 };
 
 export const getAuthCookies = () => {

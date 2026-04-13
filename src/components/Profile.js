@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout';
 import api, { API_BASE_URL, BASE_SERVER_URL } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useCompany } from '../context/CompanyContext';
 import PageHeader from './PageHeader';
@@ -58,6 +59,7 @@ const mapApiUserToState = (data) => {
 };
 
 const Profile = () => {
+  const { dispatch: authDispatch } = useAuth();
   const { state: companyState } = useCompany();
   const toast = useToast();
 
@@ -170,6 +172,7 @@ const Profile = () => {
       const mapped = mapApiUserToState(response.data);
       if (mapped) {
         setProfile(mapped);
+        authDispatch({ type: 'UPDATE_USER', payload: response.data });
         const profileData = response.data.profile || {};
         setLocalImages({
           profilePicture: profileData.profilePicture || '',
@@ -205,6 +208,11 @@ const Profile = () => {
 
         setProfile(prev => ({ ...prev, profile: { ...prev.profile, [fieldName]: serverUrl } }));
         setLocalImages(prev => ({ ...prev, [fieldName]: serverUrl }));
+
+        // Refresh full user data to sync with AuthContext
+        const userRes = await api.get('/users/profile');
+        authDispatch({ type: 'UPDATE_USER', payload: userRes.data });
+
         toast?.showToast?.('Photo uploaded.', 'success');
       } catch (error) { toast?.showToast?.('Upload failed.', 'error'); }
     }
