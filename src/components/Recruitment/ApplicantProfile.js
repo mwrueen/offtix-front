@@ -7,6 +7,7 @@ import { Button, Badge } from '../ui';
 import { useToast } from '../../context/ToastContext';
 import { getCookie } from '../../utils/cookies';
 import { BASE_SERVER_URL } from '../../services/api';
+import HireCandidateModal from './HireCandidateModal';
 
 const ApplicantProfile = () => {
     const { id } = useParams();
@@ -25,8 +26,6 @@ const ApplicantProfile = () => {
     
     // We will port the exact modal states we need
     const [hiringApplicant, setHiringApplicant] = useState(null);
-    const [hireSalary, setHireSalary] = useState('');
-    const [hireJobDescription, setHireJobDescription] = useState(application?.jobCircular?.description || '');
 
     useEffect(() => {
         if (!application) {
@@ -44,7 +43,6 @@ const ApplicantProfile = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setApplication(res.data);
-            setHireJobDescription(res.data.jobCircular?.description || '');
             loadUserProfile(res.data);
         } catch (error) {
             console.error('Failed to fetch application:', error);
@@ -95,30 +93,7 @@ const ApplicantProfile = () => {
         }
     };
 
-    const handleHireSubmit = async () => {
-        if (!hireSalary) {
-            toast.showToast('Please enter the proposed salary', 'error');
-            return;
-        }
-        setStatusUpdating(true);
-        try {
-            const token = getCookie('authToken');
-            const res = await axios.post(`/api/recruitment/applications/${application._id}/hire`, {
-                salary: Number(hireSalary),
-                roleDescription: hireJobDescription
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.showToast('Offer sent. Candidate was notified.', 'success');
-            setHiringApplicant(null);
-            setApplication({ ...application, status: 'hired', offerLetterStatus: 'pending' });
-        } catch (error) {
-            console.error('Error hiring candidate:', error);
-            toast.showToast('Hiring failed', 'error');
-        } finally {
-            setStatusUpdating(false);
-        }
-    };
+
 
     const getImageUrl = (url) => {
         if (!url) return '';
@@ -361,48 +336,14 @@ const ApplicantProfile = () => {
                 </div>
             </div>
 
-            {/* Hire Action Modal */}
-            {hiringApplicant && (
-                <div className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col border border-slate-200 animate-in zoom-in-95">
-                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                            <div>
-                                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Hire Candidate</h3>
-                                <p className="text-xs font-bold text-slate-400 tracking-widest uppercase mt-1">Configure offer for {dName}</p>
-                            </div>
-                        </div>
-
-                        <div className="p-8 overflow-y-auto max-h-[70vh] space-y-8 relative">
-                            <div className="space-y-3">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest inline-flex items-center gap-2">
-                                    <span className="w-5 h-5 rounded bg-indigo-50 text-indigo-600 flex items-center justify-center">1</span>
-                                    Proposed Monthly Salary
-                                </label>
-                                <input
-                                    type="number"
-                                    value={hireSalary}
-                                    onChange={e => setHireSalary(e.target.value)}
-                                    className="w-full bg-white border-2 border-slate-200 p-4 rounded-xl font-bold text-lg text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
-                                    placeholder="Enter proposed salary e.g. 5000"
-                                    autoFocus
-                                />
-                            </div>
-                        </div>
-
-                        <div className="p-6 border-t border-slate-100 flex justify-end gap-4 bg-slate-50">
-                            <Button variant="outline" onClick={() => setHiringApplicant(null)}>Cancel</Button>
-                            <Button
-                                variant="primary"
-                                disabled={statusUpdating}
-                                className="!bg-emerald-600 hover:!bg-emerald-700 !border-0 flex items-center gap-2"
-                                onClick={handleHireSubmit}
-                            >
-                                <span>🎉</span> Confirm Offer
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <HireCandidateModal
+                isOpen={!!hiringApplicant}
+                onClose={() => setHiringApplicant(null)}
+                application={hiringApplicant}
+                onSuccess={(updatedApp) => {
+                    setApplication({ ...application, ...updatedApp, jobCircular: application.jobCircular });
+                }}
+            />
         </Layout>
     );
 };

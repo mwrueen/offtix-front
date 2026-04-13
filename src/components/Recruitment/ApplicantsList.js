@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import HireCandidateModal from './HireCandidateModal';
 import Layout from '../Layout';
 import PageHeader from '../PageHeader';
 import { Card, Button, Badge } from '../ui';
@@ -26,8 +25,6 @@ const ApplicantsList = () => {
     const [fullProfile, setFullProfile] = useState(null);
     const [loadingProfile, setLoadingProfile] = useState(false);
     const [hiringApplicant, setHiringApplicant] = useState(null);
-    const [hireSalary, setHireSalary] = useState('');
-    const [hireJobDescription, setHireJobDescription] = useState('');
     const [openScreeningId, setOpenScreeningId] = useState(null);
 
     // Interview states
@@ -48,14 +45,6 @@ const ApplicantsList = () => {
         setInterviewTime('');
         setInterviewDetails('');
     };
-
-    useEffect(() => {
-        if (!hiringApplicant) {
-            setHireJobDescription('');
-            return;
-        }
-        setHireJobDescription(circular?.description || '');
-    }, [hiringApplicant, circular?.description]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -99,41 +88,6 @@ const ApplicantsList = () => {
             setStatusUpdating(null);
         }
     };
-
-    const handleHireSubmit = async () => {
-        if (!hireSalary) {
-            toast.showToast('Please enter a starting salary.', 'error');
-            return;
-        }
-
-        const appId = hiringApplicant._id;
-        setStatusUpdating(appId);
-        try {
-            const token = getCookie('authToken');
-            const res = await axios.post(`/api/recruitment/applications/${appId}/hire`,
-                { salary: Number(hireSalary), roleDescription: hireJobDescription.trim() || '' },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            const updated = res.data.application || {};
-            setApplicants(applicants.map(a => (a._id === appId ? { ...a, ...updated } : a)));
-            toast.showToast(
-                'Offer sent. The candidate was notified; they appear in Employees after they accept the offer letter.',
-                'success'
-            );
-            setHiringApplicant(null);
-            setHireSalary('');
-            setHireJobDescription('');
-            if (viewingApplicant && viewingApplicant._id === appId) {
-                setViewingApplicant({ ...viewingApplicant, ...updated, status: updated.status || 'hired' });
-            }
-        } catch (error) {
-            console.error('Error hiring candidate:', error);
-            toast.showToast('Hiring failed', 'error');
-        } finally {
-            setStatusUpdating(null);
-        }
-    };
-
     const applicantUserId = (app) => {
         const u = app?.user;
         if (!u) return null;
@@ -460,6 +414,72 @@ const ApplicantsList = () => {
                     </div>
                 </Card>
             </div>
+
+            {/* Interview Modal */}
+            {interviewingApplicant && (
+                <div className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-slate-200 animate-in zoom-in-95">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                            <div>
+                                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Schedule Interview</h3>
+                                <p className="text-xs font-bold text-slate-400 tracking-widest uppercase mt-1">For {interviewingApplicant.applicant?.name || 'Candidate'}</p>
+                            </div>
+                            <button onClick={() => setInterviewingApplicant(null)} className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all shadow-sm">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        <div className="p-8 overflow-y-auto space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Date</label>
+                                    <input 
+                                        type="date"
+                                        value={interviewDate}
+                                        onChange={e => setInterviewDate(e.target.value)}
+                                        className="w-full bg-white border-2 border-slate-200 px-4 py-3 rounded-xl font-medium text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Time</label>
+                                    <input 
+                                        type="time"
+                                        value={interviewTime}
+                                        onChange={e => setInterviewTime(e.target.value)}
+                                        className="w-full bg-white border-2 border-slate-200 px-4 py-3 rounded-xl font-medium text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">Meeting Link / Location / Notes</label>
+                                <textarea
+                                    value={interviewDetails}
+                                    onChange={e => setInterviewDetails(e.target.value)}
+                                    placeholder="e.g. Google Meet link or office address"
+                                    className="w-full bg-white border-2 border-slate-200 px-4 py-3 rounded-xl font-medium text-slate-900 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all resize-y min-h-[100px]"
+                                />
+                            </div>
+                        </div>
+                        <div className="p-6 border-t border-slate-100 flex justify-end gap-4 bg-slate-50">
+                            <Button variant="outline" onClick={() => setInterviewingApplicant(null)}>Cancel</Button>
+                            <Button variant="primary" onClick={handleInterviewSubmit}>Send Invitation</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Hire Candidate Form Modal */}
+            <HireCandidateModal
+                isOpen={!!hiringApplicant}
+                onClose={() => setHiringApplicant(null)}
+                application={{ ...hiringApplicant, jobCircular: circular }}
+                onSuccess={(updatedApp) => {
+                    const appId = updatedApp._id;
+                    setApplicants(applicants.map(a => (a._id === appId ? { ...a, ...updatedApp } : a)));
+                    if (viewingApplicant && viewingApplicant._id === appId) {
+                        setViewingApplicant({ ...viewingApplicant, ...updatedApp });
+                    }
+                }}
+            />
         </Layout>
     );
 };
