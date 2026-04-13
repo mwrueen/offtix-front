@@ -9,6 +9,7 @@ import { useChat } from '../context/ChatContext';
 import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import { myTasksAPI, BASE_SERVER_URL } from '../services/api';
 import { getIcon } from './layout/icons';
+import { invitationIdsCoveredByNotifications } from '../utils/invitationNotificationDedupe';
 
 const Layout = ({ children }) => {
   const { state, dispatch } = useAuth();
@@ -53,11 +54,25 @@ const Layout = ({ children }) => {
         fetch('/api/invitations/my-invitations', { headers })
       ]);
       let combined = [];
-      if (nr.ok) combined = ((await nr.json()).notifications || []).slice(0, 8);
+      let dbNotifs = [];
+      if (nr.ok) dbNotifs = (await nr.json()).notifications || [];
+      const covered = invitationIdsCoveredByNotifications(dbNotifs);
       if (ir.ok) {
-        const invs = (await ir.json());
-        const ins = (Array.isArray(invs) ? invs : []).map(i => ({ _id: `inv_${i._id}`, type: 'invitation', title: `Invitation: ${i.company?.name}`, message: `Invited as ${i.designation} by ${i.invitedBy?.name}`, isRead: false, createdAt: i.createdAt, _invitationId: i._id }));
-        combined = [...ins, ...combined].slice(0, 8);
+        const invs = await ir.json();
+        const ins = (Array.isArray(invs) ? invs : [])
+          .filter((i) => !covered.has(String(i._id)))
+          .map((i) => ({
+            _id: `inv_${i._id}`,
+            type: 'invitation',
+            title: `Invitation: ${i.company?.name}`,
+            message: `Invited as ${i.designation} by ${i.invitedBy?.name}`,
+            isRead: false,
+            createdAt: i.createdAt,
+            _invitationId: i._id
+          }));
+        combined = [...ins, ...dbNotifs].slice(0, 8);
+      } else {
+        combined = dbNotifs.slice(0, 8);
       }
       setRecentNotifications(combined);
     } catch (err) { console.error('Notification_Error', err); }
@@ -390,8 +405,15 @@ const Layout = ({ children }) => {
                       <div className="p-8 text-center text-slate-400 text-sm">No new notifications.</div>
                     ) : recentNotifications.map((n) => (
                       <div key={n._id} onClick={() => {
-                        if (!n.isRead && !n._id.startsWith('inv_')) markNotifAsRead(n._id);
                         setIsNotifDropdownOpen(false);
+                        const syntheticInvite = String(n._id).startsWith('inv_');
+                        const invId = n._invitationId || (n.type === 'invitation' && n.relatedId && (n.relatedModel === 'Invitation' || !n.relatedModel) ? String(n.relatedId) : null);
+                        if (invId && (syntheticInvite || n.type === 'invitation')) {
+                          if (!n.isRead && !syntheticInvite) markNotifAsRead(n._id);
+                          navigate(`/invitations/${invId}`);
+                          return;
+                        }
+                        if (!n.isRead && !syntheticInvite) markNotifAsRead(n._id);
                         if (n.type === 'job_offer' && n.relatedId) {
                           navigate(`/recruitment/offer/${n.relatedId}`);
                           return;

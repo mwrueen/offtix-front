@@ -20,6 +20,7 @@ import ProfilePreview from './components/ProfilePreview';
 import UserDetails from './components/UserDetails';
 import CreateCompany from './components/CreateCompany';
 import AddEmployee from './components/AddEmployee';
+import InvitationDetails from './components/InvitationDetails';
 import CreateRole from './components/CreateRole';
 import ManageRoles from './components/ManageRoles';
 import Notifications from './components/Notifications';
@@ -142,6 +143,11 @@ function App() {
                         <Route path="/notifications" element={
                           <ProtectedRoute>
                             <Notifications />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/invitations/:id" element={
+                          <ProtectedRoute>
+                            <InvitationDetails />
                           </ProtectedRoute>
                         } />
                         <Route path="/company-settings" element={

@@ -3,6 +3,7 @@ import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { getCookie } from '../utils/cookies';
 import { useCompany } from './CompanyContext';
+import { invitationIdsCoveredByNotifications } from '../utils/invitationNotificationDedupe';
 
 const SocketContext = createContext(null);
 
@@ -31,13 +32,18 @@ export const SocketProvider = ({ children }) => {
             ]);
 
             let count = 0;
+            let notifications = [];
             if (notifRes.ok) {
                 const data = await notifRes.json();
+                notifications = data.notifications || [];
                 count += data.unreadCount || 0;
             }
             if (invRes.ok) {
                 const invData = await invRes.json();
-                count += Array.isArray(invData) ? invData.length : 0;
+                const invs = Array.isArray(invData) ? invData : [];
+                const covered = invitationIdsCoveredByNotifications(notifications);
+                const orphanInvites = invs.filter((i) => !covered.has(String(i._id)));
+                count += orphanInvites.length;
             }
             setUnreadCountsByCompany(prev => ({ ...prev, [companyId]: count }));
         } catch (_) { }
@@ -114,6 +120,8 @@ export const SocketProvider = ({ children }) => {
                         type: data.type,
                         title: data.title,
                         message: data.message,
+                        relatedId: data.relatedId,
+                        relatedModel: data.relatedModel,
                         taskId:
                             data.relatedModel === 'Task' && data.relatedId
                                 ? data.relatedId

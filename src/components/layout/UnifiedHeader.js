@@ -177,10 +177,23 @@ const UnifiedHeader = () => {
                                                 </div>
                                             ) : (
                                                 recentNotifs.map(n => (
-                                                    <div key={n._id} className="p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer">
+                                                    <button
+                                                        key={n._id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setIsNotifOpen(false);
+                                                            if (n.type === 'invitation' && n.relatedId &&
+                                                                (n.relatedModel === 'Invitation' || !n.relatedModel)) {
+                                                                navigate(`/invitations/${n.relatedId}`);
+                                                                return;
+                                                            }
+                                                            navigate('/notifications');
+                                                        }}
+                                                        className="w-full text-left p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer"
+                                                    >
                                                         <p className="text-xs font-bold text-slate-700 line-clamp-1">{n.title}</p>
                                                         <p className="text-[10px] text-slate-400 line-clamp-2 mt-0.5">{n.message}</p>
-                                                    </div>
+                                                    </button>
                                                 ))
                                             )}
                                         </div>

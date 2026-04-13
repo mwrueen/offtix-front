@@ -280,7 +280,8 @@ const Profile = () => {
           subtitle="Manage your professional identity, career history, and credentials."
           icon="👤"
           stats={[
-            { label: 'Role', value: profile.role.charAt(0).toUpperCase() + profile.role.slice(1) },
+            { label: 'Email', value: profile.email || '—' },
+            { label: 'Role', value: profile.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : '—' },
             { label: 'Profile Version', value: 'Standard' }
           ]}
           actions={
@@ -322,9 +323,17 @@ const Profile = () => {
                 </button>
               ))}
             </div>
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 text-center">
-              <div className="text-[10px] font-bold uppercase tracking-widest mb-1 text-slate-400">Account Status</div>
-              <div className="text-sm font-bold text-slate-900">Active Member</div>
+            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 text-left space-y-4">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-widest mb-1 text-slate-400">Sign-in email</div>
+                <div className="text-sm font-semibold text-slate-900 break-all" title={profile.email || undefined}>
+                  {profile.email || 'Not available'}
+                </div>
+              </div>
+              <div className="pt-3 border-t border-slate-200">
+                <div className="text-[10px] font-bold uppercase tracking-widest mb-1 text-slate-400">Account</div>
+                <div className="text-sm font-bold text-slate-900">Active</div>
+              </div>
             </div>
           </div>
 
@@ -360,6 +369,18 @@ const Profile = () => {
                   </div>
 
                   <div className="pt-16 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2 space-y-1.5">
+                      <label htmlFor="profile-email-readonly" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email</label>
+                      <input
+                        id="profile-email-readonly"
+                        type="email"
+                        value={profile.email}
+                        readOnly
+                        aria-readonly="true"
+                        className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-base font-semibold text-slate-700 outline-none cursor-default"
+                      />
+                      <p className="text-xs text-slate-500 ml-1">This is the address you use to sign in. It cannot be edited on this page.</p>
+                    </div>
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
                       <input type="text" value={profile.name} onChange={e => setProfile({ ...profile, name: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-indigo-400 transition-all" />

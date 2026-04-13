@@ -4,26 +4,24 @@ import { useToast } from '../context/ToastContext';
 import { useSocket } from '../context/SocketContext';
 import { getCookie } from '../utils/cookies';
 import Layout from './Layout';
-import PageHeader from './PageHeader';
+import { getCurrencySymbol } from '../utils/currency';
 
-const currencySymbols = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', INR: '₹', BDT: '৳' };
-
-const typeConfig = {
-  task_ready: { icon: '✅', color: 'indigo', label: 'Task Ready' },
-  task_send_back: { icon: '↩️', color: 'rose', label: 'Returned' },
-  task_role_handoff: { icon: '🔄', color: 'emerald', label: 'Handoff' },
-  task_role_assignment: { icon: '🎯', color: 'indigo', label: 'Assigned' },
-  task_role_completed: { icon: '🏁', color: 'emerald', label: 'Completed' },
-  project_assignment: { icon: '📁', color: 'slate', label: 'Project' },
-  salary_update: { icon: '💰', color: 'emerald', label: 'Payroll' },
-  role_change: { icon: '👤', color: 'indigo', label: 'Role Shift' },
-  general: { icon: '🔔', color: 'slate', label: 'Update' },
-  invitation: { icon: '✉️', color: 'indigo', label: 'Invitation' },
-  job_offer: { icon: '📋', color: 'emerald', label: 'Job offer' },
-  job_application: { icon: '📥', color: 'slate', label: 'Application' },
+const typeMeta = {
+  task_ready: { label: 'Task' },
+  task_send_back: { label: 'Task' },
+  task_role_handoff: { label: 'Task' },
+  task_role_assignment: { label: 'Task' },
+  task_role_completed: { label: 'Task' },
+  project_assignment: { label: 'Project' },
+  salary_update: { label: 'Payroll' },
+  role_change: { label: 'Role' },
+  general: { label: 'Update' },
+  invitation: { label: 'Invitation' },
+  job_offer: { label: 'Job offer' },
+  job_application: { label: 'Application' },
 };
 
-const getConfig = (type) => typeConfig[type] || typeConfig.general;
+const getTypeLabel = (type) => typeMeta[type]?.label || 'Notification';
 
 function timeAgo(dateStr) {
   if (!dateStr) return '';
@@ -46,7 +44,6 @@ const Notifications = () => {
   const [invitations, setInvitations] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [processingInvitation, setProcessingInvitation] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
@@ -63,59 +60,63 @@ const Notifications = () => {
         fetch('/api/invitations/my-invitations', { headers: authHeaders() }),
         fetch('/api/notifications', { headers: authHeaders() }),
       ]);
-      if (invRes.ok) setInvitations(await invRes.json());
+      let invs = [];
+      if (invRes.ok) invs = await invRes.json();
+      setInvitations(Array.isArray(invs) ? invs : []);
+
       if (notifRes.ok) {
         const data = await notifRes.json();
-        setNotifications(data.notifications || []);
+        const notifs = data.notifications || [];
+        const pendingIds = new Set((Array.isArray(invs) ? invs : []).map((i) => String(i._id)));
+        const filtered = notifs.filter(
+          (n) =>
+            !(
+              n.type === 'invitation' &&
+              n.relatedId &&
+              pendingIds.has(String(n.relatedId))
+            )
+        );
+        setNotifications(filtered);
       }
-    } catch (err) { console.error('Error fetching notifications', err); }
-    finally { setLoading(false); }
-  };
-
-  const handleAcceptInvitation = async (id) => {
-    setProcessingInvitation(id);
-    try {
-      const res = await fetch(`/api/invitations/${id}/accept`, { method: 'POST', headers: authHeaders() });
-      if (res.ok) { toast?.success?.('Invitation accepted successfully.'); setTimeout(() => window.location.reload(), 1500); }
-      else { toast?.error?.((await res.json()).message || 'Failed to accept invitation.'); }
-    } catch { toast?.error?.('Communication error.'); }
-    finally { setProcessingInvitation(null); }
-  };
-
-  const handleRejectInvitation = async (id) => {
-    setProcessingInvitation(id);
-    try {
-      const res = await fetch(`/api/invitations/${id}/reject`, { method: 'POST', headers: authHeaders() });
-      if (res.ok) { toast?.success?.('Invitation rejected.'); fetchAll(); }
-      else toast?.error?.('Action failed.');
-    } catch { toast?.error?.('Action failed.'); }
-    finally { setProcessingInvitation(null); }
+    } catch (err) {
+      console.error('Error fetching notifications', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const markAsRead = async (id) => {
     try {
       await fetch(`/api/notifications/${id}/read`, { method: 'PUT', headers: authHeaders() });
-      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
-    } catch { }
+      setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
+    } catch { /* ignore */ }
   };
 
   const markAllAsRead = async () => {
     try {
       await fetch('/api/notifications/mark-all-read', { method: 'PUT', headers: authHeaders() });
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      toast?.success?.('All notifications marked as read.');
-    } catch { }
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      toast?.success?.('All marked as read.');
+    } catch { /* ignore */ }
   };
 
   const deleteNotification = async (id) => {
     setDeletingId(id);
     try {
       const res = await fetch(`/api/notifications/${id}`, { method: 'DELETE', headers: authHeaders() });
-      if (res.ok) setNotifications(prev => prev.filter(n => n._id !== id));
-    } catch { } finally { setDeletingId(null); }
+      if (res.ok) setNotifications((prev) => prev.filter((n) => n._id !== id));
+    } catch { /* ignore */ } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleNotifClick = (notif) => {
+    if (notif.type === 'invitation' && notif.relatedId &&
+      (notif.relatedModel === 'Invitation' || !notif.relatedModel)) {
+      if (!notif.isRead) markAsRead(notif._id);
+      navigate(`/invitations/${notif.relatedId}`);
+      return;
+    }
     if (!notif.isRead) markAsRead(notif._id);
     if (notif.type === 'job_offer' && notif.relatedId) {
       navigate(`/recruitment/offer/${notif.relatedId}`);
@@ -127,123 +128,173 @@ const Notifications = () => {
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  if (loading) return (
-    <Layout>
-      <div className="max-w-[1200px] mx-auto px-6 py-12 animate-in fade-in space-y-8">
-        <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin mx-auto shadow-sm" />
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest italic text-center">Loading updates...</p>
-      </div>
-    </Layout>
-  );
+  if (loading) {
+    return (
+      <Layout>
+        <div className="mx-auto max-w-3xl px-4 py-20 flex flex-col items-center text-slate-600">
+          <div className="h-9 w-9 rounded-full border-2 border-slate-200 border-t-indigo-600 animate-spin" />
+          <p className="mt-4 text-sm">Loading notifications…</p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
-      <div className="max-w-[1200px] mx-auto px-6 py-12 space-y-12 animate-in fade-in duration-700">
-        <PageHeader
-          title="Notifications"
-          subtitle="Track project updates, company assignments, and system communications."
-          icon="🔔"
-          stats={[
-            { label: 'Unread', value: unreadCount },
-            { label: 'Invitations', value: invitations.length }
-          ]}
-          actions={unreadCount > 0 && (
-            <button onClick={markAllAsRead} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-lg hover:bg-slate-900 transition-all active:scale-95">Mark all as Read</button>
-          )}
-        />
+      <div className="mx-auto max-w-3xl px-4 py-10 pb-20">
+        <header className="mb-10 flex flex-col gap-4 border-b border-slate-200 pb-8 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Notifications</h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Invitations and updates for your account.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            {(unreadCount > 0 || invitations.length > 0) && (
+              <span className="text-xs text-slate-500">
+                {invitations.length > 0 && `${invitations.length} pending invite${invitations.length === 1 ? '' : 's'}`}
+                {invitations.length > 0 && unreadCount > 0 && ' · '}
+                {unreadCount > 0 && `${unreadCount} unread`}
+              </span>
+            )}
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={markAllAsRead}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Mark all read
+              </button>
+            )}
+          </div>
+        </header>
 
-        <div className="space-y-16">
-          {/* Invitations Section */}
-          {invitations.length > 0 && (
-            <section className="space-y-6">
-              <div className="flex items-center gap-4 px-2">
-                <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Active Invitations</span>
-                <div className="flex-1 h-px bg-indigo-100" />
-              </div>
-
-              <div className="grid grid-cols-1 gap-6">
-                {invitations.map(inv => (
-                  <div key={inv._id} className="group bg-white p-8 rounded-3xl border border-indigo-100 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col md:flex-row items-center gap-8">
-                    <div className="w-20 h-20 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-3xl font-bold italic shadow-lg shrink-0 border-4 border-white">
-                      {inv.company?.name?.charAt(0)}
-                    </div>
-
-                    <div className="flex-1 min-w-0 text-center md:text-left space-y-4">
-                      <div>
-                        <h3 className="text-2xl font-bold text-slate-950 truncate group-hover:text-indigo-600 transition-colors uppercase italic">{inv.company?.name}</h3>
-                        <p className="text-sm font-medium text-slate-500 mt-1 line-clamp-2 max-w-2xl">{inv.company?.description || 'Awaiting synchronization.'}</p>
-                      </div>
-
-                      <div className="flex flex-wrap justify-center md:justify-start gap-3">
-                        {[
-                          { label: 'Role', val: inv.designation, color: 'indigo' },
-                          { label: 'Compensation', val: inv.salary > 0 ? `${currencySymbols[inv.company?.currency || 'USD']}${inv.salary.toLocaleString()}` : 'Negotiable', color: 'emerald' },
-                          { label: 'Invited By', val: inv.invitedBy?.name, color: 'slate' }
-                        ].map((stat, i) => (
-                          <div key={i} className={`px-4 py-1.5 bg-${stat.color}-50 border border-${stat.color}-100 rounded-full flex items-center gap-2`}>
-                            <span className={`text-[9px] font-bold text-${stat.color}-400 uppercase tracking-widest`}>{stat.label}:</span>
-                            <span className={`text-[10px] font-bold text-${stat.color}-600 uppercase`}>{stat.val}</span>
+        {invitations.length > 0 && (
+          <section className="mb-12">
+            <h2 className="mb-4 text-sm font-medium text-slate-900">Pending invitations</h2>
+            <ul className="space-y-3">
+              {invitations.map((inv) => {
+                const sym = getCurrencySymbol(inv.company?.currency || 'USD');
+                const salaryLine = inv.salary > 0
+                  ? `${sym}${Number(inv.salary).toLocaleString()} per year`
+                  : 'Salary negotiable';
+                return (
+                  <li
+                    key={inv._id}
+                    className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+                  >
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Company</p>
+                        <p className="mt-0.5 truncate text-base font-semibold text-slate-900">
+                          {inv.company?.name || 'Organization'}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-600 line-clamp-2">
+                          {inv.company?.description?.trim() || 'No company summary on file.'}
+                        </p>
+                        <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-600">
+                          <div>
+                            <dt className="inline text-slate-500">Role: </dt>
+                            <dd className="inline font-medium text-slate-800">{inv.designation}</dd>
                           </div>
-                        ))}
+                          <div>
+                            <dt className="inline text-slate-500">Compensation: </dt>
+                            <dd className="inline font-medium text-slate-800">{salaryLine}</dd>
+                          </div>
+                          {inv.invitedBy?.name && (
+                            <div>
+                              <dt className="inline text-slate-500">Invited by: </dt>
+                              <dd className="inline font-medium text-slate-800">{inv.invitedBy.name}</dd>
+                            </div>
+                          )}
+                        </dl>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/invitations/${inv._id}`)}
+                        className="shrink-0 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 sm:min-w-[160px]"
+                      >
+                        View offer details
+                      </button>
                     </div>
-
-                    <div className="flex flex-col gap-3 w-full md:w-48 shrink-0">
-                      <button onClick={() => handleAcceptInvitation(inv._id)} disabled={processingInvitation === inv._id} className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-md hover:bg-slate-900 active:scale-95 transition-all disabled:opacity-50">Accept Join</button>
-                      <button onClick={() => handleRejectInvitation(inv._id)} disabled={processingInvitation === inv._id} className="w-full py-3 bg-white text-rose-500 border border-rose-100 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-all">Decline</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Activity Stream */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-4 px-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Recent Activity</span>
-              <div className="flex-1 h-px bg-slate-100" />
-            </div>
-
-            <div className="space-y-4">
-              {notifications.length > 0 ? (
-                notifications.map(notif => {
-                  const cfg = getConfig(notif.type);
-                  return (
-                    <div key={notif._id} onClick={() => handleNotifClick(notif)} className={`group relative p-6 rounded-3xl border transition-all duration-300 flex items-center gap-6 overflow-hidden cursor-pointer ${notif.isRead ? 'bg-white border-slate-100 opacity-60' : `bg-white border-indigo-100 shadow-sm hover:shadow-md hover:border-indigo-200`}`}>
-                      {!notif.isRead && <div className="absolute left-0 top-0 w-1.5 h-full bg-indigo-600 shadow-md" />}
-                      <div className={`w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-2xl shadow-inner shrink-0 group-hover:scale-105 transition-all`}>
-                        {cfg.icon}
-                      </div>
-
-                      <div className="flex-1 min-w-0 space-y-2 font-sans">
-                        <div className="flex items-center gap-4 flex-wrap">
-                          <span className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-current/10 bg-${cfg.color}-50 text-${cfg.color}-600`}> {cfg.label} </span>
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest bg-slate-100/50 px-3 py-1 rounded-full"> {timeAgo(notif.createdAt)} </span>
-                        </div>
-                        <h3 className={`text-lg font-bold tracking-tight ${notif.isRead ? 'text-slate-500' : 'text-slate-900'}`}> {notif.title} </h3>
-                        <p className="text-[11px] font-medium text-slate-500 line-clamp-1 opacity-70"> {notif.message} </p>
-                      </div>
-
-                      <div className="flex gap-2 shrink-0 md:opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0" onClick={e => e.stopPropagation()}>
-                        {!notif.isRead && <button onClick={e => { e.stopPropagation(); markAsRead(notif._id); }} className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg hover:bg-indigo-600 hover:text-white transition-all shadow-sm">✓</button>}
-                        <button onClick={e => { e.stopPropagation(); deleteNotification(notif._id); }} disabled={deletingId === notif._id} className="w-10 h-10 rounded-xl bg-white border border-rose-100 text-rose-500 flex items-center justify-center text-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm font-bold">🗑</button>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="p-20 bg-white rounded-3xl border border-dashed border-slate-200 text-center space-y-4">
-                  <div className="text-6xl grayscale opacity-20">📭</div>
-                  <h3 className="text-xl font-bold text-slate-400 uppercase tracking-widest">No New Notifications</h3>
-                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest italic mt-2">All updates have been synchronized.</p>
-                </div>
-              )}
-            </div>
+                  </li>
+                );
+              })}
+            </ul>
           </section>
-        </div>
+        )}
+
+        <section>
+          <h2 className="mb-4 text-sm font-medium text-slate-900">Activity</h2>
+          {notifications.length > 0 ? (
+            <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white shadow-sm">
+              {notifications.map((notif) => {
+                const label = getTypeLabel(notif.type);
+                return (
+                  <li key={notif._id}>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleNotifClick(notif)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleNotifClick(notif);
+                        }
+                      }}
+                      className={`flex cursor-pointer items-start gap-4 px-4 py-4 text-left transition-colors hover:bg-slate-50 ${
+                        !notif.isRead ? 'bg-indigo-50/40' : ''
+                      }`}
+                    >
+                      {!notif.isRead && (
+                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-indigo-600" aria-hidden />
+                      )}
+                      {notif.isRead && <span className="mt-1.5 w-2 shrink-0" aria-hidden />}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                            {label}
+                          </span>
+                          <span className="text-xs text-slate-400">{timeAgo(notif.createdAt)}</span>
+                        </div>
+                        <p className="mt-1 font-medium text-slate-900">{notif.title}</p>
+                        <p className="mt-0.5 text-sm text-slate-600 line-clamp-2">{notif.message}</p>
+                      </div>
+                      <div className="flex shrink-0 gap-2 pt-0.5" onClick={(e) => e.stopPropagation()}>
+                        {!notif.isRead && (
+                          <button
+                            type="button"
+                            onClick={() => markAsRead(notif._id)}
+                            className="rounded px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                          >
+                            Mark read
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => deleteNotification(notif._id)}
+                          disabled={deletingId === notif._id}
+                          className="rounded px-2 py-1 text-xs font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/50 px-6 py-14 text-center">
+              <p className="text-sm font-medium text-slate-700">No other notifications</p>
+              <p className="mt-1 text-sm text-slate-500">
+                Task updates, offers, and alerts will appear here.
+              </p>
+            </div>
+          )}
+        </section>
       </div>
     </Layout>
   );
