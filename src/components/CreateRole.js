@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { useAuth } from '../context/AuthContext';
 import { useCompanyFilter } from '../hooks/useCompanyFilter';
 import { useToast } from '../context/ToastContext';
@@ -15,12 +17,12 @@ const CreateRole = () => {
   const toast = useToast();
   const { hasPermission, loading: permLoading } = usePermissions();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = React.useState({
     name: '',
     description: ''
   });
 
-  const [permissions, setPermissions] = useState({
+  const [permissions, setPermissions] = React.useState({
     addEmployee: false,
     viewEmployeeList: true,
     editEmployee: false,
@@ -40,8 +42,8 @@ const CreateRole = () => {
     manageRecruitment: false
   });
 
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = React.useState(false);
+  const [errors, setErrors] = React.useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -237,14 +239,14 @@ const CreateRole = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Description</label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    rows="5"
-                    placeholder="Briefly describe the responsibilities associated with this role..."
-                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 outline-none focus:bg-white focus:border-indigo-400 transition-all resize-none"
-                  />
+                  <div className="rounded-xl border border-slate-200 overflow-hidden bg-slate-50 focus-within:bg-white focus-within:border-indigo-400 transition-all [&_.ql-toolbar]:border-none [&_.ql-toolbar]:bg-slate-100/50 [&_.ql-container]:border-none [&_.ql-editor]:text-sm [&_.ql-editor]:text-slate-600 [&_.ql-editor]:min-h-[160px] [&_.ql-editor]:font-medium">
+                    <ReactQuill
+                      theme="snow"
+                      value={formData.description}
+                      onChange={(val) => setFormData(prev => ({ ...prev, description: val }))}
+                      placeholder="Briefly describe the responsibilities associated with this role..."
+                    />
+                  </div>
                 </div>
               </div>
             </div>

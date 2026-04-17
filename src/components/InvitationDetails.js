@@ -5,6 +5,7 @@ import { getCookie } from '../utils/cookies';
 import { useToast } from '../context/ToastContext';
 import { BASE_SERVER_URL } from '../services/api';
 import { getCurrencySymbol } from '../utils/currency';
+import { useCompany } from '../context/CompanyContext';
 
 const authHeaders = () => ({
   Authorization: `Bearer ${getCookie('authToken')}`,
@@ -22,7 +23,10 @@ const Section = ({ title, children, empty }) => {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <h2 className="text-sm font-semibold text-slate-900 border-b border-slate-100 pb-3 mb-4">{title}</h2>
-      <div className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{children}</div>
+      <div 
+        className="text-sm text-slate-700 leading-relaxed prose prose-slate prose-sm max-w-none"
+        dangerouslySetInnerHTML={{ __html: children }}
+      />
     </section>
   );
 };
@@ -31,6 +35,7 @@ const InvitationDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
+  const { selectCompany } = useCompany();
   const [inv, setInv] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -69,13 +74,23 @@ const InvitationDetails = () => {
     try {
       const res = await fetch(`/api/invitations/${id}/accept`, { method: 'POST', headers: authHeaders() });
       if (res.ok) {
-        toast?.success?.('You have joined the company.');
-        navigate('/overview');
+        toast?.showToast?.('You have joined the company.', 'success');
+        
+        // Auto-select the company and navigate to dashboard
+        if (inv?.company) {
+          selectCompany({
+            id: inv.company._id || inv.company.id,
+            name: inv.company.name
+          });
+        }
+        
+        navigate('/dashboard');
       } else {
-        toast?.error?.((await res.json()).message || 'Could not accept.');
+        const errorData = await res.json();
+        toast?.showToast?.(errorData.message || 'Could not accept.', 'error');
       }
     } catch {
-      toast?.error?.('Network error.');
+      toast?.showToast?.('Network error.', 'error');
     } finally {
       setProcessing(false);
     }

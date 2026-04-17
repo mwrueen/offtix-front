@@ -12,12 +12,47 @@ const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
     priority: initialData?.priority || 'medium',
     endDate: initialData?.endDate ? new Date(initialData.endDate).toISOString().split('T')[0] : '',
   });
+  const [logo, setLogo] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(initialData?.logo ? (initialData.logo.startsWith('http') ? initialData.logo : `${process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000'}${initialData.logo}`) : null);
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert('File size too large. Max 2MB.');
+        return;
+      }
+      setLogo(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const sd = { ...formData };
-    if (sd.endDate) sd.endDate = new Date(sd.endDate);
-    onSubmit(sd);
+    
+    // Check if we need to send as FormData (if logo is present)
+    if (logo) {
+      const formDataToSend = new FormData();
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== undefined && formData[key] !== null) {
+          if (typeof formData[key] === 'object' && !(formData[key] instanceof Date)) {
+            formDataToSend.append(key, JSON.stringify(formData[key]));
+          } else {
+            formDataToSend.append(key, formData[key]);
+          }
+        }
+      });
+      formDataToSend.append('logo', logo);
+      onSubmit(formDataToSend);
+    } else {
+      const sd = { ...formData };
+      if (sd.endDate) sd.endDate = new Date(sd.endDate);
+      onSubmit(sd);
+    }
   };
 
   const handleChange = (e) => {
@@ -27,29 +62,62 @@ const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-400">
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 ml-1">Project Title</label>
-            <input
-              type="text"
-              name="title"
-              placeholder="e.g. Website Revamp 2024"
-              value={formData.title}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400"
-            />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-1 space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 ml-1">Project Logo</label>
+            <div className="relative group">
+              <div className="w-full h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-indigo-300 group-hover:bg-indigo-50/30">
+                {logoPreview ? (
+                  <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+                ) : (
+                  <>
+                    <span className="text-2xl mb-1">🖼️</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Upload Logo</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+              </div>
+              {logoPreview && (
+                <button
+                  type="button"
+                  onClick={() => { setLogo(null); setLogoPreview(null); }}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center text-xs shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 ml-1">Target Deadline</label>
-            <input
-              type="date"
-              name="endDate"
-              value={formData.endDate}
-              onChange={handleChange}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
-            />
+          <div className="md:col-span-2 space-y-6">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 ml-1">Project Title</label>
+              <input
+                type="text"
+                name="title"
+                placeholder="e.g. Website Revamp 2024"
+                value={formData.title}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 ml-1">Target Deadline</label>
+              <input
+                type="date"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
+              />
+            </div>
           </div>
         </div>
 

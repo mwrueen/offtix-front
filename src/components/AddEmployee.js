@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCompany } from '../context/CompanyContext';
-import { useCompanyFilter } from '../hooks/useCompanyFilter';
 import { useToast } from '../context/ToastContext';
 import { getCookie } from '../utils/cookies';
 import Layout from './Layout';
 import { getCurrencySymbol } from '../utils/currency';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const AddEmployee = () => {
   const navigate = useNavigate();
@@ -144,7 +145,6 @@ const AddEmployee = () => {
     'w-full rounded-lg border px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-shadow focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500';
   const inputOk = `${inputBase} border-slate-300 bg-white`;
   const inputErr = `${inputBase} border-rose-400 bg-white ring-2 ring-rose-100`;
-  const textareaOk = `${inputBase} min-h-[100px] resize-y align-top`;
 
   if (isCompanyLoading || checkingPermission || loadingDesignations) {
     return (
@@ -297,49 +297,49 @@ const AddEmployee = () => {
             <h2 className="text-sm font-semibold text-slate-900">Offer details</h2>
             <p className="-mt-2 text-xs text-slate-500">Shown on the recipient&apos;s invitation page with company summary and salary.</p>
 
-            <div>
+            <div className="space-y-1.5">
               <label htmlFor="add-emp-job-desc" className="block text-sm font-medium text-slate-700">
                 Job description
               </label>
-              <textarea
-                id="add-emp-job-desc"
-                name="jobDescription"
-                value={formData.jobDescription}
-                onChange={handleChange}
-                rows={5}
-                placeholder="Responsibilities, reporting line, working hours, location, etc."
-                className={`mt-1.5 ${textareaOk}`}
-              />
+              <div className="rich-editor-wrapper">
+                <ReactQuill
+                  theme="snow"
+                  value={formData.jobDescription}
+                  onChange={(val) => setFormData(prev => ({ ...prev, jobDescription: val }))}
+                  className="bg-white rounded-xl overflow-hidden border border-slate-200 min-h-[150px]"
+                  placeholder="Responsibilities, reporting line, working hours, location, etc."
+                />
+              </div>
             </div>
 
-            <div>
+            <div className="space-y-1.5">
               <label htmlFor="add-emp-facilities" className="block text-sm font-medium text-slate-700">
                 Facilities &amp; benefits
               </label>
-              <textarea
-                id="add-emp-facilities"
-                name="facilities"
-                value={formData.facilities}
-                onChange={handleChange}
-                rows={4}
-                placeholder="Health cover, leave, equipment, remote policy, meals, transport…"
-                className={`mt-1.5 ${textareaOk}`}
-              />
+              <div className="rich-editor-wrapper">
+                <ReactQuill
+                  theme="snow"
+                  value={formData.facilities}
+                  onChange={(val) => setFormData(prev => ({ ...prev, facilities: val }))}
+                  className="bg-white rounded-xl overflow-hidden border border-slate-200 min-h-[120px]"
+                  placeholder="Health cover, leave, equipment, remote policy, meals, transport…"
+                />
+              </div>
             </div>
 
-            <div>
+            <div className="space-y-1.5">
               <label htmlFor="add-emp-terms" className="block text-sm font-medium text-slate-700">
                 Terms &amp; policies
               </label>
-              <textarea
-                id="add-emp-terms"
-                name="termsAndPolicies"
-                value={formData.termsAndPolicies}
-                onChange={handleChange}
-                rows={4}
-                placeholder="Probation, confidentiality, code of conduct, notice period, etc."
-                className={`mt-1.5 ${textareaOk}`}
-              />
+              <div className="rich-editor-wrapper">
+                <ReactQuill
+                  theme="snow"
+                  value={formData.termsAndPolicies}
+                  onChange={(val) => setFormData(prev => ({ ...prev, termsAndPolicies: val }))}
+                  className="bg-white rounded-xl overflow-hidden border border-slate-200 min-h-[120px]"
+                  placeholder="Probation, confidentiality, code of conduct, notice period, etc."
+                />
+              </div>
             </div>
           </fieldset>
 

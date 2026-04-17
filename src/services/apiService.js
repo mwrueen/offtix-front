@@ -8,11 +8,14 @@ class ApiService {
   }
 
   // Helper method to build headers with company context
-  buildHeaders(token, companyId = null) {
+  buildHeaders(token, companyId = null, isFormData = false) {
     const headers = {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      'Authorization': `Bearer ${token}`
     };
+
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     if (companyId && companyId !== 'personal') {
       headers['X-Company-Id'] = companyId;
@@ -43,7 +46,8 @@ class ApiService {
   // Generic API call method with company filtering
   async apiCall(method, endpoint, data = null, token, companyId = null, params = {}) {
     const url = this.buildURL(endpoint, params, companyId);
-    const headers = this.buildHeaders(token, companyId);
+    const isFormData = data instanceof FormData;
+    const headers = this.buildHeaders(token, companyId, isFormData);
 
     const config = {
       method,
@@ -51,7 +55,11 @@ class ApiService {
     };
 
     if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-      config.body = JSON.stringify(data);
+      if (isFormData) {
+        config.body = data;
+      } else {
+        config.body = JSON.stringify(data);
+      }
     }
 
     const response = await fetch(url, config);

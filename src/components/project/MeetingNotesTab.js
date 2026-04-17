@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { meetingNoteAPI } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import { Button, Badge } from '../ui';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import Select from 'react-select';
 
 const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isProjectOwner, onRefresh }) => {
   const [showForm, setShowForm] = useState(false);
@@ -117,55 +120,49 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
   });
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen">
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Meeting Notes</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Browse and manage all project meeting records
-          </p>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Meeting Records</h2>
+          <p className="text-sm text-slate-500">Documented discussions and institutional memory.</p>
         </div>
         {isProjectOwner && (
           <Button
             variant={showForm ? 'secondary' : 'primary'}
-            size="sm"
+            size="md"
             onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
+            className="shadow-sm"
           >
-            {showForm ? 'Cancel' : '+ New Meeting Note'}
+            {showForm ? 'Cancel' : '+ New Meeting Record'}
           </Button>
         )}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6 shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Search Notes</label>
-            <input
-              type="text"
-              placeholder="Search by title, description, or notes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 transition-all"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Meeting Type</label>
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 cursor-pointer"
-            >
-              <option value="all">All Types</option>
-              <option value="planning">Planning</option>
-              <option value="standup">Standup</option>
-              <option value="review">Review</option>
-              <option value="retrospective">Retrospective</option>
-              <option value="stakeholder">Stakeholder</option>
-              <option value="technical">Technical</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
+      <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex flex-wrap items-center gap-4">
+        <div className="flex-1 min-w-[300px] relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+          <input
+            type="text"
+            placeholder="Search meetings by keyword..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-indigo-400 transition-all shadow-sm"
+          />
         </div>
+        <select
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+          className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-indigo-400 cursor-pointer shadow-sm min-w-[160px]"
+        >
+          <option value="all">Module: All Types</option>
+          <option value="planning">📋 Planning</option>
+          <option value="standup">🏃 Standup</option>
+          <option value="review">✅ Review</option>
+          <option value="retrospective">🔄 Retrospective</option>
+          <option value="stakeholder">👥 Stakeholder</option>
+          <option value="technical">⚙️ Technical</option>
+          <option value="other">📌 Other</option>
+        </select>
       </div>
 
       {showForm && (
@@ -194,22 +191,39 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 ml-1">Short Description</label>
-                  <textarea
+                  <ReactQuill
+                    theme="snow"
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows="2"
+                    onChange={(val) => setFormData({ ...formData, description: val })}
                     placeholder="Brief summary of the meeting..."
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 resize-none"
+                    className="bg-white rounded-xl overflow-hidden border border-slate-200"
+                    modules={{
+                      toolbar: [
+                        ['bold', 'italic', 'underline'],
+                        [{ 'color': [] }],
+                        ['clean']
+                      ],
+                    }}
                   />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 ml-1">Detailed Notes</label>
-                  <textarea
+                  <ReactQuill
+                    theme="snow"
                     value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    rows="8"
-                    placeholder="Detailed notes, discussions, etc..."
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400"
+                    onChange={(val) => setFormData({ ...formData, notes: val })}
+                    placeholder="Detailed notes, discussions, decisions..."
+                    className="bg-white rounded-xl overflow-hidden border border-slate-200 min-h-[300px]"
+                    modules={{
+                      toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                        [{ 'color': [] }, { 'background': [] }],
+                        ['link'],
+                        ['clean']
+                      ],
+                    }}
                   />
                 </div>
               </div>
@@ -253,20 +267,17 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 ml-1">Attendees</label>
-                  <select
-                    multiple
-                    value={formData.attendees}
-                    onChange={(e) => {
-                      const values = Array.from(e.target.selectedOptions, option => option.value);
-                      setFormData({ ...formData, attendees: values });
+                  <Select
+                    isMulti
+                    options={users.map(u => ({ value: u._id, label: u.name }))}
+                    value={users.filter(u => formData.attendees.includes(u._id)).map(u => ({ value: u._id, label: u.name }))}
+                    onChange={(selected) => setFormData({ ...formData, attendees: selected ? selected.map(s => s.value) : [] })}
+                    placeholder="Find and select attendees..."
+                    className="text-sm font-medium"
+                    classNames={{
+                      control: () => "!bg-slate-50 !border-slate-200 !rounded-xl !p-1",
                     }}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none h-40 scrollbar-thin"
-                  >
-                    {users.map(user => (
-                      <option key={user._id} value={user._id}>{user.name}</option>
-                    ))}
-                  </select>
-                  <p className="text-[10px] text-slate-400 mt-2 font-medium">Hold Ctrl/Cmd to select multiple</p>
+                  />
                 </div>
               </div>
             </div>
@@ -284,29 +295,33 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
           {filteredMeetingNotes.map(meeting => (
             <div
               key={meeting._id}
-              className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all group cursor-pointer flex flex-col"
+              className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all group cursor-pointer flex flex-col hover:border-indigo-200 border-l-4"
+              style={{ borderLeftColor: meeting.meetingType === 'standup' ? '#10b981' : meeting.meetingType === 'review' ? '#f59e0b' : '#6366f1' }}
               onClick={() => setViewingMeeting(meeting)}
             >
               <div className="flex justify-between items-start mb-4">
-                <Badge variant={meeting.meetingType === 'standup' ? 'success' : meeting.meetingType === 'review' ? 'warning' : meeting.meetingType === 'retrospective' || meeting.meetingType === 'stakeholder' ? 'info' : meeting.meetingType === 'planning' ? 'primary' : 'default'} size="sm">
-                  {meeting.meetingType}
-                </Badge>
+                <div className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
+                  <span>📅</span> {new Date(meeting.meetingDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                </div>
                 {isProjectOwner && (
                   <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(meeting)} className="!text-slate-400 hover:!text-indigo-600 !p-1.5">✎</Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(meeting._id)} className="!text-slate-400 hover:!text-rose-600 !p-1.5">✕</Button>
+                    <button onClick={() => handleEdit(meeting)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-all text-xs">✎</button>
+                    <button onClick={() => handleDelete(meeting._id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-50 rounded-lg transition-all text-xs">✕</button>
                   </div>
                 )}
               </div>
 
-              <h3 className="text-base font-bold text-slate-900 mb-2 line-clamp-1 group-hover:text-indigo-600 transition-colors">{meeting.title}</h3>
-              <p className="text-xs text-slate-500 mb-6 line-clamp-2 h-8">{meeting.description || 'No summary provided.'}</p>
+              <h3 className="text-sm font-bold text-slate-800 mb-2 truncate group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{meeting.title}</h3>
+              <div 
+                className="text-[11px] text-slate-500 mb-6 line-clamp-2 h-8 leading-relaxed overflow-hidden prose prose-slate prose-xs"
+                dangerouslySetInnerHTML={{ __html: meeting.description || 'No descriptive summary provided.' }}
+              />
 
               <div className="mt-auto flex justify-between items-center pt-4 border-t border-slate-50">
-                <div className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
-                  <span>📅</span> {new Date(meeting.meetingDate).toLocaleDateString()}
-                </div>
-                <div className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">See Details ⮕</div>
+                <Badge variant={meeting.meetingType === 'standup' ? 'success' : meeting.meetingType === 'review' ? 'warning' : 'info'} size="sm">
+                  {meeting.meetingType}
+                </Badge>
+                <div className="text-indigo-600 font-bold text-[9px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">Details ⮕</div>
               </div>
             </div>
           ))}
@@ -342,9 +357,10 @@ const MeetingNotesTab = ({ projectId, meetingNotes, setMeetingNotes, users, isPr
             <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin space-y-8">
               <div>
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Notes</h4>
-                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                  {viewingMeeting.notes || 'No notes were recorded.'}
-                </div>
+                <div 
+                  className="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-sm text-slate-700 leading-relaxed prose prose-slate max-w-none"
+                  dangerouslySetInnerHTML={{ __html: viewingMeeting.notes || 'No notes were recorded.' }}
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

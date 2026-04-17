@@ -20,7 +20,6 @@ import AnalyticsTab from './project/AnalyticsTab';
 import FilesTab from './project/FilesTab';
 import ChatTab from './project/ChatTab';
 import TasksTab from './project/TasksTab';
-import ProjectSidebar, { SIDEBAR_EXPANDED_WIDTH } from './project/ProjectSidebar';
 
 const ProjectDetails = () => {
   const { id } = useParams();
@@ -33,7 +32,6 @@ const ProjectDetails = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_EXPANDED_WIDTH);
 
   const searchParams = new URLSearchParams(location.search);
   const activeTab = searchParams.get('tab') || 'overview';
@@ -42,7 +40,7 @@ const ProjectDetails = () => {
   const [sprints, setSprints] = useState([]);
   const [phases, setPhases] = useState([]);
 
-  const handleSidebarWidthChange = useCallback((width) => setSidebarWidth(width), []);
+
 
   useEffect(() => { fetchProjectData(); }, [id]);
 
@@ -123,21 +121,72 @@ const ProjectDetails = () => {
 
   return (
     <Layout>
-      <ProjectSidebar projectId={id} project={project} onWidthChange={handleSidebarWidthChange} />
-
-      <div
-        className="transition-all duration-300 ease-in-out min-h-screen pb-20"
-        style={{ marginRight: `${sidebarWidth}px` }}
-      >
-        <div className="space-y-8 max-w-[1600px] mx-auto">
+      <div className="transition-all duration-300 ease-in-out min-h-screen pb-20">
+        <div className="space-y-6 max-w-[1600px] mx-auto px-4 lg:px-6">
           <Breadcrumb onNavigateToProjects={() => navigate('/projects')} projectTitle={project.title} />
 
           <ProjectHeader project={project} onNavigateToTasks={() => navigate(`/projects/${id}?tab=tasks`)} isProjectOwner={isProjectOwner} onRefresh={fetchProjectData} />
 
-        
+          {/* Navigation Tabs */}
+          <div className="flex items-center justify-between border-b border-slate-200 bg-white/50 backdrop-blur-sm sticky top-0 z-20 px-2">
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+              {projectTabs.slice(0, 7).map((tab) => {
+                if (tab.permission === false) return null;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => navigate(tab.id === 'overview' ? `/projects/${id}` : `/projects/${id}?tab=${tab.id}`)}
+                    className={`flex items-center gap-2 px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider transition-all relative shrink-0 ${
+                      isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={tab.icon} />
+                    </svg>
+                    {tab.label}
+                    {isActive && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 rounded-t-full" />}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Extra Tabs Dropdown */}
+            <div className="relative group ml-4 border-l border-slate-100 pl-4 py-2">
+              <button className="flex items-center gap-2 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-all">
+                <span>More</span>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-slate-200 shadow-xl rounded-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-2 py-3 overflow-hidden">
+                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] px-4 mb-2">Project Modules</div>
+                {projectTabs.slice(7).map((tab) => {
+                  if (tab.permission === false) return null;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => navigate(`/projects/${id}?tab=${tab.id}`)}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all rounded-xl ${
+                        isActive ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                      }`}
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={tab.icon} />
+                      </svg>
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
           {/* Content Area */}
-          <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm min-h-[600px]">
-            <div className="h-full">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm min-h-[600px] overflow-hidden">
+            <div className="p-6 lg:p-8 h-full">
               {activeTab === 'overview' && <ProjectOverview project={project} users={users} isProjectOwner={canEditProject} />}
               {activeTab === 'team' && <TeamTab projectId={id} project={project} users={users} isProjectOwner={isProjectOwner} isProjectManager={isProjectManager} onRefresh={fetchProjectData} />}
               {activeTab === 'chat' && <ChatTab projectId={id} project={project} />}

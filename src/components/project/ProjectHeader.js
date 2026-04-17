@@ -69,9 +69,18 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
     },
     {
       label: 'Timeline',
-      value: project.endDate
-        ? `${new Date(project.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${new Date(project.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-        : `Started ${new Date(project.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+      value: (() => {
+        const start = project.startDate ? new Date(project.startDate) : null;
+        const end = project.endDate ? new Date(project.endDate) : null;
+        const isValid = (d) => d instanceof Date && !isNaN(d);
+        
+        if (isValid(start) && isValid(end)) {
+          return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        } else if (isValid(start)) {
+          return `Started ${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        }
+        return 'Dates Not Set';
+      })(),
       icon: <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /><line x1="16" y1="2" x2="16" y2="6" strokeWidth={2} strokeLinecap="round" /><line x1="8" y1="2" x2="8" y2="6" strokeWidth={2} strokeLinecap="round" /><line x1="3" y1="10" x2="21" y2="10" strokeWidth={2} strokeLinecap="round" /></svg>
     },
     {
@@ -98,44 +107,54 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
     <>
       {/* Card */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mb-6 overflow-hidden">
-        {/* Colored accent bar */}
-        <div className={`h-1 w-full ${statusConfig.accent}`} />
+        <div className="h-1 w-full bg-slate-50 border-b border-slate-100" />
 
         <div className="p-6 lg:p-8">
           {/* Top row: title + badges + actions */}
           <div className="flex flex-col lg:flex-row lg:items-start gap-6">
             {/* Left: name, description, badges */}
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-3 mb-2">
-                <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight truncate">{project.title}</h1>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    onClick={() => canEditStatus && setShowStatusModal(true)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold ${statusConfig.badgeCls} ${canEditStatus ? 'cursor-pointer hover:opacity-80 transition-opacity' : 'cursor-default'}`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`} />
-                    {statusConfig.label}
-                    {canEditStatus && (
-                      <svg className="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    )}
-                  </button>
-                  <Badge variant={getPriorityVariant(project.priority)} size="sm">
-                    {project.priority ? project.priority.charAt(0).toUpperCase() + project.priority.slice(1) : 'Medium'} Priority
-                  </Badge>
+            <div className="flex-1 min-w-0 flex gap-4 lg:gap-6">
+              {project.logo && (
+                <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-2xl border-2 border-slate-100 overflow-hidden shrink-0 shadow-sm">
+                  <img 
+                    src={project.logo.startsWith('http') ? project.logo : `${process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000'}${project.logo}`} 
+                    alt={project.title} 
+                    className="w-full h-full object-cover" 
+                  />
                 </div>
-              </div>
-              {project.description ? (
-                <div
-                  className="text-slate-500 text-sm leading-relaxed max-w-2xl prose prose-slate prose-sm"
-                  dangerouslySetInnerHTML={{ __html: project.description }}
-                />
-              ) : (
-                <p className="text-slate-500 text-sm leading-relaxed max-w-2xl italic">
-                  No description provided for this project.
-                </p>
               )}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-3 mb-2">
+                  <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{project.title}</h1>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => canEditStatus && setShowStatusModal(true)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold ${statusConfig.badgeCls} ${canEditStatus ? 'cursor-pointer hover:opacity-80 transition-opacity' : 'cursor-default'}`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`} />
+                      {statusConfig.label}
+                      {canEditStatus && (
+                        <svg className="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      )}
+                    </button>
+                    <Badge variant={getPriorityVariant(project.priority)} size="sm">
+                      {project.priority ? project.priority.charAt(0).toUpperCase() + project.priority.slice(1) : 'Medium'} Priority
+                    </Badge>
+                  </div>
+                </div>
+                {project.description ? (
+                  <div
+                    className="text-slate-500 text-sm leading-relaxed max-w-2xl prose prose-slate prose-sm"
+                    dangerouslySetInnerHTML={{ __html: project.description }}
+                  />
+                ) : (
+                  <p className="text-slate-500 text-sm leading-relaxed max-w-2xl italic">
+                    No description provided for this project.
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Right: progress ring + action */}

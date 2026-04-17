@@ -56,8 +56,33 @@ export const AuthProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    const { token, user } = getAuthCookies();
-    dispatch({ type: 'RESTORE_AUTH', payload: { token, user } });
+    const { token, user: cookieUser } = getAuthCookies();
+    
+    // Always prioritize fetching fresh user data from API if we have a token
+    if (token) {
+      const fetchUser = async () => {
+        try {
+          const response = await fetch('/api/users/profile', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (response.ok) {
+            const userData = await response.json();
+            dispatch({ type: 'RESTORE_AUTH', payload: { token, user: userData } });
+            // Sync cookies with fresh, server-side data
+            setAuthCookies(token, userData);
+          } else {
+            // Token might be invalid/expired
+            dispatch({ type: 'RESTORE_AUTH', payload: { token: null, user: null } });
+          }
+        } catch (error) {
+          // Fallback to cookie data if network fails
+          dispatch({ type: 'RESTORE_AUTH', payload: { token, user: cookieUser } });
+        }
+      };
+      fetchUser();
+    } else {
+      dispatch({ type: 'RESTORE_AUTH', payload: { token: null, user: null } });
+    }
   }, []);
 
   const logout = () => {

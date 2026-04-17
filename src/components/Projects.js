@@ -77,7 +77,7 @@ const Projects = () => {
         />
 
         {showForm && (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 animate-in slide-in-from-top-4 duration-300 max-w-4xl mx-auto overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 animate-in slide-in-from-top-4 duration-300 w-full mx-auto overflow-hidden">
             <div className="px-8 py-6 border-b border-slate-100 flex items-center gap-3">
               <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xl">📁</div>
               <div>

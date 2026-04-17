@@ -195,9 +195,16 @@ const ManageRoles = () => {
                   </div>
                   <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-xl group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">🛡️</div>
                 </div>
-                <p className="text-xs font-medium text-slate-500 mb-8 leading-relaxed">
-                  {role.description || 'No description provided for this role.'}
-                </p>
+                {role.description ? (
+                  <div 
+                    className="text-xs font-medium text-slate-500 mb-8 leading-relaxed prose prose-slate prose-xs max-w-none"
+                    dangerouslySetInnerHTML={{ __html: role.description }}
+                  />
+                ) : (
+                  <p className="text-xs font-medium text-slate-400 mb-8 leading-relaxed italic">
+                    No description provided for this role.
+                  </p>
+                )}
                 <div className="flex items-center justify-between pt-6 border-t border-slate-50 group-hover:border-indigo-50">
                   <div className={`px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all ${selectedRole === role ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-500'}`}>
                     {getPermissionCount(role.permissions)} Active Permissions

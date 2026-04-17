@@ -68,52 +68,51 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
       {/* Top Section: Budget and Tags */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Financial Section */}
-        <div className="lg:col-span-2 bg-slate-900 rounded-3xl p-8 shadow-xl text-white relative overflow-hidden group">
+        <div className="lg:col-span-2 bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col group">
           <div className="relative z-10">
             <div className="flex justify-between items-start mb-10">
               <div>
-                <h3 className="text-lg font-bold uppercase tracking-tight text-white italic">Project Financial Health</h3>
-                <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-bold opacity-70">Resource allocation and budget oversight</p>
+                <h3 className="text-lg font-bold text-slate-900">Project Financial Health</h3>
+                <p className="text-xs text-slate-500 mt-1">Resource allocation and budget oversight</p>
               </div>
               <div className="text-right">
-                <div className="text-3xl font-bold tracking-tight italic">{companyCurrency} {budget.amount.toLocaleString()}</div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mt-1">Total Project Budget</div>
+                <div className="text-2xl font-bold text-slate-900">{companyCurrency} {budget.amount.toLocaleString()}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mt-1">Total Project Budget</div>
               </div>
             </div>
 
             <div className="space-y-6">
               <div className="flex justify-between items-end mb-2">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Budget Utilization</span>
-                <span className={`text-xl font-bold italic ${budgetUtilization > 90 ? 'text-rose-400' : 'text-indigo-400'}`}>{budgetUtilization}%</span>
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Budget Utilization</span>
+                <span className={`text-lg font-bold ${budgetUtilization > 90 ? 'text-rose-600' : 'text-indigo-600'}`}>{budgetUtilization}%</span>
               </div>
-              <div className="h-2.5 bg-slate-800 rounded-full overflow-hidden shadow-inner">
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
                 <div
                   className={`h-full transition-all duration-1000 ${budgetUtilization > 100 ? 'bg-rose-500' : 'bg-indigo-500'}`}
                   style={{ width: `${Math.min(100, budgetUtilization)}%` }}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-8 pt-8 border-t border-white/5">
+              <div className="grid grid-cols-2 gap-8 pt-8 border-t border-slate-100">
                 <div>
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Total Expenditure</div>
-                  <div className="text-xl font-bold text-white italic">{companyCurrency} {actualCost.amount.toLocaleString()}</div>
+                  <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Expenditure</div>
+                  <div className="text-lg font-bold text-slate-800">{companyCurrency} {actualCost.amount.toLocaleString()}</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Available Funds</div>
-                  <div className="text-xl font-bold text-emerald-400 italic">{companyCurrency} {(budget.amount - actualCost.amount).toLocaleString()}</div>
+                  <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Available Funds</div>
+                  <div className="text-lg font-bold text-emerald-600">{companyCurrency} {(budget.amount - actualCost.amount).toLocaleString()}</div>
                 </div>
               </div>
             </div>
           </div>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-700" />
         </div>
 
         {/* Tags Section */}
         <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col group">
           <div className="flex justify-between items-start mb-8">
             <div>
-              <h3 className="text-lg font-bold text-slate-900 uppercase italic tracking-tight">Project Taxonomy</h3>
-              <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest opacity-70">Categorization & Labels</p>
+              <h3 className="text-lg font-bold text-slate-900">Project Taxonomy</h3>
+              <p className="text-[10px] font-semibold text-slate-400 mt-1 uppercase tracking-wider">Categorization & Labels</p>
             </div>
             {isProjectOwner && (
               <Button variant="outline" size="sm" onClick={() => setShowTagModal(true)}>
@@ -123,11 +122,11 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
           </div>
           <div className="flex flex-wrap gap-2.5">
             {tags.length > 0 ? tags.map((tag, i) => (
-              <span key={i} className="px-5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-bold text-slate-600 uppercase tracking-widest hover:border-indigo-400 hover:text-indigo-600 transition-all cursor-default italic">
+              <span key={i} className="px-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600 uppercase tracking-wider hover:border-indigo-400 hover:text-indigo-600 transition-all cursor-default">
                 {tag}
               </span>
             )) : (
-              <div className="w-full py-10 text-center text-[10px] font-bold text-slate-400 border border-dashed border-slate-200 rounded-2xl uppercase tracking-widest italic">
+              <div className="w-full py-10 text-center text-[10px] font-semibold text-slate-400 border border-dashed border-slate-200 rounded-2xl uppercase tracking-wider">
                 No labels assigned
               </div>
             )}
@@ -141,8 +140,8 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
         <section className="bg-white rounded-3xl p-8 lg:p-10 border border-slate-200 shadow-sm space-y-8">
           <div className="flex justify-between items-center mb-10 pb-6 border-b border-slate-50">
             <div>
-              <h3 className="text-xl font-bold text-slate-900 uppercase italic tracking-tight">Project Milestones</h3>
-              <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest opacity-75">Key delivery targets and completion logs</p>
+              <h3 className="text-lg font-bold text-slate-900">Project Milestones</h3>
+              <p className="text-[10px] font-semibold text-slate-400 mt-1 uppercase tracking-wider">Key delivery targets and completion logs</p>
             </div>
             {isProjectOwner && (
               <Button variant="primary" size="sm" onClick={() => setShowMilestoneModal(true)}>
@@ -155,18 +154,18 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
             <div className="absolute left-[30px] top-6 bottom-6 w-px bg-slate-100" />
             {milestones.length > 0 ? milestones.map((m, i) => (
               <div key={i} className="flex gap-8 relative group">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 z-10 border-2 border-white shadow-md text-xs font-bold ${m.status === 'completed' ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white'}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 z-10 border-2 border-white shadow-md text-[10px] font-bold ${m.status === 'completed' ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white'}`}>
                   {m.status === 'completed' ? '✓' : String(i + 1).padStart(2, '0')}
                 </div>
-                <div className={`flex-1 p-6 rounded-[2rem] border transition-all ${m.status === 'completed' ? 'bg-emerald-50/20 border-emerald-100' : 'bg-slate-50/50 border-slate-100 hover:bg-white hover:shadow-md hover:border-indigo-100'}`}>
-                  <div className="flex justify-between items-start mb-3">
-                    <h4 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase italic tracking-tight">{m.title}</h4>
+                <div className={`flex-1 p-5 rounded-2xl border transition-all ${m.status === 'completed' ? 'bg-emerald-50/20 border-emerald-100' : 'bg-slate-50/50 border-slate-100 hover:bg-white hover:shadow-md hover:border-indigo-100'}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{m.title}</h4>
                     <Badge variant={getMilestoneStatusVariant(m.status)} size="sm">
                       {m.status}
                     </Badge>
                   </div>
-                  <p className="text-xs text-slate-500 leading-relaxed italic">{m.description}</p>
-                  <div className="mt-6 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  <p className="text-[11px] text-slate-500 leading-relaxed">{m.description}</p>
+                  <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                     <span>📅</span> Targeted: {m.dueDate ? new Date(m.dueDate).toLocaleDateString() : 'Pending Date'}
                   </div>
                 </div>

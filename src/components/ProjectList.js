@@ -35,8 +35,8 @@ const ProjectList = ({ projects, onUpdate, onDelete }) => {
   return (
     <div className="space-y-12">
       {editingProject && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-[1.5rem] shadow-2xl border border-slate-200 max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 lg:p-12 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[1.5rem] shadow-2xl border border-slate-200 w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-lg">✏️</div>
@@ -64,8 +64,16 @@ const ProjectList = ({ projects, onUpdate, onDelete }) => {
               <div className="p-6 space-y-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-12 h-12 rounded-xl bg-slate-50 text-indigo-600 flex items-center justify-center font-bold text-xl shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
-                      {project.title?.charAt(0)?.toUpperCase()}
+                    <div className="w-12 h-12 rounded-xl bg-slate-50 text-indigo-600 flex items-center justify-center font-bold text-xl shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 overflow-hidden border border-slate-100 group-hover:border-indigo-500">
+                      {project.logo ? (
+                        <img 
+                          src={project.logo.startsWith('http') ? project.logo : `${process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000'}${project.logo}`} 
+                          alt={project.title} 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : (
+                        project.title?.charAt(0)?.toUpperCase()
+                      )}
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-[15px] font-bold text-slate-900 truncate tracking-tight group-hover:text-indigo-600 transition-colors"> {project.title} </h3>
