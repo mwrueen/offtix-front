@@ -92,6 +92,7 @@ export const PermissionsProvider = ({ children }) => {
     const { state: companyState } = useCompany();
 
     const [permissions, setPermissions] = useState(NO_PERMISSIONS);
+    const [designationName, setDesignationName] = useState('');
     const [isOwner, setIsOwner] = useState(false);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [companyData, setCompanyData] = useState(null);
@@ -103,6 +104,7 @@ export const PermissionsProvider = ({ children }) => {
         // Personal mode or no company: no company permissions
         if (!selectedCompany || selectedCompany.id === 'personal' || !authState.user) {
             setPermissions(NO_PERMISSIONS);
+            setDesignationName('');
             setIsOwner(false);
             setIsSuperAdmin(authState.user?.role === 'superadmin');
             setCompanyData(null);
@@ -115,6 +117,7 @@ export const PermissionsProvider = ({ children }) => {
         // Superadmin gets all permissions without fetching
         if (isSA) {
             setPermissions(ALL_PERMISSIONS);
+            setDesignationName('Super Admin');
             setIsOwner(false);
             return;
         }
@@ -124,6 +127,7 @@ export const PermissionsProvider = ({ children }) => {
             const userId = authState.user?._id || authState.user?.id;
             const ownerFlag = selectedCompany.isOwner || selectedCompany.userRole === 'owner';
             setIsOwner(ownerFlag);
+            setDesignationName(selectedCompany.userDesignation || (ownerFlag ? 'Owner' : 'Member'));
             setPermissions(ownerFlag ? ALL_PERMISSIONS : {
                 ...NO_PERMISSIONS,
                 ...selectedCompany.userPermissions
@@ -144,6 +148,7 @@ export const PermissionsProvider = ({ children }) => {
 
             if (!response.ok) {
                 setPermissions(NO_PERMISSIONS);
+                setDesignationName('');
                 return;
             }
 
@@ -157,6 +162,7 @@ export const PermissionsProvider = ({ children }) => {
 
             if (ownerFlag) {
                 setPermissions(ALL_PERMISSIONS);
+                setDesignationName('Owner');
                 return;
             }
 
@@ -167,6 +173,7 @@ export const PermissionsProvider = ({ children }) => {
             });
 
             if (memberInfo) {
+                setDesignationName(memberInfo.designation || 'Member');
                 const designation = company.designations?.find(d => d.name === memberInfo.designation);
                 if (designation?.permissions) {
                     setPermissions({
@@ -183,6 +190,7 @@ export const PermissionsProvider = ({ children }) => {
                 }
             } else {
                 setPermissions(NO_PERMISSIONS);
+                setDesignationName('');
             }
         } catch (error) {
             console.error('PermissionsContext: Error fetching permissions:', error);
@@ -227,6 +235,7 @@ export const PermissionsProvider = ({ children }) => {
 
     const value = useMemo(() => ({
         permissions,
+        designationName,
         isOwner,
         isSuperAdmin,
         companyData,
@@ -237,7 +246,7 @@ export const PermissionsProvider = ({ children }) => {
         refetchPermissions: fetchPermissions,
         PERMISSIONS,
     }), [
-        permissions, isOwner, isSuperAdmin, companyData, loading,
+        permissions, designationName, isOwner, isSuperAdmin, companyData, loading,
         hasPermission, hasAllPermissions, hasAnyPermission, fetchPermissions
     ]);
 

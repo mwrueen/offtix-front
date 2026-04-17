@@ -10,7 +10,7 @@ import SidebarNavigation from './SidebarNavigation';
 const Sidebar = ({ collapsed, onToggle }) => {
   const { state } = useAuth();
   const { state: companyState } = useCompany();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, designationName } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
@@ -133,7 +133,9 @@ const Sidebar = ({ collapsed, onToggle }) => {
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-slate-200 truncate group-hover:text-white transition-colors">{user?.name || 'User'}</p>
-              <p className="text-[11px] text-slate-500 truncate group-hover:text-slate-400 transition-colors uppercase tracking-tight font-medium">{user?.role || 'Member'}</p>
+              <p className="text-[11px] text-slate-500 truncate group-hover:text-slate-400 transition-colors uppercase tracking-tight font-medium">
+                {designationName || (companyState.selectedCompany?.id === 'personal' ? (user?.role || 'User') : (user?.role || 'User'))}
+              </p>
             </div>
           )}
           {!collapsed && (

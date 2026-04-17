@@ -16,7 +16,7 @@ const Layout = ({ children, wide }) => {
   const { state, dispatch } = useAuth();
   const { state: companyState, selectCompany } = useCompany();
   const { totalUnreadCount, unreadCountsByCompany, clearUnreadCount, fetchUnreadCount } = useSocket();
-  const { hasPermission, companyData } = usePermissions();
+  const { hasPermission, companyData, designationName } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -330,7 +330,9 @@ const Layout = ({ children, wide }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-sm text-slate-800 truncate leading-tight group-hover:text-indigo-600 transition-colors">{state.user?.name}</p>
-                  <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mt-1">{state.user?.role || 'Team Member'}</p>
+                  <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mt-1">
+                    {designationName || (companyState.selectedCompany?.id === 'personal' ? (state.user?.role || 'Team Member') : (state.user?.role || 'Team Member'))}
+                  </p>
                 </div>
               </div>
               <button onClick={handleLogout} className="w-full py-3 bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-600 rounded-xl text-xs font-bold transition-all border border-slate-200/60 shadow-sm flex items-center justify-center gap-2">
