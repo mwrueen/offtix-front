@@ -8,7 +8,8 @@ import Layout from './Layout';
 import PageHeader from './PageHeader';
 
 const EmployeeList = () => {
-  const { state: { selectedCompany } } = useCompany();
+  const { state: companyState } = useCompany();
+  const { selectedCompany } = companyState;
   const { state: authState } = useAuth();
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
@@ -21,10 +22,14 @@ const EmployeeList = () => {
   const canAddEmployee = hasPermission(PERMISSIONS.ADD_EMPLOYEE);
 
   useEffect(() => {
-    if (authState.loading) return;
-    if (selectedCompany && selectedCompany.id !== 'personal') fetchEmployees();
-    else if (!authState.loading && (selectedCompany === null || selectedCompany?.id === 'personal')) navigate('/overview');
-  }, [selectedCompany, authState.loading]);
+    if (authState.loading || companyState.loading) return;
+    
+    if (selectedCompany && selectedCompany.id !== 'personal') {
+      fetchEmployees();
+    } else if (!authState.loading && !companyState.loading && (selectedCompany === null || selectedCompany?.id === 'personal')) {
+      navigate('/overview');
+    }
+  }, [selectedCompany, authState.loading, companyState.loading]);
 
   const fetchEmployees = async () => {
     try {

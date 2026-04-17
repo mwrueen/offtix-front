@@ -3,11 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useCompanyFilter } from '../hooks/useCompanyFilter';
 import { getCookie } from '../utils/cookies';
 import Layout from './Layout';
+import { useCompany } from '../context/CompanyContext';
 import { useToast } from '../context/ToastContext';
 
 const EditCompanyInfo = () => {
   const navigate = useNavigate();
-  const { selectedCompany } = useCompanyFilter();
+  const { state: companyState } = useCompany();
+  const selectedCompany = companyState.selectedCompany;
+  const isCompanyLoading = companyState.loading;
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -55,12 +58,14 @@ const EditCompanyInfo = () => {
   ];
 
   useEffect(() => {
+    if (isCompanyLoading) return;
+
     if (selectedCompany && selectedCompany.id !== 'personal') {
       fetchCompany();
-    } else {
+    } else if (!isCompanyLoading) {
       navigate('/overview');
     }
-  }, [selectedCompany]);
+  }, [selectedCompany, isCompanyLoading]);
 
   const fetchCompany = async () => {
     setLoading(true);

@@ -84,17 +84,24 @@ const Notifications = () => {
   };
 
   const handleNotifClick = (notif) => {
+    if (!notif.isRead) markAsRead(notif._id);
+
     if (notif.type === 'invitation' && notif.relatedId &&
       (notif.relatedModel === 'Invitation' || !notif.relatedModel)) {
-      if (!notif.isRead) markAsRead(notif._id);
       navigate(`/invitations/${notif.relatedId}`);
       return;
     }
-    if (!notif.isRead) markAsRead(notif._id);
+
     if (notif.type === 'job_offer' && notif.relatedId) {
       navigate(`/recruitment/offer/${notif.relatedId}`);
       return;
     }
+
+    if (notif.type === 'job_application' && notif.relatedId) {
+      navigate(`/recruitment/applications/${notif.relatedId}`);
+      return;
+    }
+
     const taskId = notif.metadata?.taskId || notif.relatedId;
     if (taskId && (notif.relatedModel === 'Task' || notif.type?.startsWith('task_'))) {
       navigate(`/my-tasks/${taskId}`);

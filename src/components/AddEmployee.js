@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCompany } from '../context/CompanyContext';
 import { useCompanyFilter } from '../hooks/useCompanyFilter';
 import { useToast } from '../context/ToastContext';
 import { getCookie } from '../utils/cookies';
@@ -10,7 +11,9 @@ import { getCurrencySymbol } from '../utils/currency';
 const AddEmployee = () => {
   const navigate = useNavigate();
   const { state } = useAuth();
-  const { selectedCompany } = useCompanyFilter();
+  const { state: companyState } = useCompany();
+  const { selectedCompany } = companyState;
+  const isCompanyLoading = companyState.loading;
   const toast = useToast();
 
   const [formData, setFormData] = useState({
@@ -143,34 +146,33 @@ const AddEmployee = () => {
   const inputErr = `${inputBase} border-rose-400 bg-white ring-2 ring-rose-100`;
   const textareaOk = `${inputBase} min-h-[100px] resize-y align-top`;
 
-  if (!selectedCompany || selectedCompany.id === 'personal') {
+  if (isCompanyLoading || checkingPermission || loadingDesignations) {
     return (
       <Layout>
-        <div className="max-w-lg mx-auto py-16 px-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm text-center">
-            <h1 className="text-lg font-semibold text-slate-900">Select an organization</h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Choose a company from the header to invite someone to that team.
-            </p>
-            <button
-              type="button"
-              onClick={() => navigate('/overview')}
-              className="mt-6 inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
-            >
-              Go to overview
-            </button>
-          </div>
+        <div className="flex flex-col items-center justify-center py-24 text-slate-600">
+          <div className="h-9 w-9 rounded-full border-2 border-slate-200 border-t-indigo-600 animate-spin" />
+          <p className="mt-4 text-sm font-semibold tracking-tight">Authenticating workspace...</p>
         </div>
       </Layout>
     );
   }
 
-  if (checkingPermission || loadingDesignations) {
+  if (!selectedCompany || selectedCompany.id === 'personal') {
     return (
       <Layout>
-        <div className="flex flex-col items-center justify-center py-24 text-slate-600">
-          <div className="h-9 w-9 rounded-full border-2 border-slate-200 border-t-indigo-600 animate-spin" />
-          <p className="mt-4 text-sm">Loading…</p>
+        <div className="max-w-xl mx-auto py-24 px-6 text-center">
+            <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center text-6xl mx-auto grayscale opacity-40 shadow-inner mb-8">🏢</div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Organization Not Identified</h1>
+            <p className="mt-3 text-slate-500 max-w-sm mx-auto font-medium">
+              Please select an organization from the header to initiate a team invitation.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/overview')}
+              className="mt-8 inline-flex items-center justify-center rounded-xl bg-indigo-600 px-8 py-3 text-sm font-bold text-white hover:bg-indigo-700 transition-all shadow-lg active:scale-95"
+            >
+              Back to Overview
+            </button>
         </div>
       </Layout>
     );
