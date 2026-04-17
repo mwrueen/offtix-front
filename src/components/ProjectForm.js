@@ -25,94 +25,104 @@ const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Project Title *</label>
+    <div className="animate-in fade-in slide-in-from-bottom-2 duration-400">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 ml-1">Project Title</label>
             <input
               type="text"
               name="title"
-              placeholder="e.g. Q4 Marketing Campaign"
+              placeholder="e.g. Website Revamp 2024"
               value={formData.title}
               onChange={handleChange}
               required
-              className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400"
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Target Deadline</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 ml-1">Target Deadline</label>
             <input
               type="date"
               name="endDate"
               value={formData.endDate}
               onChange={handleChange}
-              className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-400 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
             />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Project Description *</label>
-          <div className="rounded-xl border-2 border-slate-100 overflow-hidden bg-white focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all [&_.ql-toolbar]:border-slate-100 [&_.ql-toolbar]:bg-slate-50 [&_.ql-container]:border-slate-100 [&_.ql-editor]:text-sm [&_.ql-editor]:text-slate-800 [&_.ql-editor]:min-h-[180px]">
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-slate-700 ml-1">Description</label>
+          <div className="rounded-xl border border-slate-200 overflow-hidden bg-white focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all [&_.ql-toolbar]:border-none [&_.ql-toolbar]:bg-slate-50 [&_.ql-container]:border-none [&_.ql-editor]:text-sm [&_.ql-editor]:text-slate-700 [&_.ql-editor]:min-h-[160px]">
             <ReactQuill
               theme="snow"
               value={formData.description}
               onChange={(val) => setFormData({ ...formData, description: val })}
-              placeholder="Detailed project objectives, requirements, and scope..."
+              placeholder="Outline the project scope, objectives, and key milestones..."
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Lifecycle Status</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 cursor-pointer appearance-none transition-all"
-            >
-              <option value="not_started">Not Started</option>
-              <option value="running">In Progress</option>
-              <option value="paused">On Hold</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="closed">Completed</option>
-            </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 ml-1">Current Status</label>
+            <div className="relative">
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 cursor-pointer appearance-none transition-all"
+              >
+                <option value="not_started">Not Started</option>
+                <option value="running">In Progress</option>
+                <option value="paused">On Hold</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="closed">Completed</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Priority Level</label>
-            <select
-              name="priority"
-              value={formData.priority}
-              onChange={handleChange}
-              className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 cursor-pointer appearance-none transition-all"
-            >
-              <option value="low">Low Priority</option>
-              <option value="medium">Medium Priority</option>
-              <option value="high">High Priority</option>
-              <option value="urgent">Critical / Urgent</option>
-            </select>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 ml-1">Priority</label>
+            <div className="relative">
+              <select
+                name="priority"
+                value={formData.priority}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 cursor-pointer appearance-none transition-all"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-end gap-4 pt-6 mt-4 border-t border-slate-50">
+        <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
           {onCancel && (
             <button
               type="button"
               onClick={onCancel}
-              className="px-8 py-3.5 text-sm font-bold text-slate-400 hover:text-slate-900 transition-all"
+              className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
             >
-              Discard Changes
+              Cancel
             </button>
           )}
           <button
             type="submit"
-            className="flex-1 sm:flex-initial px-10 py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all"
+            className="px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-sm hover:bg-indigo-700 transition-all active:scale-[0.98]"
           >
-            {initialData ? 'Update Project' : 'Create Project'}
+            {initialData ? 'Update Project' : 'Save Project'}
           </button>
         </div>
       </form>

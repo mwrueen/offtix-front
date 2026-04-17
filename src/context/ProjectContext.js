@@ -5,7 +5,7 @@ const ProjectContext = createContext();
 const projectReducer = (state, action) => {
   switch (action.type) {
     case 'SET_PROJECTS':
-      return { ...state, projects: action.payload, loading: false };
+      return { ...state, projects: action.payload, loading: false, error: null };
     case 'ADD_PROJECT':
       return { ...state, projects: [...state.projects, action.payload] };
     case 'UPDATE_PROJECT':
