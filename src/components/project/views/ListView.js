@@ -180,7 +180,12 @@ const TaskRowContent = ({ task, level, hasChildren, isExpanded, onToggleExpand, 
           {task.title}
           {task.children?.length > 0 && <span className="ml-2 text-[10px] font-medium text-slate-400">({task.children.length})</span>}
         </h4>
-        <p className="text-[10px] text-slate-500 mt-0.5 truncate">{task.description || 'No description'}</p>
+        <p 
+          className="text-[10px] text-slate-500 mt-0.5 truncate"
+          title={task.description?.replace(/<[^>]*>/g, '')}
+        >
+          {task.description?.replace(/<[^>]*>/g, '') || 'No description'}
+        </p>
       </div>
 
       <div>

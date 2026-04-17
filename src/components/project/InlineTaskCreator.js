@@ -1,4 +1,6 @@
 import React, { useState, useRef } from 'react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const InlineTaskCreator = ({ isOpen, onClose, onCreate, taskStatuses, users, sprints, phases }) => {
   const [title, setTitle] = useState('');
@@ -61,12 +63,37 @@ const InlineTaskCreator = ({ isOpen, onClose, onCreate, taskStatuses, users, spr
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-500 ml-1">Description (Optional)</label>
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              className="w-full min-h-[100px] px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all resize-none"
-              placeholder="Add more details about this task..."
-            />
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+              <ReactQuill
+                theme="snow"
+                value={description}
+                onChange={setDescription}
+                placeholder="Add more details about this task..."
+                className="quill-task-creator"
+                modules={{
+                  toolbar: [
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                    ['clean']
+                  ],
+                }}
+              />
+            </div>
+            <style jsx="true">{`
+              .quill-task-creator .ql-editor {
+                min-height: 120px;
+                font-size: 0.875rem;
+                font-family: inherit;
+              }
+              .quill-task-creator .ql-toolbar.ql-snow {
+                border: none;
+                border-bottom: 1px solid #f1f5f9;
+                background: #f8fafc;
+              }
+              .quill-task-creator .ql-container.ql-snow {
+                border: none;
+              }
+            `}</style>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

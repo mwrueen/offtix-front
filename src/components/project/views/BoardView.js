@@ -119,7 +119,12 @@ const TaskCard = ({ task, onEdit, isDragging }) => {
       <div className="flex justify-between items-start gap-4 mb-3 pl-1">
         <div className="min-w-0">
           <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase leading-tight">{task.title}</h4>
-          <p className="text-[10px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">{task.description}</p>
+          <p 
+            className="text-[10px] text-slate-500 mt-1 line-clamp-2 leading-relaxed"
+            title={task.description?.replace(/<[^>]*>/g, '')}
+          >
+            {task.description?.replace(/<[^>]*>/g, '')}
+          </p>
         </div>
         <div className={`shrink-0 w-2 h-2 rounded-full ${priorityColor}`} />
       </div>
