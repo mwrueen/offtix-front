@@ -186,7 +186,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const handleReorderTasks = async (newTasks) => {
         try {
             setTasks(newTasks);
-            const taskOrders = newTasks.map((t, index) => ({ id: t._id, order: index + 1 }));
+            const taskOrders = newTasks.map((t, index) => ({ taskId: t._id, order: index + 1 }));
             await taskAPI.reorder(id, taskOrders);
         } catch (error) {
             console.error('Failed to reorder tasks', error);
