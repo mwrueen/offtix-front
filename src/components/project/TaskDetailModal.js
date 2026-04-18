@@ -11,10 +11,7 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, meet
   const [durationSaved, setDurationSaved] = useState({});
   const [roleAssignments, setRoleAssignments] = useState([]);
   const [hasRoleChanges, setHasRoleChanges] = useState(false);
-  const [showAssignForm, setShowAssignForm] = useState(false);
-  const [formRole, setFormRole] = useState('');
-  const [formSelectedUsers, setFormSelectedUsers] = useState([]);
-  const [formDuration, setFormDuration] = useState('');
+
   const quillModules = {
     toolbar: [
       [{ header: [1, 2, 3, false] }],
@@ -71,47 +68,7 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, meet
     setHasChanges(true);
   };
 
-  const removeRoleAssignment = (roleId) => {
-    setRoleAssignments(prev => prev.filter(ra => ra.roleId !== roleId));
-    setHasRoleChanges(true);
-    setHasChanges(true);
-  };
 
-  const removeUserFromRole = (roleId, userId) => {
-    setRoleAssignments(prev =>
-      prev
-        .map(ra => (ra.roleId === roleId ? { ...ra, userIds: ra.userIds.filter(id => id !== userId) } : ra))
-        .filter(ra => ra.userIds.length > 0 || ra.assignmentId)
-    );
-    setHasRoleChanges(true);
-    setHasChanges(true);
-  };
-
-  const handleAddAssignment = () => {
-    if (!formRole || formSelectedUsers.length === 0) return;
-    setRoleAssignments(prev => {
-      const existing = prev.find(ra => ra.roleId === formRole);
-      if (existing) {
-        return prev.map(ra =>
-          ra.roleId === formRole
-            ? { ...ra, userIds: [...new Set([...ra.userIds, ...formSelectedUsers])] }
-            : ra
-        );
-      }
-      return [...prev, { assignmentId: null, roleId: formRole, userIds: [...formSelectedUsers] }];
-    });
-    if (formDuration) {
-      formSelectedUsers.forEach(uid => {
-        setDurationInputs(prev => ({ ...prev, [`${formRole}_${uid}`]: formDuration }));
-      });
-    }
-    setHasRoleChanges(true);
-    setHasChanges(true);
-    setShowAssignForm(false);
-    setFormRole('');
-    setFormSelectedUsers([]);
-    setFormDuration('');
-  };
 
   const handleSave = async () => {
     const updateHandler = onUpdateTask || onUpdate;
@@ -215,30 +172,16 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, meet
             </div>
 
             {/* ── Assign Member Section ── */}
-            <div className="space-y-4">
-              {/* Header */}
-              <div className="flex items-center justify-between">
+            {roleAssignments.length > 0 && (
+              <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Assign Member</h5>
-                  {roleAssignments.length > 0 && (
-                    <span className="bg-amber-100 text-amber-700 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">
-                      {roleAssignments.length} {roleAssignments.length === 1 ? 'Step' : 'Steps'}
-                    </span>
-                  )}
+                  <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Assigned Members</h5>
+                  <span className="bg-amber-100 text-amber-700 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">
+                    {roleAssignments.length} {roleAssignments.length === 1 ? 'Step' : 'Steps'}
+                  </span>
                 </div>
-                {!showAssignForm && (
-                  <button
-                    onClick={() => setShowAssignForm(true)}
-                    className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-bold hover:bg-indigo-700 transition-colors shadow-sm"
-                  >
-                    <span className="text-sm leading-none">+</span> Assign Member
-                  </button>
-                )}
-              </div>
 
-              {/* ── Existing assignments list ── */}
-              {roleAssignments.length > 0 && (
                 <div className="space-y-3">
                   {roleAssignments.map((ra, idx) => {
                     const role = taskRoles?.find(r => r._id === ra.roleId);
@@ -247,17 +190,13 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, meet
                     const roleUsers = ra.userIds.map(uid => users.find(u => u._id === uid)).filter(Boolean);
                     return (
                       <div key={ra.roleId} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" style={{ borderLeftColor: roleColor, borderLeftWidth: 3 }}>
-                        {/* Role header row */}
-                        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100">
+                        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 bg-slate-50/30">
                           <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0" style={{ backgroundColor: roleColor }}>{idx + 1}</div>
                           <span className="text-sm leading-none">{role?.icon || '👤'}</span>
                           <span className="text-[11px] font-bold text-slate-800 flex-1 uppercase tracking-wide">{role?.name || 'Role'}</span>
                           <span className="text-[9px] text-slate-400">{roleUsers.length} member{roleUsers.length !== 1 ? 's' : ''}</span>
-                          <button onClick={() => removeRoleAssignment(ra.roleId)} className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors text-base font-bold" title="Remove role step">×</button>
                         </div>
-                        {/* Members with duration */}
                         <div className="px-4 py-3 space-y-2">
-                          {roleUsers.length === 0 && <p className="text-[10px] text-slate-400 italic">No members yet.</p>}
                           {roleUsers.map(assignee => {
                             const uid = assignee._id?.toString() || assignee._id;
                             const key = `${raId || ra.roleId}_${uid}`;
@@ -279,7 +218,6 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, meet
                                   <button onClick={() => handleSaveDuration(raId, uid, durationInputs[key] ?? 0)} disabled={savingDuration[key] || !raId} title={!raId ? 'Save task first' : 'Save duration'} className={`px-2.5 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all ${durationSaved[key] ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed'}`}>
                                     {savingDuration[key] ? '…' : durationSaved[key] ? '✓' : 'Save'}
                                   </button>
-                                  <button onClick={() => removeUserFromRole(ra.roleId, uid)} className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 text-sm font-bold">×</button>
                                 </div>
                               </div>
                             );
@@ -289,122 +227,8 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, meet
                     );
                   })}
                 </div>
-              )}
-
-              {/* ── Empty state ── */}
-              {roleAssignments.length === 0 && !showAssignForm && (
-                <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 p-8 text-center">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
-                    <span className="text-slate-400 text-lg">👥</span>
-                  </div>
-                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">No members assigned</p>
-                  <p className="text-[10px] text-slate-400">Click "Assign Member" to add role-based members sequentially.</p>
-                </div>
-              )}
-
-              {/* ── Assign Member form ── */}
-              {showAssignForm && (
-                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5 space-y-4">
-                  {/* 1. Select Role */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Select Role</label>
-                    <div className="relative">
-                      <select
-                        value={formRole}
-                        onChange={e => { setFormRole(e.target.value); setFormSelectedUsers([]); }}
-                        className="w-full appearance-none pl-4 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-indigo-400 cursor-pointer shadow-sm transition-colors"
-                      >
-                        <option value="">— Choose a role —</option>
-                        {taskRoles?.map(role => (
-                          <option key={role._id} value={role._id}>{role.icon || '👤'} {role.name}</option>
-                        ))}
-                      </select>
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">▾</span>
-                    </div>
-                  </div>
-
-                  {/* 2. Select Members (shown after role is picked) */}
-                  {formRole && (() => {
-                    const role = taskRoles?.find(r => r._id === formRole);
-                    const roleColor = role?.color || '#6366f1';
-                    const alreadyAssigned = roleAssignments.find(ra => ra.roleId === formRole)?.userIds || [];
-                    const available = users.filter(u => !alreadyAssigned.includes(u._id?.toString()) && !alreadyAssigned.includes(u._id));
-                    return (
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                          Select Member{available.length !== 1 ? 's' : ''}
-                          {formSelectedUsers.length > 0 && (
-                            <span className="ml-2 bg-indigo-100 text-indigo-700 text-[9px] px-2 py-0.5 rounded-full font-bold">{formSelectedUsers.length} selected</span>
-                          )}
-                        </label>
-                        {available.length === 0 ? (
-                          <p className="text-[10px] text-slate-400 italic px-1">All project members are already in this role.</p>
-                        ) : (
-                          <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                            {available.map(u => {
-                              const uid = u._id?.toString() || u._id;
-                              const isSelected = formSelectedUsers.includes(uid);
-                              const initials = u.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?';
-                              return (
-                                <div
-                                  key={uid}
-                                  onClick={() => setFormSelectedUsers(prev => isSelected ? prev.filter(id => id !== uid) : [...prev, uid])}
-                                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 cursor-pointer border transition-all ${isSelected ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-100 hover:border-slate-200'}`}
-                                >
-                                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[10px] font-bold shrink-0 overflow-hidden transition-colors" style={{ backgroundColor: isSelected ? roleColor : '#94a3b8' }}>
-                                    {u.profile?.profilePicture ? <img src={u.profile.profilePicture} alt="" className="w-full h-full object-cover" /> : initials}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-[11px] font-bold text-slate-800 truncate">{u.name}</div>
-                                    {u.projectRole && <div className="text-[9px] text-slate-400">{u.projectRole}</div>}
-                                  </div>
-                                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'}`}>
-                                    {isSelected && <span className="text-white text-[8px] font-bold leading-none">✓</span>}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {/* 3. Duration */}
-                  {formRole && formSelectedUsers.length > 0 && (
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Duration (hours)</label>
-                      <div className="relative flex items-center w-36">
-                        <input
-                          type="number" step="0.5" min="0" placeholder="0"
-                          value={formDuration}
-                          onChange={e => setFormDuration(e.target.value)}
-                          className="w-full pl-3 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-400 transition-colors"
-                        />
-                        <span className="absolute right-3 text-[10px] text-slate-400 font-bold pointer-events-none">h</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex justify-end gap-2 pt-1">
-                    <button
-                      onClick={() => { setShowAssignForm(false); setFormRole(''); setFormSelectedUsers([]); setFormDuration(''); }}
-                      className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleAddAssignment}
-                      disabled={!formRole || formSelectedUsers.length === 0}
-                      className="flex items-center gap-1.5 px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
-                    >
-                      + Add
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Footer Action Bar */}
