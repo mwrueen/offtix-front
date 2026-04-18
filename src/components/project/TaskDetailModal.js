@@ -3,7 +3,7 @@ import { taskAPI } from '../../services/api';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
-const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, onUpdateTask, onUpdate, onClose, onDelete }) => {
+const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, meetingNotes, onUpdateTask, onUpdate, onClose, onDelete }) => {
   const [formData, setFormData] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
   const [durationInputs, setDurationInputs] = useState({});
@@ -32,6 +32,7 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, onUp
         description: task.description || '',
         status: task.status?._id || task.status || '',
         priority: task.priority || '',
+        meeting: task.meeting?._id || task.meeting || '',
       });
       const initialAssignments = task.useRoleWorkflow
         ? (task.roleAssignments || [])
@@ -159,6 +160,22 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, onUp
               <div className="flex items-center gap-2 mb-2">
                 <span className="bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded text-[10px] font-bold uppercase">{task.issueType || 'Task'}</span>
                 <span className="text-[10px] font-medium text-slate-400">ID: {task._id.slice(-8).toUpperCase()}</span>
+                {task.requirement && (
+                  <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-slate-200">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Requirement:</span>
+                    <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-black uppercase ring-1 ring-emerald-100 italic">
+                      {task.requirement.title || 'Linked Requirement'}
+                    </span>
+                  </div>
+                )}
+                {task.meeting && (
+                  <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-slate-200">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Meeting:</span>
+                    <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-black uppercase ring-1 ring-indigo-100 italic">
+                      {task.meeting.title || 'Linked Meeting'}
+                    </span>
+                  </div>
+                )}
               </div>
               <input
                 type="text"
@@ -186,7 +203,11 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, onUp
                   theme="snow"
                   modules={quillModules}
                   value={formData.description || ''}
-                  onChange={(value) => handleFieldChange('description', value)}
+                  onChange={(content, delta, source, editor) => {
+                    if (source === 'user') {
+                      handleFieldChange('description', content);
+                    }
+                  }}
                   placeholder="Add a detailed description for this task..."
                   className="min-h-[180px]"
                 />
@@ -413,6 +434,18 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, onUp
                   <option value="high">High</option>
                   <option value="medium">Medium</option>
                   <option value="low">Low</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block ml-1">Reference Meeting</label>
+                <select
+                  value={formData.meeting}
+                  onChange={e => handleFieldChange('meeting', e.target.value)}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-400 transition-all cursor-pointer"
+                >
+                  <option value="">No Meeting Link</option>
+                  {(meetingNotes || []).map(m => <option key={m._id} value={m._id}>{m.title}</option>)}
                 </select>
               </div>
             </div>

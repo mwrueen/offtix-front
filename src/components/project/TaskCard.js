@@ -77,6 +77,12 @@ const TaskCard = ({ task, level = 0, onEdit, onDelete, onAddSubtask }) => {
                   <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">{task.duration}h Estimated</span>
                 </div>
               )}
+              {task.requirement && (
+                <div className="flex items-center gap-3 px-4 py-1.5 bg-emerald-50 border border-emerald-100 rounded-xl italic group-hover:bg-white transition-all shadow-inner ring-1 ring-emerald-200">
+                  <span className="text-sm">📋</span>
+                  <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest truncate max-w-[150px]">REQ: {task.requirement.title}</span>
+                </div>
+              )}
             </div>
           </div>
 

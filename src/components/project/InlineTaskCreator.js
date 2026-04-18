@@ -2,13 +2,14 @@ import React, { useState, useRef } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
-const InlineTaskCreator = ({ isOpen, onClose, onCreate, taskStatuses, users, sprints, phases }) => {
+const InlineTaskCreator = ({ isOpen, onClose, onCreate, taskStatuses, users, sprints, phases, meetingNotes }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [duration, setDuration] = useState('');
   const [durationUnit, setDurationUnit] = useState('hours');
   const [status, setStatus] = useState('');
   const [priority, setPriority] = useState('medium');
+  const [meeting, setMeeting] = useState('');
   const titleInputRef = useRef(null);
 
   if (!isOpen) return null;
@@ -21,7 +22,8 @@ const InlineTaskCreator = ({ isOpen, onClose, onCreate, taskStatuses, users, spr
       title: title.trim(),
       description: description.trim() || undefined,
       status: status || undefined,
-      priority: priority || undefined
+      priority: priority || undefined,
+      meeting: meeting || undefined
     };
 
     if (duration && parseFloat(duration) > 0) {
@@ -29,7 +31,7 @@ const InlineTaskCreator = ({ isOpen, onClose, onCreate, taskStatuses, users, spr
     }
 
     await onCreate(taskData);
-    setTitle(''); setDescription(''); setDuration(''); setStatus(''); setPriority('medium');
+    setTitle(''); setDescription(''); setDuration(''); setStatus(''); setPriority('medium'); setMeeting('');
     onClose();
   };
 
@@ -121,6 +123,18 @@ const InlineTaskCreator = ({ isOpen, onClose, onCreate, taskStatuses, users, spr
                 {taskStatuses?.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
               </select>
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 ml-1">Reference Meeting</label>
+            <select
+              value={meeting}
+              onChange={e => setMeeting(e.target.value)}
+              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+            >
+              <option value="">No Meeting Link</option>
+              {meetingNotes?.map(m => <option key={m._id} value={m._id}>{m.title}</option>)}
+            </select>
           </div>
 
        

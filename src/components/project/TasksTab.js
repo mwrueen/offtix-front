@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { projectAPI, taskAPI, taskStatusAPI, sprintAPI, phaseAPI, taskRoleAPI, companyAPI, leaveAPI } from '../../services/api';
+import { projectAPI, taskAPI, taskStatusAPI, sprintAPI, phaseAPI, taskRoleAPI, companyAPI, leaveAPI, meetingNoteAPI } from '../../services/api';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import TaskDetailModal from './TaskDetailModal';
@@ -25,6 +25,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const [sprints, setSprints] = useState([]);
     const [phases, setPhases] = useState([]);
     const [taskRoles, setTaskRoles] = useState([]);
+    const [meetingNotes, setMeetingNotes] = useState([]);
     const [employeeLeaves, setEmployeeLeaves] = useState([]);
     const [taskCosts, setTaskCosts] = useState({});
     const [loading, setLoading] = useState(true);
@@ -94,13 +95,14 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const fetchProjectData = async () => {
         try {
             setLoading(true);
-            const [projectRes, tasksRes, statusesRes, sprintsRes, phasesRes, rolesRes, activityRes] = await Promise.all([
+            const [projectRes, tasksRes, statusesRes, sprintsRes, phasesRes, rolesRes, meetingNoteNotesRes, activityRes] = await Promise.all([
                 projectAPI.getById(id),
                 taskAPI.getAll(id),
                 taskStatusAPI.getAll(id),
                 sprintAPI.getAll(id),
                 phaseAPI.getAll(id),
                 taskRoleAPI.getAll(id).catch(() => ({ data: [] })),
+                meetingNoteAPI.getAll(id).catch(() => ({ data: [] })),
                 api.get('/team-activity', { params: { projectId: id } }).catch(() => ({ data: [] }))
             ]);
 
@@ -111,6 +113,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
             setSprints(sprintsRes.data);
             setPhases(phasesRes.data);
             setTaskRoles(rolesRes.data || []);
+            setMeetingNotes(meetingNoteNotesRes.data || []);
 
             try {
                 const costsRes = await projectAPI.getCosts(id);
@@ -490,6 +493,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                     sprints={sprints}
                     phases={phases}
                     taskRoles={taskRoles}
+                    meetingNotes={meetingNotes}
                 />
             )}
 
@@ -516,6 +520,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                 users={users}
                 sprints={sprints}
                 phases={phases}
+                meetingNotes={meetingNotes}
             />
 
             <DeleteConfirmModal

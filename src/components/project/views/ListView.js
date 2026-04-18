@@ -179,6 +179,16 @@ const TaskRowContent = ({ task, level, hasChildren, isExpanded, onToggleExpand, 
         <h4 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors whitespace-normal break-words leading-5">
           {task.title}
           {task.children?.length > 0 && <span className="ml-2 text-[10px] font-medium text-slate-400">({task.children.length})</span>}
+          {task.requirement && (
+            <span className="ml-2 bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded text-[9px] font-black uppercase ring-1 ring-emerald-100 italic" title={task.requirement.title}>
+              REQ: {task.requirement.title}
+            </span>
+          )}
+          {task.meeting && (
+            <span className="ml-2 bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded text-[9px] font-black uppercase ring-1 ring-indigo-100 italic" title={task.meeting.title}>
+              MTG: {task.meeting.title}
+            </span>
+          )}
         </h4>
         <p 
           className="text-[10px] text-slate-500 mt-0.5 truncate"

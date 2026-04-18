@@ -118,7 +118,15 @@ const TaskCard = ({ task, onEdit, isDragging }) => {
 
       <div className="flex justify-between items-start gap-4 mb-3 pl-1">
         <div className="min-w-0">
-          <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase leading-tight">{task.title}</h4>
+          <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase leading-tight">
+            {task.title}
+            {task.requirement && (
+              <span className="ml-2 inline-block bg-emerald-50 text-emerald-700 px-1 py-0.5 rounded text-[8px] font-black uppercase ring-1 ring-emerald-100 italic">REQ</span>
+            )}
+            {task.meeting && (
+              <span className="ml-2 inline-block bg-indigo-50 text-indigo-700 px-1 py-0.5 rounded text-[8px] font-black uppercase ring-1 ring-indigo-100 italic">MTG</span>
+            )}
+          </h4>
           <p 
             className="text-[10px] text-slate-500 mt-1 line-clamp-2 leading-relaxed"
             title={task.description?.replace(/<[^>]*>/g, '')}

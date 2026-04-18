@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { requirementAPI } from '../../services/api';
+import { requirementAPI, BASE_SERVER_URL } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import { Button, Badge } from '../ui';
 
@@ -10,7 +10,6 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
   const [editingRequirement, setEditingRequirement] = useState(null);
   const [viewingRequirement, setViewingRequirement] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [uploadingFiles, setUploadingFiles] = useState(false);
@@ -133,11 +132,26 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
 
   const handleDelete = (requirementId) => {
     const req = requirements.find(r => r._id === requirementId);
+    if (req?.convertedToTask) {
+      alert("Cannot delete a requirement that has been converted to a task.");
+      return;
+    }
     setDeleteModal({
       isOpen: true,
       id: requirementId,
       name: req?.title || 'this requirement'
     });
+  };
+
+  const handleConvertToTask = async (requirementId) => {
+    try {
+      await requirementAPI.convertToTask(projectId, requirementId);
+      await onRefresh();
+      setViewingRequirement(null);
+    } catch (error) {
+      console.error('Error converting requirement to task:', error);
+      alert(error.response?.data?.error || 'Failed to convert to task');
+    }
   };
 
   const confirmDelete = async () => {
@@ -174,10 +188,9 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
   const filteredRequirements = requirements.filter(req => {
     const matchesSearch = req.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       req.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || req.status === filterStatus;
     const matchesPriority = filterPriority === 'all' || req.priority === filterPriority;
     const matchesType = filterType === 'all' || req.type === filterType;
-    return matchesSearch && matchesStatus && matchesPriority && matchesType;
+    return matchesSearch && matchesPriority && matchesType;
   });
 
   return (
@@ -203,28 +216,28 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
       <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-2 space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Search</label>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Search Requirements</label>
             <input
               type="text"
-              placeholder="Filter by title..."
+              placeholder="Search by title or description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 transition-all font-medium"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Status</label>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Type</label>
             <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 cursor-pointer font-medium"
             >
-              <option value="all">All Statuses</option>
-              <option value="draft">Draft</option>
-              <option value="approved">Approved</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="rejected">Rejected</option>
+              <option value="all">All Types</option>
+              <option value="functional">Functional</option>
+              <option value="non-functional">Non-Functional</option>
+              <option value="business">Business</option>
+              <option value="technical">Technical</option>
+              <option value="user-story">User Story</option>
             </select>
           </div>
           <div className="space-y-1.5">
@@ -273,7 +286,11 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                 <ReactQuill
                   theme="snow"
                   value={formData.description}
-                  onChange={(value) => setFormData({ ...formData, description: value })}
+                  onChange={(content, delta, source, editor) => {
+                    if (source === 'user') {
+                      setFormData(prev => ({ ...prev, description: content }));
+                    }
+                  }}
                   modules={quillModules}
                   formats={quillFormats}
                   className="bg-white"
@@ -281,7 +298,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-sans">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-700 ml-1">Type</label>
                 <select
@@ -307,20 +324,6 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
                   <option value="critical">Critical</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 ml-1">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none cursor-pointer"
-                >
-                  <option value="draft">Draft</option>
-                  <option value="approved">Approved</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="rejected">Rejected</option>
                 </select>
               </div>
             </div>
@@ -378,7 +381,11 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                   <div>
                     <h3 className="font-bold text-slate-900 line-clamp-1 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{req.title}</h3>
                     <div className="flex gap-2 mt-1 flex-wrap">
-                      <Badge variant={req.status === 'completed' ? 'success' : req.status === 'approved' ? 'primary' : req.status === 'in-progress' ? 'warning' : req.status === 'rejected' ? 'danger' : 'default'} size="sm">{req.status}</Badge>
+                      {req.convertedToTask ? (
+                        <Badge variant="success" size="sm" className="font-black">✓ CONVERTED: {req.convertedToTask.title || 'TASK'}</Badge>
+                      ) : (
+                        <Badge variant="warning" size="sm">PENDING TASK</Badge>
+                      )}
                       <Badge variant={req.priority === 'critical' ? 'danger' : req.priority === 'high' ? 'warning' : req.priority === 'medium' ? 'info' : 'default'} size="sm">{req.priority}</Badge>
                       <Badge variant="default" size="sm">{req.type}</Badge>
                     </div>
@@ -387,7 +394,9 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                 {isProjectOwner && (
                   <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                     <Button variant="ghost" size="sm" onClick={() => handleEdit(req)} className="!text-slate-400 hover:!text-indigo-600 !p-1.5">✎</Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(req._id)} className="!text-slate-400 hover:!text-rose-600 !p-1.5">✕</Button>
+                    {!req.convertedToTask && (
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(req._id)} className="!text-slate-400 hover:!text-rose-600 !p-1.5">✕</Button>
+                    )}
                   </div>
                 )}
               </div>
@@ -408,7 +417,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
               <div className="text-4xl mb-4">📋</div>
               <h3 className="text-lg font-bold text-slate-900">No requirements found</h3>
               <p className="text-sm text-slate-500 mt-1">Adjust filters or create a new requirement.</p>
-              <Button variant="ghost" size="sm" onClick={() => { setSearchTerm(''); setFilterStatus('all'); setFilterPriority('all'); setFilterType('all'); }} className="mt-6 !text-indigo-600 hover:underline">Clear Filters</Button>
+              <Button variant="ghost" size="sm" onClick={() => { setSearchTerm(''); setFilterPriority('all'); setFilterType('all'); }} className="mt-6 !text-indigo-600 hover:underline">Clear Filters</Button>
             </div>
           )}
         </div>
@@ -423,7 +432,11 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900 leading-none">{viewingRequirement.title}</h2>
                   <div className="flex items-center gap-3 mt-4">
-                    <Badge variant={viewingRequirement.status === 'completed' ? 'success' : viewingRequirement.status === 'approved' ? 'primary' : viewingRequirement.status === 'in-progress' ? 'warning' : viewingRequirement.status === 'rejected' ? 'danger' : 'default'} size="sm">{viewingRequirement.status}</Badge>
+                    {viewingRequirement.convertedToTask ? (
+                      <Badge variant="success" size="sm" className="font-black animate-pulse">✓ CONVERTED: {viewingRequirement.convertedToTask.title || 'TASK'}</Badge>
+                    ) : (
+                      <Badge variant="warning" size="sm">PENDING TASK CONVERSION</Badge>
+                    )}
                     <Badge variant={viewingRequirement.priority === 'critical' ? 'danger' : viewingRequirement.priority === 'high' ? 'warning' : viewingRequirement.priority === 'medium' ? 'info' : 'default'} size="sm">{viewingRequirement.priority}</Badge>
                   </div>
                 </div>
@@ -457,9 +470,9 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Attachments</h4>
                     <div className="grid grid-cols-1 gap-2">
                       {viewingRequirement.attachments.map((file, i) => (
-                        <a key={i} href={file.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50 transition-all font-sans">
+                        <a key={i} href={`${BASE_SERVER_URL}${file.path}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50 transition-all font-sans" download>
                           <span className="text-lg">📄</span>
-                          <span className="text-[11px] font-bold text-slate-600 line-clamp-1">{file.name}</span>
+                          <span className="text-[11px] font-bold text-slate-600 line-clamp-1">{file.originalName || file.name}</span>
                         </a>
                       ))}
                     </div>
@@ -470,8 +483,13 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
 
             {isProjectOwner && (
               <div className="mt-10 pt-8 border-t border-slate-100 flex gap-4 flex-shrink-0">
-                <Button variant="primary" onClick={() => { handleEdit(viewingRequirement); }} className="flex-1">Edit Requirement</Button>
-                <Button variant="danger" onClick={() => { setViewingRequirement(null); handleDelete(viewingRequirement._id); }} className="flex-1">Delete</Button>
+                {!viewingRequirement.convertedToTask && (
+                  <Button variant="primary" onClick={() => handleConvertToTask(viewingRequirement._id)} className="flex-[2] !bg-emerald-600 hover:!bg-emerald-700">Convert to Task</Button>
+                )}
+                <Button variant="secondary" onClick={() => { handleEdit(viewingRequirement); }} className="flex-1">Edit</Button>
+                {!viewingRequirement.convertedToTask && (
+                  <Button variant="danger" onClick={() => { setViewingRequirement(null); handleDelete(viewingRequirement._id); }} className="flex-1">Delete</Button>
+                )}
               </div>
             )}
           </div>

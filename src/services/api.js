@@ -175,6 +175,8 @@ export const requirementAPI = {
   ),
   deleteAttachment: (projectId, requirementId, attachmentId) =>
     api.delete(`/projects/${projectId}/requirements/${requirementId}/attachments/${attachmentId}`),
+  convertToTask: (projectId, requirementId) =>
+    api.post(`/projects/${projectId}/requirements/${requirementId}/convert-to-task`),
 };
 
 export const meetingNoteAPI = {
