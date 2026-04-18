@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { projectAPI, taskAPI, taskStatusAPI, sprintAPI, phaseAPI, taskRoleAPI, companyAPI, leaveAPI, meetingNoteAPI } from '../../services/api';
 import api from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
+
 import TaskDetailModal from './TaskDetailModal';
 import AssigneeModal from './AssigneeModal';
 import InlineTaskCreator from './InlineTaskCreator';
@@ -14,8 +14,6 @@ import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onRefresh: onProjectRefresh }) => {
     const { id } = useParams();
-    const navigate = useNavigate();
-    const { state: authState } = useAuth();
     const [project, setProject] = useState(initialProject || null);
     const [company, setCompany] = useState(null);
     const [tasks, setTasks] = useState([]);
@@ -30,11 +28,10 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const [taskCosts, setTaskCosts] = useState({});
     const [loading, setLoading] = useState(true);
     const [selectedTask, setSelectedTask] = useState(null);
-    const [selectedSprint, setSelectedSprint] = useState('');
-    const [selectedPhase, setSelectedPhase] = useState('');
+    const [selectedSprint] = useState('');
+    const [selectedPhase] = useState('');
     const [currentView, setCurrentView] = useState('list');
     const [showInlineCreator, setShowInlineCreator] = useState(false);
-    const [error, setError] = useState(null);
 
     // Filter states
     const [selectedAssignee, setSelectedAssignee] = useState('');
@@ -49,10 +46,10 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     // Auto-schedule states
     const [showAutoScheduleModal, setShowAutoScheduleModal] = useState(false);
     const [isAutoScheduling, setIsAutoScheduling] = useState(false);
-    const [schedulingMode, setSchedulingMode] = useState('sequential');
-    const [maxParallelTasks, setMaxParallelTasks] = useState(3);
-    const [scheduleStartFrom, setScheduleStartFrom] = useState('project');
-    const [customScheduleDate, setCustomScheduleDate] = useState(new Date().toISOString().split('T')[0]);
+    const [schedulingMode] = useState('sequential');
+    const [maxParallelTasks] = useState(3);
+    const [scheduleStartFrom] = useState('project');
+    const [customScheduleDate] = useState(new Date().toISOString().split('T')[0]);
     const [scheduleRoleId, setScheduleRoleId] = useState('');
 
     // Duration entry states
@@ -77,22 +74,18 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
         }
     }, [isDurationEntryMode, durationContext.roleId, durationContext.userId, id]);
 
-    useEffect(() => {
-        fetchProjectData();
-        const intervalId = setInterval(fetchTeamActivity, 30000);
-        return () => clearInterval(intervalId);
-    }, [id]);
 
-    const fetchTeamActivity = async () => {
+
+    const fetchTeamActivity = React.useCallback(async () => {
         try {
             const activityRes = await api.get('/team-activity', { params: { projectId: id } });
             setTeamActivity(activityRes.data || []);
         } catch (err) {
             console.error('Failed to sync activity', err);
         }
-    };
+    }, [id]);
 
-    const fetchProjectData = async () => {
+    const fetchProjectData = React.useCallback(async () => {
         try {
             setLoading(true);
             const [projectRes, tasksRes, statusesRes, sprintsRes, phasesRes, rolesRes, meetingNoteNotesRes, activityRes] = await Promise.all([
@@ -144,11 +137,16 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
             setUsers(projectTeam);
         } catch (error) {
             console.error('Failed to load project data', error);
-            setError({ type: 'error', message: 'Task data failed to load.' });
         } finally {
             setLoading(false);
         }
-    };
+    }, [id]);
+
+    useEffect(() => {
+        fetchProjectData();
+        const intervalId = setInterval(fetchTeamActivity, 30000);
+        return () => clearInterval(intervalId);
+    }, [id, fetchProjectData, fetchTeamActivity]);
 
     const handleCreateTask = async (taskData) => {
         try {

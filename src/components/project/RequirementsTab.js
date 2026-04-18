@@ -164,26 +164,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
     }
   };
 
-  const getStatusBadge = (status) => {
-    const statusMap = {
-      'draft': 'bg-slate-50 text-slate-600 border-slate-200',
-      'approved': 'bg-indigo-50 text-indigo-700 border-indigo-200 font-bold',
-      'in-progress': 'bg-amber-50 text-amber-700 border-amber-200',
-      'completed': 'bg-emerald-50 text-emerald-700 border-emerald-200 font-black',
-      'rejected': 'bg-rose-50 text-rose-700 border-rose-200'
-    };
-    return statusMap[status] || 'bg-slate-50 text-slate-600 border-slate-200';
-  };
 
-  const getPriorityBadge = (priority) => {
-    const priorityMap = {
-      'low': 'bg-slate-100 text-slate-500',
-      'medium': 'bg-blue-50 text-blue-600',
-      'high': 'bg-orange-50 text-orange-600 font-bold',
-      'critical': 'bg-rose-50 text-rose-600 font-black'
-    };
-    return priorityMap[priority] || 'bg-slate-100 text-slate-500';
-  };
 
   const filteredRequirements = requirements.filter(req => {
     const matchesSearch = req.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
