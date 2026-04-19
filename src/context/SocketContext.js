@@ -15,10 +15,18 @@ export const SocketProvider = ({ children }) => {
     const [isConnected, setIsConnected] = useState(false);
     const [notifications, setNotifications] = useState([]);  // in-app real-time toast queue
     const [unreadCountsByCompany, setUnreadCountsByCompany] = useState({});
+    const lastFetchRef = useRef({ companyId: null, time: 0 });
 
-    // Fetch initial unread count from DB (notifications + pending invitations)
     const fetchUnreadCount = useCallback(async (companyId) => {
         if (!companyId) return;
+
+        // Prevent rapid duplicate fetches within 2 seconds
+        const now = Date.now();
+        if (lastFetchRef.current.companyId === companyId && (now - lastFetchRef.current.time < 2000)) {
+            return;
+        }
+        lastFetchRef.current = { companyId, time: now };
+
         try {
             const token = getCookie('authToken');
             if (!token) return;
@@ -52,7 +60,6 @@ export const SocketProvider = ({ children }) => {
     useEffect(() => {
         const token = getCookie('authToken');
         if (!state.isAuthenticated || !token) {
-            // Disconnect if not authenticated
             if (socketRef.current) {
                 socketRef.current.disconnect();
                 socketRef.current = null;
@@ -61,7 +68,6 @@ export const SocketProvider = ({ children }) => {
             return;
         }
 
-        // Connect socket
         const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000', {
             auth: { token },
             transports: ['websocket', 'polling'],
@@ -75,7 +81,6 @@ export const SocketProvider = ({ children }) => {
         socket.on('connect', () => {
             console.log('[Socket] Connected:', socket.id);
             setIsConnected(true);
-            fetchUnreadCount(selectedCompanyId);
         });
 
         socket.on('disconnect', () => {
@@ -87,6 +92,24 @@ export const SocketProvider = ({ children }) => {
             console.error('[Socket] Connection error:', err.message);
         });
 
+        return () => {
+            socket.disconnect();
+            socketRef.current = null;
+        };
+    }, [state.isAuthenticated]);
+
+    // Fetch unread count when company changes or socket connects
+    useEffect(() => {
+        if (isConnected) {
+            fetchUnreadCount(selectedCompanyId);
+        }
+    }, [isConnected, selectedCompanyId, fetchUnreadCount]);
+
+    // Setup socket event listeners separately so they can access fresh state
+    useEffect(() => {
+        const socket = socketRef.current;
+        if (!socket || !isConnected) return;
+
         // ─── TASK NOTIFICATIONS ───────────────────────────────────────────────
         const handleTaskNotification = (data) => {
             setNotifications(prev => [data, ...prev].slice(0, 20));
@@ -94,24 +117,15 @@ export const SocketProvider = ({ children }) => {
             setUnreadCountsByCompany(prev => ({ ...prev, [cid]: (prev[cid] || 0) + 1 }));
         };
 
-        // Sequential workflow — task passed to next assignee
         socket.on('task:ready', handleTaskNotification);
-
-        // Task sent back to a previous assignee for fixes
         socket.on('task:sent_back', handleTaskNotification);
-
-        // Role-based workflow handoff to next role
         socket.on('task:role_handoff', handleTaskNotification);
-
-        // Task newly assigned to user
         socket.on('task:assigned', handleTaskNotification);
 
-        // Chat notifications (already existed, just re-emit count bump)
         socket.on('chat-notification', () => {
             setUnreadCountsByCompany(prev => ({ ...prev, [selectedCompanyId]: (prev[selectedCompanyId] || 0) + 1 }));
         });
 
-        // DB notifications (job offer, job application, invitations, etc.)
         const handleNewNotification = (data) => {
             if (!data) return;
             setNotifications((prev) =>
@@ -122,14 +136,8 @@ export const SocketProvider = ({ children }) => {
                         message: data.message,
                         relatedId: data.relatedId,
                         relatedModel: data.relatedModel,
-                        taskId:
-                            data.relatedModel === 'Task' && data.relatedId
-                                ? data.relatedId
-                                : data.taskId,
-                        applicationId:
-                            data.relatedModel === 'Application' && data.relatedId
-                                ? data.relatedId
-                                : undefined,
+                        taskId: data.relatedModel === 'Task' && data.relatedId ? data.relatedId : data.taskId,
+                        applicationId: data.relatedModel === 'Application' && data.relatedId ? data.relatedId : undefined,
                     },
                     ...prev,
                 ].slice(0, 20)
@@ -142,16 +150,14 @@ export const SocketProvider = ({ children }) => {
         socket.on('notification:new', handleNewNotification);
 
         return () => {
-            socket.off('task:ready');
-            socket.off('task:sent_back');
-            socket.off('task:role_handoff');
-            socket.off('task:assigned');
+            socket.off('task:ready', handleTaskNotification);
+            socket.off('task:sent_back', handleTaskNotification);
+            socket.off('task:role_handoff', handleTaskNotification);
+            socket.off('task:assigned', handleTaskNotification);
             socket.off('chat-notification');
             socket.off('notification:new', handleNewNotification);
-            socket.disconnect();
-            socketRef.current = null;
         };
-    }, [state.isAuthenticated, fetchUnreadCount, selectedCompanyId]);
+    }, [isConnected, selectedCompanyId, fetchUnreadCount]);
 
     const dismissNotification = useCallback((index) => {
         setNotifications(prev => prev.filter((_, i) => i !== index));

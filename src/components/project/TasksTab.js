@@ -89,11 +89,11 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
         try {
             setLoading(true);
             const [projectRes, tasksRes, statusesRes, sprintsRes, phasesRes, rolesRes, meetingNoteNotesRes, activityRes] = await Promise.all([
-                projectAPI.getById(id),
-                taskAPI.getAll(id),
-                taskStatusAPI.getAll(id),
-                sprintAPI.getAll(id),
-                phaseAPI.getAll(id),
+                projectAPI.getById(id).catch(() => ({ data: {} })),
+                taskAPI.getAll(id).catch(() => ({ data: [] })),
+                taskStatusAPI.getAll(id).catch(() => ({ data: [] })),
+                sprintAPI.getAll(id).catch(() => ({ data: [] })),
+                phaseAPI.getAll(id).catch(() => ({ data: [] })),
                 taskRoleAPI.getAll(id).catch(() => ({ data: [] })),
                 meetingNoteAPI.getAll(id).catch(() => ({ data: [] })),
                 api.get('/team-activity', { params: { projectId: id } }).catch(() => ({ data: [] }))
