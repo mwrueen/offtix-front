@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { myTasksAPI, BASE_SERVER_URL } from '../services/api';
+import { myTasksAPI, taskAPI, BASE_SERVER_URL } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useCompany } from '../context/CompanyContext';
+import { useAuth } from '../context/AuthContext';
 import Layout from './Layout';
 import PageHeader from './PageHeader';
 import ReactQuill from 'react-quill';
@@ -22,6 +23,36 @@ const MyTaskDetails = () => {
   const [actionModal, setActionModal] = useState(null); // 'complete' or 'sendBack'
   const [formData, setFormData] = useState({ note: '', message: '', link: '' });
   const [selectedFiles, setSelectedFiles] = useState([]);
+  
+  const { user } = useAuth();
+  const [showSubtaskForm, setShowSubtaskForm] = useState(false);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  const [isSubmittingSubtask, setIsSubmittingSubtask] = useState(false);
+
+  const getUserInitials = (user) => {
+    if (!user || !user.name) return '?';
+    const names = user.name.split(' ');
+    return names.length >= 2 ? (names[0][0] + names[names.length - 1][0]).toUpperCase() : user.name.substring(0, 2).toUpperCase();
+  };
+
+  const getUserColor = (userId) => {
+    const colors = ['#0052cc', '#00875a', '#ff8b00', '#6554c0', '#00b8d9', '#ff5630'];
+    return colors[userId ? userId.charCodeAt(userId.length - 1) % colors.length : 0];
+  };
+
+  const getSubtaskAssignees = (st) => {
+    const usersMap = new Map();
+    if (st.roleAssignments) {
+        st.roleAssignments.forEach(ra => ra.assignees?.forEach(a => usersMap.set(a._id || a, a)));
+    }
+    if (st.sequentialAssignees) {
+        st.sequentialAssignees.forEach(sa => sa.user && usersMap.set(sa.user._id || sa.user, sa.user));
+    }
+    if (st.assignees) {
+        st.assignees.forEach(a => usersMap.set(a._id || a, a));
+    }
+    return Array.from(usersMap.values()).filter(a => typeof a === 'object' && a.name);
+  };
 
   const fetchTaskDetails = useCallback(async () => {
     try {
@@ -106,6 +137,50 @@ const MyTaskDetails = () => {
     }
   };
 
+  const handleCreateSubtask = async () => {
+    if (!newSubtaskTitle.trim() || !taskData?.task?.project?._id) return;
+    
+    setIsSubmittingSubtask(true);
+    try {
+        const projectId = taskData.task.project._id;
+        
+        let roleAssignments = [];
+        let assignees = [];
+        let useRoleWorkflow = false;
+        
+        if (taskData.workflowType === 'role' && taskData.steps?.current?.role) {
+            roleAssignments = [{
+                role: taskData.steps.current.role._id || taskData.steps.current.role,
+                assignees: [user._id],
+                order: 1
+            }];
+            useRoleWorkflow = true;
+        } else {
+            assignees = [user._id];
+        }
+        
+        const payload = {
+            title: newSubtaskTitle,
+            parent: taskId,
+            project: projectId,
+            roleAssignments,
+            assignees,
+            useRoleWorkflow,
+            priority: taskData.task.priority
+        };
+        
+        await taskAPI.create(projectId, payload);
+        toast?.showToast?.('Subtask created successfully', 'success');
+        setNewSubtaskTitle('');
+        setShowSubtaskForm(false);
+        fetchTaskDetails();
+    } catch (err) {
+        toast?.showToast?.(err.response?.data?.error || 'Failed to create subtask', 'error');
+    } finally {
+        setIsSubmittingSubtask(false);
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleString('en-US', {
@@ -184,7 +259,69 @@ const MyTaskDetails = () => {
             {task.description && (
               <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200 pb-3">Task Description</h3>
-                <p className="text-sm font-normal text-slate-700 leading-relaxed whitespace-pre-wrap">{task.description}</p>
+                <div className="text-sm font-normal text-slate-700 leading-relaxed prose max-w-none" dangerouslySetInnerHTML={{ __html: task.description }} />
+              </div>
+            )}
+
+            {/* Subtasks Section */}
+            {taskData.subtasks && (
+              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Subtasks ({taskData.subtasks.length})</h3>
+                  <button onClick={() => setShowSubtaskForm(!showSubtaskForm)} className="text-indigo-600 text-xs font-bold bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition border border-indigo-100 shadow-sm">+ Add Subtask</button>
+                </div>
+
+                {showSubtaskForm && (
+                  <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">Subtask Title</label>
+                        <input type="text" value={newSubtaskTitle} onChange={e => setNewSubtaskTitle(e.target.value)} className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm bg-white" placeholder="E.g., Login Page, Write Tests..." autoFocus />
+                    </div>
+                    <div className="bg-indigo-50 border border-indigo-100 p-3 rounded-lg flex items-center gap-2">
+                        <span className="text-indigo-700 text-xs font-medium">ℹ️ You will be automatically assigned to this subtask inheriting your active task role.</span>
+                    </div>
+                    <div className="flex gap-3 justify-end pt-2">
+                        <button onClick={() => setShowSubtaskForm(false)} className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-200 rounded-lg">Cancel</button>
+                        <button onClick={handleCreateSubtask} disabled={isSubmittingSubtask} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 shadow-sm disabled:opacity-50">
+                            {isSubmittingSubtask ? 'Adding...' : 'Save Subtask'}
+                        </button>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="space-y-4">
+                    {taskData.subtasks.length === 0 && !showSubtaskForm && (
+                        <p className="text-sm text-slate-400 text-center py-6 border border-dashed border-slate-200 rounded-xl bg-slate-50">No subtasks found.</p>
+                    )}
+                    {taskData.subtasks.map(st => (
+                        <div key={st._id} className="border border-slate-200 rounded-xl p-5 bg-white shadow-sm flex flex-col gap-3">
+                            <div className="flex justify-between items-start">
+                                <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2 cursor-pointer hover:text-indigo-600 transition" onClick={() => navigate(`/my-tasks/${st._id}`)}>
+                                    <span className="text-slate-400 text-xs">↳</span> {st.title}
+                                </h4>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex -space-x-2">
+                                        {getSubtaskAssignees(st).slice(0, 5).map(u => (
+                                            <div key={u._id} title={u.name} className="w-6 h-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-white shadow-sm overflow-hidden" style={{ backgroundColor: u.profile?.profilePicture ? 'transparent' : getUserColor(u._id) }}>
+                                                {u.profile?.profilePicture ? (
+                                                    <img src={u.profile.profilePicture.startsWith('http') ? u.profile.profilePicture : `${BASE_SERVER_URL}/${u.profile.profilePicture}`} alt={u.name} className="w-full h-full object-cover" />
+                                                ) : getUserInitials(u)}
+                                            </div>
+                                        ))}
+                                        {getSubtaskAssignees(st).length > 5 && (
+                                            <div className="w-6 h-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-600 shadow-sm z-10">
+                                                +{getSubtaskAssignees(st).length - 5}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold ${getStatusColorClasses(st.status?.slug || st.status?.name?.toLowerCase() || 'pending')}`}>
+                                        {st.status?.name || 'Pending'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
               </div>
             )}
 
@@ -251,6 +388,80 @@ const MyTaskDetails = () => {
           </div>
 
           <div className="lg:col-span-4 space-y-6">
+            {/* Assignments Block */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200 pb-3">Assignments</h3>
+                
+                {/* Generic Assignees */}
+                {task.assignees && task.assignees.length > 0 && !task.useRoleWorkflow && !task.useSequentialWorkflow && (
+                    <div className="space-y-3">
+                        <h4 className="text-[10px] font-bold text-slate-400 uppercase">All Assignees (Active)</h4>
+                        <div className="flex flex-col gap-2">
+                            {task.assignees.map(a => (
+                                <div key={a._id} className="flex items-center gap-2 p-2 rounded-lg border border-indigo-100 bg-indigo-50">
+                                    <div className="w-6 h-6 rounded-md bg-indigo-200 text-indigo-700 flex items-center justify-center text-[10px] font-bold uppercase">{a.name?.charAt(0) || '?'}</div>
+                                    <span className="text-xs font-bold text-slate-700">{a.name || 'User'}</span>
+                                    <span className="text-[9px] text-indigo-600 font-bold ml-auto bg-indigo-100 px-2 py-0.5 rounded">ACTIVE</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Role Workflow Assignees */}
+                {task.useRoleWorkflow && task.roleAssignments && task.roleAssignments.length > 0 && (
+                    <div className="space-y-3">
+                        {task.roleAssignments.map((ra, idx) => {
+                            const isActive = task.currentRoleIndex === idx;
+                            const isCompleted = ra.status === 'completed';
+                            return (
+                                <div key={ra._id || idx} className={`space-y-2 p-3 rounded-xl border ${isActive ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-slate-50 border-slate-100'}`}>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] text-white ${isActive ? 'bg-indigo-600' : isCompleted ? 'bg-emerald-500' : 'bg-slate-300'}`}>{idx + 1}</span>
+                                            {ra.role?.name || 'Role'}
+                                        </span>
+                                        {isActive && <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">ACTIVE</span>}
+                                        {isCompleted && <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">DONE</span>}
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5 pl-5">
+                                        {ra.assignees?.map(a => (
+                                            <span key={a._id || a} className={`text-[10px] items-center gap-1 font-medium px-2 py-0.5 rounded border flex ${isActive ? 'bg-white border-indigo-100 text-indigo-700' : 'bg-white border-slate-200 text-slate-600'}`}>
+                                                {a.name || 'User'}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* Sequential Workflow Assignees */}
+                {task.useSequentialWorkflow && task.sequentialAssignees && task.sequentialAssignees.length > 0 && (
+                    <div className="space-y-3">
+                        {task.sequentialAssignees.map((sa, idx) => {
+                            const isActive = task.currentAssigneeIndex === idx;
+                            const isCompleted = sa.status === 'completed';
+                            return (
+                                <div key={sa._id || idx} className={`flex items-center justify-between p-3 rounded-xl border ${isActive ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-slate-50 border-slate-100'}`}>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] text-white ${isActive ? 'bg-indigo-600' : isCompleted ? 'bg-emerald-500' : 'bg-slate-300'}`}>{idx + 1}</span>
+                                        <span className="text-xs font-bold text-slate-700">{sa.user?.name || 'User'}</span>
+                                    </div>
+                                    {isActive && <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">ACTIVE</span>}
+                                    {isCompleted && <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">DONE</span>}
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
+                
+                {(!task.assignees?.length && !task.roleAssignments?.length && !task.sequentialAssignees?.length) && (
+                    <p className="text-xs text-slate-400 italic">No members assigned.</p>
+                )}
+            </div>
+
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
               <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200 pb-3">Task Actions</h3>
               <div className="grid grid-cols-1 gap-4">

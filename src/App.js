@@ -36,6 +36,7 @@ import CompanyList from './components/CompanyList';
 import CompanyDetails from './components/CompanyDetails';
 import MyTasksList from './components/MyTasksList';
 import MyTaskDetails from './components/MyTaskDetails';
+import ProjectTaskDetails from './components/project/ProjectTaskDetails';
 import TeamActivity from './components/TeamActivity';
 import { SocketProvider } from './context/SocketContext';
 import RealTimeNotifications from './components/RealTimeNotifications';
@@ -89,6 +90,11 @@ function App() {
                         <Route path="/projects/:id" element={
                           <ProtectedRoute>
                             <ProjectDetails />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/projects/:id/tasks/:taskId" element={
+                          <ProtectedRoute>
+                            <ProjectTaskDetails />
                           </ProtectedRoute>
                         } />
                         <Route path="/overview" element={

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { projectAPI, taskAPI, taskStatusAPI, sprintAPI, phaseAPI, taskRoleAPI, companyAPI, leaveAPI, meetingNoteAPI } from '../../services/api';
 import api from '../../services/api';
 
@@ -14,6 +14,7 @@ import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onRefresh: onProjectRefresh }) => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [project, setProject] = useState(initialProject || null);
     const [company, setCompany] = useState(null);
     const [tasks, setTasks] = useState([]);
@@ -213,15 +214,8 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
         }
     };
 
-    const handleSelectTask = async (task) => {
-        if (task.useRoleWorkflow) {
-            try {
-                const response = await taskAPI.getTaskWithWorkflow(id, task._id);
-                setSelectedTask(response.data);
-            } catch (e) { setSelectedTask(task); }
-        } else {
-            setSelectedTask(task);
-        }
+    const handleSelectTask = (task) => {
+        navigate(`/projects/${id}/tasks/${task._id}`);
     };
 
     const handleOpenAssigneeModal = (task) => {
