@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { projectAPI, taskAPI, taskStatusAPI, sprintAPI, phaseAPI, taskRoleAPI, companyAPI, leaveAPI, meetingNoteAPI } from '../../services/api';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 import TaskDetailModal from './TaskDetailModal';
 import AssigneeModal from './AssigneeModal';
@@ -15,6 +16,8 @@ import DeleteConfirmModal from '../common/DeleteConfirmModal';
 const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onRefresh: onProjectRefresh }) => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { state: authState } = useAuth();
+    const user = authState?.user;
     const [project, setProject] = useState(initialProject || null);
     const [company, setCompany] = useState(null);
     const [tasks, setTasks] = useState([]);
@@ -61,6 +64,14 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const [isSubmittingDurations, setIsSubmittingDurations] = useState(false);
     const [deleteTaskModal, setDeleteTaskModal] = useState({ isOpen: false, taskId: null, taskTitle: '' });
     const [assigneeModalTask, setAssigneeModalTask] = useState(null);
+
+    const canViewCost = React.useMemo(() => {
+        if (!user || !project) return false;
+        if (user.role === 'superadmin' || user.role === 'owner' || user.role === 'company_admin' || user.role === 'admin') return true;
+        if ((project.owner?._id || project.owner) === user._id) return true;
+        if (user.permissions && user.permissions.includes('viewProjectCost')) return true;
+        return false;
+    }, [user, project]);
 
     useEffect(() => {
         if (isDurationEntryMode && durationContext.roleId && durationContext.userId) {
@@ -451,6 +462,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                         pendingDurations={pendingDurations}
                         setPendingDurations={setPendingDurations}
                         existingDurations={existingDurations}
+                        canViewCost={canViewCost}
                     />
                 )}
                 {currentView === 'board' && (

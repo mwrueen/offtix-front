@@ -19,7 +19,8 @@ const ListView = ({
   durationContext,
   pendingDurations,
   setPendingDurations,
-  existingDurations
+  existingDurations,
+  canViewCost
 }) => {
   const { state: companyState } = useCompany();
   const companyCurrency = companyState?.selectedCompany?.currency || 'USD';
@@ -64,10 +65,14 @@ const ListView = ({
     }
   };
 
+  const gridClass = canViewCost 
+    ? "grid grid-cols-[40px_1fr_120px_100px_140px_100px_80px_100px] gap-4 px-6 py-4 items-center" 
+    : "grid grid-cols-[40px_1fr_120px_100px_140px_100px_80px] gap-4 px-6 py-4 items-center";
+
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={() => setActiveTask(null)}>
       <div className="bg-white rounded-xl overflow-hidden border border-slate-200">
-        <div className="grid grid-cols-[40px_1fr_120px_100px_140px_100px_80px_100px] gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200 items-center">
+        <div className={`${gridClass} bg-slate-50 border-b border-slate-200`}>
           <div />
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Task Name</div>
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status</div>
@@ -75,7 +80,7 @@ const ListView = ({
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Assignees</div>
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Due Date</div>
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Duration</div>
-          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Cost</div>
+          {canViewCost && <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Cost</div>}
         </div>
 
         <SortableContext items={tasks.map(t => t._id)} strategy={verticalListSortingStrategy}>
@@ -110,6 +115,7 @@ const ListView = ({
                   setPendingDurations={setPendingDurations}
                   existingDurations={existingDurations}
                   onOpenAssigneeModal={onOpenAssigneeModal}
+                  canViewCost={canViewCost}
                 />
               ))
             )}
@@ -150,15 +156,19 @@ const SortableTaskRow = (props) => {
   );
 };
 
-const TaskRowContent = ({ task, level, hasChildren, isExpanded, onToggleExpand, onSelect, isSelected, isDragging, taskCosts, companyCurrency, isDurationEntryMode, durationContext, pendingDurations, setPendingDurations, existingDurations, onOpenAssigneeModal }) => {
+const TaskRowContent = ({ task, level, hasChildren, isExpanded, onToggleExpand, onSelect, isSelected, isDragging, taskCosts, companyCurrency, isDurationEntryMode, durationContext, pendingDurations, setPendingDurations, existingDurations, onOpenAssigneeModal, canViewCost }) => {
   const cost = taskCosts[task._id];
   const priorityColor = { urgent: 'bg-rose-500', high: 'bg-orange-500', medium: 'bg-amber-400', low: 'bg-emerald-500' }[task.priority] || 'bg-slate-300';
   const statusColor = task.status?.color ? { color: task.status.color, bg: `${task.status.color}10` } : { color: '#64748b', bg: '#f8fafc' };
 
+  const gridClass = canViewCost 
+    ? "grid grid-cols-[40px_1fr_120px_100px_140px_100px_80px_100px] gap-4 px-6 py-4 items-center" 
+    : "grid grid-cols-[40px_1fr_120px_100px_140px_100px_80px] gap-4 px-6 py-4 items-center";
+
   return (
     <div
       onClick={onSelect}
-      className={`grid grid-cols-[40px_1fr_120px_100px_140px_100px_80px_100px] gap-4 px-6 py-4 items-center cursor-pointer transition-colors relative group ${isSelected ? 'bg-indigo-50/50' : 'hover:bg-slate-50/50'}`}
+      className={`${gridClass} cursor-pointer transition-colors relative group ${isSelected ? 'bg-indigo-50/50' : 'hover:bg-slate-50/50'}`}
     >
       {isSelected && <div className="absolute left-0 top-0 w-1 h-full bg-indigo-600 shadow-sm" />}
 
@@ -257,9 +267,11 @@ const TaskRowContent = ({ task, level, hasChildren, isExpanded, onToggleExpand, 
         )}
       </div>
 
-      <div className="text-right text-[11px] font-bold text-slate-700 tabular-nums">
-        {cost ? new Intl.NumberFormat('en-US', { style: 'currency', currency: companyCurrency }).format(cost) : '-'}
-      </div>
+      {canViewCost && (
+        <div className="text-right text-[11px] font-bold text-slate-700 tabular-nums">
+          {cost ? new Intl.NumberFormat('en-US', { style: 'currency', currency: companyCurrency }).format(cost) : '-'}
+        </div>
+      )}
     </div>
   );
 };

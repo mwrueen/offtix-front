@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { taskAPI, projectAPI, taskRoleAPI, taskStatusAPI, BASE_SERVER_URL } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import Layout from '../Layout';
 import PageHeader from '../PageHeader';
 import ReactQuill from 'react-quill';
@@ -11,6 +12,8 @@ const ProjectTaskDetails = () => {
     const { id: projectId, taskId } = useParams();
     const navigate = useNavigate();
     const toast = useToast();
+    const { state: authState } = useAuth();
+    const user = authState.user;
 
     const [task, setTask] = useState(null);
     const [project, setProject] = useState(null);
@@ -23,6 +26,30 @@ const ProjectTaskDetails = () => {
     const [showSubtaskForm, setShowSubtaskForm] = useState(false);
     const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
     const [selectedUsersForSubtask, setSelectedUsersForSubtask] = useState([]);
+
+    const [editingSubtask, setEditingSubtask] = useState(null);
+    const [editingSubtaskTitle, setEditingSubtaskTitle] = useState('');
+    const [editingSubtaskUsers, setEditingSubtaskUsers] = useState([]);
+
+    const [isEditingTask, setIsEditingTask] = useState(false);
+    const [editedTask, setEditedTask] = useState({ title: '', description: '' });
+    const [isSavingTask, setIsSavingTask] = useState(false);
+
+    const canEditTask = React.useMemo(() => {
+        if (!user || !project) return false;
+        if (user.role === 'superadmin') return true;
+        if ((project.owner?._id || project.owner) === user._id) return true;
+        
+        let hasCompanyPermission = false;
+        if (user.company === project.company || (project.company && project.company._id === user.company)) {
+            // Approximating permission since frontend resolves this broadly for project owners / assigned members
+            hasCompanyPermission = true; 
+        }
+
+        const isMember = project.members?.some(m => (m.user?._id || m.user) === user._id);
+        
+        return hasCompanyPermission || isMember;
+    }, [project, user]);
 
     const mainTaskUsers = React.useMemo(() => {
         if (!task) return [];
@@ -88,6 +115,9 @@ const ProjectTaskDetails = () => {
             ]);
 
             setTask(taskRes.data);
+            if (taskRes.data) {
+                setEditedTask({ title: taskRes.data.title || '', description: taskRes.data.description || '' });
+            }
             setSubtasks(taskRes.data?.subtasks || []);
             setProject(projRes.data);
             setTaskRoles(rolesRes.data);
@@ -121,6 +151,24 @@ const ProjectTaskDetails = () => {
             fetchData();
         } catch (e) {
             toast?.showToast?.('Failed to update task status', 'error');
+        }
+    };
+
+    const handleSaveTaskDetails = async () => {
+        if (!editedTask.title.trim()) return toast?.showToast?.('Title is required', 'error');
+        setIsSavingTask(true);
+        try {
+            await taskAPI.update(projectId, taskId, {
+                title: editedTask.title,
+                description: editedTask.description
+            });
+            toast?.showToast?.('Task updated successfully', 'success');
+            setIsEditingTask(false);
+            fetchData();
+        } catch (e) {
+            toast?.showToast?.('Failed to update task details', 'error');
+        } finally {
+            setIsSavingTask(false);
         }
     };
 
@@ -165,6 +213,72 @@ const ProjectTaskDetails = () => {
             fetchData();
         } catch (e) {
             toast?.showToast?.('Failed to create subtask', 'error');
+        }
+    };
+
+    const startEditingSubtask = (st) => {
+        setEditingSubtask(st._id);
+        setEditingSubtaskTitle(st.title);
+        const currentUsers = [];
+        if (st.roleAssignments) {
+            st.roleAssignments.forEach(ra => ra.assignees?.forEach(a => currentUsers.push(a._id || a)));
+        }
+        if (st.assignees) {
+            st.assignees.forEach(a => currentUsers.push(a._id || a));
+        }
+        setEditingSubtaskUsers(currentUsers);
+    };
+
+    const cancelEditingSubtask = () => {
+        setEditingSubtask(null);
+        setEditingSubtaskTitle('');
+        setEditingSubtaskUsers([]);
+    };
+
+    const saveSubtaskEdit = async (stId) => {
+        if (!editingSubtaskTitle.trim()) return toast?.showToast?.('Title required', 'error');
+        try {
+            const roleAssignmentsMap = new Map();
+            const genericAssignees = [];
+            
+            editingSubtaskUsers.forEach(userId => {
+                const u = mainTaskUsers.find(mu => mu._id === userId);
+                if (u && u.roleId) {
+                    if (!roleAssignmentsMap.has(u.roleId)) roleAssignmentsMap.set(u.roleId, []);
+                    roleAssignmentsMap.get(u.roleId).push(userId);
+                } else {
+                    genericAssignees.push(userId);
+                }
+            });
+            
+            const roleAssignments = Array.from(roleAssignmentsMap.entries()).map(([roleId, userIds], idx) => ({
+                role: roleId,
+                assignees: userIds,
+                order: idx + 1
+            }));
+
+            await taskAPI.update(projectId, stId, {
+                title: editingSubtaskTitle,
+                roleAssignments,
+                assignees: genericAssignees,
+                useRoleWorkflow: roleAssignments.length > 0
+            });
+            toast?.showToast?.('Subtask updated successfully', 'success');
+            cancelEditingSubtask();
+            fetchData();
+        } catch (e) {
+            toast?.showToast?.('Failed to update subtask', 'error');
+        }
+    };
+
+    const deleteSubtask = async (stId) => {
+        if (!window.confirm('Are you sure you want to delete this subtask?')) return;
+        try {
+            await taskAPI.delete(projectId, stId);
+            toast?.showToast?.('Subtask deleted successfully', 'success');
+            fetchData();
+        } catch (e) {
+            toast?.showToast?.('Failed to delete subtask', 'error');
         }
     };
 
@@ -219,11 +333,35 @@ const ProjectTaskDetails = () => {
     return (
         <Layout>
             <div className="max-w-6xl mx-auto py-8 px-6 space-y-8 pb-24">
-                <PageHeader
-                    title={task.title}
-                    subtitle={`Task Details - ${project?.title || ''}`}
-                    actions={<button onClick={() => navigate(`/projects/${projectId}?tab=tasks`)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Back to Tasks</button>}
-                />
+                {isEditingTask ? (
+                    <div className="bg-white p-6 rounded-2xl border border-indigo-200 shadow-sm flex flex-col gap-4">
+                        <label className="text-xs font-bold text-slate-500 uppercase">Task Title</label>
+                        <input 
+                            type="text" 
+                            value={editedTask.title} 
+                            onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })} 
+                            className="w-full text-2xl font-bold px-4 py-3 border border-slate-200 rounded-xl"
+                            placeholder="Enter task title"
+                        />
+                        <div className="flex justify-end gap-3 pt-2">
+                            <button onClick={() => { setIsEditingTask(false); setEditedTask({ title: task.title, description: task.description}); }} className="px-5 py-2 text-sm font-bold text-slate-500 hover:bg-slate-100 rounded-lg">Cancel Edit</button>
+                            <button onClick={handleSaveTaskDetails} disabled={isSavingTask} className="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-sm">{isSavingTask ? 'Saving Base Task...' : 'Save Changes'}</button>
+                        </div>
+                    </div>
+                ) : (
+                    <PageHeader
+                        title={task.title}
+                        subtitle={`Task Details - ${project?.title || ''}`}
+                        actions={
+                            <div className="flex gap-3 items-center">
+                                {canEditTask && (
+                                    <button onClick={() => setIsEditingTask(true)} className="px-4 py-2 text-sm font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors">Edit Details</button>
+                                )}
+                                <button onClick={() => navigate(`/projects/${projectId}?tab=tasks`)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Back to Tasks</button>
+                            </div>
+                        }
+                    />
+                )}
 
                 {showCompletionPrompt && (
                     <div className="bg-emerald-50 border-emerald-200 p-6 rounded-2xl border shadow-sm flex items-center justify-between">
@@ -247,8 +385,26 @@ const ProjectTaskDetails = () => {
                     <div className="lg:col-span-8 space-y-8">
                         {/* Parent Description */}
                         <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                            <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200 pb-3">Main Task Description</h3>
-                            <div className="text-sm font-normal text-slate-700 prose max-w-none" dangerouslySetInnerHTML={{ __html: task.description || 'No description provided.' }} />
+                            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                                <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Main Task Description</h3>
+                                {canEditTask && !isEditingTask && (
+                                    <button onClick={() => setIsEditingTask(true)} className="text-[10px] uppercase font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">Edit</button>
+                                )}
+                            </div>
+                            
+                            {isEditingTask ? (
+                                <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+                                    <ReactQuill 
+                                        value={editedTask.description} 
+                                        onChange={(val) => setEditedTask({ ...editedTask, description: val })} 
+                                        className="h-64" 
+                                        theme="snow" 
+                                    />
+                                    <div className="h-10" />
+                                </div>
+                            ) : (
+                                <div className="text-sm font-normal text-slate-700 prose max-w-none" dangerouslySetInnerHTML={{ __html: task.description || 'No description provided.' }} />
+                            )}
                         </div>
 
                         {/* Subtasks Section */}
@@ -310,11 +466,65 @@ const ProjectTaskDetails = () => {
                                     <p className="text-sm text-slate-400 text-center py-6 border border-dashed border-slate-200 rounded-xl bg-slate-50">No subtasks found.</p>
                                 )}
                                 {subtasks.map(st => (
-                                    <div key={st._id} className="border border-slate-200 rounded-xl p-5 hover:border-indigo-200 transition-colors bg-white shadow-sm flex flex-col gap-4">
+                                    editingSubtask === st._id ? (
+                                        <div key={st._id} className="bg-slate-50 p-6 rounded-xl border border-indigo-200 shadow-sm space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold text-slate-500 uppercase ml-1">Edit Title</label>
+                                                <input type="text" value={editingSubtaskTitle} onChange={e => setEditingSubtaskTitle(e.target.value)} className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:border-indigo-400 outline-none" />
+                                            </div>
+                                            <div className="space-y-3">
+                                                <label className="text-xs font-bold text-slate-500 uppercase ml-1">Assignees</label>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                    {mainTaskUsers.map(u => (
+                                                        <label key={u._id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${editingSubtaskUsers.includes(u._id) ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
+                                                            <input 
+                                                                type="checkbox" 
+                                                                checked={editingSubtaskUsers.includes(u._id)}
+                                                                onChange={(e) => {
+                                                                    if (e.target.checked) setEditingSubtaskUsers([...editingSubtaskUsers, u._id]);
+                                                                    else setEditingSubtaskUsers(editingSubtaskUsers.filter(id => id !== u._id));
+                                                                }}
+                                                                className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                                                            />
+                                                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                                {u.profile?.profilePicture ? (
+                                                                    <img src={u.profile.profilePicture.startsWith('http') ? u.profile.profilePicture : `${BASE_SERVER_URL}/${u.profile.profilePicture}`} alt={u.name || 'User'} className="w-8 h-8 rounded-full object-cover shadow-sm bg-white" />
+                                                                ) : (
+                                                                    <div className="w-8 h-8 rounded-full text-white flex items-center justify-center text-xs font-semibold shrink-0" style={{ backgroundColor: getUserColor(u._id) }}>
+                                                                        {getUserInitials(u)}
+                                                                    </div>
+                                                                )}
+                                                                <div className="flex flex-col truncate">
+                                                                    <span className="text-sm font-bold text-slate-700 truncate">{u.name || 'User'}</span>
+                                                                    {u.roleName && <span className="text-[10px] text-indigo-600 truncate">{u.roleName}</span>}
+                                                                </div>
+                                                            </div>
+                                                        </label>
+                                                    ))}
+                                                    {mainTaskUsers.length === 0 && (
+                                                        <p className="text-xs text-slate-400 italic">No assignees available to map.</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-3 justify-end pt-2">
+                                                <button onClick={cancelEditingSubtask} className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-200 rounded-lg">Cancel</button>
+                                                <button onClick={() => saveSubtaskEdit(st._id)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 shadow-sm">Save Changes</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                    <div key={st._id} className="border border-slate-200 rounded-xl p-5 hover:border-indigo-200 transition-colors bg-white shadow-sm flex flex-col gap-4 group">
                                         <div className="flex justify-between items-start">
-                                            <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                                                <span className="text-slate-400 text-xs">↳</span> {st.title}
-                                            </h4>
+                                            <div className="flex flex-col gap-1">
+                                                <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                                    <span className="text-slate-400 text-xs">↳</span> {st.title}
+                                                </h4>
+                                                {canEditTask && (
+                                                    <div className="flex items-center gap-3 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button onClick={() => startEditingSubtask(st)} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800">EDIT</button>
+                                                        <button onClick={() => deleteSubtask(st._id)} className="text-[10px] font-bold text-rose-600 hover:text-rose-800">DELETE</button>
+                                                    </div>
+                                                )}
+                                            </div>
                                             <div className="flex items-center gap-3">
                                                 <div className="flex -space-x-2">
                                                     {getSubtaskAssignees(st).slice(0, 5).map(u => (
@@ -357,6 +567,7 @@ const ProjectTaskDetails = () => {
                                             </div>
                                         )}
                                     </div>
+                                    )
                                 ))}
                             </div>
                         </div>

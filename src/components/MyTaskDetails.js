@@ -24,7 +24,8 @@ const MyTaskDetails = () => {
   const [formData, setFormData] = useState({ note: '', message: '', link: '' });
   const [selectedFiles, setSelectedFiles] = useState([]);
   
-  const { user } = useAuth();
+  const { state: authState } = useAuth();
+  const user = authState.user;
   const [showSubtaskForm, setShowSubtaskForm] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [isSubmittingSubtask, setIsSubmittingSubtask] = useState(false);
@@ -175,7 +176,9 @@ const MyTaskDetails = () => {
         setShowSubtaskForm(false);
         fetchTaskDetails();
     } catch (err) {
-        toast?.showToast?.(err.response?.data?.error || 'Failed to create subtask', 'error');
+        console.error("Subtask creation error:", err, err.response?.data);
+        const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to create subtask';
+        toast?.showToast?.(errorMsg, 'error');
     } finally {
         setIsSubmittingSubtask(false);
     }
