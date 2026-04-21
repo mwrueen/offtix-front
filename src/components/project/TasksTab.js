@@ -64,6 +64,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const [isSubmittingDurations, setIsSubmittingDurations] = useState(false);
     const [deleteTaskModal, setDeleteTaskModal] = useState({ isOpen: false, taskId: null, taskTitle: '' });
     const [assigneeModalTask, setAssigneeModalTask] = useState(null);
+    const [myDurations, setMyDurations] = useState({});
 
     const canViewCost = React.useMemo(() => {
         if (!user || !project) return false;
@@ -139,6 +140,12 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                 setEmployeeLeaves(leavesRes.data.leaves || []);
             }
 
+            if (user?._id) {
+                taskAPI.getBulkUserDurations(id, user._id, '')
+                    .then(res => setMyDurations(res.data || {}))
+                    .catch(e => console.error('Failed to load personal durations', e));
+            }
+
             const projectTeam = [];
             if (projectRes.data.owner) projectTeam.push({ ...projectRes.data.owner, projectRole: 'Owner' });
             projectRes.data.members?.forEach(m => {
@@ -212,7 +219,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
         try {
             const updates = Object.entries(pendingDurations).map(([taskId, value]) => ({
                 taskId,
-                duration: parseFloat(value) * 60
+                duration: parseFloat(value) // backend parses this directly as hours
             }));
             await taskAPI.bulkUpdateRoleDurations(id, durationContext.roleId, updates, durationContext.userId);
             setIsDurationEntryMode(false);
@@ -241,6 +248,14 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
             if (onProjectRefresh) onProjectRefresh();
         } catch (e) { console.error('Failed to delete task', e); }
         finally { setDeleteTaskModal({ isOpen: false, taskId: null, taskTitle: '' }); }
+    };
+
+    const handleSetMyDuration = async (taskId, hours) => {
+        try {
+            const numHours = parseFloat(hours) || 0;
+            await taskAPI.setRoleDuration(id, taskId, { targetUserId: user._id, durationMinutes: Math.round(numHours * 60) });
+            setMyDurations(prev => ({ ...prev, [taskId]: Math.round(numHours * 60) }));
+        } catch (e) { console.error('Failed to set personal duration', e); }
     };
 
     const handleAutoSchedule = async () => {
@@ -340,7 +355,13 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                     </button>
 
                     <button
-                        onClick={() => setIsDurationEntryMode(!isDurationEntryMode)}
+                        onClick={() => {
+                            const enteringMode = !isDurationEntryMode;
+                            setIsDurationEntryMode(enteringMode);
+                            if (enteringMode) {
+                                setDurationContext({ roleId: '', userId: user?._id || '' });
+                            }
+                        }}
                         className={`px-4 py-2 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all ${isDurationEntryMode ? 'bg-amber-500 border-amber-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                     >
                         <span>⏱️</span>
@@ -423,18 +444,20 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                         <div className="text-[10px] font-bold bg-white/20 px-3 py-1 rounded-lg">BULK DURATION ENTRY</div>
                         <div className="flex items-center gap-3">
                             <span className="text-[10px] font-bold uppercase opacity-80">Role:</span>
-                            <select value={durationContext.roleId} onChange={e => setDurationContext({ roleId: e.target.value, userId: '' })} className="bg-white/10 border-white/20 rounded-lg px-3 py-1.5 text-xs font-bold outline-none cursor-pointer">
+                            <select value={durationContext.roleId} onChange={e => setDurationContext({ roleId: e.target.value, userId: user?._id || '' })} className="bg-white/10 border-white/20 rounded-lg px-3 py-1.5 text-xs font-bold outline-none cursor-pointer">
                                 <option value="" className="text-slate-800">Select Role</option>
                                 {taskRoles.map(r => <option key={r._id} value={r._id} className="text-slate-800">{r.name}</option>)}
                             </select>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-bold uppercase opacity-80">User:</span>
-                            <select value={durationContext.userId} onChange={e => setDurationContext({ ...durationContext, userId: e.target.value })} className="bg-white/10 border-white/20 rounded-lg px-3 py-1.5 text-xs font-bold outline-none cursor-pointer">
-                                <option value="" className="text-slate-800">{durationRoleId && durationRoleUsers.length === 0 ? 'No users in role' : 'Select User'}</option>
-                                {durationRoleUsers.map(u => <option key={u._id} value={u._id} className="text-slate-800">{u.name}</option>)}
-                            </select>
-                        </div>
+                        {canViewCost && (
+                            <div className="flex items-center gap-3">
+                                <span className="text-[10px] font-bold uppercase opacity-80">User:</span>
+                                <select value={durationContext.userId || user?._id} onChange={e => setDurationContext({ ...durationContext, userId: e.target.value })} className="bg-white/10 border-white/20 rounded-lg px-3 py-1.5 text-xs font-bold outline-none cursor-pointer">
+                                    <option value="" className="text-slate-800">{durationRoleId && durationRoleUsers.length === 0 ? 'No users in role' : 'Select User'}</option>
+                                    {durationRoleUsers.map(u => <option key={u._id} value={u._id} className="text-slate-800">{u.name}</option>)}
+                                </select>
+                            </div>
+                        )}
                     </div>
                     <div className="flex items-center gap-3">
                         <button onClick={() => setIsDurationEntryMode(false)} className="px-4 py-1.5 text-xs font-bold hover:bg-white/10 rounded-lg transition-colors">Cancel</button>
@@ -463,6 +486,9 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                         setPendingDurations={setPendingDurations}
                         existingDurations={existingDurations}
                         canViewCost={canViewCost}
+                        myDurations={myDurations}
+                        onSetMyDuration={handleSetMyDuration}
+                        currentUserId={user?._id}
                     />
                 )}
                 {currentView === 'board' && (
