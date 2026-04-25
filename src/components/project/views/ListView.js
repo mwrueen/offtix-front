@@ -133,6 +133,17 @@ const TaskRowContent = ({ task, level, hasChildren, isExpanded, onToggleExpand, 
                 </div>
               );
             }
+            const actualHr = task.totalDurationMinutes ? (task.totalDurationMinutes / 60).toFixed(1) : 0;
+            const targetHr = task.duration?.value || 0;
+
+            if (canViewCost) {
+                return (
+                    <div className="flex flex-col items-center leading-tight" title={`Actual: ${actualHr}h / Target: ${targetHr}h`}>
+                        <span className={`text-[11px] font-black tabular-nums ${+actualHr > +targetHr && targetHr > 0 ? 'text-rose-600' : 'text-slate-800'}`}>{actualHr}h</span>
+                        {targetHr > 0 && <span className="text-[9px] text-slate-400 font-bold tabular-nums">{targetHr}h target</span>}
+                    </div>
+                );
+            }
             return <span className="text-[11px] font-bold text-slate-400 tabular-nums">{task.duration?.value || '-'}h</span>;
           })()
         )}
