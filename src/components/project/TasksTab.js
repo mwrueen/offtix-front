@@ -87,6 +87,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
         if (isDurationEntryMode && durationContext.roleId && durationContext.userId) {
             taskAPI.getBulkUserDurations(id, durationContext.userId, durationContext.roleId)
                 .then(res => {
+                    console.log(`Durations for user ${durationContext.userId}:`, res.data);
                     setExistingDurations(res.data || {});
                     setPendingDurations({});
                 })
@@ -293,16 +294,21 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const durationRoleId = isDurationEntryMode ? durationContext.roleId : '';
 
     // Users assigned to the selected duration role (for the User dropdown in duration mode)
-    const durationRoleUsers = durationRoleId
-        ? users.filter(u =>
-            tasks.some(t =>
-                t.roleAssignments?.some(ra =>
-                    (ra.role?._id || ra.role) === durationRoleId &&
-                    ra.assignees?.some(a => (a._id || a) === u._id)
-                )
-            )
-          )
-        : users;
+    const durationRoleUsers = React.useMemo(() => {
+        if (!durationRoleId || !project?.members) return users;
+        const selectedRoleObj = taskRoles.find(r => r._id === durationRoleId);
+        if (!selectedRoleObj) return users;
+        
+        const roleNameBase = selectedRoleObj.name.toLowerCase();
+        
+        // Filter members who have this role name in their project role designation
+        const memberIds = project.members
+            .filter(m => (m.role || '').toLowerCase().includes(roleNameBase))
+            .map(m => (m.user?._id || m.user).toString());
+            
+        return users.filter(u => memberIds.includes(u._id.toString()));
+    }, [durationRoleId, project?.members, taskRoles, users]);
+
 
     const filteredTasks = tasks.filter(task => {
         if (selectedSprint && task.sprint?._id !== selectedSprint) return false;
@@ -455,7 +461,43 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                         <div className="text-[10px] font-bold bg-white/20 px-3 py-1 rounded-lg">BULK DURATION ENTRY</div>
                         <div className="flex items-center gap-3">
                             <span className="text-[10px] font-bold uppercase opacity-80">Role:</span>
-                            <select value={durationContext.roleId} onChange={e => setDurationContext({ roleId: e.target.value, userId: user?._id || '' })} className="bg-white/10 border-white/20 rounded-lg px-3 py-1.5 text-xs font-bold outline-none cursor-pointer">
+                            <select
+                                value={durationContext.roleId}
+                                onChange={e => {
+                                    const newRoleId = e.target.value;
+                                    // Find members who belong to this role
+                                    let newUserId = '';
+                                    if (newRoleId && project?.members) {
+                                        const selectedRoleObj = taskRoles.find(r => r._id === newRoleId);
+                                        if (selectedRoleObj) {
+                                            const roleNameBase = selectedRoleObj.name.toLowerCase();
+                                            const memberIds = project.members
+                                                .filter(m => (m.role || '').toLowerCase().includes(roleNameBase))
+                                                .map(m => (m.user?._id || m.user).toString());
+                                            const roleUsers = users.filter(u => memberIds.includes(u._id.toString()));
+                                            // Auto-select if only one user
+                                            if (roleUsers.length === 1) {
+                                                newUserId = roleUsers[0]._id;
+                                            }
+                                        }
+                                    }
+                                    setDurationContext({ roleId: newRoleId, userId: newUserId });
+                                    // Fetch durations when we have both role and user
+                                    if (newRoleId && newUserId) {
+                                        taskAPI.getBulkUserDurations(id, newUserId, newRoleId)
+                                            .then(res => {
+                                                console.log('Fetched durations:', res.data);
+                                                setPendingDurations({});
+                                                setExistingDurations(res.data || {});
+                                            })
+                                            .catch(err => { console.error('Duration fetch error:', err); });
+                                    } else {
+                                        setPendingDurations({});
+                                        setExistingDurations({});
+                                    }
+                                }}
+                                className="bg-white/10 border-white/20 rounded-lg px-3 py-1.5 text-xs font-bold outline-none cursor-pointer"
+                            >
                                 <option value="" className="text-slate-800">Select Role</option>
                                 {taskRoles.map(r => <option key={r._id} value={r._id} className="text-slate-800">{r.name}</option>)}
                             </select>
@@ -463,7 +505,27 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                         {canViewCost && (
                             <div className="flex items-center gap-3">
                                 <span className="text-[10px] font-bold uppercase opacity-80">User:</span>
-                                <select value={durationContext.userId || user?._id} onChange={e => setDurationContext({ ...durationContext, userId: e.target.value })} className="bg-white/10 border-white/20 rounded-lg px-3 py-1.5 text-xs font-bold outline-none cursor-pointer">
+                                <select
+                                    value={durationContext.userId || ''}
+                                    onChange={e => {
+                                        const newUserId = e.target.value;
+                                        setDurationContext(prev => ({ ...prev, userId: newUserId }));
+                                        // Fetch durations immediately
+                                        if (newUserId && durationContext.roleId) {
+                                            taskAPI.getBulkUserDurations(id, newUserId, durationContext.roleId)
+                                                .then(res => {
+                                                    console.log('Fetched durations:', res.data);
+                                                    setPendingDurations({});
+                                                    setExistingDurations(res.data || {});
+                                                })
+                                                .catch(err => { console.error('Duration fetch error:', err); });
+                                        } else {
+                                            setPendingDurations({});
+                                            setExistingDurations({});
+                                        }
+                                    }}
+                                    className="bg-white/10 border-white/20 rounded-lg px-3 py-1.5 text-xs font-bold outline-none cursor-pointer"
+                                >
                                     <option value="" className="text-slate-800">{durationRoleId && durationRoleUsers.length === 0 ? 'No users in role' : 'Select User'}</option>
                                     {durationRoleUsers.map(u => <option key={u._id} value={u._id} className="text-slate-800">{u.name}</option>)}
                                 </select>

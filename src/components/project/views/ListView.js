@@ -4,8 +4,38 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { CSS } from '@dnd-kit/utilities';
 import { useCompany } from '../../../context/CompanyContext';
 
+/**
+ * DurationInput — uses a key derived from the pre-existing value so React remounts
+ * the input (and thus shows the correct default) when existingDurations changes.
+ */
+const DurationInput = ({ taskId, existingMinutes, onChangePending }) => {
+  const existingHours = existingMinutes > 0 ? +(existingMinutes / 60).toFixed(2) : '';
+  const [val, setVal] = React.useState(existingHours);
+
+  // Sync with incoming existingMinutes when it changes (e.g., after data loads)
+  React.useEffect(() => {
+    setVal(existingMinutes > 0 ? +(existingMinutes / 60).toFixed(2) : '');
+  }, [existingMinutes]);
+
+  return (
+    <input
+      type="number"
+      step="0.5"
+      placeholder="0"
+      value={val}
+      onClick={e => { e.stopPropagation(); e.target.select(); }}
+      onChange={e => {
+        setVal(e.target.value);
+        onChangePending(taskId, e.target.value);
+      }}
+      className="w-12 py-1 bg-amber-50 border border-amber-300 rounded text-center text-xs font-bold text-amber-700 outline-none focus:bg-white"
+    />
+  );
+};
+
 const TaskRowContent = ({ task, level, hasChildren, isExpanded, onToggleExpand, onSelect, isSelected, isDragging, taskCosts, companyCurrency, isDurationEntryMode, durationContext, pendingDurations, setPendingDurations, existingDurations, onOpenAssigneeModal, canViewCost, myDurations, onSetMyDuration, currentUserId }) => {
-  const cost = taskCosts[task._id];
+  const taskIdStr = task?._id ? String(task._id) : '';
+  const cost = taskCosts && taskIdStr ? (taskCosts[taskIdStr] || 0) : 0;
   const priorityColor = { urgent: 'bg-rose-500', high: 'bg-orange-500', medium: 'bg-amber-400', low: 'bg-emerald-500' }[task.priority] || 'bg-slate-300';
   const statusColor = task.status?.color ? { color: task.status.color, bg: `${task.status.color}10` } : { color: '#64748b', bg: '#f8fafc' };
 
@@ -103,12 +133,11 @@ const TaskRowContent = ({ task, level, hasChildren, isExpanded, onToggleExpand, 
 
       <div className="text-center">
         {isDurationEntryMode && durationContext?.roleId ? (
-          <input
-            type="number" step="0.5"
-            onClick={e => { e.stopPropagation(); e.target.select(); }}
-            onChange={e => setPendingDurations({ ...pendingDurations, [task._id]: e.target.value })}
-            className="w-12 py-1 bg-amber-50 border border-amber-300 rounded text-center text-xs font-bold text-amber-700 outline-none focus:bg-white"
-            value={pendingDurations[task._id] !== undefined ? pendingDurations[task._id] : (existingDurations?.[task._id] ? +(existingDurations[task._id] / 60).toFixed(2) : '')}
+          <DurationInput
+            key={`dur-${String(task._id)}-${existingDurations?.[String(task._id)] || 0}`}
+            taskId={String(task._id)}
+            existingMinutes={existingDurations?.[String(task._id)] || 0}
+            onChangePending={(taskId, val) => setPendingDurations(prev => ({ ...prev, [taskId]: val }))}
           />
         ) : (
           (() => {
@@ -290,6 +319,8 @@ const ListView = ({
                   isDurationEntryMode={isDurationEntryMode}
                   durationContext={durationContext}
                   pendingDurations={pendingDurations}
+                  setPendingDurations={setPendingDurations}
+                  existingDurations={existingDurations}
                   onOpenAssigneeModal={onOpenAssigneeModal}
                   canViewCost={canViewCost}
                   myDurations={myDurations}
