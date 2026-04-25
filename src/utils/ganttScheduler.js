@@ -249,164 +249,169 @@ export const calculateTaskDates = (task, projectStartDate, settings, allLeaves =
 };
 
 /**
- * Priority order for sorting (higher value = scheduled first)
+ * Snap a datetime forward to the next valid working datetime
+ * (i.e. inside working hours of a working day).
  */
-const PRIORITY_ORDER = {
-  'urgent': 4,
-  'high': 3,
-  'medium': 2,
-  'low': 1,
-  '': 0,
-  undefined: 0,
-  null: 0
+const snapToWorkingTime = (date, workingDays, holidays, employeeLeaves, timeTracking) => {
+  const { workingHoursStart = '09:00', workingHoursEnd = '17:00' } = timeTracking || {};
+  const [sh, sm] = workingHoursStart.split(':').map(Number);
+  const [eh, em] = workingHoursEnd.split(':').map(Number);
+
+  let d = new Date(date);
+  while (!isWorkingDay(d, workingDays, holidays, employeeLeaves)) {
+    d.setDate(d.getDate() + 1);
+    d.setHours(sh, sm, 0, 0);
+  }
+  const dayStart = new Date(d); dayStart.setHours(sh, sm, 0, 0);
+  const dayEnd = new Date(d); dayEnd.setHours(eh, em, 0, 0);
+  if (d < dayStart) return dayStart;
+  if (d >= dayEnd) {
+    d.setDate(d.getDate() + 1);
+    d.setHours(sh, sm, 0, 0);
+    while (!isWorkingDay(d, workingDays, holidays, employeeLeaves)) {
+      d.setDate(d.getDate() + 1);
+    }
+    return d;
+  }
+  return d;
 };
 
 /**
- * Sort tasks by priority (urgent first, then high, medium, low)
+ * Add a number of working hours to a starting datetime, respecting
+ * working days, holidays, leaves and the daily working window.
  */
-const sortTasksByPriority = (tasks) => {
-  return [...tasks].sort((a, b) => {
-    const priorityA = PRIORITY_ORDER[a.priority] || 0;
-    const priorityB = PRIORITY_ORDER[b.priority] || 0;
-    return priorityB - priorityA; // Higher priority first
-  });
+const addWorkingHours = (startDateTime, hoursToAdd, workingDays, holidays, employeeLeaves, timeTracking) => {
+  const { workingHoursStart = '09:00', workingHoursEnd = '17:00' } = timeTracking || {};
+  const [sh, sm] = workingHoursStart.split(':').map(Number);
+  const [eh, em] = workingHoursEnd.split(':').map(Number);
+
+  let cursor = snapToWorkingTime(startDateTime, workingDays, holidays, employeeLeaves, timeTracking);
+  let remainingMs = Math.max(0, hoursToAdd) * 60 * 60 * 1000;
+  let safety = 0;
+
+  while (remainingMs > 0 && safety++ < 5000) {
+    if (!isWorkingDay(cursor, workingDays, holidays, employeeLeaves)) {
+      cursor.setDate(cursor.getDate() + 1);
+      cursor.setHours(sh, sm, 0, 0);
+      continue;
+    }
+    const eod = new Date(cursor); eod.setHours(eh, em, 0, 0);
+    const slotMs = eod - cursor;
+    if (slotMs <= 0) {
+      cursor.setDate(cursor.getDate() + 1);
+      cursor.setHours(sh, sm, 0, 0);
+      continue;
+    }
+    if (remainingMs <= slotMs) {
+      cursor = new Date(cursor.getTime() + remainingMs);
+      remainingMs = 0;
+    } else {
+      remainingMs -= slotMs;
+      cursor = new Date(eod);
+      cursor.setDate(cursor.getDate() + 1);
+      cursor.setHours(sh, sm, 0, 0);
+    }
+  }
+  return cursor;
 };
 
 /**
- * Auto-schedule all tasks in a project
- * @param {Array} tasks - List of tasks to schedule
- * @param {Date} projectStartDate - Project start date
- * @param {Object} settings - Scheduling settings (workingDays, holidays, timeTracking)
- * @param {Array} allLeaves - Employee leaves
- * @param {Object} options - Scheduling options
- * @param {string} options.mode - 'sequential' (one after another) or 'parallel' (multiple at same time)
- * @param {number} options.maxParallel - Maximum number of parallel tasks (for parallel mode)
+ * Convert a {value, unit} duration to working hours.
+ */
+const durationToHours = (duration, timeTracking) => {
+  if (!duration || duration.value == null) return 0;
+  const hpd = calculateWorkingHoursPerDay(timeTracking);
+  switch (duration.unit) {
+    case 'minutes': return duration.value / 60;
+    case 'hours':   return duration.value;
+    case 'days':    return duration.value * hpd;
+    case 'weeks':   return duration.value * hpd * (timeTracking?.daysPerWeek || 5);
+    default:        return duration.value;
+  }
+};
+
+/**
+ * Auto-schedule tasks from a given start date.
+ *
+ * Two modes (controlled by options.roleId):
+ *
+ *  1. Per-role mode (roleId provided)
+ *     For each task in `order`, the matching role-assignment is scheduled
+ *     starting at max(currentCursor, end-of-earlier-role-assignments-in-the-same-task).
+ *     This guarantees a later role never starts before an earlier role ends.
+ *
+ *  2. Workflow mode (no roleId)
+ *     For each task in `order`, every role-assignment is scheduled
+ *     sequentially within the task (role N+1 starts at role N's end), and
+ *     the task-level start/due is set to the union of role-assignment dates.
+ *
+ * Both modes honour working days, holidays, employee leaves and the daily
+ * working window (workingHoursStart/workingHoursEnd) from settings.timeTracking.
+ *
+ * Returns a flat array suitable for the bulk-schedule endpoint:
+ *   [{ taskId, roleId?, startDate, dueDate }, ...]
  */
 export const autoScheduleAllTasks = (tasks, projectStartDate, settings, allLeaves = [], options = {}) => {
-  const { mode = 'sequential', maxParallel = 3, roleId, useTaskSequence = false } = options;
-  const { workingDays = [1, 2, 3, 4, 5], holidays = [] } = settings;
-  const scheduledTasks = [];
+  const { roleId, durationOverrides = {} } = options;
+  const { workingDays = [1, 2, 3, 4, 5], holidays = [], timeTracking = {} } = settings;
+  const schedules = [];
 
-  // Filter only tasks with duration (consider role duration if roleId provided)
-  const tasksWithDuration = tasks.filter(task => {
+  const yearMs = 365 * 24 * 3600 * 1000;
+  let cursor = snapToWorkingTime(new Date(projectStartDate), workingDays, holidays, [], timeTracking);
+
+  const ordered = [...tasks].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  ordered.forEach(task => {
     if (roleId) {
-      const ra = task.roleAssignments?.find(ra => (ra.role?._id || ra.role) === roleId);
-      return ra?.duration?.value;
+      const ra = task.roleAssignments?.find(r => (r.role?._id || r.role) === roleId);
+      if (!ra) return;
+      const overrideMin = durationOverrides[task._id] || durationOverrides[String(task._id)];
+      const hours = overrideMin > 0 ? overrideMin / 60 : durationToHours(ra.duration, timeTracking);
+      if (!hours) return;
+
+      let earlierEnd = null;
+      (task.roleAssignments || []).forEach(r => {
+        if ((r.order ?? 0) < (ra.order ?? 0) && r.dueDate) {
+          const e = new Date(r.dueDate);
+          if (!earlierEnd || e > earlierEnd) earlierEnd = e;
+        }
+      });
+      const minStart = earlierEnd && earlierEnd > cursor ? earlierEnd : cursor;
+      const leaves = filterEmployeeLeaves(allLeaves, ra.assignees, minStart, new Date(minStart.getTime() + yearMs));
+      const start = snapToWorkingTime(minStart, workingDays, holidays, leaves, timeTracking);
+      const end = addWorkingHours(start, hours, workingDays, holidays, leaves, timeTracking);
+
+      schedules.push({ taskId: task._id, roleId, startDate: start, dueDate: end });
+      cursor = end;
+    } else {
+      const ras = (task.roleAssignments || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      let taskStart = null;
+      let taskCursor = cursor;
+
+      ras.forEach(ra => {
+        const hours = durationToHours(ra.duration, timeTracking);
+        if (!hours) return;
+        const leaves = filterEmployeeLeaves(allLeaves, ra.assignees, taskCursor, new Date(taskCursor.getTime() + yearMs));
+        const raStart = snapToWorkingTime(taskCursor, workingDays, holidays, leaves, timeTracking);
+        const raEnd = addWorkingHours(raStart, hours, workingDays, holidays, leaves, timeTracking);
+        if (!taskStart) taskStart = raStart;
+        schedules.push({ taskId: task._id, roleId: (ra.role?._id || ra.role), startDate: raStart, dueDate: raEnd });
+        taskCursor = raEnd;
+      });
+
+      if (!taskStart) {
+        const hours = durationToHours(task.duration, timeTracking);
+        if (!hours) return;
+        const leaves = filterEmployeeLeaves(allLeaves, task.assignees, cursor, new Date(cursor.getTime() + yearMs));
+        taskStart = snapToWorkingTime(cursor, workingDays, holidays, leaves, timeTracking);
+        taskCursor = addWorkingHours(taskStart, hours, workingDays, holidays, leaves, timeTracking);
+      }
+
+      schedules.push({ taskId: task._id, startDate: taskStart, dueDate: taskCursor });
+      cursor = taskCursor;
     }
-    return task.duration?.value;
   });
 
-  // Sort tasks: either by priority or by current sequence
-  let sortedTasksToSchedule;
-  if (useTaskSequence) {
-    // Keep original sequence (presumed sorted by order from API or UI)
-    sortedTasksToSchedule = [...tasksWithDuration];
-  } else {
-    // Sort all tasks by priority (urgent first)
-    sortedTasksToSchedule = sortTasksByPriority(tasksWithDuration);
-  }
-
-  // Start scheduling from the provided start date
-  let currentDate = new Date(projectStartDate);
-
-  // Ensure we start on a working day
-  while (!isWorkingDay(currentDate, workingDays, holidays)) {
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-
-  if (mode === 'parallel') {
-    // Parallel scheduling: Group tasks by priority and schedule them in parallel
-    const priorityGroups = {
-      urgent: [],
-      high: [],
-      medium: [],
-      low: [],
-      none: []
-    };
-
-    // Group tasks by priority
-    sortedTasksToSchedule.forEach(task => {
-      const priority = task.priority || 'none';
-      if (priorityGroups[priority]) {
-        priorityGroups[priority].push(task);
-      } else {
-        priorityGroups.none.push(task);
-      }
-    });
-
-    // Process each priority group
-    ['urgent', 'high', 'medium', 'low', 'none'].forEach(priority => {
-      const groupTasks = priorityGroups[priority];
-
-      // Process tasks in batches of maxParallel
-      for (let i = 0; i < groupTasks.length; i += maxParallel) {
-        const batch = groupTasks.slice(i, i + maxParallel);
-        let maxEndDate = currentDate;
-
-        // Schedule all tasks in batch starting from same date
-        batch.forEach(task => {
-          const calculatedDates = calculateTaskDates(
-            { ...task, startDate: null }, // Force recalculate from currentDate
-            currentDate,
-            settings,
-            allLeaves,
-            { roleId }
-          );
-
-          if (calculatedDates) {
-            scheduledTasks.push({
-              taskId: task._id,
-              roleId,
-              ...calculatedDates
-            });
-
-            // Track the latest end date in this batch
-            if (calculatedDates.dueDate > maxEndDate) {
-              maxEndDate = calculatedDates.dueDate;
-            }
-          }
-        });
-
-        // Next batch starts after the longest task in current batch ends
-        if (batch.length > 0) {
-          currentDate = new Date(maxEndDate);
-          currentDate.setDate(currentDate.getDate() + 1);
-          // Ensure next start is a working day
-          while (!isWorkingDay(currentDate, workingDays, holidays)) {
-            currentDate.setDate(currentDate.getDate() + 1);
-          }
-        }
-      }
-    });
-  } else {
-    // Sequential scheduling: One task after another, but sorted by priority
-    sortedTasksToSchedule.forEach(task => {
-      const calculatedDates = calculateTaskDates(
-        { ...task, startDate: null }, // Force recalculate from currentDate
-        currentDate,
-        settings,
-        allLeaves,
-        { roleId }
-      );
-
-      if (calculatedDates) {
-        scheduledTasks.push({
-          taskId: task._id,
-          roleId,
-          ...calculatedDates
-        });
-
-        // Next task starts after this one ends
-        currentDate = new Date(calculatedDates.dueDate);
-        currentDate.setDate(currentDate.getDate() + 1);
-        // Ensure next start is a working day
-        while (!isWorkingDay(currentDate, workingDays, holidays)) {
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
-      }
-    });
-  }
-
-  return scheduledTasks;
+  return schedules;
 };
 

@@ -20,10 +20,11 @@ const MyTaskDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
+  const [subtaskActionLoading, setSubtaskActionLoading] = useState({});
   const [actionModal, setActionModal] = useState(null); // 'complete' or 'sendBack'
   const [formData, setFormData] = useState({ note: '', message: '', link: '' });
   const [selectedFiles, setSelectedFiles] = useState([]);
-  
+
   const { state: authState } = useAuth();
   const user = authState.user;
   const [showSubtaskForm, setShowSubtaskForm] = useState(false);
@@ -100,6 +101,19 @@ const MyTaskDetails = () => {
       toast?.showToast?.(err.response?.data?.error || 'Failed to pause task', 'error');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleSubtaskStart = async (subtaskId) => {
+    setSubtaskActionLoading(prev => ({ ...prev, [subtaskId]: 'starting' }));
+    try {
+      await myTasksAPI.start(subtaskId);
+      toast?.showToast?.('Subtask started successfully', 'success');
+      fetchTaskDetails();
+    } catch (err) {
+      toast?.showToast?.(err.response?.data?.error || 'Failed to start subtask', 'error');
+    } finally {
+      setSubtaskActionLoading(prev => ({ ...prev, [subtaskId]: null }));
     }
   };
 
@@ -197,22 +211,26 @@ const MyTaskDetails = () => {
 
   const getStatusColorClasses = (status) => {
     const statusMap = {
-      pending: 'bg-slate-100 text-slate-500 border-slate-200',
-      active: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+      todo: 'bg-slate-100 text-slate-600 border-slate-200',
+      pending: 'bg-slate-100 text-slate-600 border-slate-200',
+      active: 'bg-indigo-50 text-indigo-600 border-indigo-100',
       in_progress: 'bg-indigo-50 text-indigo-600 border-indigo-100',
       paused: 'bg-amber-50 text-amber-600 border-amber-100',
-      completed: 'bg-emerald-50 text-emerald-600 border-emerald-100'
+      completed: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+      cancelled: 'bg-rose-50 text-rose-600 border-rose-100'
     };
     return statusMap[status] || 'bg-slate-100 text-slate-500';
   };
 
   const getStatusLabel = (status) => {
     const labelMap = {
-      pending: 'Pending',
-      active: 'Active',
+      todo: 'To do',
+      pending: 'To do',
+      active: 'In Progress',
       in_progress: 'In Progress',
       paused: 'Paused',
-      completed: 'Completed'
+      completed: 'Completed',
+      cancelled: 'Cancelled'
     };
     return labelMap[status] || status;
   };
@@ -296,7 +314,10 @@ const MyTaskDetails = () => {
                     {taskData.subtasks.length === 0 && !showSubtaskForm && (
                         <p className="text-sm text-slate-400 text-center py-6 border border-dashed border-slate-200 rounded-xl bg-slate-50">No subtasks found.</p>
                     )}
-                    {taskData.subtasks.map(st => (
+                    {taskData.subtasks.map(st => {
+                        const stStatus = st.status?.slug || st.status?.name?.toLowerCase() || 'todo';
+                        const isStLoading = subtaskActionLoading[st._id];
+                        return (
                         <div key={st._id} className="border border-slate-200 rounded-xl p-5 bg-white shadow-sm flex flex-col gap-3">
                             <div className="flex justify-between items-start">
                                 <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2 cursor-pointer hover:text-indigo-600 transition" onClick={() => navigate(`/my-tasks/${st._id}`)}>
@@ -317,13 +338,35 @@ const MyTaskDetails = () => {
                                             </div>
                                         )}
                                     </div>
-                                    <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold ${getStatusColorClasses(st.status?.slug || st.status?.name?.toLowerCase() || 'pending')}`}>
-                                        {st.status?.name || 'Pending'}
+                                    <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold ${getStatusColorClasses(stStatus)}`}>
+                                        {getStatusLabel(stStatus)}
                                     </span>
                                 </div>
                             </div>
+                            <div className="flex items-center gap-2 pt-3 border-t border-slate-100 justify-end">
+                                {(['pending', 'todo', ''].includes(stStatus) || stStatus === 'paused') && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleSubtaskStart(st._id); }}
+                                        disabled={isStLoading}
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50 ${isStLoading ? 'bg-slate-100 text-slate-400' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                                    >
+                                        {isStLoading === 'starting' ? 'Starting...' : (stStatus === 'paused' ? 'Resume' : 'Start Task')}
+                                    </button>
+                                )}
+                                {(['active', 'in_progress'].includes(stStatus)) && (
+                                    <>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); navigate(`/my-tasks/${st._id}`); }}
+                                            className="px-4 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm"
+                                        >
+                                            Complete Task
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
               </div>
             )}
@@ -488,7 +531,7 @@ const MyTaskDetails = () => {
               <div className="space-y-6">
                 <div className="space-y-1">
                   <span className="text-xs font-medium text-slate-500">Current Status</span>
-                  <div className="flex"><span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColorClasses(task.status?.slug || task.status?.name?.toLowerCase())}`}>{task.status?.name}</span></div>
+                  <div className="flex"><span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColorClasses(task.status?.slug || task.status?.name?.toLowerCase())}`}>{getStatusLabel(task.status?.slug || task.status?.name?.toLowerCase())}</span></div>
                 </div>
                 <div className="space-y-1">
                   <span className="text-xs font-medium text-slate-500">Priority</span>

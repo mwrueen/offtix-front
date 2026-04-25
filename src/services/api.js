@@ -137,6 +137,8 @@ export const taskAPI = {
     api.post(`/projects/${projectId}/tasks/bulk-update-role-durations`, { roleId, updates, userId }),
   getBulkUserDurations: (projectId, userId, roleId) =>
     api.get(`/projects/${projectId}/tasks/bulk-durations`, { params: { userId, roleId } }),
+  getRoleTaskDurations: (projectId, roleId) =>
+    api.get(`/projects/${projectId}/tasks/role-task-durations`, { params: { roleId } }),
   bulkAssignMember: (projectId, userId, roleIds) =>
     api.post(`/projects/${projectId}/tasks/bulk-assign-member`, { userId, roleIds }),
   bulkSchedule: (projectId, schedules) => api.post(`/projects/${projectId}/tasks/bulk-schedule`, { schedules }),

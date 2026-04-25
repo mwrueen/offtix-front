@@ -9,7 +9,7 @@ import AssigneeModal from './AssigneeModal';
 import InlineTaskCreator from './InlineTaskCreator';
 import ListView from './views/ListView';
 import BoardView from './views/BoardView';
-import GanttView from './views/GanttView';
+import CalendarView from './views/CalendarView';
 import { autoScheduleAllTasks } from '../../utils/ganttScheduler';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
@@ -50,11 +50,8 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     // Auto-schedule states
     const [showAutoScheduleModal, setShowAutoScheduleModal] = useState(false);
     const [isAutoScheduling, setIsAutoScheduling] = useState(false);
-    const [schedulingMode] = useState('sequential');
-    const [maxParallelTasks] = useState(3);
-    const [scheduleStartFrom] = useState('project');
-    const [customScheduleDate] = useState(new Date().toISOString().split('T')[0]);
     const [scheduleRoleId, setScheduleRoleId] = useState('');
+    const [scheduleStartDate, setScheduleStartDate] = useState(() => new Date().toISOString().split('T')[0]);
 
     // Duration entry states
     const [isDurationEntryMode, setIsDurationEntryMode] = useState(false);
@@ -269,24 +266,42 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     };
 
     const handleAutoSchedule = async () => {
-        let startDate = scheduleStartFrom === 'today' ? new Date().toISOString() : (scheduleStartFrom === 'custom' ? new Date(customScheduleDate).toISOString() : project?.startDate);
-        if (!startDate) return;
+        if (!scheduleStartDate || !scheduleRoleId) return;
 
         setIsAutoScheduling(true);
         try {
-            const tasksToConsider = scheduleRoleId ? tasks.filter(t => t.roleAssignments?.some(ra => (ra.role?._id || ra.role) === scheduleRoleId)) : tasks;
             const settings = {
                 workingDays: company?.settings?.workingDays || project?.settings?.workingDays || [1, 2, 3, 4, 5],
                 holidays: company?.settings?.holidays || project?.settings?.holidays || [],
-                timeTracking: company?.settings?.timeTracking || project?.settings?.timeTracking || { hoursPerDay: 8, daysPerWeek: 5, defaultDurationUnit: 'hours' }
+                timeTracking: company?.settings?.timeTracking || project?.settings?.timeTracking || { hoursPerDay: 8, daysPerWeek: 5, workingHoursStart: '09:00', workingHoursEnd: '17:00' }
             };
 
-            const scheduledTasks = autoScheduleAllTasks(tasksToConsider.filter(t => scheduleRoleId ? t.roleAssignments?.find(ra => (ra.role?._id || ra.role) === scheduleRoleId)?.duration?.value : t.duration?.value), startDate, settings, employeeLeaves, { mode: schedulingMode, maxParallel: maxParallelTasks, forceReschedule: true, roleId: scheduleRoleId, useTaskSequence: true });
+            const tasksOrdered = [...tasks].sort((a, b) => (a.order || 0) - (b.order || 0));
+            const startIso = new Date(scheduleStartDate + 'T00:00:00').toISOString();
 
-            await taskAPI.bulkSchedule(id, scheduledTasks);
+            let durationOverrides = {};
+            try {
+                const res = await taskAPI.getRoleTaskDurations(id, scheduleRoleId);
+                durationOverrides = res.data || {};
+            } catch (err) {
+                console.warn('Could not fetch role task durations, falling back to role-assignment durations.', err);
+            }
+
+            const schedules = autoScheduleAllTasks(tasksOrdered, startIso, settings, employeeLeaves, { roleId: scheduleRoleId, durationOverrides });
+
+            if (schedules.length === 0) {
+                console.warn('Auto-schedule: no schedulable tasks found.', { durationOverrides });
+                alert('No schedulable tasks were found for this role. Make sure the selected role is assigned to tasks and that durations have been recorded.');
+                return;
+            }
+
+            await taskAPI.bulkSchedule(id, schedules);
             setShowAutoScheduleModal(false);
             fetchProjectData();
-        } catch (e) { console.error('Auto-schedule failed', e); }
+        } catch (e) {
+            console.error('Auto-schedule failed', e);
+            alert('Auto-schedule failed: ' + (e?.response?.data?.error || e.message || 'unknown error'));
+        }
         finally { setIsAutoScheduling(false); }
     };
 
@@ -347,7 +362,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                     {[
                         { id: 'list', label: 'List', icon: '☰' },
                         { id: 'board', label: 'Board', icon: '⚏' },
-                        { id: 'gantt', label: 'Timeline', icon: '📊' }
+                        { id: 'calendar', label: 'Timeline', icon: '📅' }
                     ].map(view => (
                         <button
                             key={view.id}
@@ -572,10 +587,10 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                         onSelectTask={handleSelectTask}
                     />
                 )}
-                {currentView === 'gantt' && (
-                    <GanttView
+                {currentView === 'calendar' && (
+                    <CalendarView
                         tasks={filteredTasks}
-                        project={project}
+                        taskRoles={taskRoles}
                         onSelectTask={handleSelectTask}
                     />
                 )}
@@ -639,19 +654,31 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                     <div className="bg-white rounded-3xl w-full max-w-sm shadow-xl border border-slate-200 overflow-hidden animate-in zoom-in-95">
                         <div className="p-6 bg-indigo-600 text-white">
                             <h3 className="text-xl font-bold">Auto Schedule</h3>
-                            <p className="text-xs text-indigo-100 mt-1">Automatically calculate task dates based on dependencies and durations.</p>
+                            <p className="text-xs text-indigo-100 mt-1">Calculates each task's start &amp; due dates from durations, working hours, weekends, holidays and leaves — in task sequence.</p>
                         </div>
-                        <div className="p-6 space-y-6">
+                        <div className="p-6 space-y-5">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Scheduling Target Role</label>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Start Date</label>
+                                <input
+                                    type="date"
+                                    value={scheduleStartDate}
+                                    onChange={e => setScheduleStartDate(e.target.value)}
+                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-400"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Target Role</label>
                                 <select value={scheduleRoleId} onChange={e => setScheduleRoleId(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-400">
-                                    <option value="">Global Sync (All Roles)</option>
+                                    <option value="">Select a role</option>
                                     {taskRoles.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
                                 </select>
+                                <p className="text-[10px] text-slate-400 leading-snug">
+                                    Schedules this role across tasks; later roles never start before earlier roles in the same task end.
+                                </p>
                             </div>
                             <div className="flex gap-3 pt-4 border-t border-slate-100">
                                 <button onClick={() => setShowAutoScheduleModal(false)} className="flex-1 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50 rounded-lg transition-colors">Cancel</button>
-                                <button onClick={handleAutoSchedule} disabled={isAutoScheduling} className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold text-xs shadow-md hover:bg-indigo-700 transition-all">
+                                <button onClick={handleAutoSchedule} disabled={isAutoScheduling || !scheduleStartDate || !scheduleRoleId} className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold text-xs shadow-md hover:bg-indigo-700 transition-all disabled:opacity-50">
                                     {isAutoScheduling ? 'Scheduling...' : 'Start Auto Sync'}
                                 </button>
                             </div>

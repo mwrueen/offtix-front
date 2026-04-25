@@ -224,23 +224,43 @@ const MyTasksList = () => {
                         </div>
 
                         <div className="space-y-1">
-                          <h3 className="text-lg font-semibold text-slate-900 truncate group-hover:text-indigo-700 transition-colors">{task.title}</h3>
+                          <h3 className="text-lg font-semibold text-slate-900 truncate group-hover:text-indigo-700 transition-colors cursor-pointer">{task.title}</h3>
                           <p className="text-xs text-slate-500">Task ID: {task._id.slice(-8).toUpperCase()}</p>
                         </div>
-
-                        <div className="flex flex-wrap items-center gap-4 pt-1">
-                          <div className="flex items-center gap-2">
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize border ${getStatusClasses(status)}`}>
-                              {status.replace('_', ' ')}
-                            </span>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 p-4 bg-slate-50 rounded-xl border border-slate-100 items-center">
+                          <div className="flex flex-col">
+                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Status</span>
+                             <span className={`inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-bold capitalize border ${getStatusClasses(status)}`}>
+                               {status.replace('_', ' ')}
+                             </span>
                           </div>
-
-                          {task.status && (
-                            <div className="flex items-center gap-2 pl-4 border-l border-slate-200">
-                              <span className="text-xs font-medium text-slate-600">Workflow:</span>
-                              <span className="text-xs font-semibold text-slate-700">{task.status.name}</span>
-                            </div>
-                          )}
+                          <div className="flex flex-col">
+                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Start Time</span>
+                             <span className="text-xs font-semibold text-slate-800">
+                               {(() => {
+                                  const sd = task.userStep?.startDate || task.userAssignee?.startDate || task.startDate;
+                                  if (!sd) return '--';
+                                  return new Date(sd).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                               })()}
+                             </span>
+                          </div>
+                          <div className="flex flex-col">
+                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">End Time</span>
+                             <span className="text-xs font-semibold text-slate-800">
+                               {(() => {
+                                  const ed = task.userStep?.dueDate || task.userAssignee?.dueDate || task.dueDate;
+                                  if (!ed) return '--';
+                                  return new Date(ed).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                               })()}
+                             </span>
+                          </div>
+                          <div className="flex flex-col text-left md:text-right">
+                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Total Hours</span>
+                             <span className="text-sm font-black text-indigo-700 bg-indigo-100/50 w-fit md:ml-auto px-2 py-0.5 rounded-md">
+                               {task.durationMinutes ? (task.durationMinutes / 60).toFixed(2) + ' Hrs' : '0.00 Hrs'}
+                             </span>
+                          </div>
                         </div>
                       </div>
 
