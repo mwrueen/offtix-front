@@ -75,7 +75,10 @@ const ProjectDetails = () => {
   useEffect(() => { if (project && activeTab !== 'overview') fetchTabData(activeTab); }, [activeTab, project]);
 
   const isProjectOwner = authState.user && project && (project.owner?._id === authState.user.id || project.owner === authState.user.id || project.owner === authState.user._id || project.owner?._id === authState.user._id);
-  const isProjectManager = authState.user && project?.members?.some(m => (m.user?._id === authState.user.id || m.user === authState.user.id) && m.role === 'Project Manager');
+  const isProjectManager = authState.user && project && (
+    (project.projectManager?._id === authState.user.id || project.projectManager === authState.user.id || project.projectManager?._id === authState.user._id || project.projectManager === authState.user._id) ||
+    project.members?.some(m => (m.user?._id === authState.user.id || m.user === authState.user.id || m.user?._id === authState.user._id || m.user === authState.user._id) && m.role === 'Project Manager')
+  );
   const canEditProject = isProjectOwner || isSuperAdmin || hasPermission(PERMISSIONS.EDIT_PROJECT);
   const canViewAnalytics = isProjectOwner || isSuperAdmin || hasPermission(PERMISSIONS.VIEW_PROJECT_ANALYTICS);
 

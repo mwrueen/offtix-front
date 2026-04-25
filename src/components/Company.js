@@ -250,7 +250,7 @@ const Company = () => {
             {company.members?.map((member, index) => (
               <div
                 key={member._id}
-                onClick={() => navigate(`/employees/${member.user?._id || member.user}`)}
+                onClick={() => navigate(`/profile/view/${member.user?._id || member.user}`)}
                 className="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all cursor-pointer animate-in fade-in"
                 style={{ animationDelay: `${index * 50}ms` }}
               >

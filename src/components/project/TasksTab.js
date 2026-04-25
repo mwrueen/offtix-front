@@ -66,13 +66,22 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const [assigneeModalTask, setAssigneeModalTask] = useState(null);
     const [myDurations, setMyDurations] = useState({});
 
+    const isProjectManager = React.useMemo(() => {
+        if (!user || !project) return false;
+        return (project.projectManager?._id || project.projectManager) === user?._id;
+    }, [user, project]);
+
     const canViewCost = React.useMemo(() => {
         if (!user || !project) return false;
         if (user.role === 'superadmin' || user.role === 'owner' || user.role === 'company_admin' || user.role === 'admin') return true;
-        if ((project.owner?._id || project.owner) === user._id) return true;
+        
+        // Project Manager also has cost/duration visibility
+        if (isProjectManager) return true;
+
+        if (project.owner === user._id || project.owner?._id === user._id) return true;
         if (user.permissions && user.permissions.includes('viewProjectCost')) return true;
         return false;
-    }, [user, project]);
+    }, [user, project, isProjectManager]);
 
     useEffect(() => {
         if (isDurationEntryMode && durationContext.roleId && durationContext.userId) {
@@ -354,19 +363,21 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                         Filters {activeFilterCount > 0 && <span className="bg-indigo-600 text-white px-1.5 py-0.5 rounded-full text-[9px]">{activeFilterCount}</span>}
                     </button>
 
-                    <button
-                        onClick={() => {
-                            const enteringMode = !isDurationEntryMode;
-                            setIsDurationEntryMode(enteringMode);
-                            if (enteringMode) {
-                                setDurationContext({ roleId: '', userId: user?._id || '' });
-                            }
-                        }}
-                        className={`px-4 py-2 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all ${isDurationEntryMode ? 'bg-amber-500 border-amber-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                    >
-                        <span>⏱️</span>
-                        Durations
-                    </button>
+                    {canViewCost && (
+                        <button
+                            onClick={() => {
+                                const enteringMode = !isDurationEntryMode;
+                                setIsDurationEntryMode(enteringMode);
+                                if (enteringMode) {
+                                    setDurationContext({ roleId: '', userId: user?._id || '' });
+                                }
+                            }}
+                            className={`px-4 py-2 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all ${isDurationEntryMode ? 'bg-amber-500 border-amber-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                        >
+                            <span>⏱️</span>
+                            Durations
+                        </button>
+                    )}
 
                     <button
                         onClick={() => setShowAutoScheduleModal(true)}

@@ -240,6 +240,68 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
         )}
 
         <div className="space-y-4">
+          {/* Team Manager Identity - Only visible if project has a manager */}
+          {(project.projectManager || isProjectOwner) && (
+            <div className="bg-white p-6 rounded-3xl shadow-sm flex items-center justify-between border-2 border-indigo-100 bg-gradient-to-r from-indigo-50/30 to-transparent">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-2xl bg-white border-2 border-indigo-200 flex items-center justify-center text-2xl font-black text-indigo-600 shadow-sm overflow-hidden">
+                  {project.projectManager?.profile?.avatar ? (
+                    <img src={project.projectManager.profile.avatar} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    project.projectManager?.name?.[0].toUpperCase() || '?'
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">Project Manager</span>
+                    {isProjectOwner && (
+                      <button 
+                        onClick={() => setShowAddMember('pm')} 
+                        className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition-colors underline cursor-pointer"
+                      >
+                        {project.projectManager ? 'Change PM' : 'Assign PM'}
+                      </button>
+                    )}
+                  </div>
+                  <h4 className="text-lg font-bold text-slate-900 leading-tight">
+                    {project.projectManager?.name || (isProjectOwner ? 'Unassigned' : 'No Project Manager')}
+                  </h4>
+                  <p className="text-xs text-slate-500 font-medium">{project.projectManager?.email || 'Assign someone to manage this project'}</p>
+                </div>
+              </div>
+              <div className="px-5 py-2.5 bg-white rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-500 border border-indigo-50 shadow-sm">
+                Management Tier
+              </div>
+            </div>
+          )}
+
+          {/* PM Assignment Selector */}
+          {showAddMember === 'pm' && isProjectOwner && (
+            <div className="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100 space-y-4 animate-in slide-in-from-top-4">
+              <div className="flex justify-between items-center">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Select Project Manager</h4>
+                <button onClick={() => setShowAddMember(false)} className="text-slate-400 hover:text-slate-600">×</button>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <Select 
+                    options={users?.map(u => ({ value: u._id, label: `${u.name} (${u.email})` }))} 
+                    onChange={async (opt) => {
+                      try {
+                        await projectAPI.update(projectId, { projectManager: opt.value });
+                        showToast('Project Manager updated', 'success');
+                        onRefresh();
+                        setShowAddMember(false);
+                      } catch (e) { showToast('Update failed', 'error'); }
+                    }} 
+                    styles={selectStyles} 
+                    placeholder="Select a user from organization..." 
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Owner Identity */}
           <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-lg flex items-center justify-between border-4 border-slate-800">
             <div className="flex items-center gap-6">

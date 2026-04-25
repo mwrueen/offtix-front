@@ -113,13 +113,13 @@ const TaskRowContent = ({ task, level, hasChildren, isExpanded, onToggleExpand, 
         ) : (
           (() => {
             const isAssigned = task.assignees?.some(a => (a._id || a) === currentUserId) || task.roleAssignments?.some(ra => ra.assignees?.some(a => (a._id || a) === currentUserId));
-            if (!canViewCost && isAssigned) {
+            if (isAssigned) {
               const myMin = myDurations[task._id] || 0;
               const myHr = myMin > 0 ? +(myMin / 60).toFixed(2) : '';
               return (
                 <div className="flex justify-center" onClick={e => e.stopPropagation()}>
                   <input
-                    type="number" step="0.5" placeholder="0"
+                    type="number" step="0.1" placeholder="0"
                     className="w-12 py-1 bg-slate-50 border border-slate-200 hover:border-indigo-300 focus:border-indigo-500 rounded text-center text-xs font-bold text-indigo-700 outline-none transition-colors"
                     defaultValue={myHr}
                     onBlur={e => {
