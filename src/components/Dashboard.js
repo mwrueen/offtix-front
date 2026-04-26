@@ -139,7 +139,23 @@ const Dashboard = () => {
               <button onClick={() => navigate('/projects')} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-4 decoration-indigo-100">View All</button>
             </div>
             <div className="space-y-3">
-              {projects.slice(0, 5).map((p) => (
+              {projects.slice(0, 5).map((p) => {
+                const pct = p.progress?.percentage ?? 0;
+                const statusLabel = {
+                  not_started: 'Not Started',
+                  running: 'Running',
+                  paused: 'Paused',
+                  cancelled: 'Cancelled',
+                  closed: 'Closed'
+                }[p.status] || p.status;
+                const statusColor = {
+                  not_started: 'text-slate-500 border-slate-200',
+                  running: 'text-emerald-600 border-emerald-200 bg-emerald-50',
+                  paused: 'text-amber-600 border-amber-200 bg-amber-50',
+                  cancelled: 'text-rose-600 border-rose-200 bg-rose-50',
+                  closed: 'text-indigo-600 border-indigo-200 bg-indigo-50'
+                }[p.status] || 'text-slate-500 border-slate-200';
+                return (
                 <div
                   key={p._id}
                   onClick={() => navigate(`/projects/${p._id}`)}
@@ -147,16 +163,20 @@ const Dashboard = () => {
                 >
                   <div className="flex justify-between items-start mb-2">
                     <p className="font-bold text-slate-800 truncate text-sm group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{p.title}</p>
-                    <span className="text-[10px] bg-white px-2 py-0.5 rounded-lg border border-slate-200 text-slate-500 font-bold uppercase">{p.status}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-lg border font-bold uppercase ${statusColor}`}>{statusLabel}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-indigo-600 rounded-full transition-all duration-1000 w-[60%]" />
+                      <div
+                        className="h-full bg-indigo-600 rounded-full transition-all duration-1000"
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
-                    <span className="text-[10px] font-bold text-slate-500">60%</span>
+                    <span className="text-[10px] font-bold text-slate-500">{pct}%</span>
                   </div>
                 </div>
-              ))}
+                );
+              })}
               {projects.length === 0 && !loading && (
                 <div className="py-12 text-center text-slate-400 font-medium text-sm">
                   <div className="text-4xl mb-3 opacity-30">📁</div>

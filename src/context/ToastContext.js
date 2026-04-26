@@ -15,9 +15,8 @@ export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
   const showToast = (message, type = 'success', duration = 3000) => {
-    const id = Date.now();
+    const id = Date.now() + Math.random();
     const newToast = { id, message, type, duration };
-    
     setToasts(prev => [...prev, newToast]);
   };
 
@@ -36,15 +35,20 @@ export const ToastProvider = ({ children }) => {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      {toasts.map(toast => (
-        <Toast
-          key={toast.id}
-          message={toast.message}
-          type={toast.type}
-          duration={toast.duration}
-          onClose={() => removeToast(toast.id)}
-        />
-      ))}
+      {toasts.length > 0 && (
+        <div className="fixed bottom-6 right-6 z-[1000] flex flex-col-reverse gap-3 pointer-events-none">
+          {toasts.map(toast => (
+            <div key={toast.id} className="pointer-events-auto">
+              <Toast
+                message={toast.message}
+                type={toast.type}
+                duration={toast.duration}
+                onClose={() => removeToast(toast.id)}
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </ToastContext.Provider>
   );
 };

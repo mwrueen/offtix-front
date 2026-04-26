@@ -116,37 +116,56 @@ const MyTasksList = () => {
   };
 
   const renderActionButtons = (task) => {
-    const isCurrent = task.workflowType === 'sequential' ? (task.userAssignee && task.userAssignee.isCurrent) : (task.userStep && task.userStep.isCurrent);
-    if (!isCurrent) return null;
     const taskStatus = getTaskStatus(task);
     const isLoading = actionLoading[task._id];
-    const canStartTask = task.canStart !== false;
+    const canStartTask = task.canStart === true;
 
     if (taskStatus === 'pending' || taskStatus === 'active') {
       return (
         <button
           onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }}
           disabled={isLoading || !canStartTask}
-          className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-colors ${canStartTask ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-70'}`}
+          className={`group relative inline-flex items-center justify-center gap-2 px-6 py-2.5 overflow-hidden font-semibold text-sm transition-all duration-300 rounded-xl shadow-sm hover:shadow active:scale-95 ${canStartTask ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:from-indigo-500 hover:to-indigo-400 hover:-translate-y-0.5' : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-70'}`}
         >
-          {isLoading === 'starting' ? 'Starting...' : 'Start Task'}
+          {isLoading === 'starting' ? (
+            <svg className="animate-spin w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          ) : (
+            <svg className={`w-4 h-4 transition-transform duration-300 ${canStartTask ? 'group-hover:translate-x-0.5' : ''}`} fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347c-.75.412-1.667-.13-1.667-.986V5.653z" />
+            </svg>
+          )}
+          <span>{isLoading === 'starting' ? 'Starting...' : 'Start Task'}</span>
         </button>
       );
     }
 
     if (taskStatus === 'in_progress') {
       return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {task.workflowType === 'sequential' && (
-            <button onClick={(e) => { e.stopPropagation(); handlePause(task._id); }} disabled={isLoading} className="px-4 py-2.5 bg-amber-500 text-white rounded-lg font-medium text-sm hover:bg-amber-600 transition-colors">
-              Pause
+            <button onClick={(e) => { e.stopPropagation(); handlePause(task._id); }} disabled={isLoading} className="group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-amber-200 text-amber-600 rounded-xl font-semibold text-sm hover:bg-amber-50 hover:border-amber-300 transition-all duration-300 shadow-sm hover:shadow active:scale-95">
+              <svg className="w-4 h-4 group-hover:scale-105 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
+              </svg>
+              <span>Pause</span>
             </button>
           )}
-          <button onClick={(e) => handleCompleteClick(e, task)} disabled={isLoading} className="px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium text-sm hover:bg-indigo-700 transition-colors">
-            Complete
+          <button onClick={(e) => handleCompleteClick(e, task)} disabled={isLoading} className="group relative inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-xl font-semibold text-sm hover:from-emerald-500 hover:to-emerald-400 transition-all duration-300 shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-95">
+            <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            <span>Complete</span>
           </button>
           {task.workflowType === 'sequential' && (
-            <button onClick={(e) => handleSendBackClick(e, task)} disabled={isLoading} className="px-4 py-2.5 bg-white text-rose-700 border border-rose-200 rounded-lg font-medium text-sm hover:bg-rose-50 transition-colors">Return</button>
+            <button onClick={(e) => handleSendBackClick(e, task)} disabled={isLoading} className="group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-rose-200 text-rose-600 rounded-xl font-semibold text-sm hover:bg-rose-50 hover:border-rose-300 transition-all duration-300 shadow-sm hover:shadow active:scale-95">
+              <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+              </svg>
+              <span>Return</span>
+            </button>
           )}
         </div>
       );
@@ -154,8 +173,11 @@ const MyTasksList = () => {
 
     if (taskStatus === 'paused') {
       return (
-        <button onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }} disabled={isLoading || !canStartTask} className="px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium text-sm hover:bg-indigo-700 transition-colors">
-          Resume
+        <button onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }} disabled={isLoading || !canStartTask} className="group relative inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white rounded-xl font-semibold text-sm hover:from-indigo-500 hover:to-indigo-400 transition-all duration-300 shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-95">
+          <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347c-.75.412-1.667-.13-1.667-.986V5.653z" />
+          </svg>
+          <span>Resume</span>
         </button>
       );
     }
@@ -204,69 +226,67 @@ const MyTasksList = () => {
             <div className="grid grid-cols-1 gap-6">
               {tasks.map((task) => {
                 const status = getTaskStatus(task);
+                const sd = task.userStep?.startDate || task.userAssignee?.startDate || task.startDate;
+                const ed = task.userStep?.dueDate || task.userAssignee?.dueDate || task.dueDate;
+                const formattedStart = sd ? new Date(sd).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '--';
+                const formattedEnd = ed ? new Date(ed).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '--';
+                const hours = task.durationMinutes ? (task.durationMinutes / 60).toFixed(2) : '0.00';
+
                 return (
                   <div
                     key={task._id}
                     onClick={() => navigate(`/my-tasks/${task._id}`)}
-                    className="group bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                    className="group bg-white rounded-xl p-5 border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow transition-all duration-200 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-5"
                   >
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                      <div className="flex-1 min-w-0 space-y-3">
-                        <div className="flex flex-wrap items-center gap-3">
-                          {task.priority && (
-                            <span className={`px-3 py-1 rounded-full text-[11px] font-semibold capitalize ${getPriorityClasses(task.priority)}`}>
-                              {task.priority} Priority
-                            </span>
-                          )}
-                          <span className="text-xs font-medium text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 truncate max-w-xs">
-                            {task.project?.title || 'Global Workspace'}
+                    <div className="flex-1 min-w-0 space-y-3">
+                      {/* Top Row: Priority, Project, Title */}
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-base font-semibold text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
+                          {task.title}
+                        </h3>
+                        {task.priority && (
+                          <span className={`shrink-0 px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${getPriorityClasses(task.priority)}`}>
+                            {task.priority}
                           </span>
-                        </div>
-
-                        <div className="space-y-1">
-                          <h3 className="text-lg font-semibold text-slate-900 truncate group-hover:text-indigo-700 transition-colors cursor-pointer">{task.title}</h3>
-                          <p className="text-xs text-slate-500">Task ID: {task._id.slice(-8).toUpperCase()}</p>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 p-4 bg-slate-50 rounded-xl border border-slate-100 items-center">
-                          <div className="flex flex-col">
-                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Status</span>
-                             <span className={`inline-flex items-center w-fit px-2.5 py-0.5 rounded-full text-xs font-bold capitalize border ${getStatusClasses(status)}`}>
-                               {status.replace('_', ' ')}
-                             </span>
-                          </div>
-                          <div className="flex flex-col">
-                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Start Time</span>
-                             <span className="text-xs font-semibold text-slate-800">
-                               {(() => {
-                                  const sd = task.userStep?.startDate || task.userAssignee?.startDate || task.startDate;
-                                  if (!sd) return '--';
-                                  return new Date(sd).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                               })()}
-                             </span>
-                          </div>
-                          <div className="flex flex-col">
-                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">End Time</span>
-                             <span className="text-xs font-semibold text-slate-800">
-                               {(() => {
-                                  const ed = task.userStep?.dueDate || task.userAssignee?.dueDate || task.dueDate;
-                                  if (!ed) return '--';
-                                  return new Date(ed).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                               })()}
-                             </span>
-                          </div>
-                          <div className="flex flex-col text-left md:text-right">
-                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Total Hours</span>
-                             <span className="text-sm font-black text-indigo-700 bg-indigo-100/50 w-fit md:ml-auto px-2 py-0.5 rounded-md">
-                               {task.durationMinutes ? (task.durationMinutes / 60).toFixed(2) + ' Hrs' : '0.00 Hrs'}
-                             </span>
-                          </div>
-                        </div>
+                        )}
+                        <span className="shrink-0 px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                          {task.project?.title || 'Global'}
+                        </span>
                       </div>
 
-                      <div className="shrink-0" onClick={e => e.stopPropagation()}>
-                        {renderActionButtons(task)}
+                      {/* Bottom Row: Metadata */}
+                      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold capitalize border ${getStatusClasses(status)}`}>
+                             {status.replace('_', ' ')}
+                           </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 text-slate-500 text-xs font-medium">
+                          <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span>Start: {formattedStart}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 text-slate-500 text-xs font-medium">
+                          <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span>Due: {formattedEnd}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 text-indigo-700 text-xs font-bold bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                          <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span>{hours} Hrs</span>
+                        </div>
                       </div>
+                    </div>
+
+                    <div className="shrink-0 flex items-center mt-2 md:mt-0" onClick={e => e.stopPropagation()}>
+                      {renderActionButtons(task)}
                     </div>
                   </div>
                 );
