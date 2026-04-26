@@ -321,6 +321,8 @@ export const myTasksAPI = {
     api.post(`/my-tasks/${taskId}/duration`, { duration_minutes: durationMinutes }),
   // Start task step
   start: (taskId) => api.post(`/my-tasks/${taskId}/start`),
+  // Pause task step
+  pause: (taskId) => api.post(`/my-tasks/${taskId}/pause`),
   // Complete task step
   complete: (taskId, note, files) => {
     const formData = new FormData();

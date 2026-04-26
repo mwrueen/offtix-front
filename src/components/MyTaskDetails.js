@@ -131,7 +131,11 @@ const MyTaskDetails = () => {
   const handlePause = async () => {
     setActionLoading('pausing');
     try {
-      await myTasksAPI.pauseSequential(taskId);
+      if (taskData.workflowType === 'sequential') {
+        await myTasksAPI.pauseSequential(taskId);
+      } else {
+        await myTasksAPI.pause(taskId);
+      }
       toast?.showToast?.('Task paused', 'success');
       fetchTaskDetails();
     } catch (err) {
@@ -157,11 +161,24 @@ const MyTaskDetails = () => {
   const handleSubtaskPause = async (subtaskId) => {
     setSubtaskActionLoading(prev => ({ ...prev, [subtaskId]: 'pausing' }));
     try {
-      await myTasksAPI.pauseSequential(subtaskId);
+      await myTasksAPI.pause(subtaskId);
       toast?.showToast?.('Subtask paused successfully', 'success');
       fetchTaskDetails();
     } catch (err) {
       toast?.showToast?.(err.response?.data?.error || 'Failed to pause subtask', 'error');
+    } finally {
+      setSubtaskActionLoading(prev => ({ ...prev, [subtaskId]: null }));
+    }
+  };
+
+  const handleSubtaskComplete = async (subtaskId) => {
+    setSubtaskActionLoading(prev => ({ ...prev, [subtaskId]: 'completing' }));
+    try {
+      await myTasksAPI.complete(subtaskId, 'Completed', []);
+      toast?.showToast?.('Subtask completed successfully', 'success');
+      fetchTaskDetails();
+    } catch (err) {
+      toast?.showToast?.(err.response?.data?.error || 'Failed to complete subtask', 'error');
     } finally {
       setSubtaskActionLoading(prev => ({ ...prev, [subtaskId]: null }));
     }
@@ -285,7 +302,7 @@ const MyTaskDetails = () => {
     return labelMap[status] || status;
   };
 
-  if (loading) {
+  if (loading && !taskData) {
     return (
       <Layout>
         <div className="max-w-5xl mx-auto px-6 py-24 text-center space-y-4">
@@ -364,56 +381,98 @@ const MyTaskDetails = () => {
                     {taskData.subtasks.length === 0 && !showSubtaskForm && (
                         <p className="text-sm text-slate-400 text-center py-6 border border-dashed border-slate-200 rounded-xl bg-slate-50">No subtasks found.</p>
                     )}
-                    {taskData.subtasks.map(st => {
-                        const stStatus = st.status?.slug || st.status?.name?.toLowerCase() || 'todo';
-                        const isStLoading = subtaskActionLoading[st._id];
-                        const isActive = ['active', 'in_progress'].includes(stStatus);
-                        const isPaused = stStatus === 'paused';
-                        const isPending = ['pending', 'todo', ''].includes(stStatus);
+                    {(() => {
+                        // Helper: resolve the effective status string for a subtask
+                        // checking task-level status, sequentialAssignees, and roleAssignments
+                        const getEffectiveStatus = (st) => {
+                            // Check sequentialAssignees first (most precise)
+                            if (st.sequentialAssignees && st.sequentialAssignees.length > 0) {
+                                const inProgress = st.sequentialAssignees.find(sa => sa.status === 'in_progress');
+                                if (inProgress) return 'in_progress';
+                                const paused = st.sequentialAssignees.find(sa => sa.status === 'paused');
+                                if (paused) return 'paused';
+                                const completed = st.sequentialAssignees.find(sa => sa.status === 'completed');
+                                if (completed) return 'completed';
+                            }
+                            // Check roleAssignments
+                            if (st.roleAssignments && st.roleAssignments.length > 0) {
+                                const active = st.roleAssignments.find(ra => ra.status === 'active' || ra.status === 'in_progress');
+                                if (active) return active.status;
+                                const paused = st.roleAssignments.find(ra => ra.status === 'paused');
+                                if (paused) return 'paused';
+                            }
+                            // Fall back to task-level status
+                            const raw = st.status?.slug || st.status?.name || 'todo';
+                            return typeof raw === 'string' ? raw.toLowerCase().trim() : 'todo';
+                        };
 
-                        return (
-                            <div key={st._id} className="border border-slate-200 rounded-xl p-4 bg-white shadow-sm flex items-center justify-between gap-4">
-                                <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                                    <span className="text-slate-400 text-xs">↳</span> {st.title}
-                                </h4>
-                                <div className="flex items-center gap-3">
-                                    {!isPending && (
-                                        <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold ${getStatusColorClasses(stStatus)}`}>
-                                            {getStatusLabel(stStatus)}
-                                        </span>
-                                    )}
+                        // Check if any subtask is currently active/in-progress
+                        const hasActiveSubtask = taskData.subtasks.some(st => {
+                            const s = getEffectiveStatus(st).replace(/[\s\-_]/g, '');
+                            return ['active', 'inprogress'].includes(s);
+                        });
 
-                                    {isActive && (
-                                        <>
+                        return taskData.subtasks.map(st => {
+                            const stStatusRaw = getEffectiveStatus(st);
+                            // Normalize for comparison
+                            const stStatusNorm = stStatusRaw.replace(/[\s\-_]/g, '');
+
+                            const isStLoading = subtaskActionLoading[st._id];
+                            const isActive = ['active', 'inprogress'].includes(stStatusNorm);
+                            const isPaused = stStatusNorm === 'paused';
+                            const isCompleted = ['completed', 'done'].includes(stStatusNorm);
+                            const isPending = !isActive && !isPaused && !isCompleted;
+
+                            // Only show Start/Resume if no other subtask is in active state
+                            // Exception: the paused subtask itself can always show Resume
+                            const canStart = !hasActiveSubtask || isPaused;
+
+                            return (
+                                <div key={st._id} className="border border-slate-200 rounded-xl p-4 bg-white shadow-sm flex items-center justify-between gap-4">
+                                    <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                        <span className="text-slate-400 text-xs">↳</span> {st.title}
+                                    </h4>
+                                    <div className="flex items-center gap-3">
+                                        {/* Hide badge for pending/to do tasks */}
+                                        {!isPending && (
+                                            <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold ${getStatusColorClasses(stStatusRaw)}`}>
+                                                {getStatusLabel(stStatusRaw)}
+                                            </span>
+                                        )}
+
+                                        {isActive && (
+                                            <>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleSubtaskPause(st._id); }}
+                                                    disabled={isStLoading}
+                                                    className="px-4 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition-colors shadow-sm disabled:opacity-50"
+                                                >
+                                                    {isStLoading === 'pausing' ? 'Pausing...' : 'Pause'}
+                                                </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleSubtaskComplete(st._id); }}
+                                                    disabled={isStLoading}
+                                                    className="px-4 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50"
+                                                >
+                                                    {isStLoading === 'completing' ? 'Completing...' : 'Complete'}
+                                                </button>
+                                            </>
+                                        )}
+
+                                        {!isActive && !isCompleted && canStart && (
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); handleSubtaskPause(st._id); }}
+                                                onClick={(e) => { e.stopPropagation(); handleSubtaskStart(st._id); }}
                                                 disabled={isStLoading}
-                                                className="px-4 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition-colors shadow-sm disabled:opacity-50"
+                                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50 ${isStLoading ? 'bg-slate-100 text-slate-400' : isPaused ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
                                             >
-                                                {isStLoading === 'pausing' ? 'Pausing...' : 'Pause'}
+                                                {isStLoading === 'starting' ? 'Starting...' : isPaused ? 'Resume' : 'Start'}
                                             </button>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); navigate(`/my-tasks/${st._id}`); }}
-                                                className="px-4 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm"
-                                            >
-                                                Complete
-                                            </button>
-                                        </>
-                                    )}
-
-                                    {(isPending || isPaused) && (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleSubtaskStart(st._id); }}
-                                            disabled={isStLoading}
-                                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50 ${isStLoading ? 'bg-slate-100 text-slate-400' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
-                                        >
-                                            {isStLoading === 'starting' ? 'Starting...' : (isPaused ? 'Resume' : 'Start')}
-                                        </button>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        });
+                    })()}
                 </div>
               </div>
             )}
