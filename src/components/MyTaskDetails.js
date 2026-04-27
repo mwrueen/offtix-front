@@ -436,9 +436,9 @@ const MyTaskDetails = () => {
                       const isCompleted = ['completed', 'done'].includes(stStatusNorm);
                       const isPending = !isActive && !isPaused && !isCompleted;
 
-                      // Only show Start/Resume if no other subtask is in active state
-                      // Exception: the paused subtask itself can always show Resume
-                      const canStart = !hasActiveSubtask || isPaused;
+                      // 1. Parent task MUST be running (canPause is true)
+                      // 2. No other subtask is active OR this subtask itself is paused (can be resumed)
+                      const canStart = allowedActions.canPause && (!hasActiveSubtask || isPaused);
 
                       return (
                         <div key={st._id} className="border border-slate-200 rounded-xl p-4 bg-white shadow-sm flex items-center justify-between gap-4">
