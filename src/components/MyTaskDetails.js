@@ -481,18 +481,25 @@ const MyTaskDetails = () => {
                               <div className="flex items-center gap-2 flex-wrap">
                                 {subtaskAssignees.map(a => {
                                   const aId = (a._id || a.id)?.toString();
-                                  const isThisActive = activeUserId && aId === activeUserId;
+                                  const isThisActive = isActive && activeUserId && aId === activeUserId;
+                                  const isThisPaused = isPaused && activeUserId && aId === activeUserId;
                                   const isThisCompleter = isCompleted && st.completedBy && aId === st.completedBy._id.toString();
                                   return (
-                                    <div key={aId} className={`flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full border ${isThisActive ? 'border-emerald-300 bg-emerald-50' : isThisCompleter ? 'border-emerald-400 bg-emerald-100' : 'border-slate-200 bg-slate-50'}`}>
+                                    <div key={aId} className={`flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full border ${isThisActive ? 'border-emerald-300 bg-emerald-50' : isThisPaused ? 'border-amber-300 bg-amber-50' : isThisCompleter ? 'border-emerald-400 bg-emerald-100' : 'border-slate-200 bg-slate-50'}`}>
                                       <div className={`w-5 h-5 rounded-full ${isThisCompleter ? 'bg-emerald-500' : colorFor(aId)} text-white text-[9px] font-bold flex items-center justify-center`}>
                                         {initials(a.name)}
                                       </div>
-                                      <span className={`text-[11px] font-medium ${isThisCompleter ? 'text-emerald-800' : 'text-slate-700'}`}>{a.name}</span>
+                                      <span className={`text-[11px] font-medium ${isThisCompleter ? 'text-emerald-800' : isThisPaused ? 'text-amber-800' : 'text-slate-700'}`}>{a.name}</span>
                                       {isThisActive && (
                                         <span className="flex items-center gap-1 ml-0.5">
                                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                           <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-wide">Active</span>
+                                        </span>
+                                      )}
+                                      {isThisPaused && (
+                                        <span className="flex items-center gap-1 ml-0.5">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                          <span className="text-[9px] font-bold text-amber-700 uppercase tracking-wide">Paused</span>
                                         </span>
                                       )}
                                       {isThisCompleter && (
