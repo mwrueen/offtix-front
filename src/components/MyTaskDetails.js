@@ -441,17 +441,18 @@ const MyTaskDetails = () => {
                       const stStatusNorm = stStatusRaw.replace(/[\s\-_]/g, '');
 
                       const isStLoading = subtaskActionLoading[st._id];
-                      const isActive = ['active', 'inprogress'].includes(stStatusNorm);
-                      const isPaused = stStatusNorm === 'paused';
                       const isCompleted = ['completed', 'done'].includes(stStatusNorm);
+                      // Paused state is determined by pausedAt field (independent of project's status taxonomy)
+                      const isPaused = !isCompleted && Boolean(st.pausedAt) && !st.activeUser;
+                      const isActive = !isCompleted && !isPaused && (['active', 'inprogress'].includes(stStatusNorm) || Boolean(st.activeUser));
                       const isPending = !isActive && !isPaused && !isCompleted;
                       const isAssignedToThisSt = isUserAssignedToSubtask(st);
 
                       const currentUserIdStr = (user?.id || user?._id)?.toString();
                       const activeUserObj = st.activeUser || st.activeStartedBy;
                       const activeUserId = (activeUserObj?._id || activeUserObj?.id || activeUserObj)?.toString();
-                      const isRunningByMe = Boolean(activeUserId && currentUserIdStr && activeUserId === currentUserIdStr);
-                      const isRunningByOther = Boolean(activeUserId && currentUserIdStr && activeUserId !== currentUserIdStr);
+                      const isRunningByMe = isActive && Boolean(activeUserId && currentUserIdStr && activeUserId === currentUserIdStr);
+                      const isRunningByOther = isActive && Boolean(activeUserId && currentUserIdStr && activeUserId !== currentUserIdStr);
 
                       const subtaskAssignees = getSubtaskAssignees(st);
 
