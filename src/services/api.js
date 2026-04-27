@@ -81,9 +81,7 @@ export const projectAPI = {
   addTeamMember: (id, userId, role) => api.post(`/projects/${id}/members`, { userId, role }),
   removeTeamMember: (id, userId) => api.delete(`/projects/${id}/members/${userId}`),
   getAnalytics: (id) => api.get(`/projects/${id}/analytics`),
-  uploadAttachment: (id, formData) => api.post(`/projects/${id}/attachments`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  uploadAttachment: (id, formData) => api.post(`/projects/${id}/attachments`, formData),
   deleteAttachment: (id, attachmentId) => api.delete(`/projects/${id}/attachments/${attachmentId}`),
 
   // Milestone management
@@ -173,8 +171,7 @@ export const requirementAPI = {
   addComment: (projectId, requirementId, comment) => api.post(`/projects/${projectId}/requirements/${requirementId}/comments`, comment),
   uploadAttachment: (projectId, requirementId, formData) => api.post(
     `/projects/${projectId}/requirements/${requirementId}/attachments`,
-    formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } }
+    formData
   ),
   deleteAttachment: (projectId, requirementId, attachmentId) =>
     api.delete(`/projects/${projectId}/requirements/${requirementId}/attachments/${attachmentId}`),
@@ -330,9 +327,7 @@ export const myTasksAPI = {
     if (files && files.length > 0) {
       files.forEach(file => formData.append('files', file));
     }
-    return api.post(`/my-tasks/${taskId}/complete`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    return api.post(`/my-tasks/${taskId}/complete`, formData);
   },
   // Send back for fix
   sendBack: (taskId, note, message) =>
@@ -349,9 +344,7 @@ export const myTasksAPI = {
     if (files && files.length > 0) {
       files.forEach(file => formData.append('files', file));
     }
-    return api.post(`/my-tasks/${taskId}/sequential/complete`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    return api.post(`/my-tasks/${taskId}/sequential/complete`, formData);
   },
   sendBackSequential: (taskId, note, message, link, files) => {
     const formData = new FormData();
@@ -361,9 +354,7 @@ export const myTasksAPI = {
     if (files && files.length > 0) {
       files.forEach(file => formData.append('files', file));
     }
-    return api.post(`/my-tasks/${taskId}/sequential/send-back`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    return api.post(`/my-tasks/${taskId}/sequential/send-back`, formData);
   },
 };
 

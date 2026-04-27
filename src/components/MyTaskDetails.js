@@ -21,7 +21,8 @@ const MyTaskDetails = () => {
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
   const [subtaskActionLoading, setSubtaskActionLoading] = useState({});
-  const [actionModal, setActionModal] = useState(null); // 'complete' or 'sendBack'
+  const [actionModal, setActionModal] = useState(null); // 'complete', 'sendBack', 'completeSubtask'
+  const [activeSubtaskId, setActiveSubtaskId] = useState(null);
   const [formData, setFormData] = useState({ note: '', message: '', link: '' });
   const [selectedFiles, setSelectedFiles] = useState([]);
 
@@ -171,17 +172,9 @@ const MyTaskDetails = () => {
     }
   };
 
-  const handleSubtaskComplete = async (subtaskId) => {
-    setSubtaskActionLoading(prev => ({ ...prev, [subtaskId]: 'completing' }));
-    try {
-      await myTasksAPI.complete(subtaskId, 'Completed', []);
-      toast?.showToast?.('Subtask completed successfully', 'success');
-      fetchTaskDetails();
-    } catch (err) {
-      toast?.showToast?.(err.response?.data?.error || 'Failed to complete subtask', 'error');
-    } finally {
-      setSubtaskActionLoading(prev => ({ ...prev, [subtaskId]: null }));
-    }
+  const handleSubtaskCompleteClick = (subtaskId) => {
+    setActiveSubtaskId(subtaskId);
+    setActionModal('completeSubtask');
   };
 
   const handleCompleteClick = () => {
@@ -193,16 +186,20 @@ const MyTaskDetails = () => {
   };
 
   const handleModalSubmit = async () => {
-    setActionLoading(actionModal === 'complete' ? 'completing' : 'sendingBack');
+    setActionLoading(actionModal);
     try {
       if (actionModal === 'complete') {
         await myTasksAPI.completeSequential(taskId, formData.note, formData.message, formData.link, selectedFiles);
         toast?.showToast?.('Task completed successfully', 'success');
+      } else if (actionModal === 'completeSubtask') {
+        await myTasksAPI.complete(activeSubtaskId, formData.note || 'Completed', selectedFiles);
+        toast?.showToast?.('Subtask completed successfully', 'success');
       } else {
         await myTasksAPI.sendBackSequential(taskId, formData.note, formData.message, formData.link, selectedFiles);
         toast?.showToast?.('Task sent back successfully', 'success');
       }
       setActionModal(null);
+      setActiveSubtaskId(null);
       setFormData({ note: '', message: '', link: '' });
       setSelectedFiles([]);
       fetchTaskDetails();
@@ -431,8 +428,11 @@ const MyTaskDetails = () => {
 
                     // Check if any subtask is currently active/in-progress FOR THE CURRENT USER
                     const hasActiveSubtask = taskData.subtasks.some(st => {
-                      const s = getEffectiveStatus(st).replace(/[\s\-_]/g, '');
-                      return ['active', 'inprogress'].includes(s);
+                      const stStatusNorm = getEffectiveStatus(st).replace(/[\s\-_]/g, '');
+                      const isCompleted = ['completed', 'done'].includes(stStatusNorm);
+                      const isPaused = !isCompleted && Boolean(st.pausedAt) && !st.activeUser;
+                      const isActive = !isCompleted && !isPaused && (['active', 'inprogress'].includes(stStatusNorm) || Boolean(st.activeUser));
+                      return isActive;
                     });
 
                     return taskData.subtasks.map(st => {
@@ -473,13 +473,6 @@ const MyTaskDetails = () => {
                               <span className="text-slate-400 text-xs">↳</span>
                               <span className="truncate">{st.title}</span>
                             </h4>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {(!isPending && stStatusRaw !== 'unassigned') && (
-                                <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold ${getStatusColorClasses(stStatusRaw)}`}>
-                                  {getStatusLabel(stStatusRaw)}
-                                </span>
-                              )}
-                            </div>
                           </div>
 
                           {/* Assignees + active indicator */}
@@ -489,16 +482,22 @@ const MyTaskDetails = () => {
                                 {subtaskAssignees.map(a => {
                                   const aId = (a._id || a.id)?.toString();
                                   const isThisActive = activeUserId && aId === activeUserId;
+                                  const isThisCompleter = isCompleted && st.completedBy && aId === st.completedBy._id.toString();
                                   return (
-                                    <div key={aId} className={`flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full border ${isThisActive ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
-                                      <div className={`w-5 h-5 rounded-full ${colorFor(aId)} text-white text-[9px] font-bold flex items-center justify-center`}>
+                                    <div key={aId} className={`flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full border ${isThisActive ? 'border-emerald-300 bg-emerald-50' : isThisCompleter ? 'border-emerald-400 bg-emerald-100' : 'border-slate-200 bg-slate-50'}`}>
+                                      <div className={`w-5 h-5 rounded-full ${isThisCompleter ? 'bg-emerald-500' : colorFor(aId)} text-white text-[9px] font-bold flex items-center justify-center`}>
                                         {initials(a.name)}
                                       </div>
-                                      <span className="text-[11px] font-medium text-slate-700">{a.name}</span>
+                                      <span className={`text-[11px] font-medium ${isThisCompleter ? 'text-emerald-800' : 'text-slate-700'}`}>{a.name}</span>
                                       {isThisActive && (
                                         <span className="flex items-center gap-1 ml-0.5">
                                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                           <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-wide">Active</span>
+                                        </span>
+                                      )}
+                                      {isThisCompleter && (
+                                        <span className="flex items-center gap-1 ml-0.5">
+                                          <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-wide whitespace-nowrap">Completed</span>
                                         </span>
                                       )}
                                     </div>
@@ -518,11 +517,11 @@ const MyTaskDetails = () => {
                                       {isStLoading === 'pausing' ? 'Pausing...' : 'Pause'}
                                     </button>
                                     <button
-                                      onClick={(e) => { e.stopPropagation(); handleSubtaskComplete(st._id); }}
+                                      onClick={(e) => { e.stopPropagation(); handleSubtaskCompleteClick(st._id); }}
                                       disabled={isStLoading}
                                       className="px-3.5 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50"
                                     >
-                                      {isStLoading === 'completing' ? 'Completing...' : 'Complete'}
+                                      Complete
                                     </button>
                                   </>
                                 )}
@@ -583,10 +582,16 @@ const MyTaskDetails = () => {
                     <div key={item._id} className="relative pl-8 border-l-2 border-slate-200">
                       <div className="absolute -left-[7px] top-1 w-3 h-3 rounded-full bg-white border-2 border-indigo-400" />
                       <div className="flex flex-col sm:flex-row justify-between mb-4 gap-4">
-                        <div className="font-medium text-slate-700 text-sm flex items-center gap-2">
+                        <div className="font-medium text-slate-700 text-sm flex items-center gap-2 flex-wrap">
                           <span className="text-indigo-700">{item.performedBy?.name || 'System'}</span>
                           <span className="text-slate-400">→</span>
                           <span className="text-slate-600 capitalize text-sm">{item.action.replace(/_/g, ' ')}</span>
+                          {item.task && item.task._id !== taskId && (
+                            <>
+                              <span className="text-slate-400 text-[10px]">on subtask</span>
+                              <span className="text-slate-700 font-bold text-[10px] bg-slate-100 px-1.5 py-0.5 rounded-md border border-slate-200">{item.task.title}</span>
+                            </>
+                          )}
                         </div>
                         <span className="text-xs font-medium text-slate-500">{formatDate(item.createdAt)}</span>
                       </div>
@@ -791,14 +796,14 @@ const MyTaskDetails = () => {
           <div className="bg-white rounded-2xl w-full max-w-4xl p-8 lg:p-10 shadow-xl border border-slate-200 overflow-hidden">
             <div className="flex justify-between items-center mb-8">
               <div className="flex items-center gap-4">
-                <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${actionModal === 'complete' ? 'bg-indigo-100 text-indigo-700' : 'bg-rose-100 text-rose-700'}`}>
-                  {actionModal === 'complete' ? '✓' : '↩'}
+                <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${actionModal === 'complete' || actionModal === 'completeSubtask' ? 'bg-indigo-100 text-indigo-700' : 'bg-rose-100 text-rose-700'}`}>
+                  {actionModal === 'complete' || actionModal === 'completeSubtask' ? '✓' : '↩'}
                 </div>
                 <h3 className="text-xl font-semibold text-slate-800">
-                  {actionModal === 'complete' ? 'Submit Task Completion' : 'Request Revision'}
+                  {actionModal === 'complete' || actionModal === 'completeSubtask' ? 'Submit Task Completion' : 'Request Revision'}
                 </h3>
               </div>
-              <button onClick={() => setActionModal(null)} className="w-9 h-9 flex items-center justify-center bg-slate-100 rounded-lg text-slate-500 hover:bg-slate-200 transition-colors">×</button>
+              <button onClick={() => { setActionModal(null); setActiveSubtaskId(null); }} className="w-9 h-9 flex items-center justify-center bg-slate-100 rounded-lg text-slate-500 hover:bg-slate-200 transition-colors">×</button>
             </div>
 
             <div className="space-y-8 max-h-[60vh] overflow-y-auto pr-2">
@@ -833,8 +838,8 @@ const MyTaskDetails = () => {
             </div>
 
             <div className="flex justify-end gap-4 pt-8 mt-8 border-t border-slate-100">
-              <button onClick={() => setActionModal(null)} className="px-5 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
-              <button onClick={handleModalSubmit} disabled={actionLoading} className={`px-8 py-2.5 rounded-lg font-medium text-sm text-white transition-colors disabled:opacity-50 ${actionModal === 'complete' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-rose-600 hover:bg-rose-700'}`}>{actionLoading ? 'Processing...' : (actionModal === 'complete' ? 'Submit Completion' : 'Confirm Return')}</button>
+              <button onClick={() => { setActionModal(null); setActiveSubtaskId(null); }} className="px-5 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
+              <button onClick={handleModalSubmit} disabled={actionLoading} className={`px-8 py-2.5 rounded-lg font-medium text-sm text-white transition-colors disabled:opacity-50 ${actionModal === 'complete' || actionModal === 'completeSubtask' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-rose-600 hover:bg-rose-700'}`}>{actionLoading ? 'Processing...' : (actionModal === 'complete' || actionModal === 'completeSubtask' ? 'Submit Completion' : 'Confirm Return')}</button>
             </div>
           </div>
         </div>
