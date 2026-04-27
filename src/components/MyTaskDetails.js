@@ -45,13 +45,13 @@ const MyTaskDetails = () => {
   const getSubtaskAssignees = (st) => {
     const usersMap = new Map();
     if (st.roleAssignments) {
-        st.roleAssignments.forEach(ra => ra.assignees?.forEach(a => usersMap.set(a._id || a, a)));
+      st.roleAssignments.forEach(ra => ra.assignees?.forEach(a => usersMap.set(a._id || a, a)));
     }
     if (st.sequentialAssignees) {
-        st.sequentialAssignees.forEach(sa => sa.user && usersMap.set(sa.user._id || sa.user, sa.user));
+      st.sequentialAssignees.forEach(sa => sa.user && usersMap.set(sa.user._id || sa.user, sa.user));
     }
     if (st.assignees) {
-        st.assignees.forEach(a => usersMap.set(a._id || a, a));
+      st.assignees.forEach(a => usersMap.set(a._id || a, a));
     }
     return Array.from(usersMap.values()).filter(a => typeof a === 'object' && a.name);
   };
@@ -221,47 +221,47 @@ const MyTaskDetails = () => {
 
   const handleCreateSubtask = async () => {
     if (!newSubtaskTitle.trim() || !taskData?.task?.project?._id) return;
-    
+
     setIsSubmittingSubtask(true);
     try {
-        const projectId = taskData.task.project._id;
-        
-        let roleAssignments = [];
-        let assignees = [];
-        let useRoleWorkflow = false;
-        
-        if (taskData.workflowType === 'role' && taskData.steps?.current?.role) {
-            roleAssignments = [{
-                role: taskData.steps.current.role._id || taskData.steps.current.role,
-                assignees: [user._id],
-                order: 1
-            }];
-            useRoleWorkflow = true;
-        } else {
-            assignees = [user._id];
-        }
-        
-        const payload = {
-            title: newSubtaskTitle,
-            parent: taskId,
-            project: projectId,
-            roleAssignments,
-            assignees,
-            useRoleWorkflow,
-            priority: taskData.task.priority
-        };
-        
-        await taskAPI.create(projectId, payload);
-        toast?.showToast?.('Subtask created successfully', 'success');
-        setNewSubtaskTitle('');
-        setShowSubtaskForm(false);
-        fetchTaskDetails();
+      const projectId = taskData.task.project._id;
+
+      let roleAssignments = [];
+      let assignees = [];
+      let useRoleWorkflow = false;
+
+      if (taskData.workflowType === 'role' && taskData.steps?.current?.role) {
+        roleAssignments = [{
+          role: taskData.steps.current.role._id || taskData.steps.current.role,
+          assignees: [user._id],
+          order: 1
+        }];
+        useRoleWorkflow = true;
+      } else {
+        assignees = [user._id];
+      }
+
+      const payload = {
+        title: newSubtaskTitle,
+        parent: taskId,
+        project: projectId,
+        roleAssignments,
+        assignees,
+        useRoleWorkflow,
+        priority: taskData.task.priority
+      };
+
+      await taskAPI.create(projectId, payload);
+      toast?.showToast?.('Subtask created successfully', 'success');
+      setNewSubtaskTitle('');
+      setShowSubtaskForm(false);
+      fetchTaskDetails();
     } catch (err) {
-        console.error("Subtask creation error:", err, err.response?.data);
-        const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to create subtask';
-        toast?.showToast?.(errorMsg, 'error');
+      console.error("Subtask creation error:", err, err.response?.data);
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to create subtask';
+      toast?.showToast?.(errorMsg, 'error');
     } finally {
-        setIsSubmittingSubtask(false);
+      setIsSubmittingSubtask(false);
     }
   };
 
@@ -375,117 +375,117 @@ const MyTaskDetails = () => {
                 {showSubtaskForm && (
                   <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
                     <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">Subtask Title</label>
-                        <input type="text" value={newSubtaskTitle} onChange={e => setNewSubtaskTitle(e.target.value)} className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm bg-white" placeholder="E.g., Login Page, Write Tests..." autoFocus />
+                      <label className="text-xs font-bold text-slate-500 uppercase ml-1">Subtask Title</label>
+                      <input type="text" value={newSubtaskTitle} onChange={e => setNewSubtaskTitle(e.target.value)} className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm bg-white" placeholder="E.g., Login Page, Write Tests..." autoFocus />
                     </div>
                     <div className="bg-indigo-50 border border-indigo-100 p-3 rounded-lg flex items-center gap-2">
-                        <span className="text-indigo-700 text-xs font-medium">ℹ️ You will be automatically assigned to this subtask inheriting your active task role.</span>
+                      <span className="text-indigo-700 text-xs font-medium">ℹ️ You will be automatically assigned to this subtask inheriting your active task role.</span>
                     </div>
                     <div className="flex gap-3 justify-end pt-2">
-                        <button onClick={() => setShowSubtaskForm(false)} className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-200 rounded-lg">Cancel</button>
-                        <button onClick={handleCreateSubtask} disabled={isSubmittingSubtask} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 shadow-sm disabled:opacity-50">
-                            {isSubmittingSubtask ? 'Adding...' : 'Save Subtask'}
-                        </button>
+                      <button onClick={() => setShowSubtaskForm(false)} className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-200 rounded-lg">Cancel</button>
+                      <button onClick={handleCreateSubtask} disabled={isSubmittingSubtask} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 shadow-sm disabled:opacity-50">
+                        {isSubmittingSubtask ? 'Adding...' : 'Save Subtask'}
+                      </button>
                     </div>
                   </div>
                 )}
-                
+
                 <div className="space-y-4">
-                    {taskData.subtasks.length === 0 && !showSubtaskForm && (
-                        <p className="text-sm text-slate-400 text-center py-6 border border-dashed border-slate-200 rounded-xl bg-slate-50">No subtasks found.</p>
-                    )}
-                    {(() => {
-                        // Helper: resolve the effective status string for a subtask
-                        // checking task-level status, sequentialAssignees, and roleAssignments
-                        const getEffectiveStatus = (st) => {
-                            // Check sequentialAssignees first (most precise)
-                            if (st.sequentialAssignees && st.sequentialAssignees.length > 0) {
-                                const inProgress = st.sequentialAssignees.find(sa => sa.status === 'in_progress');
-                                if (inProgress) return 'in_progress';
-                                const paused = st.sequentialAssignees.find(sa => sa.status === 'paused');
-                                if (paused) return 'paused';
-                                const completed = st.sequentialAssignees.find(sa => sa.status === 'completed');
-                                if (completed) return 'completed';
-                            }
-                            // Check roleAssignments
-                            if (st.roleAssignments && st.roleAssignments.length > 0) {
-                                const active = st.roleAssignments.find(ra => ra.status === 'active' || ra.status === 'in_progress');
-                                if (active) return active.status;
-                                const paused = st.roleAssignments.find(ra => ra.status === 'paused');
-                                if (paused) return 'paused';
-                            }
-                            // Fall back to task-level status
-                            const raw = st.status?.slug || st.status?.name || 'todo';
-                            return typeof raw === 'string' ? raw.toLowerCase().trim() : 'todo';
-                        };
+                  {taskData.subtasks.length === 0 && !showSubtaskForm && (
+                    <p className="text-sm text-slate-400 text-center py-6 border border-dashed border-slate-200 rounded-xl bg-slate-50">No subtasks found.</p>
+                  )}
+                  {(() => {
+                    // Helper: resolve the effective status string for a subtask
+                    // checking task-level status, sequentialAssignees, and roleAssignments
+                    const getEffectiveStatus = (st) => {
+                      // Check sequentialAssignees first (most precise)
+                      if (st.sequentialAssignees && st.sequentialAssignees.length > 0) {
+                        const inProgress = st.sequentialAssignees.find(sa => sa.status === 'in_progress');
+                        if (inProgress) return 'in_progress';
+                        const paused = st.sequentialAssignees.find(sa => sa.status === 'paused');
+                        if (paused) return 'paused';
+                        const completed = st.sequentialAssignees.find(sa => sa.status === 'completed');
+                        if (completed) return 'completed';
+                      }
+                      // Check roleAssignments
+                      if (st.roleAssignments && st.roleAssignments.length > 0) {
+                        const active = st.roleAssignments.find(ra => ra.status === 'active' || ra.status === 'in_progress');
+                        if (active) return active.status;
+                        const paused = st.roleAssignments.find(ra => ra.status === 'paused');
+                        if (paused) return 'paused';
+                      }
+                      // Fall back to task-level status
+                      const raw = st.status?.slug || st.status?.name || 'todo';
+                      return typeof raw === 'string' ? raw.toLowerCase().trim() : 'todo';
+                    };
 
-                        // Check if any subtask is currently active/in-progress
-                        const hasActiveSubtask = taskData.subtasks.some(st => {
-                            const s = getEffectiveStatus(st).replace(/[\s\-_]/g, '');
-                            return ['active', 'inprogress'].includes(s);
-                        });
+                    // Check if any subtask is currently active/in-progress
+                    const hasActiveSubtask = taskData.subtasks.some(st => {
+                      const s = getEffectiveStatus(st).replace(/[\s\-_]/g, '');
+                      return ['active', 'inprogress'].includes(s);
+                    });
 
-                        return taskData.subtasks.map(st => {
-                            const stStatusRaw = getEffectiveStatus(st);
-                            // Normalize for comparison
-                            const stStatusNorm = stStatusRaw.replace(/[\s\-_]/g, '');
+                    return taskData.subtasks.map(st => {
+                      const stStatusRaw = getEffectiveStatus(st);
+                      // Normalize for comparison
+                      const stStatusNorm = stStatusRaw.replace(/[\s\-_]/g, '');
 
-                            const isStLoading = subtaskActionLoading[st._id];
-                            const isActive = ['active', 'inprogress'].includes(stStatusNorm);
-                            const isPaused = stStatusNorm === 'paused';
-                            const isCompleted = ['completed', 'done'].includes(stStatusNorm);
-                            const isPending = !isActive && !isPaused && !isCompleted;
+                      const isStLoading = subtaskActionLoading[st._id];
+                      const isActive = ['active', 'inprogress'].includes(stStatusNorm);
+                      const isPaused = stStatusNorm === 'paused';
+                      const isCompleted = ['completed', 'done'].includes(stStatusNorm);
+                      const isPending = !isActive && !isPaused && !isCompleted;
 
-                            // Only show Start/Resume if no other subtask is in active state
-                            // Exception: the paused subtask itself can always show Resume
-                            const canStart = !hasActiveSubtask || isPaused;
+                      // Only show Start/Resume if no other subtask is in active state
+                      // Exception: the paused subtask itself can always show Resume
+                      const canStart = !hasActiveSubtask || isPaused;
 
-                            return (
-                                <div key={st._id} className="border border-slate-200 rounded-xl p-4 bg-white shadow-sm flex items-center justify-between gap-4">
-                                    <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                                        <span className="text-slate-400 text-xs">↳</span> {st.title}
-                                    </h4>
-                                    <div className="flex items-center gap-3">
-                                        {/* Hide badge for pending/to do tasks */}
-                                        {!isPending && (
-                                            <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold ${getStatusColorClasses(stStatusRaw)}`}>
-                                                {getStatusLabel(stStatusRaw)}
-                                            </span>
-                                        )}
+                      return (
+                        <div key={st._id} className="border border-slate-200 rounded-xl p-4 bg-white shadow-sm flex items-center justify-between gap-4">
+                          <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                            <span className="text-slate-400 text-xs">↳</span> {st.title}
+                          </h4>
+                          <div className="flex items-center gap-3">
+                            {/* Hide badge for pending/to do tasks */}
+                            {!isPending && (
+                              <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold ${getStatusColorClasses(stStatusRaw)}`}>
+                                {getStatusLabel(stStatusRaw)}
+                              </span>
+                            )}
 
-                                        {isActive && (
-                                            <>
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleSubtaskPause(st._id); }}
-                                                    disabled={isStLoading}
-                                                    className="px-4 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition-colors shadow-sm disabled:opacity-50"
-                                                >
-                                                    {isStLoading === 'pausing' ? 'Pausing...' : 'Pause'}
-                                                </button>
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleSubtaskComplete(st._id); }}
-                                                    disabled={isStLoading}
-                                                    className="px-4 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50"
-                                                >
-                                                    {isStLoading === 'completing' ? 'Completing...' : 'Complete'}
-                                                </button>
-                                            </>
-                                        )}
+                            {isActive && (
+                              <>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleSubtaskPause(st._id); }}
+                                  disabled={isStLoading}
+                                  className="px-4 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition-colors shadow-sm disabled:opacity-50"
+                                >
+                                  {isStLoading === 'pausing' ? 'Pausing...' : 'Pause'}
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleSubtaskComplete(st._id); }}
+                                  disabled={isStLoading}
+                                  className="px-4 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50"
+                                >
+                                  {isStLoading === 'completing' ? 'Completing...' : 'Complete'}
+                                </button>
+                              </>
+                            )}
 
-                                        {!isActive && !isCompleted && canStart && (
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleSubtaskStart(st._id); }}
-                                                disabled={isStLoading}
-                                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50 ${isStLoading ? 'bg-slate-100 text-slate-400' : isPaused ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
-                                            >
-                                                {isStLoading === 'starting' ? 'Starting...' : isPaused ? 'Resume' : 'Start'}
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        });
-                    })()}
+                            {!isActive && !isCompleted && canStart && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleSubtaskStart(st._id); }}
+                                disabled={isStLoading}
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50 ${isStLoading ? 'bg-slate-100 text-slate-400' : isPaused ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                              >
+                                {isStLoading === 'starting' ? 'Starting...' : isPaused ? 'Resume' : 'Start'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             )}
@@ -553,79 +553,7 @@ const MyTaskDetails = () => {
           </div>
 
           <div className="lg:col-span-4 space-y-6">
-            {/* Assignments Block */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200 pb-3">Assignments</h3>
-                
-                {/* Generic Assignees */}
-                {task.assignees && task.assignees.length > 0 && !task.useRoleWorkflow && !task.useSequentialWorkflow && (
-                    <div className="space-y-3">
-                        <h4 className="text-[10px] font-bold text-slate-400 uppercase">All Assignees (Active)</h4>
-                        <div className="flex flex-col gap-2">
-                            {task.assignees.map(a => (
-                                <div key={a._id} className="flex items-center gap-2 p-2 rounded-lg border border-indigo-100 bg-indigo-50">
-                                    <div className="w-6 h-6 rounded-md bg-indigo-200 text-indigo-700 flex items-center justify-center text-[10px] font-bold uppercase">{a.name?.charAt(0) || '?'}</div>
-                                    <span className="text-xs font-bold text-slate-700">{a.name || 'User'}</span>
-                                    <span className="text-[9px] text-indigo-600 font-bold ml-auto bg-indigo-100 px-2 py-0.5 rounded">ACTIVE</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
 
-                {/* Role Workflow Assignees */}
-                {task.useRoleWorkflow && task.roleAssignments && task.roleAssignments.length > 0 && (
-                    <div className="space-y-3">
-                        {task.roleAssignments.map((ra, idx) => {
-                            const isActive = task.currentRoleIndex === idx;
-                            const isCompleted = ra.status === 'completed';
-                            return (
-                                <div key={ra._id || idx} className={`space-y-2 p-3 rounded-xl border ${isActive ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-slate-50 border-slate-100'}`}>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] text-white ${isActive ? 'bg-indigo-600' : isCompleted ? 'bg-emerald-500' : 'bg-slate-300'}`}>{idx + 1}</span>
-                                            {ra.role?.name || 'Role'}
-                                        </span>
-                                        {isActive && <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">ACTIVE</span>}
-                                        {isCompleted && <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">DONE</span>}
-                                    </div>
-                                    <div className="flex flex-wrap gap-1.5 pl-5">
-                                        {ra.assignees?.map(a => (
-                                            <span key={a._id || a} className={`text-[10px] items-center gap-1 font-medium px-2 py-0.5 rounded border flex ${isActive ? 'bg-white border-indigo-100 text-indigo-700' : 'bg-white border-slate-200 text-slate-600'}`}>
-                                                {a.name || 'User'}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {/* Sequential Workflow Assignees */}
-                {task.useSequentialWorkflow && task.sequentialAssignees && task.sequentialAssignees.length > 0 && (
-                    <div className="space-y-3">
-                        {task.sequentialAssignees.map((sa, idx) => {
-                            const isActive = task.currentAssigneeIndex === idx;
-                            const isCompleted = sa.status === 'completed';
-                            return (
-                                <div key={sa._id || idx} className={`flex items-center justify-between p-3 rounded-xl border ${isActive ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-slate-50 border-slate-100'}`}>
-                                    <div className="flex items-center gap-2">
-                                        <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] text-white ${isActive ? 'bg-indigo-600' : isCompleted ? 'bg-emerald-500' : 'bg-slate-300'}`}>{idx + 1}</span>
-                                        <span className="text-xs font-bold text-slate-700">{sa.user?.name || 'User'}</span>
-                                    </div>
-                                    {isActive && <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">ACTIVE</span>}
-                                    {isCompleted && <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">DONE</span>}
-                                </div>
-                            )
-                        })}
-                    </div>
-                )}
-                
-                {(!task.assignees?.length && !task.roleAssignments?.length && !task.sequentialAssignees?.length) && (
-                    <p className="text-xs text-slate-400 italic">No members assigned.</p>
-                )}
-            </div>
 
             <div className={`p-6 rounded-2xl shadow-sm space-y-5 border transition-all duration-300 ${allowedActions.canPause ? 'bg-gradient-to-br from-emerald-50 to-indigo-50 border-indigo-300 ring-2 ring-indigo-200/50' : 'bg-white border-slate-200'}`}>
               {/* Header */}
@@ -693,28 +621,109 @@ const MyTaskDetails = () => {
                 <p className="text-xs text-slate-400 text-center italic pt-1">No actions available for this task.</p>
               )}
             </div>
+            {/* Assignments Block */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200 pb-3">All Assignees</h3>
 
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-6">
-              <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200 pb-3">Task Metadata</h3>
-              <div className="space-y-6">
-                <div className="space-y-1">
-                  <span className="text-xs font-medium text-slate-500">Current Status</span>
-                  <div className="flex"><span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColorClasses(task.status?.slug || task.status?.name?.toLowerCase())}`}>{getStatusLabel(task.status?.slug || task.status?.name?.toLowerCase())}</span></div>
+              {/* Role Workflow Assignees */}
+              {task.useRoleWorkflow && task.roleAssignments && task.roleAssignments.length > 0 && (
+                <div className="space-y-2">
+                  {task.roleAssignments.map((ra, idx) => {
+                    const isRunning = (ra.status === 'active' || ra.status === 'in_progress');
+                    const isCompleted = ra.status === 'completed';
+                    const isPending = !isRunning && !isCompleted;
+                    return (
+                      <div key={ra._id || idx} className={`rounded-xl border p-3 transition-all ${isRunning ? 'bg-emerald-50 border-emerald-300 shadow-sm' :
+                        isCompleted ? 'bg-slate-50 border-slate-100 opacity-70' :
+                          'bg-slate-50 border-slate-100'
+                        }`}>
+                        {/* Role header */}
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] text-white ${isRunning ? 'bg-emerald-500' : isCompleted ? 'bg-indigo-500' : 'bg-slate-300'
+                              }`}>{idx + 1}</span>
+                            {ra.role?.name || 'Role'}
+                          </span>
+                          {isRunning && (
+                            <div className="flex items-center gap-1.5">
+                              <div className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                              </div>
+                              <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">Running</span>
+                            </div>
+                          )}
+                          {isCompleted && <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">Done ✓</span>}
+                        </div>
+                        {/* Assignees in this role */}
+                        <div className="flex flex-col gap-1.5">
+                          {ra.assignees?.map(a => (
+                            <div key={a._id || a} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg ${isRunning ? 'bg-white border border-emerald-200' : 'bg-white border border-slate-100'
+                              }`}>
+                              <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black uppercase ${isRunning ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                                }`}>{(a.name || '?').charAt(0)}</div>
+                              <span className={`text-xs font-semibold ${isRunning ? 'text-emerald-800' : 'text-slate-600'
+                                }`}>{a.name || 'User'}</span>
+                              {isRunning && <span className="ml-auto text-[8px] font-black text-emerald-600 uppercase">● Active</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="space-y-1">
-                  <span className="text-xs font-medium text-slate-500">Priority</span>
-                  <div className="flex"><span className={`px-3 py-1 rounded-full text-xs font-medium border ${task.priority === 'urgent' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-indigo-50 text-indigo-700 border-indigo-200'}`}>{task.priority}</span></div>
+              )}
+
+              {/* Sequential Workflow Assignees */}
+              {task.useSequentialWorkflow && task.sequentialAssignees && task.sequentialAssignees.length > 0 && (
+                <div className="space-y-2">
+                  {task.sequentialAssignees.map((sa, idx) => {
+                    const isRunning = sa.status === 'in_progress' || sa.status === 'active';
+                    const isCompleted = sa.status === 'completed';
+                    return (
+                      <div key={sa._id || idx} className={`flex items-center justify-between px-3 py-2.5 rounded-xl border ${isRunning ? 'bg-emerald-50 border-emerald-300 shadow-sm' :
+                        isCompleted ? 'bg-slate-50 border-slate-100 opacity-70' :
+                          'bg-slate-50 border-slate-100'
+                        }`}>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-black uppercase ${isRunning ? 'bg-emerald-100 text-emerald-700' : isCompleted ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-500'
+                            }`}>{(sa.user?.name || '?').charAt(0)}</div>
+                          <span className={`text-xs font-semibold ${isRunning ? 'text-emerald-800' : 'text-slate-700'
+                            }`}>{sa.user?.name || 'User'}</span>
+                        </div>
+                        {isRunning && (
+                          <div className="flex items-center gap-1.5">
+                            <div className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </div>
+                            <span className="text-[9px] font-black text-emerald-700 uppercase">Running</span>
+                          </div>
+                        )}
+                        {isCompleted && <span className="text-[9px] font-bold text-indigo-600">Done ✓</span>}
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="space-y-1">
-                  <span className="text-xs font-medium text-slate-500">Project</span>
-                  <p className="text-sm font-semibold text-slate-900">{task.project?.title || 'Standalone'}</p>
+              )}
+
+              {/* Generic Assignees (no workflow) */}
+              {task.assignees && task.assignees.length > 0 && !task.useRoleWorkflow && !task.useSequentialWorkflow && (
+                <div className="flex flex-col gap-2">
+                  {task.assignees.map(a => (
+                    <div key={a._id} className="flex items-center gap-2 p-2 rounded-lg border border-slate-100 bg-slate-50">
+                      <div className="w-6 h-6 rounded-md bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold uppercase">{a.name?.charAt(0) || '?'}</div>
+                      <span className="text-xs font-semibold text-slate-700">{a.name || 'User'}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="space-y-1 pt-4 border-t border-slate-200">
-                  <span className="text-xs font-medium text-slate-500">System Identifier</span>
-                  <p className="font-mono text-xs text-slate-500 truncate bg-white p-3 rounded-lg border border-slate-200">{taskId}</p>
-                </div>
-              </div>
+              )}
+
+              {!task.useRoleWorkflow && !task.useSequentialWorkflow && !task.assignees?.length && (
+                <p className="text-xs text-slate-400 italic">No members assigned.</p>
+              )}
             </div>
+
           </div>
         </div>
       </div>
