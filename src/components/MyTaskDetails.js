@@ -331,7 +331,20 @@ const MyTaskDetails = () => {
     <Layout>
       <div className="max-w-7xl mx-auto py-8 px-6 space-y-8 pb-24">
         <PageHeader
-          title={task.title}
+          title={
+            <div className="flex items-center gap-3">
+              {allowedActions.canPause && (
+                <div className="relative flex h-3 w-3 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-600"></span>
+                </div>
+              )}
+              <span>{task.title}</span>
+              {allowedActions.canPause && (
+                <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase rounded-md tracking-wider animate-pulse">Running</span>
+              )}
+            </div>
+          }
           subtitle={`Task details and workflow activity for ${task.project?.title || 'Standalone Project'}.`}
           icon="✅"
           stats={[
@@ -614,22 +627,71 @@ const MyTaskDetails = () => {
                 )}
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
-              <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200 pb-3">Task Actions</h3>
-              <div className="grid grid-cols-1 gap-4">
-                {allowedActions.canStart && (
-                  <button onClick={handleStart} disabled={actionLoading} className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium text-sm hover:bg-indigo-700 transition-colors disabled:opacity-50">Start Task</button>
-                )}
+            <div className={`p-6 rounded-2xl shadow-sm space-y-5 border transition-all duration-300 ${allowedActions.canPause ? 'bg-gradient-to-br from-emerald-50 to-indigo-50 border-indigo-300 ring-2 ring-indigo-200/50' : 'bg-white border-slate-200'}`}>
+              {/* Header */}
+              {allowedActions.canPause ? (
+                <div className="flex items-center justify-between border-b border-indigo-200 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </div>
+                    <h3 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Currently Running</h3>
+                  </div>
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase rounded-md tracking-widest border border-emerald-200">LIVE</span>
+                </div>
+              ) : (
+                <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200 pb-3">Task Actions</h3>
+              )}
+
+              <div className="grid grid-cols-1 gap-3">
+                {/* Running state: Pause + Complete are primary */}
                 {allowedActions.canPause && (
-                  <button onClick={handlePause} disabled={actionLoading} className="w-full py-2.5 bg-amber-500 text-white rounded-lg font-medium text-sm hover:bg-amber-600 transition-colors disabled:opacity-50">Pause Task</button>
+                  <button
+                    onClick={handlePause}
+                    disabled={actionLoading}
+                    className="w-full py-3 bg-amber-500 text-white rounded-xl font-semibold text-sm hover:bg-amber-600 active:scale-95 transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
+                    </svg>
+                    {actionLoading === 'pausing' ? 'Pausing...' : 'Pause Task'}
+                  </button>
                 )}
                 {allowedActions.canComplete && (
-                  <button onClick={handleCompleteClick} disabled={actionLoading} className="w-full py-2.5 bg-slate-900 text-white rounded-lg font-medium text-sm hover:bg-slate-800 transition-colors disabled:opacity-50">Complete Task</button>
+                  <button
+                    onClick={handleCompleteClick}
+                    disabled={actionLoading}
+                    className={`w-full py-3 text-white rounded-xl font-semibold text-sm active:scale-95 transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2 ${allowedActions.canPause ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-slate-900 hover:bg-slate-800'}`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    {actionLoading === 'completing' ? 'Submitting...' : 'Complete Task'}
+                  </button>
+                )}
+                {/* Not running: show Start */}
+                {allowedActions.canStart && (
+                  <button
+                    onClick={handleStart}
+                    disabled={actionLoading}
+                    className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 active:scale-95 transition-all shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347c-.75.412-1.667-.13-1.667-.986V5.653z" />
+                    </svg>
+                    {actionLoading === 'starting' ? 'Starting...' : 'Start Task'}
+                  </button>
                 )}
                 {allowedActions.canSendBack && (
-                  <button onClick={handleSendBackClick} disabled={actionLoading} className="w-full py-2.5 bg-white border border-rose-200 text-rose-700 rounded-lg font-medium text-sm hover:bg-rose-50 transition-colors disabled:opacity-50">Send Back</button>
+                  <button onClick={handleSendBackClick} disabled={actionLoading} className="w-full py-2.5 bg-white border border-rose-200 text-rose-700 rounded-xl font-semibold text-sm hover:bg-rose-50 active:scale-95 transition-all disabled:opacity-50">Send Back</button>
                 )}
               </div>
+
+              {/* No actions available */}
+              {!allowedActions.canStart && !allowedActions.canPause && !allowedActions.canComplete && (
+                <p className="text-xs text-slate-400 text-center italic pt-1">No actions available for this task.</p>
+              )}
             </div>
 
             <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-6">

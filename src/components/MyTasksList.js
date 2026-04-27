@@ -46,10 +46,11 @@ const MyTasksList = () => {
     finally { setActionLoading(prev => ({ ...prev, [taskId]: null })); }
   };
 
-  const handlePause = async (taskId) => {
+  const handlePause = async (taskId, workflowType) => {
     setActionLoading(prev => ({ ...prev, [taskId]: 'pausing' }));
     try {
-      await myTasksAPI.pauseSequential(taskId);
+      if (workflowType === 'sequential') await myTasksAPI.pauseSequential(taskId);
+      else await myTasksAPI.pause(taskId);
       toast?.showToast?.('Task paused.', 'info');
       fetchTasks();
     } catch (err) { toast?.showToast?.('Failed to pause task.', 'error'); }
@@ -120,7 +121,44 @@ const MyTasksList = () => {
     const isLoading = actionLoading[task._id];
     const canStartTask = task.canStart === true;
 
-    if (taskStatus === 'pending' || taskStatus === 'active') {
+    // 🏃 Running State
+    if (taskStatus === 'active' || taskStatus === 'in_progress') {
+      return (
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={(e) => { e.stopPropagation(); handlePause(task._id, task.workflowType); }} 
+            disabled={isLoading} 
+            className="group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-amber-200 text-amber-600 rounded-xl font-semibold text-sm hover:bg-amber-50 hover:border-amber-300 transition-all duration-300 shadow-sm hover:shadow active:scale-95"
+          >
+            {isLoading === 'pausing' ? (
+              <svg className="animate-spin w-4 h-4 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
+              </svg>
+            )}
+            <span>{isLoading === 'pausing' ? 'Pausing...' : 'Pause'}</span>
+          </button>
+          
+          <button 
+            onClick={(e) => handleCompleteClick(e, task)} 
+            disabled={isLoading} 
+            className="group relative inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-xl font-semibold text-sm hover:from-emerald-500 hover:to-emerald-400 transition-all duration-300 shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-95"
+          >
+            <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            <span>Complete</span>
+          </button>
+        </div>
+      );
+    }
+
+    // ⏹ Stopped / Pending state
+    if (['pending', 'assigned', 'todo', 'todo_active'].includes(taskStatus)) {
       return (
         <button
           onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }}
@@ -142,35 +180,7 @@ const MyTasksList = () => {
       );
     }
 
-    if (taskStatus === 'in_progress') {
-      return (
-        <div className="flex items-center gap-3">
-          {task.workflowType === 'sequential' && (
-            <button onClick={(e) => { e.stopPropagation(); handlePause(task._id); }} disabled={isLoading} className="group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-amber-200 text-amber-600 rounded-xl font-semibold text-sm hover:bg-amber-50 hover:border-amber-300 transition-all duration-300 shadow-sm hover:shadow active:scale-95">
-              <svg className="w-4 h-4 group-hover:scale-105 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
-              </svg>
-              <span>Pause</span>
-            </button>
-          )}
-          <button onClick={(e) => handleCompleteClick(e, task)} disabled={isLoading} className="group relative inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-xl font-semibold text-sm hover:from-emerald-500 hover:to-emerald-400 transition-all duration-300 shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-95">
-            <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span>Complete</span>
-          </button>
-          {task.workflowType === 'sequential' && (
-            <button onClick={(e) => handleSendBackClick(e, task)} disabled={isLoading} className="group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-rose-200 text-rose-600 rounded-xl font-semibold text-sm hover:bg-rose-50 hover:border-rose-300 transition-all duration-300 shadow-sm hover:shadow active:scale-95">
-              <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-              </svg>
-              <span>Return</span>
-            </button>
-          )}
-        </div>
-      );
-    }
-
+    // ⏸ Paused state
     if (taskStatus === 'paused') {
       return (
         <button onClick={(e) => { e.stopPropagation(); handleStart(task._id, task.workflowType); }} disabled={isLoading || !canStartTask} className="group relative inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white rounded-xl font-semibold text-sm hover:from-indigo-500 hover:to-indigo-400 transition-all duration-300 shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-95">
@@ -232,15 +242,23 @@ const MyTasksList = () => {
                 const formattedEnd = ed ? new Date(ed).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '--';
                 const hours = task.durationMinutes ? (task.durationMinutes / 60).toFixed(2) : '0.00';
 
+                const isRunning = ['active', 'in_progress'].includes(status);
+
                 return (
                   <div
                     key={task._id}
                     onClick={() => navigate(`/my-tasks/${task._id}`)}
-                    className="group bg-white rounded-xl p-5 border border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow transition-all duration-200 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-5"
+                    className={`group rounded-xl p-5 border transition-all duration-200 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-5 ${isRunning ? 'bg-indigo-50/50 border-indigo-400 shadow-md ring-2 ring-indigo-500/10 scale-[1.01]' : 'bg-white border-slate-200 hover:border-indigo-200 shadow-sm hover:shadow'}`}
                   >
                     <div className="flex-1 min-w-0 space-y-3">
                       {/* Top Row: Priority, Project, Title */}
                       <div className="flex items-center gap-3">
+                        {isRunning && (
+                          <div className="relative flex h-3 w-3 shrink-0">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-600"></span>
+                          </div>
+                        )}
                         <h3 className="text-base font-semibold text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
                           {task.title}
                         </h3>
