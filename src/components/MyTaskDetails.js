@@ -395,31 +395,41 @@ const MyTaskDetails = () => {
                     <p className="text-sm text-slate-400 text-center py-6 border border-dashed border-slate-200 rounded-xl bg-slate-50">No subtasks found.</p>
                   )}
                   {(() => {
-                    // Helper: resolve the effective status string for a subtask
-                    // checking task-level status, sequentialAssignees, and roleAssignments
                     const getEffectiveStatus = (st) => {
-                      // Check sequentialAssignees first (most precise)
-                      if (st.sequentialAssignees && st.sequentialAssignees.length > 0) {
-                        const inProgress = st.sequentialAssignees.find(sa => sa.status === 'in_progress');
-                        if (inProgress) return 'in_progress';
-                        const paused = st.sequentialAssignees.find(sa => sa.status === 'paused');
-                        if (paused) return 'paused';
-                        const completed = st.sequentialAssignees.find(sa => sa.status === 'completed');
-                        if (completed) return 'completed';
+                      const currentUserId = user?.id || user?._id;
+
+                      if (currentUserId) {
+                        // Check sequentialAssignees for current user
+                        if (st.sequentialAssignees && st.sequentialAssignees.length > 0) {
+                          const myAssignment = st.sequentialAssignees.find(sa => {
+                            const assigneeId = sa.user?._id || sa.user;
+                            return assigneeId === currentUserId || assigneeId?.toString() === currentUserId.toString();
+                          });
+                          if (myAssignment) return myAssignment.status;
+                          // If it uses sequential and we are not in it, we don't share the global status
+                          return 'unassigned';
+                        }
+
+                        // Check roleAssignments for current user
+                        if (st.roleAssignments && st.roleAssignments.length > 0) {
+                          const myRoleAssignment = st.roleAssignments.find(ra => 
+                            ra.assignees?.some(a => {
+                              const assigneeId = a._id || a;
+                              return assigneeId === currentUserId || assigneeId?.toString() === currentUserId.toString();
+                            })
+                          );
+                          if (myRoleAssignment) return myRoleAssignment.status;
+                          // If it uses role workflow and we are not in it, we don't share the global status
+                          return 'unassigned';
+                        }
                       }
-                      // Check roleAssignments
-                      if (st.roleAssignments && st.roleAssignments.length > 0) {
-                        const active = st.roleAssignments.find(ra => ra.status === 'active' || ra.status === 'in_progress');
-                        if (active) return active.status;
-                        const paused = st.roleAssignments.find(ra => ra.status === 'paused');
-                        if (paused) return 'paused';
-                      }
-                      // Fall back to task-level status
+
+                      // Fall back to task-level status (only for generic shared assignees)
                       const raw = st.status?.slug || st.status?.name || 'todo';
                       return typeof raw === 'string' ? raw.toLowerCase().trim() : 'todo';
                     };
 
-                    // Check if any subtask is currently active/in-progress
+                    // Check if any subtask is currently active/in-progress FOR THE CURRENT USER
                     const hasActiveSubtask = taskData.subtasks.some(st => {
                       const s = getEffectiveStatus(st).replace(/[\s\-_]/g, '');
                       return ['active', 'inprogress'].includes(s);
@@ -435,53 +445,99 @@ const MyTaskDetails = () => {
                       const isPaused = stStatusNorm === 'paused';
                       const isCompleted = ['completed', 'done'].includes(stStatusNorm);
                       const isPending = !isActive && !isPaused && !isCompleted;
+                      const isAssignedToThisSt = isUserAssignedToSubtask(st);
+
+                      const currentUserIdStr = (user?.id || user?._id)?.toString();
+                      const activeUserObj = st.activeUser || st.activeStartedBy;
+                      const activeUserId = (activeUserObj?._id || activeUserObj?.id || activeUserObj)?.toString();
+                      const isRunningByMe = Boolean(activeUserId && currentUserIdStr && activeUserId === currentUserIdStr);
+                      const isRunningByOther = Boolean(activeUserId && currentUserIdStr && activeUserId !== currentUserIdStr);
+
+                      const subtaskAssignees = getSubtaskAssignees(st);
 
                       // 1. Parent task MUST be running (canPause is true)
                       // 2. No other subtask is active OR this subtask itself is paused (can be resumed)
-                      const canStart = allowedActions.canPause && (!hasActiveSubtask || isPaused);
+                      // 3. User must be explicitly assigned to this subtask
+                      // 4. If currently active, only the active user can resume
+                      const canStart = isAssignedToThisSt && allowedActions.canPause && (!hasActiveSubtask || (isPaused && !isRunningByOther));
+
+                      const initials = (name) => (name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                      const avatarColors = ['bg-orange-500', 'bg-sky-500', 'bg-rose-500', 'bg-violet-500', 'bg-emerald-500', 'bg-amber-500'];
+                      const colorFor = (id) => avatarColors[(id?.toString() || '').split('').reduce((s, c) => s + c.charCodeAt(0), 0) % avatarColors.length];
 
                       return (
-                        <div key={st._id} className="border border-slate-200 rounded-xl p-4 bg-white shadow-sm flex items-center justify-between gap-4">
-                          <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                            <span className="text-slate-400 text-xs">↳</span> {st.title}
-                          </h4>
-                          <div className="flex items-center gap-3">
-                            {/* Hide badge for pending/to do tasks */}
-                            {!isPending && (
-                              <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold ${getStatusColorClasses(stStatusRaw)}`}>
-                                {getStatusLabel(stStatusRaw)}
-                              </span>
-                            )}
-
-                            {isActive && (
-                              <>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleSubtaskPause(st._id); }}
-                                  disabled={isStLoading}
-                                  className="px-4 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition-colors shadow-sm disabled:opacity-50"
-                                >
-                                  {isStLoading === 'pausing' ? 'Pausing...' : 'Pause'}
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleSubtaskComplete(st._id); }}
-                                  disabled={isStLoading}
-                                  className="px-4 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50"
-                                >
-                                  {isStLoading === 'completing' ? 'Completing...' : 'Complete'}
-                                </button>
-                              </>
-                            )}
-
-                            {!isActive && !isCompleted && canStart && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleSubtaskStart(st._id); }}
-                                disabled={isStLoading}
-                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50 ${isStLoading ? 'bg-slate-100 text-slate-400' : isPaused ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
-                              >
-                                {isStLoading === 'starting' ? 'Starting...' : isPaused ? 'Resume' : 'Start'}
-                              </button>
-                            )}
+                        <div key={st._id} className="border border-slate-200 rounded-xl p-4 bg-white shadow-sm space-y-3">
+                          <div className="flex items-center justify-between gap-4">
+                            <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2 min-w-0">
+                              <span className="text-slate-400 text-xs">↳</span>
+                              <span className="truncate">{st.title}</span>
+                            </h4>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {(!isPending && stStatusRaw !== 'unassigned') && (
+                                <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold ${getStatusColorClasses(stStatusRaw)}`}>
+                                  {getStatusLabel(stStatusRaw)}
+                                </span>
+                              )}
+                            </div>
                           </div>
+
+                          {/* Assignees + active indicator */}
+                          {(subtaskAssignees.length > 0 || activeUserObj) && (
+                            <div className="flex items-center justify-between gap-3 flex-wrap">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {subtaskAssignees.map(a => {
+                                  const aId = (a._id || a.id)?.toString();
+                                  const isThisActive = activeUserId && aId === activeUserId;
+                                  return (
+                                    <div key={aId} className={`flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full border ${isThisActive ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
+                                      <div className={`w-5 h-5 rounded-full ${colorFor(aId)} text-white text-[9px] font-bold flex items-center justify-center`}>
+                                        {initials(a.name)}
+                                      </div>
+                                      <span className="text-[11px] font-medium text-slate-700">{a.name}</span>
+                                      {isThisActive && (
+                                        <span className="flex items-center gap-1 ml-0.5">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                          <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-wide">Active</span>
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                          
+                                {isActive && isRunningByMe && (
+                                  <>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handleSubtaskPause(st._id); }}
+                                      disabled={isStLoading}
+                                      className="px-3.5 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition-colors shadow-sm disabled:opacity-50"
+                                    >
+                                      {isStLoading === 'pausing' ? 'Pausing...' : 'Pause'}
+                                    </button>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handleSubtaskComplete(st._id); }}
+                                      disabled={isStLoading}
+                                      className="px-3.5 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50"
+                                    >
+                                      {isStLoading === 'completing' ? 'Completing...' : 'Complete'}
+                                    </button>
+                                  </>
+                                )}
+
+                                {!isActive && !isCompleted && canStart && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleSubtaskStart(st._id); }}
+                                    disabled={isStLoading}
+                                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50 ${isStLoading ? 'bg-slate-100 text-slate-400' : isPaused ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                                  >
+                                    {isStLoading === 'starting' ? 'Starting...' : isPaused ? 'Resume' : 'Start'}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     });
