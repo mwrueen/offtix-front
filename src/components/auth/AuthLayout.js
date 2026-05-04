@@ -1,57 +1,113 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+const slides = [
+  {
+    image: '/images/login-bg-1.jpeg',
+    message: 'Streamline your event management effortlessly.'
+  },
+  {
+    image: '/images/login-bg-2.jpeg',
+    message: 'Connect with your audience in real-time.'
+  },
+  {
+    image: '/images/login-bg-3.jpeg',
+    message: 'Organize, execute, and succeed with Offtix.'
+  }
+];
 
 const AuthLayout = ({ children, title, subtitle }) => {
   const navigate = useNavigate();
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <div className="min-h-screen flex font-sans">
       {/* Left branded panel */}
-      <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-indigo-600 via-indigo-700 to-slate-900 flex-col justify-between p-12 relative overflow-hidden">
-        {/* Background orbs */}
-        <div className="absolute top-[-10%] right-[-10%] w-72 h-72 bg-white/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-[-5%] left-[-5%] w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="hidden lg:flex lg:w-[45%] relative flex-col justify-between p-12 overflow-hidden">
+        {/* Background Images Slider */}
+        {slides.map((slide, index) => (
+          <div
+            key={index}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              index === currentSlide ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <div className="absolute inset-0 bg-slate-900/40 z-10" /> {/* Overlay for readability */}
+            <img
+              src={slide.image}
+              alt={`Slide ${index + 1}`}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ))}
 
-        {/* Logo */}
+        {/* Left top text brand */}
         <div
           onClick={() => navigate('/')}
-          className="cursor-pointer flex items-center gap-3 relative z-10 w-fit"
+          className="cursor-pointer relative z-20 w-fit"
         >
-          <div className="w-10 h-10 flex items-center justify-center transition-transform hover:scale-110">
-            <img src="/offtix-logo.png" alt="Offtix Logo" className="w-full h-full object-contain" />
+          <div className="px-6 py-2 border-2 border-white/40 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.3)] backdrop-blur-md bg-white/5 hover:bg-white/10 transition-all hover:scale-105 group">
+            <span className="text-white text-3xl font-extrabold tracking-widest uppercase drop-shadow-lg">
+              Offtix
+            </span>
           </div>
-          <span className="text-white text-xl font-bold tracking-wide">Offtix</span>
         </div>
 
-        {/* Center quote */}
-        <div className="relative z-10 space-y-6">
-          <div className="w-10 h-1 bg-white/40 rounded-full" />
-          <blockquote className="text-white/90 text-2xl font-semibold leading-snug">
-            Manage your team,<br />events, and operations<br />all in one place.
-          </blockquote>
-          <p className="text-white/50 text-sm">Trusted by teams worldwide.</p>
+        {/* Center message */}
+        <div className="relative z-20 space-y-6">
+          <div className="w-10 h-1 bg-indigo-500 rounded-full" />
+          {slides.map((slide, index) => (
+            <div
+              key={index}
+              className={`transition-all duration-1000 absolute ${
+                index === currentSlide ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+              }`}
+            >
+              <blockquote className="text-white text-3xl font-bold leading-tight drop-shadow-lg">
+                {slide.message.split(',').map((part, i) => (
+                  <React.Fragment key={i}>
+                    {part}{i < slide.message.split(',').length - 1 && <br />}
+                  </React.Fragment>
+                ))}
+              </blockquote>
+            </div>
+          ))}
+          <div className="h-24" /> {/* Spacer for absolute messages */}
+          <p className="text-white/80 text-sm font-medium">Trusted by teams worldwide.</p>
         </div>
 
         {/* Bottom dots */}
-        <div className="flex gap-2 relative z-10">
-          <div className="w-2 h-2 rounded-full bg-white/60" />
-          <div className="w-2 h-2 rounded-full bg-white/20" />
-          <div className="w-2 h-2 rounded-full bg-white/20" />
+        <div className="flex gap-2 relative z-20">
+          {slides.map((_, index) => (
+            <div
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`w-2.5 h-2.5 rounded-full cursor-pointer transition-all ${
+                index === currentSlide ? 'bg-white w-6' : 'bg-white/40 hover:bg-white/60'
+              }`}
+            />
+          ))}
         </div>
       </div>
 
       {/* Right form panel */}
       <div className="flex-1 bg-white flex items-center justify-center p-8">
         <div className="w-full max-w-sm">
-          {/* Mobile logo */}
+          {/* Logo above form */}
           <div
             onClick={() => navigate('/')}
-            className="lg:hidden cursor-pointer flex items-center gap-3 mb-10"
+            className="cursor-pointer flex flex-col items-center gap-3 mb-8"
           >
-            <div className="w-10 h-10 flex items-center justify-center">
+            <div className="w-28 h-28 flex items-center justify-center transition-transform hover:scale-110">
               <img src="/offtix-logo.png" alt="Offtix Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="text-slate-900 text-lg font-bold">Offtix</span>
           </div>
 
           {/* Heading */}
@@ -74,3 +130,5 @@ const AuthLayout = ({ children, title, subtitle }) => {
 };
 
 export default AuthLayout;
+
+

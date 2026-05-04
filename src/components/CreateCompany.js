@@ -114,8 +114,8 @@ const CreateCompany = () => {
   ];
 
   return (
-    <Layout>
-      <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8 pb-32">
+    <Layout wide>
+      <div className="w-full py-10 px-4 sm:px-6 lg:px-8 pb-32">
         <PageHeader
           title="Create New Company"
           subtitle="Fill in the details below to set up your company."
