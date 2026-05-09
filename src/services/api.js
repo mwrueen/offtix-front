@@ -321,17 +321,27 @@ export const myTasksAPI = {
   // Pause task step
   pause: (taskId) => api.post(`/my-tasks/${taskId}/pause`),
   // Complete task step
-  complete: (taskId, note, files) => {
+  complete: (taskId, note, message, link, files) => {
     const formData = new FormData();
-    formData.append('note', note);
+    if (note) formData.append('note', note);
+    if (message) formData.append('message', message);
+    if (link) formData.append('link', link);
     if (files && files.length > 0) {
       files.forEach(file => formData.append('files', file));
     }
     return api.post(`/my-tasks/${taskId}/complete`, formData);
   },
   // Send back for fix
-  sendBack: (taskId, note, message) =>
-    api.post(`/my-tasks/${taskId}/send-back`, { note, message }),
+  sendBack: (taskId, note, message, link, files) => {
+    const formData = new FormData();
+    if (note) formData.append('note', note);
+    if (message) formData.append('message', message);
+    if (link) formData.append('link', link);
+    if (files && files.length > 0) {
+      files.forEach(file => formData.append('files', file));
+    }
+    return api.post(`/my-tasks/${taskId}/send-back`, formData);
+  },
 
   // Sequential workflow operations
   startSequential: (taskId) => api.post(`/my-tasks/${taskId}/sequential/start`),

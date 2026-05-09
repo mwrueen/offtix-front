@@ -189,13 +189,21 @@ const MyTaskDetails = () => {
     setActionLoading(actionModal);
     try {
       if (actionModal === 'complete') {
-        await myTasksAPI.completeSequential(taskId, formData.note, formData.message, formData.link, selectedFiles);
+        if (taskData.workflowType === 'sequential') {
+          await myTasksAPI.completeSequential(taskId, formData.note, formData.message, formData.link, selectedFiles);
+        } else {
+          await myTasksAPI.complete(taskId, formData.note, formData.message, formData.link, selectedFiles);
+        }
         toast?.showToast?.('Task completed successfully', 'success');
       } else if (actionModal === 'completeSubtask') {
         await myTasksAPI.complete(activeSubtaskId, formData.note || 'Completed', selectedFiles);
         toast?.showToast?.('Subtask completed successfully', 'success');
       } else {
-        await myTasksAPI.sendBackSequential(taskId, formData.note, formData.message, formData.link, selectedFiles);
+        if (taskData.workflowType === 'sequential') {
+          await myTasksAPI.sendBackSequential(taskId, formData.note, formData.message, formData.link, selectedFiles);
+        } else {
+          await myTasksAPI.sendBack(taskId, formData.note, formData.message, formData.link, selectedFiles);
+        }
         toast?.showToast?.('Task sent back successfully', 'success');
       }
       setActionModal(null);
