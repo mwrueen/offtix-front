@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCompanyFilter } from '../hooks/useCompanyFilter';
@@ -20,6 +20,11 @@ const Organogram = () => {
   const [selectedManager, setSelectedManager] = useState('');
   const [saving, setSaving] = useState(false);
   const [viewMode, setViewMode] = useState('tree');
+
+  // Drag state
+  const [draggedNode, setDraggedNode] = useState(null);
+  const [dragOverNode, setDragOverNode] = useState(null);
+  const dragNodeRef = useRef(null);
 
   useEffect(() => {
     if (selectedCompany && selectedCompany.id !== 'personal') {
@@ -47,8 +52,7 @@ const Organogram = () => {
     }
   };
 
-  const handleUpdateManager = async () => {
-    if (!editingEmployee) return;
+  const handleUpdateManager = async (memberId, reportsTo) => {
     setSaving(true);
     try {
       const token = getCookie('authToken');
@@ -58,10 +62,7 @@ const Organogram = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          memberId: editingEmployee.memberId,
-          reportsTo: selectedManager || null
-        })
+        body: JSON.stringify({ memberId, reportsTo: reportsTo || null })
       });
       if (response.ok) {
         toast?.showToast?.('Reporting structure updated.', 'success');
@@ -79,6 +80,65 @@ const Organogram = () => {
     }
   };
 
+  // ── Drag handlers ──────────────────────────────────────────────────────────
+
+  const handleDragStart = (e, node) => {
+    setDraggedNode(node);
+    dragNodeRef.current = node;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', node.id);
+  };
+
+  const handleDragOver = (e, node) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragNodeRef.current?.id !== node.id) {
+      setDragOverNode(node.id);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverNode(null);
+  };
+
+  const handleDrop = (e, targetNode) => {
+    e.preventDefault();
+    setDragOverNode(null);
+    const source = dragNodeRef.current;
+    if (!source || source.id === targetNode.id) return;
+
+    // Prevent dropping onto own current manager
+    if (source.reportsTo === targetNode.id) {
+      toast?.showToast?.('Already reports to this person.', 'error');
+      return;
+    }
+
+    // Prevent dropping if target reports to source (would create cycle)
+    if (targetNode.reportsTo === source.id) {
+      toast?.showToast?.('Cannot create circular reporting.', 'error');
+      return;
+    }
+
+    // Find source memberId
+    const emp = employees.find(e => e.id === source.id);
+    if (!emp || !emp.memberId) {
+      toast?.showToast?.('Cannot update owner reporting.', 'error');
+      return;
+    }
+
+    handleUpdateManager(emp.memberId, targetNode.id);
+    setDraggedNode(null);
+    dragNodeRef.current = null;
+  };
+
+  const handleDragEnd = () => {
+    setDraggedNode(null);
+    dragNodeRef.current = null;
+    setDragOverNode(null);
+  };
+
+  // ── Styles helpers ─────────────────────────────────────────────────────────
+
   const getLevelStyles = (l) => {
     const configs = {
       0: { border: 'border-indigo-500', bg: 'bg-indigo-600', text: 'text-indigo-600', lightBg: 'bg-indigo-50' },
@@ -91,12 +151,19 @@ const Organogram = () => {
     return configs[l] || configs[5];
   };
 
+  // ── Employee Node ──────────────────────────────────────────────────────────
+
   const EmployeeNode = ({ node, depth = 0 }) => {
     const hasChildren = node.children && node.children.length > 0;
     const styles = getLevelStyles(node.level);
+    const isDragging = draggedNode?.id === node.id;
+    const isDropTarget = dragOverNode === node.id;
 
     return (
-      <div className={`relative ${depth > 0 ? 'ml-16 lg:ml-24' : ''} mb-8 animate-in fade-in slide-in-from-left-4 duration-500`} style={{ animationDelay: `${depth * 50}ms` }}>
+      <div
+        className={`relative ${depth > 0 ? 'ml-16 lg:ml-24' : ''} mb-8 animate-in fade-in slide-in-from-left-4 duration-500`}
+        style={{ animationDelay: `${depth * 50}ms` }}
+      >
         {/* Connection Lines */}
         {depth > 0 && (
           <>
@@ -105,11 +172,47 @@ const Organogram = () => {
           </>
         )}
 
-        <div className={`group relative bg-white rounded-2xl border border-slate-200 p-5 pl-7 shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-5 max-w-2xl ${editingEmployee?.id === node.id ? 'ring-2 ring-indigo-500 ring-offset-2 border-transparent' : ''}`}>
+        <div
+          draggable={!!node.memberId}
+          onDragStart={(e) => handleDragStart(e, node)}
+          onDragOver={(e) => handleDragOver(e, node)}
+          onDragLeave={handleDragLeave}
+          onDrop={(e) => handleDrop(e, node)}
+          onDragEnd={handleDragEnd}
+          className={`
+            group relative bg-white rounded-2xl border p-5 pl-7 shadow-sm
+            flex items-center gap-5 max-w-2xl transition-all duration-200
+            ${isDragging ? 'opacity-40 scale-95 shadow-none' : ''}
+            ${isDropTarget ? 'border-indigo-400 shadow-lg ring-2 ring-indigo-400/30 bg-indigo-50/30 scale-[1.02]' : 'border-slate-200 hover:shadow-md'}
+            ${editingEmployee?.id === node.id ? 'ring-2 ring-indigo-500 ring-offset-2 border-transparent' : ''}
+            ${node.memberId ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}
+          `}
+        >
           {/* Level Color Bar */}
           <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-12 rounded-r-lg ${styles.bg}`} />
 
-          {/* Avatar / Initials */}
+          {/* Drag handle indicator */}
+          {node.memberId && (
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-40 transition-opacity">
+              <svg className="w-3 h-6 text-slate-400" fill="currentColor" viewBox="0 0 6 24">
+                <circle cx="1.5" cy="4" r="1.5"/><circle cx="4.5" cy="4" r="1.5"/>
+                <circle cx="1.5" cy="10" r="1.5"/><circle cx="4.5" cy="10" r="1.5"/>
+                <circle cx="1.5" cy="16" r="1.5"/><circle cx="4.5" cy="16" r="1.5"/>
+                <circle cx="1.5" cy="22" r="1.5"/><circle cx="4.5" cy="22" r="1.5"/>
+              </svg>
+            </div>
+          )}
+
+          {/* Drop target hint */}
+          {isDropTarget && (
+            <div className="absolute inset-0 rounded-2xl flex items-center justify-center pointer-events-none">
+              <span className="text-xs font-bold text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200 shadow-sm">
+                Drop to set as manager
+              </span>
+            </div>
+          )}
+
+          {/* Avatar */}
           <div className={`w-14 h-14 rounded-xl ${styles.lightBg} border border-white shadow-sm flex items-center justify-center shrink-0 overflow-hidden relative group-hover:scale-105 transition-transform duration-300`}>
             {node.avatar ? (
               <img src={node.avatar} alt={node.name} className="w-full h-full object-cover" />
@@ -118,7 +221,7 @@ const Organogram = () => {
             )}
             {node.isOwner && (
               <div className="absolute top-0 right-0 p-1">
-                <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]"></div>
+                <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
               </div>
             )}
           </div>
@@ -137,6 +240,9 @@ const Organogram = () => {
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide truncate">
               {node.designation || 'Specialist'}
             </p>
+            {node.reportsToName && (
+              <p className="text-[10px] text-slate-400 mt-0.5">Reports to: {node.reportsToName}</p>
+            )}
           </div>
 
           <div className="shrink-0 flex items-center gap-2 px-2">
@@ -239,8 +345,16 @@ const Organogram = () => {
 
         {viewMode === 'tree' ? (
           <div className="p-8 lg:p-16 bg-slate-50/50 rounded-3xl border border-slate-200 shadow-inner min-h-[600px] relative overflow-hidden">
-            {/* Background Grid Pattern */}
-            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
+            {/* Background Grid */}
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+
+            {/* Drag & Drop instruction */}
+            <div className="absolute top-4 right-6 flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur border border-slate-200 rounded-xl shadow-sm text-[11px] font-semibold text-slate-500 pointer-events-none">
+              <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+              Drag a card onto another to set reporting
+            </div>
 
             <div className="relative z-10">
               {hierarchy.length > 0 ? (
@@ -278,7 +392,7 @@ const Organogram = () => {
                     </td>
                     <td className="px-8 py-5 text-sm font-medium text-slate-500">{emp.designation || 'Specialist'}</td>
                     <td className="px-8 py-5">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${getLevelStyles(emp.level).lightBg} ${getLevelStyles(emp.level).text} ${getLevelStyles(emp.level).border.replace('border-', 'border-')}/20 shadow-sm`}>
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${getLevelStyles(emp.level).lightBg} ${getLevelStyles(emp.level).text} shadow-sm`}>
                         Level {emp.level}
                       </span>
                     </td>
@@ -347,7 +461,10 @@ const Organogram = () => {
                     Cancel
                   </button>
                   <button
-                    onClick={handleUpdateManager}
+                    onClick={() => {
+                      const emp = employees.find(e => e.id === editingEmployee.id);
+                      if (emp?.memberId) handleUpdateManager(emp.memberId, selectedManager);
+                    }}
                     disabled={saving}
                     className="flex-[2] py-4 bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50"
                   >
@@ -369,4 +486,3 @@ const Organogram = () => {
 };
 
 export default Organogram;
-
