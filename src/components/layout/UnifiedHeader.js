@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useCompany } from '../../context/CompanyContext';
 import { useSocket } from '../../context/SocketContext';
 import { useChat } from '../../context/ChatContext';
-import { usePermissions } from '../../context/PermissionsContext';
 import { getCookie } from '../../utils/cookies';
 import { BASE_SERVER_URL } from '../../services/api';
 import { getTypeLabel, timeAgo } from '../../utils/notifications';
@@ -14,9 +13,8 @@ const UnifiedHeader = () => {
     const location = useLocation();
     const { state, dispatch } = useAuth();
     const { state: companyState, selectCompany } = useCompany();
-    const { totalUnreadCount, unreadCount, fetchUnreadCount } = useSocket();
-    const { unreadCounts, fetchUnreadCounts, toggleGlobalChat } = useChat();
-    const { companyData } = usePermissions();
+    const { totalUnreadCount } = useSocket();
+    const { unreadCounts, toggleGlobalChat } = useChat();
 
     const [isCompanyOpen, setIsCompanyOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
