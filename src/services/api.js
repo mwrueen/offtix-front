@@ -49,11 +49,19 @@ export const authAPI = {
 };
 
 export const userAPI = {
-  getAll: (companyId = null) => {
-    const config = {};
+  getAll: (companyId = null, page, limit, search) => {
+    const config = { params: {} };
     if (companyId && companyId !== 'personal') {
       config.headers = { 'X-Company-Id': companyId };
-      config.params = { companyId };
+      config.params.companyId = companyId;
+    }
+    if (page) {
+      config.params.paginated = 'true';
+      config.params.page = page;
+      if (limit) config.params.limit = limit;
+    }
+    if (search) {
+      config.params.search = search;
     }
     return api.get('/users', config);
   },

@@ -17,7 +17,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
 
   const getUserImageUrl = (path) => {
     if (!path) return null;
-    if (path.startsWith('http')) return path;
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
     return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
   };
 
