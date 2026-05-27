@@ -14,6 +14,8 @@ const PublicCareers = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [filterNature, setFilterNature] = useState('all');
+    const [minSalary, setMinSalary] = useState('');
+    const [maxExperience, setMaxExperience] = useState('');
 
     useEffect(() => {
         const fetchCirculars = async () => {
@@ -40,17 +42,25 @@ const PublicCareers = () => {
         if (debouncedSearch) {
             const lowSearch = debouncedSearch.toLowerCase();
             result = result.filter(c =>
-                c.title.toLowerCase().includes(lowSearch) ||
-                c.role.toLowerCase().includes(lowSearch) ||
+                c.title?.toLowerCase().includes(lowSearch) ||
+                c.role?.toLowerCase().includes(lowSearch) ||
                 c.location?.toLowerCase().includes(lowSearch) ||
-                c.mandatorySkills.some(s => s.toLowerCase().includes(lowSearch))
+                c.mandatorySkills?.some(s => s.toLowerCase().includes(lowSearch)) ||
+                c.niceToHaveSkills?.some(s => s.toLowerCase().includes(lowSearch)) ||
+                c.description?.toLowerCase().includes(lowSearch)
             );
         }
         if (filterNature !== 'all') {
             result = result.filter(c => c.jobNature === filterNature);
         }
+        if (minSalary) {
+            result = result.filter(c => c.salaryRange?.max >= Number(minSalary) || c.salaryRange?.min >= Number(minSalary));
+        }
+        if (maxExperience) {
+            result = result.filter(c => c.experience <= Number(maxExperience));
+        }
         setFilteredCirculars(result);
-    }, [debouncedSearch, filterNature, circulars]);
+    }, [debouncedSearch, filterNature, minSalary, maxExperience, circulars]);
 
     const getTimeAge = (dateString) => {
         if (!dateString) return 'recently';
@@ -100,6 +110,33 @@ const PublicCareers = () => {
                         </div>
                     </div>
 
+                    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                        <h3 className="text-xs font-bold text-slate-800 mb-4">Expected Salary (Min)</h3>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                            <input
+                                type="number"
+                                placeholder="e.g. 5000"
+                                value={minSalary}
+                                onChange={(e) => setMinSalary(e.target.value)}
+                                className="w-full bg-slate-50 border border-slate-200 p-2.5 pl-7 rounded-lg text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                        <h3 className="text-xs font-bold text-slate-800 mb-4">Max Experience (Years)</h3>
+                        <div className="relative">
+                            <input
+                                type="number"
+                                placeholder="e.g. 3"
+                                value={maxExperience}
+                                onChange={(e) => setMaxExperience(e.target.value)}
+                                className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                            />
+                        </div>
+                    </div>
+
                     <div className="bg-slate-900 text-white rounded-xl p-6 shadow-xl relative overflow-hidden group">
                         <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-indigo-600/20 rounded-full blur-3xl group-hover:bg-indigo-600/40 transition-all"></div>
                         <h3 className="text-lg font-bold leading-tight relative z-10">Expand your career with Offtix.</h3>
@@ -111,7 +148,7 @@ const PublicCareers = () => {
                 {/* Main Feed: Jobs */}
                 <main className="lg:col-span-6 space-y-4">
                     {/* Feed Header/Search */}
-                    <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm flex items-center gap-3">
+                    <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm flex items-center gap-3 focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-100 transition-all">
                         <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 italic transition-all group-hover:border-indigo-200 group-hover:text-indigo-600">
                             🔍
                         </div>
@@ -120,7 +157,7 @@ const PublicCareers = () => {
                             placeholder="Search opportunities (e.g. Designer, London)"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="flex-1 bg-transparent border-none text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-0"
+                            className="flex-1 bg-transparent border-none outline-none text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-0 focus:outline-none"
                         />
                     </div>
 
@@ -130,17 +167,22 @@ const PublicCareers = () => {
                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-300">Synchronizing Global Feed...</p>
                         </div>
                     ) : filteredCirculars.length === 0 ? (
-                        <div className="bg-white border border-slate-200 rounded-2xl p-32 text-center space-y-4">
-                            <div className="text-6xl grayscale opacity-20 mb-8 select-none">📂</div>
-                            <p className="text-3xl font-bold text-slate-800 tracking-tight">No Results Found</p>
-                            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2 px-20 text-center">We couldn't find any positions matching your search criteria.</p>
+                        <div className="bg-white border border-slate-200 rounded-2xl p-32 flex flex-col items-center justify-center text-center space-y-4 shadow-sm">
+                            <div className="mb-8 p-6 bg-slate-50 rounded-full border border-slate-100">
+                                <svg className="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.5 9.5l3 3m0-3l-3 3" />
+                                </svg>
+                            </div>
+                            <p className="text-3xl font-extrabold text-slate-800 tracking-tight">No Results Found</p>
+                            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2 max-w-sm mx-auto text-center">We couldn't find any positions matching your search criteria. Try adjusting your filters.</p>
                         </div>
                     ) : (
                         filteredCirculars.map(circular => (
                             <Link
                                 key={circular._id}
                                 to={`/careers/${circular._id}`}
-                                className="block bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-300 group mb-4"
+                                className="block bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-xl hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 group mb-4"
                             >
                                 <div className="flex gap-4">
                                     {/* Company Logo */}
@@ -181,6 +223,11 @@ const PublicCareers = () => {
                                             <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-100">
                                                 💰 ${circular.salaryRange.min.toLocaleString()} - ${circular.salaryRange.max.toLocaleString()}
                                             </span>
+                                            {circular.deadline && (
+                                                <span className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-100">
+                                                    ⏳ Deadline: {new Date(circular.deadline).toLocaleDateString()}
+                                                </span>
+                                            )}
                                         </div>
 
                                         {/* Description Snippets (optional like LinkedIn) */}
@@ -195,7 +242,7 @@ const PublicCareers = () => {
                                                 <div className="w-6 h-6 rounded-full border border-white bg-slate-300"></div>
                                             </div>
                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                                {getTimeAge(circular.createdAt)} • Activly recruiting
+                                                {getTimeAge(circular.createdAt)} • Actively recruiting
                                             </p>
                                         </div>
                                     </div>

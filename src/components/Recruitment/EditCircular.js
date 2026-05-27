@@ -34,7 +34,8 @@ const EditCircular = () => {
         mandatorySkills: [],
         niceToHaveSkills: [],
         questions: [],
-        status: 'active'
+        status: 'active',
+        deadline: ''
     });
 
     useEffect(() => {
@@ -61,7 +62,8 @@ const EditCircular = () => {
                     mandatorySkills: data.mandatorySkills || [],
                     niceToHaveSkills: data.niceToHaveSkills || [],
                     questions: data.questions || [],
-                    status: data.status || 'active'
+                    status: data.status || 'active',
+                    deadline: data.deadline ? new Date(data.deadline).toISOString().split('T')[0] : ''
                 });
                 if (selectedCompany?.id && selectedCompany.id !== 'personal') {
                     fetchDesignations();
@@ -243,6 +245,18 @@ const EditCircular = () => {
                                             placeholder="Full Address / Venue Details..."
                                             value={formData.location}
                                             onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Deadline</label>
+                                        <input
+                                            type="date"
+                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 text-sm"
+                                            value={formData.deadline}
+                                            onChange={e => setFormData({ ...formData, deadline: e.target.value })}
                                         />
                                     </div>
                                 </div>

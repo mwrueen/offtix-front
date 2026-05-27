@@ -39,7 +39,8 @@ const CreateCircular = () => {
         benefits: '',
         mandatorySkills: [],
         niceToHaveSkills: [],
-        questions: []
+        questions: [],
+        deadline: ''
     });
 
     useEffect(() => {
@@ -200,6 +201,18 @@ const CreateCircular = () => {
                                             className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold shadow-inner text-sm"
                                             value={formData.experience}
                                             onChange={e => setFormData({ ...formData, experience: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Deadline</label>
+                                        <input
+                                            type="date"
+                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold shadow-inner text-sm text-slate-700"
+                                            value={formData.deadline}
+                                            onChange={e => setFormData({ ...formData, deadline: e.target.value })}
                                         />
                                     </div>
                                 </div>
