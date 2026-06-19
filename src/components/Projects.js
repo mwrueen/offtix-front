@@ -92,24 +92,11 @@ const Projects = () => {
         )}
 
         {projects.length === 0 && !showForm ? (
-          <div className="bg-white p-16 rounded-3xl border border-slate-100 text-center shadow-sm max-w-2xl mx-auto my-12">
-            <div className="space-y-6">
-              <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center text-4xl mx-auto grayscale opacity-50 shadow-inner">📁</div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">No projects yet</h3>
-                <p className="text-slate-500 max-w-xs mx-auto text-sm leading-relaxed font-medium">
-                  Create your first project to start tracking tasks and managing team project delivery.
-                </p>
-              </div>
-              {canCreateProjects() && (
-                <button
-                  onClick={() => setShowForm(true)}
-                  className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
-                >
-                  Create Your First Project
-                </button>
-              )}
-            </div>
+          <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-sm">
+            <h3 className="text-xl font-semibold text-slate-900 mb-2">No projects yet</h3>
+            <p className="text-slate-600 text-sm">
+              Create your first project to start tracking tasks and managing team project delivery.
+            </p>
           </div>
         ) : !showForm && (
           <div className="animate-in fade-in duration-700">

@@ -18,6 +18,8 @@ const CreateCircular = () => {
     const { hasPermission } = usePermissions();
     const [step, setStep] = useState(1);
     const [designations, setDesignations] = useState([]);
+    const [isCreatingRole, setIsCreatingRole] = useState(false);
+    const [newRoleName, setNewRoleName] = useState('');
 
     const canManageRecruitment = hasPermission(PERMISSIONS.MANAGE_RECRUITMENT);
 
@@ -62,6 +64,46 @@ const CreateCircular = () => {
             setDesignations(res.data.designations || []);
         } catch (error) {
             console.error('Error fetching designations:', error);
+        }
+    };
+
+    const handleCreateRole = async () => {
+        if (!newRoleName.trim()) return;
+        try {
+            const token = getCookie('authToken');
+            const res = await axios.post(`/api/companies/${selectedCompany.id}/designations`, {
+                name: newRoleName.trim(),
+                description: '',
+                permissions: {
+                    addEmployee: false,
+                    viewEmployeeList: true,
+                    editEmployee: false,
+                    createDesignation: false,
+                    viewDesignations: true,
+                    editDesignation: false,
+                    deleteDesignation: false,
+                    createProject: false,
+                    editProject: false,
+                    deleteProject: false,
+                    assignEmployeeToProject: false,
+                    removeEmployeeFromProject: false,
+                    viewProjectAnalytics: false,
+                    createTask: false,
+                    editTask: false,
+                    deleteTask: false,
+                    manageRecruitment: false
+                }
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            setDesignations(res.data.designations || []);
+            setFormData({ ...formData, role: newRoleName.trim() });
+            setIsCreatingRole(false);
+            setNewRoleName('');
+            toast.showToast('Level created successfully', 'success');
+        } catch (error) {
+            toast.showToast(error.response?.data?.message || 'Failed to create level', 'error');
         }
     };
 
@@ -139,14 +181,48 @@ const CreateCircular = () => {
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Designation Level</label>
-                                        <select
-                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 text-sm"
-                                            value={formData.role}
-                                            onChange={e => setFormData({ ...formData, role: e.target.value })}
-                                        >
-                                            <option value="">Select Level</option>
-                                            {designations.map(d => <option key={d._id} value={d.name}>{d.name}</option>)}
-                                        </select>
+                                        {isCreatingRole ? (
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    className="flex-1 bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 shadow-inner text-sm"
+                                                    placeholder="New Level..."
+                                                    value={newRoleName}
+                                                    onChange={e => setNewRoleName(e.target.value)}
+                                                    autoFocus
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="px-4 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition-all disabled:opacity-50"
+                                                    onClick={handleCreateRole}
+                                                    disabled={!newRoleName.trim()}
+                                                >Save</button>
+                                                <button
+                                                    type="button"
+                                                    className="px-3 bg-white border border-slate-200 text-slate-500 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all"
+                                                    onClick={() => {
+                                                        setIsCreatingRole(false);
+                                                        setNewRoleName('');
+                                                    }}
+                                                >×</button>
+                                            </div>
+                                        ) : (
+                                            <select
+                                                className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 text-sm"
+                                                value={formData.role}
+                                                onChange={e => {
+                                                    if (e.target.value === 'CREATE_NEW') {
+                                                        setIsCreatingRole(true);
+                                                    } else {
+                                                        setFormData({ ...formData, role: e.target.value });
+                                                    }
+                                                }}
+                                            >
+                                                <option value="">Select Level</option>
+                                                {designations.map(d => <option key={d._id} value={d.name}>{d.name}</option>)}
+                                                <option value="CREATE_NEW" className="text-indigo-600 font-bold bg-indigo-50">+ Create New Level</option>
+                                            </select>
+                                        )}
                                     </div>
                                 </div>
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCompany } from '../context/CompanyContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { getCookie } from '../utils/cookies';
 import SidebarHeader from './SidebarHeader';
 import { useSocket } from '../context/SocketContext';
@@ -297,8 +297,8 @@ const Layout = ({ children, wide }) => {
             return (
               <React.Fragment key={item.path}>
                 {showCat && <div className={`px-4 ${idx === 0 ? 'mt-0' : 'mt-8'} mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-[2px]`}>{item.category}</div>}
-                <div
-                  onClick={() => navigate(item.path)}
+                <Link
+                  to={item.path}
                   className={`group flex items-center gap-4 cursor-pointer rounded-xl transition-all duration-200 relative ${sidebarCollapsed ? 'p-3 justify-center mb-1' : 'p-3 px-4 mb-0.5'} 
                     ${active
                       ? 'bg-slate-100 text-slate-900 shadow-none'
@@ -309,7 +309,7 @@ const Layout = ({ children, wide }) => {
                   </div>
                   {!sidebarCollapsed && <span className={`flex-1 text-[13px] tracking-tight ${active ? 'text-slate-900 font-black' : 'text-slate-600 font-medium group-hover:text-indigo-600'}`}>{item.label}</span>}
                   {!sidebarCollapsed && active && <div className="w-1.5 h-6 rounded-l-full bg-indigo-600 absolute right-0" />}
-                </div>
+                </Link>
               </React.Fragment>
             );
           })}
