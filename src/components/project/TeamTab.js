@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
-import { projectAPI, companyAPI, taskRoleAPI } from '../../services/api';
+import { projectAPI, companyAPI, taskRoleAPI, BASE_SERVER_URL } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 import { useToast } from '../../context/ToastContext';
 import { Button, Badge } from '../ui';
+
+const getAvatarUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http') || path.startsWith('data:')) return path;
+  return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+};
 
 const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, onRefresh }) => {
   const navigate = useNavigate();
@@ -21,6 +27,10 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
   const [loading, setLoading] = useState(false);
   const [companyRoles, setCompanyRoles] = useState([]);
   const [projectRoles, setProjectRoles] = useState([]);
+  const [showPMSelector, setShowPMSelector] = useState(false);
+  const [selectedPMOption, setSelectedPMOption] = useState(null);
+  const [pmLoading, setPmLoading] = useState(false);
+  const [confirmUnassignPM, setConfirmUnassignPM] = useState(false);
 
   const canAddMembers = isProjectOwner || isProjectManager || hasPermission(PERMISSIONS.ASSIGN_EMPLOYEE_TO_PROJECT);
   const canRemoveMembers = isProjectOwner || isProjectManager || hasPermission(PERMISSIONS.REMOVE_EMPLOYEE_FROM_PROJECT);
@@ -56,6 +66,41 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
     const available = users.filter(user => !project.members?.some(m => (m.user?._id || m.user) === user._id) && project.owner?._id !== user._id && project.owner !== user._id);
     return available.map(u => ({ value: u._id, label: `${u.name} (${u.email})`, user: u }));
   }, [users, project.members, project.owner]);
+
+  const currentPMId = project.projectManager?._id || project.projectManager;
+
+  const pmOptions = useMemo(() => {
+    if (!users) return [];
+    const ownerId = project.owner?._id || project.owner;
+    return users
+      .filter(user => user._id !== ownerId && user._id !== currentPMId)
+      .map(u => ({ value: u._id, label: `${u.name} (${u.email})`, user: u }));
+  }, [users, project.owner, currentPMId]);
+
+  const handleAssignPM = async () => {
+    if (!selectedPMOption) return;
+    setPmLoading(true);
+    try {
+      await projectAPI.update(projectId, { projectManager: selectedPMOption.value });
+      showToast('Project Manager assigned successfully', 'success');
+      setSelectedPMOption(null);
+      setShowPMSelector(false);
+      onRefresh();
+    } catch (e) { showToast('Failed to assign Project Manager', 'error'); }
+    finally { setPmLoading(false); }
+  };
+
+  const handleUnassignPM = async () => {
+    setPmLoading(true);
+    try {
+      await projectAPI.update(projectId, { projectManager: null });
+      showToast('Project Manager unassigned', 'success');
+      setConfirmUnassignPM(false);
+      setShowPMSelector(false);
+      onRefresh();
+    } catch (e) { showToast('Failed to unassign Project Manager', 'error'); }
+    finally { setPmLoading(false); }
+  };
 
   const handleCreateRole = async () => {
     if (!newRole.name.trim()) return;
@@ -240,64 +285,72 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
         )}
 
         <div className="space-y-4">
-          {/* Team Manager Identity - Only visible if project has a manager */}
+          {/* Team Manager Identity - Only visible if project has a manager or the owner can assign one */}
           {(project.projectManager || isProjectOwner) && (
-            <div className="bg-white p-6 rounded-3xl shadow-sm flex items-center justify-between border-2 border-indigo-100 bg-gradient-to-r from-indigo-50/30 to-transparent">
+            <div className="bg-white p-6 rounded-3xl shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-2 border-indigo-100 bg-gradient-to-r from-indigo-50/30 to-transparent">
               <div className="flex items-center gap-6">
                 <div className="w-16 h-16 rounded-2xl bg-white border-2 border-indigo-200 flex items-center justify-center text-2xl font-black text-indigo-600 shadow-sm overflow-hidden">
-                  {project.projectManager?.profile?.avatar ? (
-                    <img src={project.projectManager.profile.avatar} alt="" className="w-full h-full object-cover" />
+                  {getAvatarUrl(project.projectManager?.profile?.avatar || project.projectManager?.profile?.profilePicture) ? (
+                    <img src={getAvatarUrl(project.projectManager.profile.avatar || project.projectManager.profile.profilePicture)} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    project.projectManager?.name?.[0].toUpperCase() || '?'
+                    project.projectManager?.name?.[0]?.toUpperCase() || '?'
                   )}
                 </div>
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">Project Manager</span>
-                    {isProjectOwner && (
-                      <button 
-                        onClick={() => setShowAddMember('pm')} 
-                        className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition-colors underline cursor-pointer"
-                      >
-                        {project.projectManager ? 'Change PM' : 'Assign PM'}
-                      </button>
-                    )}
-                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">Project Manager</span>
                   <h4 className="text-lg font-bold text-slate-900 leading-tight">
                     {project.projectManager?.name || (isProjectOwner ? 'Unassigned' : 'No Project Manager')}
                   </h4>
                   <p className="text-xs text-slate-500 font-medium">{project.projectManager?.email || 'Assign someone to manage this project'}</p>
                 </div>
               </div>
-              <div className="px-5 py-2.5 bg-white rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-500 border border-indigo-50 shadow-sm">
-                Management Tier
-              </div>
+              {isProjectOwner && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    variant={project.projectManager ? 'ghost' : 'primary'}
+                    size="sm"
+                    onClick={() => { setShowPMSelector(v => !v); setSelectedPMOption(null); }}
+                  >
+                    {project.projectManager ? 'Change' : '+ Assign PM'}
+                  </Button>
+                  {project.projectManager && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setConfirmUnassignPM(true)}
+                      className="text-rose-500 hover:bg-rose-50"
+                    >
+                      Unassign
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
           {/* PM Assignment Selector */}
-          {showAddMember === 'pm' && isProjectOwner && (
+          {showPMSelector && isProjectOwner && (
             <div className="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100 space-y-4 animate-in slide-in-from-top-4">
               <div className="flex justify-between items-center">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Select Project Manager</h4>
-                <button onClick={() => setShowAddMember(false)} className="text-slate-400 hover:text-slate-600">×</button>
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">
+                  {project.projectManager ? 'Change Project Manager' : 'Select Project Manager'}
+                </h4>
+                <button onClick={() => { setShowPMSelector(false); setSelectedPMOption(null); }} className="text-slate-400 hover:text-slate-600">×</button>
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1">
-                  <Select 
-                    options={users?.map(u => ({ value: u._id, label: `${u.name} (${u.email})` }))} 
-                    onChange={async (opt) => {
-                      try {
-                        await projectAPI.update(projectId, { projectManager: opt.value });
-                        showToast('Project Manager updated', 'success');
-                        onRefresh();
-                        setShowAddMember(false);
-                      } catch (e) { showToast('Update failed', 'error'); }
-                    }} 
-                    styles={selectStyles} 
-                    placeholder="Select a user from organization..." 
+                  <Select
+                    options={pmOptions}
+                    value={selectedPMOption}
+                    onChange={setSelectedPMOption}
+                    styles={selectStyles}
+                    placeholder="Search a user by name or email..."
+                    isClearable
                   />
                 </div>
+                <Button variant="primary" size="sm" onClick={handleAssignPM} disabled={pmLoading || !selectedPMOption} loading={pmLoading}>
+                  Confirm
+                </Button>
               </div>
             </div>
           )}
@@ -377,6 +430,15 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
         onConfirm={handleDeleteRole}
         title="Delete Project Role"
         message={`Are you sure you want to delete the role: ${roleToRemove?.name}? Active assignments to this role will remain but lose their reference.`}
+      />
+
+      <DeleteConfirmModal
+        isOpen={confirmUnassignPM}
+        onClose={() => setConfirmUnassignPM(false)}
+        onConfirm={handleUnassignPM}
+        title="Unassign Project Manager"
+        message={`Are you sure you want to unassign ${project.projectManager?.name || 'the current Project Manager'} from this project? Management privileges will be revoked.`}
+        confirmButtonText="Yes, Unassign"
       />
     </div>
   );
