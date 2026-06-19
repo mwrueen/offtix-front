@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import { projectAPI, companyAPI, taskRoleAPI, BASE_SERVER_URL } from '../../services/api';
@@ -36,9 +36,7 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
   const canRemoveMembers = isProjectOwner || isProjectManager || hasPermission(PERMISSIONS.REMOVE_EMPLOYEE_FROM_PROJECT);
   const canManageRoles = isProjectOwner || isProjectManager;
 
-  useEffect(() => { fetchRoles(); }, [projectId, project]);
-
-  const fetchRoles = async () => {
+  const fetchRoles = useCallback(async () => {
     try {
       const projectRolesRes = await taskRoleAPI.getAll(projectId);
       setProjectRoles(projectRolesRes.data || []);
@@ -50,7 +48,9 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
         }
       }
     } catch (e) { console.error('Error fetching roles', e); }
-  };
+  }, [projectId, project]);
+
+  useEffect(() => { fetchRoles(); }, [fetchRoles]);
 
   const roleOptions = useMemo(() => {
     const projectSpecific = projectRoles.map(r => ({ value: r.name, label: r.name }));

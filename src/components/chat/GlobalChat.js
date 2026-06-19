@@ -125,7 +125,7 @@ const GlobalChat = ({ onClose }) => {
             }
         };
         fetchNav();
-    }, [companyId, currentUser?._id]);
+    }, [companyId, currentUser?.id, currentUser?._id]);
 
     // Join/Leave rooms and fetch messages when selectedChat changes
     useEffect(() => {
