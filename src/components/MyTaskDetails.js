@@ -32,17 +32,6 @@ const MyTaskDetails = () => {
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [isSubmittingSubtask, setIsSubmittingSubtask] = useState(false);
 
-  const getUserInitials = (user) => {
-    if (!user || !user.name) return '?';
-    const names = user.name.split(' ');
-    return names.length >= 2 ? (names[0][0] + names[names.length - 1][0]).toUpperCase() : user.name.substring(0, 2).toUpperCase();
-  };
-
-  const getUserColor = (userId) => {
-    const colors = ['#0052cc', '#00875a', '#ff8b00', '#6554c0', '#00b8d9', '#ff5630'];
-    return colors[userId ? userId.charCodeAt(userId.length - 1) % colors.length : 0];
-  };
-
   const getSubtaskAssignees = (st) => {
     const usersMap = new Map();
     if (st.roleAssignments) {
@@ -453,7 +442,6 @@ const MyTaskDetails = () => {
                       // Paused state is determined by pausedAt field (independent of project's status taxonomy)
                       const isPaused = !isCompleted && Boolean(st.pausedAt) && !st.activeUser;
                       const isActive = !isCompleted && !isPaused && (['active', 'inprogress'].includes(stStatusNorm) || Boolean(st.activeUser));
-                      const isPending = !isActive && !isPaused && !isCompleted;
                       const isAssignedToThisSt = isUserAssignedToSubtask(st);
 
                       const currentUserIdStr = (user?.id || user?._id)?.toString();
@@ -708,7 +696,6 @@ const MyTaskDetails = () => {
                   {task.roleAssignments.map((ra, idx) => {
                     const isRunning = (ra.status === 'active' || ra.status === 'in_progress');
                     const isCompleted = ra.status === 'completed';
-                    const isPending = !isRunning && !isCompleted;
                     return (
                       <div key={ra._id || idx} className={`rounded-xl border p-3 transition-all ${isRunning ? 'bg-emerald-50 border-emerald-300 shadow-sm' :
                         isCompleted ? 'bg-slate-50 border-slate-100 opacity-70' :

@@ -30,6 +30,7 @@ const HolidayCalendar = () => {
       fetchHolidays();
       fetchCompanySettings();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCompany]);
 
   useEffect(() => {
@@ -38,6 +39,7 @@ const HolidayCalendar = () => {
     };
     document.addEventListener('mouseup', handleMouseUpGlobal);
     return () => document.removeEventListener('mouseup', handleMouseUpGlobal);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDragging, dragStartDate, dragEndDate]);
 
   const fetchHolidays = async () => {

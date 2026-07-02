@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Layout from './Layout';
-import api, { API_BASE_URL, BASE_SERVER_URL } from '../services/api';
+import api, { BASE_SERVER_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { useCompany } from '../context/CompanyContext';
 import PageHeader from './PageHeader';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -60,19 +59,8 @@ const mapApiUserToState = (data) => {
 
 const Profile = () => {
   const { dispatch: authDispatch } = useAuth();
-  const { state: companyState } = useCompany();
   const toast = useToast();
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    try {
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return dateStr;
-      return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    } catch (e) {
-      return dateStr;
-    }
-  };
 
   const getImageUrl = (url) => {
     if (!url) return '';
@@ -136,6 +124,7 @@ const Profile = () => {
     return () => {
       cancelled = true;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const exportResume = async () => {

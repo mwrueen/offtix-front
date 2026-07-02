@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useProjects } from '../hooks/useProjects';
-import { useAuth } from '../context/AuthContext';
 import { useCompanyFilter } from '../hooks/useCompanyFilter';
 import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import ProjectForm from './ProjectForm';
@@ -11,7 +10,6 @@ import DeleteConfirmModal from './common/DeleteConfirmModal';
 
 const Projects = () => {
   const { projects, loading, error, fetchProjects, createProject, updateProject, deleteProject } = useProjects();
-  const { state } = useAuth();
   const { selectedCompany, state: companyState } = useCompanyFilter();
   const { hasPermission, isSuperAdmin } = usePermissions();
   const [showForm, setShowForm] = useState(false);

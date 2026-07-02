@@ -7,7 +7,7 @@ import PageHeader from '../PageHeader';
 import { Card, Button, Badge } from '../ui';
 import { useToast } from '../../context/ToastContext';
 import { getCookie } from '../../utils/cookies';
-import { BASE_SERVER_URL } from '../../services/api';
+
 
 const ApplicantsList = () => {
     const { id } = useParams();
@@ -22,8 +22,6 @@ const ApplicantsList = () => {
     const [filterStatus, setFilterStatus] = useState('all');
     const [filterExperience, setFilterExperience] = useState('all');
     const [viewingApplicant, setViewingApplicant] = useState(null);
-    const [fullProfile, setFullProfile] = useState(null);
-    const [loadingProfile, setLoadingProfile] = useState(false);
     const [hiringApplicant, setHiringApplicant] = useState(null);
     const [openScreeningId, setOpenScreeningId] = useState(null);
 
@@ -65,6 +63,7 @@ const ApplicantsList = () => {
             }
         };
         fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const updateStatus = async (appId, status, notes = '', interviewDate = null) => {
@@ -88,32 +87,9 @@ const ApplicantsList = () => {
             setStatusUpdating(null);
         }
     };
-    const applicantUserId = (app) => {
-        const u = app?.user;
-        if (!u) return null;
-        if (typeof u === 'object' && u._id != null) return String(u._id);
-        return String(u);
-    };
 
     const handleViewProfile = (app) => {
         navigate(`/recruitment/applications/${app._id}`, { state: { application: app } });
-    };
-
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '';
-        try {
-            const date = new Date(dateStr);
-            if (isNaN(date.getTime())) return dateStr;
-            return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        } catch (e) {
-            return dateStr;
-        }
-    };
-
-    const getImageUrl = (url) => {
-        if (!url) return '';
-        if (url.startsWith('http')) return url;
-        return `${BASE_SERVER_URL}${url.startsWith('/') ? '' : '/'}${url}`;
     };
 
     const hasCircularQuestions = Array.isArray(circular?.questions) && circular.questions.length > 0;

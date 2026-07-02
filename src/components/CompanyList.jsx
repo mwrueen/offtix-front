@@ -5,7 +5,6 @@ import Layout from './Layout';
 import PageHeader from './PageHeader';
 import Card from './ui/Card';
 import Badge from './ui/Badge';
-import Input from './ui/Input';
 import Button from './ui/Button';
 import LoadingSpinner from './ui/LoadingSpinner';
 import { BASE_SERVER_URL } from '../services/api';

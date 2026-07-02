@@ -56,6 +56,7 @@ const EmployeeDetails = () => {
     } else if (!isCompanyLoading) {
       navigate('/overview');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCompany, isCompanyLoading, id]);
 
   const fetchEmployeeDetails = async () => {

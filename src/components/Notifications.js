@@ -21,6 +21,7 @@ const Notifications = () => {
   useEffect(() => {
     fetchAll();
     clearUnreadCount();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clearUnreadCount]);
 
   const authHeaders = () => ({ Authorization: `Bearer ${getCookie('authToken')}`, 'Content-Type': 'application/json' });

@@ -200,7 +200,6 @@ const Layout = ({ children, wide }) => {
     navigate('/dashboard', { replace: true });
   };
 
-  const getCompanyNotifCount = (companyId) => unreadCountsByCompany?.[companyId] || 0;
   const getCompanyMsgCount = (companyId) => chatUnreadByCompany?.[companyId]?.total || 0;
   const getCompanyPendingTasks = (companyId) => pendingTasksByCompany?.[companyId] || 0;
 
@@ -225,7 +224,6 @@ const Layout = ({ children, wide }) => {
     return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
   };
 
-  const baseServerUrl = BASE_SERVER_URL;
   const ChatHeaderIcon = getIcon('chat');
   const BellHeaderIcon = getIcon('bell');
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from './Layout';
-import api, { API_BASE_URL, BASE_SERVER_URL } from '../services/api';
+import api, { BASE_SERVER_URL } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import PageHeader from './PageHeader';
 
@@ -31,6 +31,7 @@ const ProfilePreview = () => {
 
     useEffect(() => {
         fetchUserProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const fetchUserProfile = async () => {

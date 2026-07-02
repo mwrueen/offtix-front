@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useCompanyFilter } from '../hooks/useCompanyFilter';
+import { useNavigate } from 'react-router-dom';
 import { getCookie } from '../utils/cookies';
 import Layout from './Layout';
 import { useCompany } from '../context/CompanyContext';
@@ -14,7 +13,6 @@ const EditCompanyInfo = () => {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [company, setCompany] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [formData, setFormData] = useState({
@@ -65,6 +63,7 @@ const EditCompanyInfo = () => {
     } else if (!isCompanyLoading) {
       navigate('/overview');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCompany, isCompanyLoading]);
 
   const fetchCompany = async () => {
@@ -80,7 +79,6 @@ const EditCompanyInfo = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setCompany(data);
         setFormData({
           name: data.name || '',
           description: data.description || '',

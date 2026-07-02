@@ -20,6 +20,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (selectedCompany) fetchDashboardData();
     if (state.user?.role === 'superadmin') fetchAdminStats();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCompany, state.user?.role]);
 
   const fetchDashboardData = async () => {

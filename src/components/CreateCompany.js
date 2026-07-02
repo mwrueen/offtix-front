@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { useCompany } from '../context/CompanyContext';
 import { useToast } from '../context/ToastContext';
 import Layout from './Layout';
@@ -9,7 +8,6 @@ import Input from './common/Input';
 
 const CreateCompany = () => {
   const navigate = useNavigate();
-  const { state } = useAuth();
   const { createCompany } = useCompany();
   const toast = useToast();
 

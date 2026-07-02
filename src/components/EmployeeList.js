@@ -29,6 +29,7 @@ const EmployeeList = () => {
     } else if (!authState.loading && !companyState.loading && (selectedCompany === null || selectedCompany?.id === 'personal')) {
       navigate('/overview');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCompany, authState.loading, companyState.loading]);
 
   const fetchEmployees = async () => {

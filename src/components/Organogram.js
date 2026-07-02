@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { useCompanyFilter } from '../hooks/useCompanyFilter';
 import { useToast } from '../context/ToastContext';
 import { getCookie } from '../utils/cookies';
@@ -9,7 +8,6 @@ import PageHeader from './PageHeader';
 
 const Organogram = () => {
   const navigate = useNavigate();
-  const { state: authState } = useAuth();
   const { selectedCompany } = useCompanyFilter();
   const toast = useToast();
   const [hierarchy, setHierarchy] = useState([]);
@@ -30,6 +28,7 @@ const Organogram = () => {
     if (selectedCompany && selectedCompany.id !== 'personal') {
       fetchOrganogram();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCompany]);
 
   const fetchOrganogram = async () => {

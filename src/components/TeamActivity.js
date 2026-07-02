@@ -69,12 +69,13 @@ const TeamActivity = () => {
     };
     fetchActivity();
     return () => ctrl.abort();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyFilter.companyId, selectedProject, selectedDate, companyState.loading]);
 
   const formatDate = (ds) => {
     if (!ds) return 'N/A';
     const d = new Date(ds); const n = new Date(); const df = n - d;
-    const m = Math.floor(df / 60000); const h = Math.floor(m / 60); const dy = Math.floor(h / 24);
+    const m = Math.floor(df / 60000); const h = Math.floor(m / 60);
     if (m < 1) return 'Just now'; if (m < 60) return `${m}m ago`; if (h < 24) return `${h}h ago`;
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: d.getFullYear() !== n.getFullYear() ? 'numeric' : undefined });
   };

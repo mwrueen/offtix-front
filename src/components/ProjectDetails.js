@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { projectAPI, requirementAPI, meetingNoteAPI, sprintAPI, phaseAPI, userAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { useCompanyFilter } from '../hooks/useCompanyFilter';
 import { usePermissions, PERMISSIONS } from '../context/PermissionsContext';
 import Layout from './Layout';
 import Breadcrumb from './project/Breadcrumb';
@@ -26,7 +25,6 @@ const ProjectDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { state: authState } = useAuth();
-  const companyFilter = useCompanyFilter();
   const { hasPermission, isSuperAdmin } = usePermissions();
   const [project, setProject] = useState(null);
   const [users, setUsers] = useState([]);
@@ -42,6 +40,7 @@ const ProjectDetails = () => {
 
 
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchProjectData(); }, [id]);
 
   const fetchProjectData = async () => {
@@ -72,6 +71,7 @@ const ProjectDetails = () => {
     } catch (e) { console.error(`Data sync error: ${tab}`, e); }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (project && activeTab !== 'overview') fetchTabData(activeTab); }, [activeTab, project]);
 
   const isProjectOwner = authState.user && project && (project.owner?._id === authState.user.id || project.owner === authState.user.id || project.owner === authState.user._id || project.owner?._id === authState.user._id);

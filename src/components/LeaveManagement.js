@@ -33,6 +33,7 @@ const LeaveManagement = () => {
       fetchLeaves();
       fetchLeaveBalance();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCompany, activeTab]);
 
   const fetchLeaves = async () => {

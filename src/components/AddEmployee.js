@@ -38,6 +38,7 @@ const AddEmployee = () => {
     if (selectedCompany && selectedCompany.id !== 'personal') {
       fetchDesignations();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCompany]);
 
   const fetchDesignations = async () => {

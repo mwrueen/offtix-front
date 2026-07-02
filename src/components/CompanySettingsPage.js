@@ -5,7 +5,6 @@ import { useCompany } from '../context/CompanyContext';
 import { useToast } from '../context/ToastContext';
 import Layout from './Layout';
 import CompanySettings from './company/CompanySettings';
-import PageHeader from './PageHeader';
 import { companyAPI } from '../services/api';
 
 const CompanySettingsPage = () => {
@@ -22,6 +21,7 @@ const CompanySettingsPage = () => {
     // Avoid redirecting until company state finished loading.
     if (companyState.loading) return;
     fetchCompanyData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyState.selectedCompany, companyState.loading]);
 
   const fetchCompanyData = async () => {

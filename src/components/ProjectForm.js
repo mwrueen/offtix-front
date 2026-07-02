@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { useCompany } from '../context/CompanyContext';
 
 const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
-  const { company } = useCompany();
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     description: initialData?.description || '',

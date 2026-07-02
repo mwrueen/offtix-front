@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { useCompanyFilter } from '../hooks/useCompanyFilter';
 import { useToast } from '../context/ToastContext';
 import { getCookie } from '../utils/cookies';
@@ -20,7 +19,6 @@ const permissionCategories = [
 
 const ManageRoles = () => {
   const navigate = useNavigate();
-  const { state: authState } = useAuth();
   const { selectedCompany } = useCompanyFilter();
   const toast = useToast();
   const { hasPermission } = usePermissions();
@@ -36,6 +34,7 @@ const ManageRoles = () => {
     if (selectedCompany && selectedCompany.id !== 'personal') {
       fetchCompany();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCompany]);
 
   const fetchCompany = async () => {

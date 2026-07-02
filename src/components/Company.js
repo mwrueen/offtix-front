@@ -14,10 +14,10 @@ const Company = () => {
   const navigate = useNavigate();
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
-  const toast = useToast();
 
   useEffect(() => {
     if (selectedCompany) fetchCompany();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCompany]);
 
   const fetchCompany = async () => {
