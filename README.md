@@ -67,20 +67,28 @@ The application will open in your browser at `http://localhost:3000`
 
 ## Project Structure
 
+The project follows a modular, feature-oriented component architecture. Component files are organized inside subdirectories in `src/components` matching their functional domain, preventing folder bloat and maximizing separation of concerns.
+
 ```
 src/
-├── components/          # Reusable UI components
-│   ├── auth/           # Authentication components
-│   ├── common/         # Common UI components
-│   ├── company/        # Company management components
-│   ├── landing/        # Landing page components
-│   └── project/        # Project management components
-├── context/            # React Context providers
-├── hooks/              # Custom React hooks
-├── services/           # API service functions
-├── utils/              # Utility functions
-├── App.js              # Main application component
-└── index.js            # Application entry point
+├── components/          # Categorized React Components
+│   ├── auth/           # Login, registration, and social provider flows
+│   ├── chat/           # Global real-time messaging workspace
+│   ├── common/         # Route guards (ProtectedRoute) and general utility modals
+│   ├── company/        # Organization forms, workforce rosters, leaves & holidays, organogram, roles
+│   ├── dashboard/      # Main entry dashboard and team activity feed
+│   ├── landing/        # Marketing landing pages and footer
+│   ├── layout/         # Base layout, sidebar navigation, unified header, notifications drawer
+│   ├── project/        # Backlog, phases, task cards, task form/editor, workflows, dependencies, sprints
+│   ├── recruitment/    # Circular publisher, resume parser, screening flow, offer acceptances
+│   ├── ui/             # Standard low-level UI elements (Toast alerts, etc.)
+│   └── user/           # User profile cards, profile settings, and employee directory
+├── context/            # Global React Context API state providers
+├── hooks/              # Reusable custom React hooks
+├── services/           # Api service wrappers (apiService, Axios defaults)
+├── utils/              # Client helpers (cookies, currency formatting, dates)
+├── App.js              # Routing table and global provider configuration
+└── index.js            # React Virtual DOM mount point
 ```
 
 ## Key Features

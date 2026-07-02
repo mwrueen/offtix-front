@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useCompany } from '../../context/CompanyContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import Layout from '../Layout';
+import Layout from '../layout/Layout';
 import CompanyForm from './CompanyForm';
 import MemberForm from './MemberForm';
 import CompanySettings from './CompanySettings';

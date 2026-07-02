@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { taskAPI, projectAPI, taskStatusAPI, BASE_SERVER_URL } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
-import Layout from '../Layout';
-import PageHeader from '../PageHeader';
+import Layout from '../layout/Layout';
+import PageHeader from '../layout/PageHeader';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 

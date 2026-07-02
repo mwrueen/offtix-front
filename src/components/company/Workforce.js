@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { companyAPI } from '../../services/api';
 import { useCompany } from '../../context/CompanyContext';
-import Layout from '../Layout';
-import PageHeader from '../PageHeader';
+import Layout from '../layout/Layout';
+import PageHeader from '../layout/PageHeader';
 
 const formatCurrency = (a, cc = 'USD') => {
   if (a === undefined || a === null) return '-';
