@@ -22,6 +22,7 @@ const AssigneeModal = ({ task, projectId, users = [], taskRoles = [], onClose, o
         setSelectedRoleId(taskRoles[0]._id);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task, taskRoles]);
 
   const getUserInitials = (user) => {

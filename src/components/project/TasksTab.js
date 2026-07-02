@@ -166,7 +166,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
         } finally {
             setLoading(false);
         }
-    }, [id]);
+    }, [id, user?._id]);
 
     useEffect(() => {
         fetchProjectData();

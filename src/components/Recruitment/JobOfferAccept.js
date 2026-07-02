@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import Layout from '../Layout';
 import { useToast } from '../../context/ToastContext';
 import { getCookie } from '../../utils/cookies';
@@ -9,7 +9,6 @@ const currencySymbols = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', INR: '₹'
 
 const JobOfferAccept = () => {
     const { applicationId } = useParams();
-    const navigate = useNavigate();
     const toast = useToast();
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);

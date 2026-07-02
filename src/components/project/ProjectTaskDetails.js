@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { taskAPI, projectAPI, taskRoleAPI, taskStatusAPI, BASE_SERVER_URL } from '../../services/api';
+import { taskAPI, projectAPI, taskStatusAPI, BASE_SERVER_URL } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import Layout from '../Layout';
@@ -19,7 +19,6 @@ const ProjectTaskDetails = () => {
     const [project, setProject] = useState(null);
     const [subtasks, setSubtasks] = useState([]);
     const [users, setUsers] = useState([]);
-    const [taskRoles, setTaskRoles] = useState([]);
     const [taskStatuses, setTaskStatuses] = useState([]);
     const [loading, setLoading] = useState(true);
     
@@ -107,10 +106,9 @@ const ProjectTaskDetails = () => {
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const [taskRes, projRes, rolesRes, statusesRes] = await Promise.all([
+            const [taskRes, projRes, statusesRes] = await Promise.all([
                 taskAPI.getById(projectId, taskId).catch(() => ({ data: null })),
                 projectAPI.getById(projectId).catch(() => ({ data: null })),
-                taskRoleAPI.getAll(projectId).catch(() => ({ data: [] })),
                 taskStatusAPI.getAll(projectId).catch(() => ({ data: [] }))
             ]);
 
@@ -120,7 +118,6 @@ const ProjectTaskDetails = () => {
             }
             setSubtasks(taskRes.data?.subtasks || []);
             setProject(projRes.data);
-            setTaskRoles(rolesRes.data);
             setTaskStatuses(statusesRes.data);
 
             if (projRes.data) {

@@ -24,6 +24,7 @@ const UserDetails = () => {
       return;
     }
     fetchUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, state.user, navigate]);
 
   const fetchUser = async () => {

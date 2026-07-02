@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Layout from '../Layout';
 import PageHeader from '../PageHeader';
 import { useCompanyFilter } from '../../hooks/useCompanyFilter';
@@ -8,7 +8,6 @@ import { getCookie } from '../../utils/cookies';
 import { BASE_SERVER_URL } from '../../services/api';
 
 const RecruitmentOverview = () => {
-    const navigate = useNavigate();
     const { selectedCompany } = useCompanyFilter();
 
     const getLogoUrl = (path) => {

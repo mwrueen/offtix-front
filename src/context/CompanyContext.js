@@ -147,7 +147,7 @@ export const CompanyProvider = ({ children }) => {
     } else {
       dispatch({ type: 'RESET' });
     }
-  }, [authState.token, authState.user]);
+  }, [authState.token, authState.user, fetchUserCompanies]);
 
   const value = useMemo(() => ({
     state,

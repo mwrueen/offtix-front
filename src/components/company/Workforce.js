@@ -136,6 +136,7 @@ const Workforce = () => {
   useEffect(() => {
     if (companyState.selectedCompany?.id && companyState.selectedCompany.id !== 'personal') fetchWorkforce();
     else { setLoading(false); setError('Select an active organization to view workforce data.'); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyState.selectedCompany]);
 
   const fetchWorkforce = async () => {

@@ -92,15 +92,6 @@ const PhasesTab = ({ projectId, phases, setPhases, users, isProjectOwner, onRefr
     }
   };
 
-  const getStatusBadge = (status) => {
-    const statusMap = {
-      'planning': 'bg-amber-50 text-amber-700 border-amber-200',
-      'active': 'bg-indigo-50 text-indigo-700 border-indigo-200',
-      'completed': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      'on-hold': 'bg-slate-50 text-slate-700 border-slate-200'
-    };
-    return statusMap[status] || 'bg-slate-50 text-slate-700 border-slate-200';
-  };
 
   const calculateProgress = (phase) => {
     if (!phase.milestones || phase.milestones.length === 0) return 0;

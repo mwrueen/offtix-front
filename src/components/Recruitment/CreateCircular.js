@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import Layout from '../Layout';
-import PageHeader from '../PageHeader';
 import SkillsSelector from './SkillsSelector';
 import { useCompanyFilter } from '../../hooks/useCompanyFilter';
 import { useToast } from '../../context/ToastContext';
@@ -28,6 +27,7 @@ const CreateCircular = () => {
             toast.showToast('You do not have permission to manage recruitment', 'error');
             navigate('/recruitment');
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [canManageRecruitment, navigate, selectedCompany]);
 
     const [formData, setFormData] = useState({
@@ -53,6 +53,7 @@ const CreateCircular = () => {
                 setFormData(prev => ({ ...prev, location: selectedCompany.address }));
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedCompany]);
 
     const fetchDesignations = async () => {

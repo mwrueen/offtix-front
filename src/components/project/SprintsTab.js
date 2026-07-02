@@ -97,15 +97,7 @@ const SprintsTab = ({ projectId, sprints, setSprints, phases, users, isProjectOw
     }
   };
 
-  const getStatusBadge = (status) => {
-    const statusMap = {
-      'planning': 'bg-amber-50 text-amber-700 border-amber-200',
-      'active': 'bg-indigo-50 text-indigo-700 border-indigo-200',
-      'completed': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      'cancelled': 'bg-rose-50 text-rose-700 border-rose-200'
-    };
-    return statusMap[status] || 'bg-slate-50 text-slate-700 border-slate-200';
-  };
+
 
   const calculateDuration = (startDate, endDate) => {
     if (!startDate || !endDate) return 0;

@@ -99,7 +99,7 @@ const JobDetails = () => {
             }
         };
         fetchCircular();
-    }, [id, isAuthenticated, authHeaders, hasAppliedInBrowser]);
+    }, [id, isAuthenticated, authHeaders, hasAppliedInBrowser, toast]);
 
     const handleAnswerChange = (index, value, type) => {
         const newAnswers = [...formData.answers];

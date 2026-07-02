@@ -38,7 +38,7 @@ const HireCandidateModal = ({ isOpen, onClose, application, onSuccess }) => {
         setStatusUpdating(true);
         try {
             const token = getCookie('authToken');
-            const res = await axios.post(`/api/recruitment/applications/${application._id}/hire`, {
+            await axios.post(`/api/recruitment/applications/${application._id}/hire`, {
                 salary: Number(hireSalary),
                 roleDescription: hireJobDescription,
                 facilities: hireFacilities,

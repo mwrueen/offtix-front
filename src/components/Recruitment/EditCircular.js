@@ -43,6 +43,7 @@ const EditCircular = () => {
             toast.showToast('You do not have permission to manage recruitment', 'error');
             navigate('/recruitment');
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [canManageRecruitment, navigate, selectedCompany]);
 
     useEffect(() => {
@@ -76,6 +77,7 @@ const EditCircular = () => {
             }
         };
         fetchDetails();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const fetchDesignations = async () => {

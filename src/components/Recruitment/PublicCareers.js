@@ -6,7 +6,7 @@ import UnifiedHeader from '../layout/UnifiedHeader';
 import { BASE_SERVER_URL } from '../../services/api';
 
 const PublicCareers = () => {
-    const { state } = useAuth();
+    useAuth();
     const [circulars, setCirculars] = useState([]);
     const [filteredCirculars, setFilteredCirculars] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -303,8 +303,8 @@ const PublicCareers = () => {
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">
                     <div className="mb-4 md:mb-0 opacity-50">© 2026 Offtix Organization</div>
                     <div className="flex space-x-8">
-                        <a href="#" className="hover:text-indigo-600 transition-colors">Privacy Policy</a>
-                        <a href="#" className="hover:text-indigo-600 transition-colors">Terms of Service</a>
+                        <a href="#privacy" className="hover:text-indigo-600 transition-colors">Privacy Policy</a>
+                        <a href="#terms" className="hover:text-indigo-600 transition-colors">Terms of Service</a>
                     </div>
                 </div>
             </footer>

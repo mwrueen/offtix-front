@@ -3,7 +3,7 @@ import { useProjectContext } from '../context/ProjectContext';
 import { useAuth } from '../context/AuthContext';
 import { useCompanyFilter } from './useCompanyFilter';
 import apiService from '../services/apiService';
-import { projectAPI } from '../services/api';
+
 
 export const useProjects = () => {
   const { state, dispatch } = useProjectContext();

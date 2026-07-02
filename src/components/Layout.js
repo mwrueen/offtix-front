@@ -15,7 +15,7 @@ import { getTypeLabel, timeAgo } from '../utils/notifications';
 const Layout = ({ children, wide }) => {
   const { state, dispatch } = useAuth();
   const { state: companyState, selectCompany } = useCompany();
-  const { totalUnreadCount, unreadCountsByCompany, clearUnreadCount, fetchUnreadCount } = useSocket();
+  const { totalUnreadCount, clearUnreadCount, fetchUnreadCount } = useSocket();
   const { hasPermission, companyData, designationName } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();

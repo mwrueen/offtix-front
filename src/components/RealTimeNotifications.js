@@ -44,6 +44,7 @@ const ToastItem = ({ notification, index, onDismiss }) => {
         // Auto-dismiss after 6 seconds
         timerRef.current = setTimeout(() => handleDismiss(), 6000);
         return () => clearTimeout(timerRef.current);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleDismiss = () => {

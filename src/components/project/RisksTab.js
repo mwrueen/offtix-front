@@ -85,34 +85,7 @@ const RisksTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
     }
   };
 
-  const getSeverityBadge = (severity) => {
-    const severityMap = {
-      low: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      medium: 'bg-amber-50 text-amber-700 border-amber-200',
-      high: 'bg-orange-50 text-orange-700 border-orange-200 font-bold',
-      critical: 'bg-rose-50 text-rose-700 border-rose-200 font-black'
-    };
-    return severityMap[severity] || 'bg-slate-50 text-slate-700 border-slate-200';
-  };
 
-  const getProbabilityBadge = (probability) => {
-    const probabilityMap = {
-      low: 'bg-slate-50 text-slate-500 border-slate-200',
-      medium: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-      high: 'bg-purple-50 text-purple-700 border-purple-200 font-bold'
-    };
-    return probabilityMap[probability] || 'bg-slate-50 text-slate-500 border-slate-200';
-  };
-
-  const getStatusBadge = (status) => {
-    const statusMap = {
-      identified: 'bg-slate-100 text-slate-600',
-      monitoring: 'bg-indigo-50 text-indigo-700',
-      mitigated: 'bg-emerald-50 text-emerald-700 font-bold',
-      occurred: 'bg-rose-50 text-rose-700 font-black'
-    };
-    return statusMap[status] || 'bg-slate-100 text-slate-600';
-  };
 
   const filteredRisks = risks.filter(risk => {
     const matchesSearch = risk.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||

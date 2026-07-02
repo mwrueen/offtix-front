@@ -81,26 +81,6 @@ const DependenciesTab = ({ projectId, project, isProjectOwner, onRefresh }) => {
     }
   };
 
-  const getTypeBadge = (type) => {
-    const typeMap = {
-      internal: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-      external: 'bg-purple-50 text-purple-700 border-purple-200',
-      technical: 'bg-slate-50 text-slate-700 border-slate-200',
-      resource: 'bg-amber-50 text-amber-700 border-amber-200',
-      business: 'bg-emerald-50 text-emerald-700 border-emerald-200'
-    };
-    return typeMap[type] || 'bg-slate-50 text-slate-700 border-slate-200';
-  };
-
-  const getStatusBadge = (status) => {
-    const statusMap = {
-      pending: 'bg-amber-50 text-amber-700 border-amber-200 font-bold',
-      'in-progress': 'bg-indigo-50 text-indigo-700 border-indigo-200',
-      blocked: 'bg-rose-50 text-rose-700 border-rose-200 font-black',
-      resolved: 'bg-emerald-50 text-emerald-700 border-emerald-200 font-black'
-    };
-    return statusMap[status] || 'bg-slate-50 text-slate-700 border-slate-200';
-  };
 
   const filteredDependencies = dependencies.filter(dep => {
     const matchesSearch = dep.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||

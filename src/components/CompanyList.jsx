@@ -31,6 +31,7 @@ const CompanyList = () => {
         }
 
         fetchCompanies();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state.user, navigate, state.token]);
 
     const fetchCompanies = async () => {

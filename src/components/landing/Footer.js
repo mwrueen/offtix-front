@@ -31,7 +31,7 @@ const Footer = () => {
                 <Link to="/careers" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Career Node</Link>
               </li>
               <li>
-                <a href="#" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Deployment Log</a>
+                <a href="#deployment" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Deployment Log</a>
               </li>
             </ul>
           </div>
@@ -42,13 +42,13 @@ const Footer = () => {
             </h4>
             <ul className="space-y-4">
               <li>
-                <a href="#" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">The Lab</a>
+                <a href="#lab" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">The Lab</a>
               </li>
               <li>
-                <a href="#" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Security protocol</a>
+                <a href="#security" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Security protocol</a>
               </li>
               <li>
-                <a href="#" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Support sync</a>
+                <a href="#support" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Support sync</a>
               </li>
             </ul>
           </div>
@@ -74,8 +74,8 @@ const Footer = () => {
             © 2026 Offtix Analytics Protocol. Built for architectural precision.
           </p>
           <div className="flex gap-10">
-            <a href="#" className="hover:text-white transition-colors">Privacy Infrastructure</a>
-            <a href="#" className="hover:text-white transition-colors">Service Terms</a>
+            <a href="#privacy" className="hover:text-white transition-colors">Privacy Infrastructure</a>
+            <a href="#terms" className="hover:text-white transition-colors">Service Terms</a>
           </div>
         </div>
       </div>

@@ -10,6 +10,7 @@ const AnalyticsTab = ({ projectId }) => {
 
   useEffect(() => {
     fetchAnalytics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   const fetchAnalytics = async () => {

@@ -124,7 +124,6 @@ export const PermissionsProvider = ({ children }) => {
 
         // Check if permissions are embedded in the selected company object (from getUserCompanies)
         if (selectedCompany.userPermissions) {
-            const userId = authState.user?._id || authState.user?.id;
             const ownerFlag = selectedCompany.isOwner || selectedCompany.userRole === 'owner';
             setIsOwner(ownerFlag);
             setDesignationName(selectedCompany.userDesignation || (ownerFlag ? 'Owner' : 'Member'));

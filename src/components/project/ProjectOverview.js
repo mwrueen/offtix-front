@@ -2,20 +2,16 @@ import React, { useState } from 'react';
 import { projectAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useCompany } from '../../context/CompanyContext';
-import DeleteConfirmModal from '../common/DeleteConfirmModal';
-import { Button, Card, Badge, Modal } from '../ui';
+import { Button, Badge, Modal } from '../ui';
 
 const ProjectOverview = ({ project, users, isProjectOwner }) => {
   const { showToast } = useToast();
   const { state: companyState } = useCompany();
   const companyCurrency = companyState?.selectedCompany?.currency || 'USD';
 
-  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [showTagModal, setShowTagModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, type: null, id: null, name: '' });
 
-  const [milestoneForm, setMilestoneForm] = useState({ title: '', description: '', dueDate: '' });
   const [tagInput, setTagInput] = useState('');
   const milestones = project.milestones || [];
   const risks = project.risks || [];
@@ -36,18 +32,7 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
 
   const budgetUtilization = budget.amount > 0 ? Math.round((actualCost.amount / budget.amount) * 100) : 0;
 
-  const handleAddMilestone = async () => {
-    if (!milestoneForm.title.trim()) { showToast('Please enter a milestone title', 'error'); return; }
-    setLoading(true);
-    try {
-      await projectAPI.addMilestone(project._id, milestoneForm);
-      showToast('Milestone added successfully', 'success');
-      setShowMilestoneModal(false);
-      setMilestoneForm({ title: '', description: '', dueDate: '' });
-      window.location.reload();
-    } catch (error) { showToast('Failed to add milestone', 'error'); }
-    finally { setLoading(false); }
-  };
+
 
   const handleAddTag = async () => {
     if (!tagInput.trim()) return;
@@ -144,7 +129,7 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
               <p className="text-[10px] font-semibold text-slate-400 mt-1 uppercase tracking-wider">Key delivery targets and completion logs</p>
             </div>
             {isProjectOwner && (
-              <Button variant="primary" size="sm" onClick={() => setShowMilestoneModal(true)}>
+              <Button variant="primary" size="sm" onClick={() => showToast('Milestones can be managed inside the Phases tab.', 'info')}>
                 + Add Milestone
               </Button>
             )}

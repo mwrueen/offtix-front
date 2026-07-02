@@ -8,6 +8,7 @@ const ProjectHistoryTab = ({ projectId, project }) => {
 
   useEffect(() => {
     fetchProjectHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   const fetchProjectHistory = async () => {

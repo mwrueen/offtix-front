@@ -63,11 +63,7 @@ const MyTasksList = () => {
     else navigate(`/my-tasks/${task._id}`);
   };
 
-  const handleSendBackClick = (e, task) => {
-    e.stopPropagation();
-    if (task.workflowType === 'sequential') { setActiveTask(task); setActionModal('sendBack'); }
-    else navigate(`/my-tasks/${task._id}`);
-  };
+
 
   const handleModalSubmit = async () => {
     if (!activeTask) return;
