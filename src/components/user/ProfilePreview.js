@@ -115,7 +115,7 @@ const ProfilePreview = () => {
                         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                             <div
                                 className={`h-40 w-full ${!profile.coverPhoto ? 'bg-gradient-to-r from-slate-900 to-indigo-900' : ''}`}
-                                style={profile.coverPhoto ? { backgroundImage: `url(${getImageUrl(profile.coverPhoto)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+                                style={profile.coverPhoto ? { backgroundImage: `url(${getImageUrl(profile.coverPhoto)})`, backgroundSize: 'cover', backgroundPosition: `center ${profile.coverPosition ?? 50}%` } : {}}
                             />
                             <div className="px-10 pb-10 relative">
                                 <div className="flex flex-col md:flex-row gap-6 items-end -mt-12 mb-8">

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -18,20 +19,27 @@ const AuthCallback = () => {
     }
 
     if (token) {
-      // Store token and redirect to dashboard
+      // Store token
       localStorage.setItem('token', token);
 
-      // You might want to fetch user data here
-      // For now, we'll just set a basic auth state
-      dispatch({
-        type: 'LOGIN_SUCCESS',
-        payload: {
-          token,
-          user: { id: 'temp' } // This should be replaced with actual user data
+      const fetchProfileAndLogin = async () => {
+        try {
+          const response = await api.get('/users/profile');
+          dispatch({
+            type: 'LOGIN_SUCCESS',
+            payload: {
+              token,
+              user: response.data
+            }
+          });
+          navigate('/dashboard');
+        } catch (err) {
+          console.error('Error fetching user profile during social login callback:', err);
+          navigate('/signin?error=Failed to retrieve user profile');
         }
-      });
+      };
 
-      navigate('/dashboard');
+      fetchProfileAndLogin();
     } else {
       navigate('/signin?error=Authentication failed');
     }

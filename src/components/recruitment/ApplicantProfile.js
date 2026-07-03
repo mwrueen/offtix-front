@@ -181,7 +181,7 @@ const ApplicantProfile = () => {
                 <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                     <div
                         className={`h-48 bg-gradient-to-r ${coverPhotoUrl ? '' : 'from-slate-800 to-indigo-900'}`}
-                        style={coverPhotoUrl ? { backgroundImage: `url(${coverPhotoUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+                        style={coverPhotoUrl ? { backgroundImage: `url(${coverPhotoUrl})`, backgroundSize: 'cover', backgroundPosition: `center ${profileObj.coverPosition ?? 50}%` } : {}}
                     />
                     <div className="px-10 pb-10 relative">
                         <div className="flex flex-col sm:flex-row gap-6 sm:items-end mb-8 relative">

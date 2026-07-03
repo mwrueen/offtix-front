@@ -230,7 +230,7 @@ const EmployeeDetails = () => {
             <Card padding={false} className="overflow-hidden border-none shadow-md">
               <div 
                 className={`h-40 bg-gradient-to-br transition-all duration-700 ${profile.coverPhoto ? '' : 'from-indigo-600 via-indigo-700 to-indigo-900'}`}
-                style={profile.coverPhoto ? { backgroundImage: `url(${profile.coverPhoto})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+                style={profile.coverPhoto ? { backgroundImage: `url(${profile.coverPhoto})`, backgroundSize: 'cover', backgroundPosition: `center ${profile.coverPosition ?? 50}%` } : {}}
               >
                 {!profile.coverPhoto && (
                   <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} />

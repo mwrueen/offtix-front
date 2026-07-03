@@ -41,6 +41,7 @@ const mapApiUserToState = (data) => {
     profile: {
       profilePicture: profileData.profilePicture || '',
       coverPhoto: profileData.coverPhoto || '',
+      coverPosition: typeof profileData.coverPosition === 'number' ? profileData.coverPosition : 50,
       phone: profileData.phone || '',
       location: profileData.location || '',
       title: profileData.title || '',
@@ -77,6 +78,7 @@ const Profile = () => {
     profile: {
       profilePicture: '',
       coverPhoto: '',
+      coverPosition: 50,
       phone: '',
       location: '',
       title: '',
@@ -96,6 +98,32 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState('basic');
   const [skillInput, setSkillInput] = useState('');
+
+  const [isRepositioning, setIsRepositioning] = useState(false);
+  const [dragStart, setDragStart] = useState(null);
+  const [tempPosition, setTempPosition] = useState(50);
+
+  const handleCoverMouseDown = (e) => {
+    if (!isRepositioning) return;
+    e.preventDefault();
+    setDragStart({
+      y: e.clientY,
+      pos: tempPosition
+    });
+  };
+
+  const handleCoverMouseMove = (e) => {
+    if (!isRepositioning || !dragStart) return;
+    const deltaY = e.clientY - dragStart.y;
+    const containerHeight = e.currentTarget.clientHeight || 192;
+    const pctChange = (deltaY / containerHeight) * 100;
+    const newPos = Math.max(0, Math.min(100, dragStart.pos - pctChange));
+    setTempPosition(newPos);
+  };
+
+  const handleCoverMouseUp = () => {
+    setDragStart(null);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -274,7 +302,7 @@ const Profile = () => {
             { label: 'Profile Version', value: 'Standard' }
           ]}
           actions={
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => window.open(`/profile/view/${profile.id}`, '_blank')}
                 className="px-4 py-2 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold text-xs hover:border-indigo-600 transition-all flex items-center gap-2"
@@ -332,12 +360,73 @@ const Profile = () => {
                 <div className="space-y-10">
                   <div className="relative">
                     <div
-                      className={`w-full h-48 rounded-2xl border border-slate-200 overflow-hidden relative group transition-colors bg-cover bg-center ${!(localImages.coverPhoto || profile.profile.coverPhoto) ? 'bg-gradient-to-r from-slate-900 to-indigo-900' : ''}`}
-                      style={(localImages.coverPhoto || profile.profile.coverPhoto) ? { backgroundImage: `url(${getImageUrl(localImages.coverPhoto || profile.profile.coverPhoto)})` } : {}}
+                      className={`w-full h-48 rounded-2xl border border-slate-200 overflow-hidden relative group transition-colors bg-cover ${!(localImages.coverPhoto || profile.profile.coverPhoto) ? 'bg-gradient-to-r from-slate-900 to-indigo-900' : ''}`}
+                      style={(localImages.coverPhoto || profile.profile.coverPhoto) ? {
+                        backgroundImage: `url(${getImageUrl(localImages.coverPhoto || profile.profile.coverPhoto)})`,
+                        backgroundPosition: `center ${isRepositioning ? tempPosition : (profile.profile.coverPosition ?? 50)}%`,
+                        cursor: isRepositioning ? (dragStart ? 'grabbing' : 'grab') : 'default'
+                      } : {}}
+                      onMouseDown={handleCoverMouseDown}
+                      onMouseMove={handleCoverMouseMove}
+                      onMouseUp={handleCoverMouseUp}
+                      onMouseLeave={handleCoverMouseUp}
                     >
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-sm">
-                        <label htmlFor="cover-up" className="px-5 py-2 bg-white text-slate-900 rounded-lg font-bold text-xs cursor-pointer shadow-lg">Change Cover</label>
-                      </div>
+                      {/* Reposition Mode Controls */}
+                      {isRepositioning ? (
+                        <div className="absolute inset-0 bg-black/30 flex flex-col items-center justify-between p-4 backdrop-blur-[1px] select-none">
+                          <div className="bg-slate-900/80 px-4 py-1.5 rounded-full text-white text-xs font-semibold shadow-lg backdrop-blur-sm">
+                            ↕️ Drag up or down to adjust cover position
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProfile(p => ({
+                                  ...p,
+                                  profile: {
+                                    ...p.profile,
+                                    coverPosition: tempPosition
+                                  }
+                                }));
+                                setIsRepositioning(false);
+                              }}
+                              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-lg transition-all"
+                            >
+                              Save Position
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setIsRepositioning(false)}
+                              className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-900 rounded-xl font-bold text-xs shadow-lg transition-all"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        (localImages.coverPhoto || profile.profile.coverPhoto) && (
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-3 backdrop-blur-sm">
+                            <label htmlFor="cover-up" className="px-4 py-2 bg-white text-slate-900 rounded-lg font-bold text-xs cursor-pointer shadow-lg hover:scale-105 transition-all">Change Cover</label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsRepositioning(true);
+                                setTempPosition(profile.profile.coverPosition ?? 50);
+                              }}
+                              className="px-4 py-2 bg-white text-slate-900 rounded-lg font-bold text-xs cursor-pointer shadow-lg hover:scale-105 transition-all"
+                            >
+                              Reposition
+                            </button>
+                          </div>
+                        )
+                      )}
+                      
+                      {/* When no cover photo exists, just show change cover button */}
+                      {!(localImages.coverPhoto || profile.profile.coverPhoto) && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <label htmlFor="cover-up" className="px-5 py-2 bg-white text-slate-900 rounded-lg font-bold text-xs cursor-pointer shadow-lg hover:scale-105 transition-all">Upload Cover Photo</label>
+                        </div>
+                      )}
                       <input type="file" id="cover-up" accept="image/*" onChange={e => handleFileUpload(e, 'cover')} className="hidden" />
                     </div>
 
