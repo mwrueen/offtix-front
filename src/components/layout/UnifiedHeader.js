@@ -237,7 +237,7 @@ const UnifiedHeader = () => {
                                     className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs hover:ring-4 hover:ring-indigo-50 transition-all border-2 border-white shadow-sm overflow-hidden"
                                 >
                                     {(user?.profilePicture || user?.profile?.profilePicture) ? (
-                                        <img src={getLogoUrl(user.profilePicture || user.profile?.profilePicture)} alt="" className="w-full h-full object-cover" />
+                                        <img src={getLogoUrl(user.profilePicture || user.profile?.profilePicture)} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                     ) : initials}
                                 </button>
 

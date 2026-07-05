@@ -124,7 +124,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
           <div className="relative">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-lg group-hover:scale-105 transition-transform overflow-hidden">
               {(user?.profilePicture || user?.profile?.profilePicture) ? (
-                <img src={getUserImageUrl(user.profilePicture || user.profile?.profilePicture)} alt="" className="w-full h-full object-cover" />
+                <img src={getUserImageUrl(user.profilePicture || user.profile?.profilePicture)} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               ) : initials}
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></div>

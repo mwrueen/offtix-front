@@ -335,7 +335,7 @@ const Layout = ({ children, wide }) => {
               >
                 <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-indigo-700 text-white flex items-center justify-center font-bold text-lg shadow-md group-hover:scale-105 transition-transform overflow-hidden">
                   {(state.user?.profilePicture || state.user?.profile?.profilePicture) ? (
-                    <img src={getLogoUrl(state.user.profilePicture || state.user.profile?.profilePicture)} alt="" className="w-full h-full object-cover" />
+                    <img src={getLogoUrl(state.user.profilePicture || state.user.profile?.profilePicture)} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : state.user?.name?.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -354,7 +354,7 @@ const Layout = ({ children, wide }) => {
             <div className="flex flex-col items-center gap-4">
               <div onClick={() => navigate('/profile')} className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-indigo-700 text-white flex items-center justify-center font-bold text-lg cursor-pointer hover:scale-110 transition-transform shadow-md overflow-hidden">
                 {(state.user?.profilePicture || state.user?.profile?.profilePicture) ? (
-                  <img src={getLogoUrl(state.user.profilePicture || state.user.profile?.profilePicture)} alt="" className="w-full h-full object-cover" />
+                  <img src={getLogoUrl(state.user.profilePicture || state.user.profile?.profilePicture)} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 ) : state.user?.name?.charAt(0)}
               </div>
               <button onClick={handleLogout} className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all shadow-sm group">

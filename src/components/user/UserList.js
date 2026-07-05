@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { userAPI } from '../../services/api';
+import { userAPI, getAssetUrl } from '../../services/api';
 import Layout from '../layout/Layout';
 import UserForm from './UserForm';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
@@ -123,8 +123,17 @@ const UserList = () => {
             <div className="grid grid-cols-1 gap-3">
               {users.map((user) => (
                 <div key={user._id} className="group bg-white p-5 rounded-2xl border border-slate-200 hover:border-indigo-200 hover:shadow-sm transition-all flex flex-col md:flex-row items-center gap-6">
-                  <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-indigo-600 text-lg font-bold shrink-0">
-                    {user.name?.charAt(0)?.toUpperCase()}
+                  <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-indigo-600 text-lg font-bold shrink-0 overflow-hidden">
+                    {(user.profilePicture || user.profile?.profilePicture || user.avatar) ? (
+                      <img
+                        src={getAssetUrl(user.profilePicture || user.profile?.profilePicture || user.avatar)}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      user.name?.charAt(0)?.toUpperCase()
+                    )}
                   </div>
 
                   <div className="flex-1 min-w-0">
