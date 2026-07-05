@@ -7,7 +7,7 @@ import Layout from '../layout/Layout';
 import PageHeader from '../layout/PageHeader';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import { useToast } from '../../context/ToastContext';
-import { getCurrencySymbol } from '../../utils/currency';
+import { getCurrencySymbol, getCurrencyIcon } from '../../utils/currency';
 import { Card, Button, Badge, LoadingSpinner, Modal as UIModal, Input } from '../ui';
 
 const fmtDate = (d, opts = { year: 'numeric', month: 'short', day: 'numeric' }) => 
@@ -47,6 +47,7 @@ const EmployeeDetails = () => {
   const [selectedManager, setSelectedManager] = useState('');
 
   const currSym = getCurrencySymbol(company?.currency);
+  const currIcon = getCurrencyIcon(company?.currency);
 
   useEffect(() => {
     if (isCompanyLoading) return;
@@ -337,7 +338,20 @@ const EmployeeDetails = () => {
                         <DetailRow label="Employee ID" value={employee.memberId} />
                         <DetailRow label="Department" value={profile.department || 'General'} />
                         <DetailRow label="Reports To" value={managerName || 'None (Top Level)'} />
-                        <DetailRow label="Monthly Compensation" value={`${currSym}${employee.currentSalary?.toLocaleString()}`} color="text-indigo-600" />
+                        <DetailRow 
+                            label="Monthly Compensation" 
+                            value={
+                                <span className="flex items-center gap-1.5">
+                                    {currIcon ? (
+                                        <img src={currIcon} alt="" className="w-5 h-5 object-contain" />
+                                    ) : (
+                                        <span>{currSym}</span>
+                                    )}
+                                    <span>{employee.currentSalary?.toLocaleString()}</span>
+                                </span>
+                            } 
+                            color="text-indigo-600" 
+                        />
                         <DetailRow label="Joining Date" value={fmtDate(employee.joinedAt)} />
                         <DetailRow label="Status" value={<Badge variant={employee.isOwner ? 'success' : 'info'}>{employee.isOwner ? 'Founder / Owner' : 'Active Personnel'}</Badge>} />
                     </div>
@@ -395,7 +409,14 @@ const EmployeeDetails = () => {
                             {employee.salaryHistory.slice().reverse().slice(0, 5).map((h, i) => (
                                 <div key={i} className="px-6 py-4 hover:bg-slate-50 transition-colors">
                                     <div className="flex justify-between items-center bg-transparent">
-                                        <span className="font-bold text-slate-900">{currSym}{h.amount?.toLocaleString()}</span>
+                                        <span className="font-bold text-slate-900 flex items-center gap-1">
+                                            {currIcon ? (
+                                                <img src={currIcon} alt="" className="w-4 h-4 object-contain animate-in fade-in" />
+                                            ) : (
+                                                <span>{currSym}</span>
+                                            )}
+                                            <span>{h.amount?.toLocaleString()}</span>
+                                        </span>
                                         <span className="text-[10px] text-slate-400 font-bold">{fmtDate(h.effectiveDate)}</span>
                                     </div>
                                     <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide mt-1">{h.reason || 'Standard Adjustment'}</p>

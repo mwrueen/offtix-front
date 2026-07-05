@@ -7,7 +7,8 @@ import SidebarHeader from './SidebarHeader';
 import { useSocket } from '../../context/SocketContext';
 import { useChat } from '../../context/ChatContext';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
-import { myTasksAPI, getAssetUrl } from '../../services/api';
+import { myTasksAPI, getAssetUrl, currencyAPI } from '../../services/api';
+import { setCurrencies } from '../../utils/currency';
 import { getIcon } from '../layout/icons';
 import { invitationIdsCoveredByNotifications } from '../../utils/invitationNotificationDedupe';
 import { getTypeLabel, timeAgo } from '../../utils/notifications';
@@ -100,6 +101,18 @@ const Layout = ({ children, wide }) => {
   useEffect(() => { if (location.pathname === '/notifications') clearUnreadCount(); }, [location.pathname, clearUnreadCount]);
   useEffect(() => { fetchUnreadCount(selectedCompanyId); }, [fetchUnreadCount, selectedCompanyId]);
 
+  useEffect(() => {
+    const fetchCurrencies = async () => {
+      try {
+        const res = await currencyAPI.getAll();
+        if (res.data && res.data.length > 0) setCurrencies(res.data);
+      } catch (err) {
+        console.error('Failed to fetch currencies', err);
+      }
+    };
+    fetchCurrencies();
+  }, []);
+
   // Memoized company IDs to avoid re-triggering effects on every layout render
   const companyIds = React.useMemo(() => {
     const companies = Array.isArray(companyState.companies) ? companyState.companies : [];
@@ -174,6 +187,9 @@ const Layout = ({ children, wide }) => {
     ...(state.user?.role === 'admin' || state.user?.role === 'superadmin' ? [
       { path: '/users', label: 'Users', icon: 'users', category: 'Administration' },
       { path: '/companies', label: 'Companies', icon: 'companies', category: 'Administration' }
+    ] : []),
+    ...(state.user?.role === 'superadmin' ? [
+      { path: '/currencies', label: 'Currencies', icon: 'currencies', category: 'Administration' }
     ] : []),
     ...(canManageSettings && companyState.selectedCompany?.id !== 'personal' ? [
       { path: '/company-settings', label: 'Settings', icon: 'settings', category: 'System' }

@@ -1,4 +1,6 @@
-export const currencies = [
+import { getAssetUrl } from '../services/api';
+
+export let currencies = [
     { code: 'USD', symbol: '$', name: 'US Dollar' },
     { code: 'EUR', symbol: '€', name: 'Euro' },
     { code: 'GBP', symbol: '£', name: 'British Pound' },
@@ -18,10 +20,29 @@ export const currencies = [
     { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
     { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
     { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
-    { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal' }
+    { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal' },
+    { code: 'BDT', symbol: '৳', name: 'Bangladeshi Taka' },
+    { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit' },
+    { code: 'IDR', symbol: 'Rp', name: 'Indonesian Rupiah' },
+    { code: 'PKR', symbol: '₨', name: 'Pakistani Rupee' },
+    { code: 'LKR', symbol: '₨', name: 'Sri Lankan Rupee' },
+    { code: 'QAR', symbol: 'ر.ق', name: 'Qatari Riyal' },
+    { code: 'OMR', symbol: 'ر.ع.', name: 'Omani Rial' },
+    { code: 'BHD', symbol: '.د.ب', name: 'Bahraini Dinar' },
+    { code: 'KWD', symbol: 'د.ك', name: 'Kuwaiti Dinar' }
 ];
+
+export const setCurrencies = (newCurrencies) => {
+    currencies = newCurrencies;
+};
 
 export const getCurrencySymbol = (code) => {
     const currency = currencies.find(c => c.code === code);
     return currency ? currency.symbol : '$';
 };
+
+export const getCurrencyIcon = (code) => {
+    const currency = currencies.find(c => c.code === code);
+    return currency && currency.icon ? getAssetUrl(currency.icon) : null;
+};
+

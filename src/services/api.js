@@ -390,4 +390,14 @@ export const myTasksAPI = {
   },
 };
 
+export const currencyAPI = {
+  getAll: () => api.get('/currencies'),
+  create: (data) => api.post('/currencies', data),
+  update: (id, data) => api.put(`/currencies/${id}`, data),
+  delete: (id) => api.delete(`/currencies/${id}`),
+  uploadIcon: (id, formData) => api.post(`/currencies/${id}/icon`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+};
+
 export default api;

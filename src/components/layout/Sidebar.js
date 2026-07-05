@@ -50,6 +50,9 @@ const Sidebar = ({ collapsed, onToggle }) => {
       { path: '/users', label: 'Users', icon: 'users', category: 'admin' },
       { path: '/companies', label: 'Companies', icon: 'companies', category: 'admin' }
     ] : []),
+    ...(state.user?.role === 'superadmin' ? [
+      { path: '/currencies', label: 'Currencies', icon: 'currencies', category: 'admin' }
+    ] : []),
     ...(canManageSettings && companyState.selectedCompany?.id !== 'personal' ? [
       { path: '/company-settings', label: 'Settings', icon: 'settings', category: 'company' }
     ] : [])

@@ -51,6 +51,7 @@ import PublicCareers from './components/recruitment/PublicCareers';
 import JobDetails from './components/recruitment/JobDetails';
 import EditCircular from './components/recruitment/EditCircular';
 import JobOfferAccept from './components/recruitment/JobOfferAccept';
+import CurrencyList from './components/currency/CurrencyList';
 
 function GlobalChatPortal() {
   const { isGlobalChatOpen, closeGlobalChat } = useChat();
@@ -200,6 +201,11 @@ function App() {
                         <Route path="/companies/:id" element={
                           <ProtectedRoute>
                             <CompanyDetails />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/currencies" element={
+                          <ProtectedRoute>
+                            <CurrencyList />
                           </ProtectedRoute>
                         } />
                         <Route path="/my-tasks" element={

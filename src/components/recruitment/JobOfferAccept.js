@@ -5,7 +5,7 @@ import Layout from '../layout/Layout';
 import { useToast } from '../../context/ToastContext';
 import { getCookie } from '../../utils/cookies';
 
-const currencySymbols = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', INR: '₹', BDT: '৳', AUD: 'A$', CAD: 'C$' };
+import { getCurrencySymbol, getCurrencyIcon } from '../../utils/currency';
 
 const JobOfferAccept = () => {
     const { applicationId } = useParams();
@@ -106,7 +106,8 @@ const JobOfferAccept = () => {
     }
 
     const cur = offer.company?.currency || 'USD';
-    const sym = currencySymbols[cur] || `${cur} `;
+    const sym = getCurrencySymbol(cur);
+    const iconUrl = getCurrencyIcon(cur);
     const amount = offer.offeredSalary?.amount;
 
     return (
@@ -128,9 +129,16 @@ const JobOfferAccept = () => {
                     </div>
                     <div className="px-8 py-6 border-b border-slate-100">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Proposed monthly salary</p>
-                        <p className="text-2xl font-black text-emerald-700 mt-1">
-                            {amount != null ? `${sym}${Number(amount).toLocaleString()} ${cur}` : '—'}
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                            {iconUrl ? (
+                                <img src={iconUrl} alt={cur} className="w-6 h-6 object-contain inline-block" />
+                            ) : (
+                                <span className="text-2xl font-black text-emerald-700">{sym}</span>
+                            )}
+                            <span className="text-2xl font-black text-emerald-700">
+                                {amount != null ? `${Number(amount).toLocaleString()} ${cur}` : '—'}
+                            </span>
+                        </div>
                     </div>
                     <div className="px-8 py-6">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Role description</p>

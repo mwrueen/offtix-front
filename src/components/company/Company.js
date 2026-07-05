@@ -5,8 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import { getCookie } from '../../utils/cookies';
 import Layout from '../layout/Layout';
 import PageHeader from '../layout/PageHeader';
-import { companyAPI, getAssetUrl } from '../../services/api';
+import { companyAPI, getAssetUrl, currencyAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { currencies } from '../../utils/currency';
 
 const Company = () => {
   const { state } = useAuth();
@@ -287,6 +288,22 @@ const CompanySettings = ({ company, onRefresh }) => {
   const toast = useToast();
   const [saving, setSaving] = useState(false);
   const [currency, setCurrency] = useState(company.currency || 'USD');
+  const [currenciesList, setCurrenciesList] = useState(currencies);
+
+  useEffect(() => {
+    const fetchDynamicCurrencies = async () => {
+      try {
+        const res = await currencyAPI.getAll();
+        if (res.data && res.data.length > 0) {
+          setCurrenciesList(res.data);
+        }
+      } catch (e) {
+        console.error('Failed to load currencies', e);
+      }
+    };
+    fetchDynamicCurrencies();
+  }, []);
+
   const [settings, setSettings] = useState(company.settings || {
     timeTracking: {
       defaultDurationUnit: 'hours',
@@ -296,14 +313,6 @@ const CompanySettings = ({ company, onRefresh }) => {
       workingHoursEnd: '17:00'
     }
   });
-
-  const currencies = [
-    { code: 'USD', symbol: '$' },
-    { code: 'EUR', symbol: '€' },
-    { code: 'GBP', symbol: '£' },
-    { code: 'BDT', symbol: '৳' },
-    { code: 'INR', symbol: '₹' }
-  ];
 
   const updateCT = (f, v) => setSettings(p => ({ ...p, timeTracking: { ...p.timeTracking, [f]: v } }));
 
@@ -346,7 +355,7 @@ const CompanySettings = ({ company, onRefresh }) => {
                 onChange={e => setCurrency(e.target.value)}
                 className="w-full bg-slate-50 text-slate-900 px-5 py-3 rounded-xl border border-slate-200 font-bold text-sm outline-none focus:border-indigo-500 transition-all cursor-pointer"
               >
-                {currencies.map(c => <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>)}
+                {currenciesList.map(c => <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>)}
               </select>
             </div>
           </div>

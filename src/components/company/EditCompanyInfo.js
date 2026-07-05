@@ -4,7 +4,8 @@ import { getCookie } from '../../utils/cookies';
 import Layout from '../layout/Layout';
 import { useCompany } from '../../context/CompanyContext';
 import { useToast } from '../../context/ToastContext';
-import { getAssetUrl } from '../../services/api';
+import { getAssetUrl, currencyAPI } from '../../services/api';
+import { currencies } from '../../utils/currency';
 
 const EditCompanyInfo = () => {
   const navigate = useNavigate();
@@ -33,28 +34,21 @@ const EditCompanyInfo = () => {
     currency: 'USD'
   });
 
-  const currencies = [
-    { code: 'USD', symbol: '$', name: 'US Dollar' },
-    { code: 'EUR', symbol: '€', name: 'Euro' },
-    { code: 'GBP', symbol: '£', name: 'British Pound' },
-    { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-    { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-    { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
-    { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
-    { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
-    { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
-    { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
-    { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },
-    { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' },
-    { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
-    { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone' },
-    { code: 'DKK', symbol: 'kr', name: 'Danish Krone' },
-    { code: 'MXN', symbol: 'MX$', name: 'Mexican Peso' },
-    { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
-    { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
-    { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
-    { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal' }
-  ];
+  const [currenciesList, setCurrenciesList] = useState(currencies);
+
+  useEffect(() => {
+    const fetchDynamicCurrencies = async () => {
+      try {
+        const res = await currencyAPI.getAll();
+        if (res.data && res.data.length > 0) {
+          setCurrenciesList(res.data);
+        }
+      } catch (e) {
+        console.error('Failed to load currencies', e);
+      }
+    };
+    fetchDynamicCurrencies();
+  }, []);
 
   useEffect(() => {
     if (isCompanyLoading) return;
@@ -347,7 +341,7 @@ const EditCompanyInfo = () => {
                     onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm text-slate-800 outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all appearance-none cursor-pointer"
                   >
-                    {currencies.map((currency) => (
+                    {currenciesList.map((currency) => (
                       <option key={currency.code} value={currency.code}>
                         {currency.symbol} {currency.code} — {currency.name}
                       </option>
