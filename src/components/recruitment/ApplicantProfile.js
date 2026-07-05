@@ -6,7 +6,7 @@ import PageHeader from '../layout/PageHeader';
 import { Button, Badge } from '../ui';
 import { useToast } from '../../context/ToastContext';
 import { getCookie } from '../../utils/cookies';
-import { BASE_SERVER_URL } from '../../services/api';
+import { getAssetUrl } from '../../services/api';
 import HireCandidateModal from './HireCandidateModal';
 
 const ApplicantProfile = () => {
@@ -96,11 +96,7 @@ const ApplicantProfile = () => {
 
 
 
-    const getImageUrl = (url) => {
-        if (!url) return '';
-        if (url.startsWith('http')) return url;
-        return `${BASE_SERVER_URL}${url}`;
-    };
+    const getImageUrl = getAssetUrl;
 
     const formatDate = (dateStr) => {
         if (!dateStr) return '';

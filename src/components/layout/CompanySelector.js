@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCompany } from '../../context/CompanyContext';
 import { useSocket } from '../../context/SocketContext';
 import { useChat } from '../../context/ChatContext';
-import { BASE_SERVER_URL } from '../../services/api';
+import { getAssetUrl } from '../../services/api';
 
 const CompanySelector = ({ collapsed, isOpen, onToggle, dark = false }) => {
   const navigate = useNavigate();
@@ -38,11 +38,7 @@ const CompanySelector = ({ collapsed, isOpen, onToggle, dark = false }) => {
   const getCompanyNotifCount = (companyId) => unreadCountsByCompany?.[companyId] || 0;
   const getCompanyMsgCount = (companyId) => chatUnreadByCompany?.[companyId]?.total || 0;
 
-  const getLogoUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith('http')) return path;
-    return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
-  };
+  const getLogoUrl = getAssetUrl;
 
   return (
     <div className={`relative px-3 py-2 ${dark ? '' : 'border-b border-slate-100 bg-slate-50/50'}`}>

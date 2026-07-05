@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { taskAPI, projectAPI, taskStatusAPI, BASE_SERVER_URL } from '../../services/api';
+import { taskAPI, projectAPI, taskStatusAPI, getAssetUrl } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import Layout from '../layout/Layout';
@@ -433,7 +433,7 @@ const ProjectTaskDetails = () => {
                                                     />
                                                     <div className="flex items-center gap-2 flex-1 min-w-0">
                                                         {u.profile?.profilePicture ? (
-                                                            <img src={u.profile.profilePicture.startsWith('http') ? u.profile.profilePicture : `${BASE_SERVER_URL}/${u.profile.profilePicture}`} alt={u.name || 'User'} className="w-8 h-8 rounded-full object-cover shadow-sm bg-white" />
+                                                            <img src={getAssetUrl(u.profile.profilePicture)} alt={u.name || 'User'} className="w-8 h-8 rounded-full object-cover shadow-sm bg-white" />
                                                         ) : (
                                                             <div className="w-8 h-8 rounded-full text-white flex items-center justify-center text-xs font-semibold shrink-0" style={{ backgroundColor: getUserColor(u._id) }}>
                                                                 {getUserInitials(u)}
@@ -485,7 +485,7 @@ const ProjectTaskDetails = () => {
                                                             />
                                                             <div className="flex items-center gap-2 flex-1 min-w-0">
                                                                 {u.profile?.profilePicture ? (
-                                                                    <img src={u.profile.profilePicture.startsWith('http') ? u.profile.profilePicture : `${BASE_SERVER_URL}/${u.profile.profilePicture}`} alt={u.name || 'User'} className="w-8 h-8 rounded-full object-cover shadow-sm bg-white" />
+                                                                    <img src={getAssetUrl(u.profile.profilePicture)} alt={u.name || 'User'} className="w-8 h-8 rounded-full object-cover shadow-sm bg-white" />
                                                                 ) : (
                                                                     <div className="w-8 h-8 rounded-full text-white flex items-center justify-center text-xs font-semibold shrink-0" style={{ backgroundColor: getUserColor(u._id) }}>
                                                                         {getUserInitials(u)}
@@ -527,7 +527,7 @@ const ProjectTaskDetails = () => {
                                                     {getSubtaskAssignees(st).slice(0, 5).map(u => (
                                                         <div key={u._id} title={u.name} className="w-6 h-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-white shadow-sm overflow-hidden" style={{ backgroundColor: u.profile?.profilePicture ? 'transparent' : getUserColor(u._id) }}>
                                                             {u.profile?.profilePicture ? (
-                                                                <img src={u.profile.profilePicture.startsWith('http') ? u.profile.profilePicture : `${BASE_SERVER_URL}/${u.profile.profilePicture}`} alt={u.name} className="w-full h-full object-cover" />
+                                                                <img src={getAssetUrl(u.profile.profilePicture)} alt={u.name} className="w-full h-full object-cover" />
                                                             ) : getUserInitials(u)}
                                                         </div>
                                                     ))}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { myTasksAPI, taskAPI, BASE_SERVER_URL } from '../../services/api';
+import { myTasksAPI, taskAPI, getAssetUrl } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useCompany } from '../../context/CompanyContext';
 import { useAuth } from '../../context/AuthContext';
@@ -607,7 +607,7 @@ const MyTaskDetails = () => {
                       <div className="flex flex-wrap gap-3">
                         {item.metadata?.link && <a href={item.metadata.link} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-slate-100 rounded-lg text-xs font-medium text-indigo-700 hover:bg-indigo-100 transition-colors">View Reference ↗</a>}
                         {item.documents?.map((doc, dIdx) => (
-                          <a key={dIdx} href={`${BASE_SERVER_URL}/${doc.path}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs font-medium text-emerald-700 hover:bg-emerald-100 transition-colors flex items-center gap-2">Artifact: {doc.originalName}</a>
+                          <a key={dIdx} href={getAssetUrl(doc.path)} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs font-medium text-emerald-700 hover:bg-emerald-100 transition-colors flex items-center gap-2">Artifact: {doc.originalName}</a>
                         ))}
                       </div>
                     </div>

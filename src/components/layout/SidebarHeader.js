@@ -1,5 +1,5 @@
 import React from 'react';
-import { BASE_SERVER_URL } from '../../services/api';
+import { getAssetUrl } from '../../services/api';
 
 const SidebarHeader = ({
   sidebarCollapsed,
@@ -62,11 +62,7 @@ const SidebarHeader = ({
   );
 };
 
-const getLogoUrl = (path) => {
-  if (!path) return null;
-  if (path.startsWith('http') || path.startsWith('data:')) return path;
-  return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
-};
+const getLogoUrl = getAssetUrl;
 
 const CollapsedLogo = ({ selectedCompany, companyData, onClick }) => {
   const isPersonal = selectedCompany?.id === 'personal';

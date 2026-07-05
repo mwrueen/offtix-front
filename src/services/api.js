@@ -4,7 +4,21 @@ import { getCookie } from '../utils/cookies';
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 const BASE_SERVER_URL = API_BASE_URL.replace('/api', '');
 
-export { API_BASE_URL, BASE_SERVER_URL };
+/**
+ * Helper to construct the full URL for static assets (images, files, documents).
+ * Resolves against REACT_APP_ASSET_URL if defined, falling back to the base server URL.
+ *
+ * @param {string} path File path (e.g. '/uploads/requirement-files/req-123.txt')
+ * @returns {string} Fully qualified URL
+ */
+const getAssetUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http') || path.startsWith('data:')) return path;
+  const assetBase = process.env.REACT_APP_ASSET_URL || BASE_SERVER_URL;
+  return `${assetBase}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
+export { API_BASE_URL, BASE_SERVER_URL, getAssetUrl };
 
 const api = axios.create({
   baseURL: API_BASE_URL,

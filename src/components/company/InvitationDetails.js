@@ -3,7 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import Layout from '../layout/Layout';
 import { getCookie } from '../../utils/cookies';
 import { useToast } from '../../context/ToastContext';
-import { BASE_SERVER_URL } from '../../services/api';
+import { getAssetUrl } from '../../services/api';
 import { getCurrencySymbol } from '../../utils/currency';
 import { useCompany } from '../../context/CompanyContext';
 
@@ -12,11 +12,7 @@ const authHeaders = () => ({
   'Content-Type': 'application/json'
 });
 
-const logoUrl = (path) => {
-  if (!path) return null;
-  if (path.startsWith('http')) return path;
-  return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
-};
+const logoUrl = getAssetUrl;
 
 const Section = ({ title, children, empty }) => {
   if (empty) return null;

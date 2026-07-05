@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCompany } from '../../context/CompanyContext';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
-import { BASE_SERVER_URL } from '../../services/api';
+import { getAssetUrl } from '../../services/api';
 import CompanySelector from './CompanySelector';
 import SidebarNavigation from './SidebarNavigation';
 
@@ -15,11 +15,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
   const location = useLocation();
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
 
-  const getUserImageUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith('http') || path.startsWith('data:')) return path;
-    return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
-  };
+  const getUserImageUrl = getAssetUrl;
 
   const canManageSettings = hasPermission(PERMISSIONS.MANAGE_COMPANY_SETTINGS);
   const canViewDesignations = hasPermission(PERMISSIONS.VIEW_DESIGNATIONS);

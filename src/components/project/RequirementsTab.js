@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { requirementAPI, BASE_SERVER_URL } from '../../services/api';
+import { requirementAPI, getAssetUrl } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import { Button, Badge } from '../ui';
 
@@ -451,7 +451,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Attachments</h4>
                     <div className="grid grid-cols-1 gap-2">
                       {viewingRequirement.attachments.map((file, i) => (
-                        <a key={i} href={`${BASE_SERVER_URL}${file.path}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50 transition-all font-sans" download>
+                        <a key={i} href={getAssetUrl(file.path)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50 transition-all font-sans" download>
                           <span className="text-lg">📄</span>
                           <span className="text-[11px] font-bold text-slate-600 line-clamp-1">{file.originalName || file.name}</span>
                         </a>

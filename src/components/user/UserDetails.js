@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../layout/Layout';
-import { userAPI, BASE_SERVER_URL } from '../../services/api';
+import { userAPI, getAssetUrl } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import PageHeader from '../layout/PageHeader';
 
@@ -97,11 +97,7 @@ const UserDetails = () => {
   }
 
   const profile = user.profile || {};
-  const getImageUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http')) return url;
-    return `${BASE_SERVER_URL}${url}`;
-  };
+  const getImageUrl = getAssetUrl;
 
   return (
     <Layout>

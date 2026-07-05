@@ -1,14 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { chatAPI, projectAPI, userAPI, BASE_SERVER_URL } from '../../services/api';
+import { chatAPI, projectAPI, userAPI, getAssetUrl } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useCompany } from '../../context/CompanyContext';
 import { useChat } from '../../context/ChatContext';
 
-const getAvatarUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith('http') || path.startsWith('data:')) return path;
-    return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
-};
+const getAvatarUrl = getAssetUrl;
 
 const GlobalChat = ({ onClose }) => {
     const { state: authState } = useAuth();

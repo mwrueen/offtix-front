@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../layout/Layout';
-import api, { BASE_SERVER_URL } from '../../services/api';
+import api, { getAssetUrl } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import PageHeader from '../layout/PageHeader';
@@ -63,12 +63,7 @@ const Profile = () => {
   const toast = useToast();
 
 
-  const getImageUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('data:')) return url;
-    if (url.startsWith('http')) return url;
-    return `${BASE_SERVER_URL}${url}`;
-  };
+  const getImageUrl = getAssetUrl;
 
   const [profile, setProfile] = useState({
     name: '',

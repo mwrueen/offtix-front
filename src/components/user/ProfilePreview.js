@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../layout/Layout';
-import api, { BASE_SERVER_URL } from '../../services/api';
+import api, { getAssetUrl } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import PageHeader from '../layout/PageHeader';
 
@@ -23,11 +23,7 @@ const ProfilePreview = () => {
         }
     };
 
-    const getImageUrl = (url) => {
-        if (!url) return '';
-        if (url.startsWith('http')) return url;
-        return `${BASE_SERVER_URL}${url}`;
-    };
+    const getImageUrl = getAssetUrl;
 
     useEffect(() => {
         fetchUserProfile();

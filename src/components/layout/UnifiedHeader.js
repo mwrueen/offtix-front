@@ -5,7 +5,7 @@ import { useCompany } from '../../context/CompanyContext';
 import { useSocket } from '../../context/SocketContext';
 import { useChat } from '../../context/ChatContext';
 import { getCookie } from '../../utils/cookies';
-import { BASE_SERVER_URL } from '../../services/api';
+import { getAssetUrl } from '../../services/api';
 import { getTypeLabel, timeAgo } from '../../utils/notifications';
 
 const UnifiedHeader = () => {
@@ -30,11 +30,7 @@ const UnifiedHeader = () => {
     const selectedCompany = companyState.selectedCompany;
     const isPersonal = selectedCompany?.id === 'personal';
 
-    const getLogoUrl = (path) => {
-        if (!path) return null;
-        if (path.startsWith('http') || path.startsWith('data:')) return path;
-        return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
-    };
+    const getLogoUrl = getAssetUrl;
 
     useEffect(() => {
         const handleClickOutside = (event) => {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { projectAPI } from '../../services/api';
+import { projectAPI, getAssetUrl } from '../../services/api';
 import { useCompany } from '../../context/CompanyContext';
 import { useToast } from '../../context/ToastContext';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
@@ -117,7 +117,7 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
               {project.logo && (
                 <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-2xl border-2 border-slate-100 overflow-hidden shrink-0 shadow-sm">
                   <img 
-                    src={project.logo.startsWith('http') ? project.logo : `${process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000'}${project.logo}`} 
+                    src={getAssetUrl(project.logo)} 
                     alt={project.title} 
                     className="w-full h-full object-cover" 
                   />

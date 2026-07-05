@@ -4,6 +4,7 @@ import { getCookie } from '../../utils/cookies';
 import Layout from '../layout/Layout';
 import { useCompany } from '../../context/CompanyContext';
 import { useToast } from '../../context/ToastContext';
+import { getAssetUrl } from '../../services/api';
 
 const EditCompanyInfo = () => {
   const navigate = useNavigate();
@@ -96,8 +97,7 @@ const EditCompanyInfo = () => {
           currency: data.currency || 'USD'
         });
         if (data.logo) {
-          const baseUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
-          setLogoPreview(data.logo.startsWith('http') ? data.logo : `${baseUrl}${data.logo.startsWith('/') ? '' : '/'}${data.logo}`);
+          setLogoPreview(getAssetUrl(data.logo));
         }
       }
     } catch (error) {

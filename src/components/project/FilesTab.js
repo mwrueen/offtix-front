@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { projectAPI } from '../../services/api';
+import { projectAPI, getAssetUrl } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
@@ -134,7 +134,7 @@ const FilesTab = ({ project, isProjectOwner, onRefresh }) => {
 
                 <div className="flex gap-2">
                   <a
-                    href={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${file.url}`}
+                    href={getAssetUrl(file.url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-1 py-2.5 bg-slate-950 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest text-center hover:bg-slate-800 transition-all flex items-center justify-center gap-1.5"

@@ -7,7 +7,7 @@ import SidebarHeader from './SidebarHeader';
 import { useSocket } from '../../context/SocketContext';
 import { useChat } from '../../context/ChatContext';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
-import { myTasksAPI, BASE_SERVER_URL } from '../../services/api';
+import { myTasksAPI, getAssetUrl } from '../../services/api';
 import { getIcon } from '../layout/icons';
 import { invitationIdsCoveredByNotifications } from '../../utils/invitationNotificationDedupe';
 import { getTypeLabel, timeAgo } from '../../utils/notifications';
@@ -218,11 +218,7 @@ const Layout = ({ children, wide }) => {
     return titles[location.pathname] || 'Offtix';
   };
 
-  const getLogoUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith('http') || path.startsWith('data:')) return path;
-    return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
-  };
+  const getLogoUrl = getAssetUrl;
 
   const ChatHeaderIcon = getIcon('chat');
   const BellHeaderIcon = getIcon('bell');

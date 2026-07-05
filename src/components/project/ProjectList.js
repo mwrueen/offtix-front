@@ -4,6 +4,7 @@ import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
+import { getAssetUrl } from '../../services/api';
 
 const ProjectList = ({ projects, onUpdate, onDelete }) => {
   const { hasPermission, isSuperAdmin } = usePermissions();
@@ -67,7 +68,7 @@ const ProjectList = ({ projects, onUpdate, onDelete }) => {
                     <div className="w-12 h-12 rounded-xl bg-slate-50 text-indigo-600 flex items-center justify-center font-bold text-xl shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 overflow-hidden border border-slate-100 group-hover:border-indigo-500">
                       {project.logo ? (
                         <img 
-                          src={project.logo.startsWith('http') ? project.logo : `${process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000'}${project.logo}`} 
+                          src={getAssetUrl(project.logo)} 
                           alt={project.title} 
                           className="w-full h-full object-cover" 
                         />

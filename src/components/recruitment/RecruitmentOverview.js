@@ -5,16 +5,12 @@ import Layout from '../layout/Layout';
 import PageHeader from '../layout/PageHeader';
 import { useCompanyFilter } from '../../hooks/useCompanyFilter';
 import { getCookie } from '../../utils/cookies';
-import { BASE_SERVER_URL } from '../../services/api';
+import { getAssetUrl } from '../../services/api';
 
 const RecruitmentOverview = () => {
     const { selectedCompany } = useCompanyFilter();
 
-    const getLogoUrl = (path) => {
-        if (!path) return null;
-        if (path.startsWith('http')) return path;
-        return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
-    };
+    const getLogoUrl = getAssetUrl;
 
     const [circulars, setCirculars] = useState([]);
     const [stats, setStats] = useState({

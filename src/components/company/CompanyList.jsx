@@ -7,7 +7,7 @@ import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
 import LoadingSpinner from '../ui/LoadingSpinner';
-import { BASE_SERVER_URL } from '../../services/api';
+import { BASE_SERVER_URL, getAssetUrl } from '../../services/api';
 
 const CompanyList = () => {
     const { state } = useAuth();
@@ -17,11 +17,7 @@ const CompanyList = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterIndustry, setFilterIndustry] = useState('all');
 
-    const getLogoUrl = (path) => {
-        if (!path) return null;
-        if (path.startsWith('http')) return path;
-        return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
-    };
+    const getLogoUrl = getAssetUrl;
 
     useEffect(() => {
         // Check if user is admin or superadmin

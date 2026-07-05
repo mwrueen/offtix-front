@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { getAssetUrl } from '../../services/api';
+
 
 const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -11,7 +13,7 @@ const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
     endDate: initialData?.endDate ? new Date(initialData.endDate).toISOString().split('T')[0] : '',
   });
   const [logo, setLogo] = useState(null);
-  const [logoPreview, setLogoPreview] = useState(initialData?.logo ? (initialData.logo.startsWith('http') ? initialData.logo : `${process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000'}${initialData.logo}`) : null);
+  const [logoPreview, setLogoPreview] = useState(initialData?.logo ? getAssetUrl(initialData.logo) : null);
 
   const handleLogoChange = (e) => {
     const file = e.target.files[0];

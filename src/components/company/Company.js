@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCookie } from '../../utils/cookies';
 import Layout from '../layout/Layout';
 import PageHeader from '../layout/PageHeader';
-import { companyAPI, BASE_SERVER_URL } from '../../services/api';
+import { companyAPI, getAssetUrl } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
 const Company = () => {
@@ -83,11 +83,7 @@ const Company = () => {
 
   const userPermissions = getUserPermissions();
 
-  const getLogoUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith('http')) return path;
-    return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
-  };
+  const getLogoUrl = getAssetUrl;
 
   if (loading) return (
     <Layout>

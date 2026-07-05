@@ -1,17 +1,13 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
-import { projectAPI, companyAPI, taskRoleAPI, BASE_SERVER_URL } from '../../services/api';
+import { projectAPI, companyAPI, taskRoleAPI, getAssetUrl } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 import { useToast } from '../../context/ToastContext';
 import { Button, Badge } from '../ui';
 
-const getAvatarUrl = (path) => {
-  if (!path) return null;
-  if (path.startsWith('http') || path.startsWith('data:')) return path;
-  return `${BASE_SERVER_URL}${path.startsWith('/') ? '' : '/'}${path}`;
-};
+const getAvatarUrl = getAssetUrl;
 
 const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, onRefresh }) => {
   const navigate = useNavigate();
