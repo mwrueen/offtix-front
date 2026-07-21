@@ -8,6 +8,7 @@ import Layout from '../layout/Layout';
 import PageHeader from '../layout/PageHeader';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import GenerateAITasksModal from './GenerateAITasksModal';
 
 const MyTaskDetails = () => {
   const { id: taskId } = useParams();
@@ -21,14 +22,16 @@ const MyTaskDetails = () => {
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
   const [subtaskActionLoading, setSubtaskActionLoading] = useState({});
-  const [actionModal, setActionModal] = useState(null); // 'complete', 'sendBack', 'completeSubtask'
+  const [actionModal, setActionModal] = useState(null); // 'complete', 'sendBack', 'completeSubtask', 'editActivity'
   const [activeSubtaskId, setActiveSubtaskId] = useState(null);
+  const [editActivityId, setEditActivityId] = useState(null);
   const [formData, setFormData] = useState({ note: '', message: '', link: '' });
   const [selectedFiles, setSelectedFiles] = useState([]);
 
   const { state: authState } = useAuth();
   const user = authState.user;
   const [showSubtaskForm, setShowSubtaskForm] = useState(false);
+  const [showAISubtasksModal, setShowAISubtasksModal] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [isSubmittingSubtask, setIsSubmittingSubtask] = useState(false);
 
@@ -174,6 +177,17 @@ const MyTaskDetails = () => {
     setActionModal('sendBack');
   };
 
+  const handleEditActivityClick = (activity) => {
+    setEditActivityId(activity._id);
+    setFormData({
+      note: activity.note || '',
+      message: activity.message || '',
+      link: activity.metadata?.link || ''
+    });
+    setSelectedFiles([]); // Assuming existing files cannot be easily pre-populated in a standard file input
+    setActionModal('editActivity');
+  };
+
   const handleModalSubmit = async () => {
     setActionLoading(actionModal);
     try {
@@ -185,8 +199,11 @@ const MyTaskDetails = () => {
         }
         toast?.showToast?.('Task completed successfully', 'success');
       } else if (actionModal === 'completeSubtask') {
-        await myTasksAPI.complete(activeSubtaskId, formData.note || 'Completed', selectedFiles);
+        await myTasksAPI.complete(activeSubtaskId, formData.note || 'Completed', formData.message, formData.link, selectedFiles);
         toast?.showToast?.('Subtask completed successfully', 'success');
+      } else if (actionModal === 'editActivity') {
+        await myTasksAPI.editActivity(editActivityId, formData.note, formData.message, formData.link, selectedFiles);
+        toast?.showToast?.('Completion details updated successfully', 'success');
       } else {
         if (taskData.workflowType === 'sequential') {
           await myTasksAPI.sendBackSequential(taskId, formData.note, formData.message, formData.link, selectedFiles);
@@ -197,6 +214,7 @@ const MyTaskDetails = () => {
       }
       setActionModal(null);
       setActiveSubtaskId(null);
+      setEditActivityId(null);
       setFormData({ note: '', message: '', link: '' });
       setSelectedFiles([]);
       fetchTaskDetails();
@@ -256,6 +274,49 @@ const MyTaskDetails = () => {
       toast?.showToast?.(errorMsg, 'error');
     } finally {
       setIsSubmittingSubtask(false);
+    }
+  };
+
+  const handleGenerateAISubtasksSubmit = async (generatedSubtasks) => {
+    if (!taskData?.task?.project?._id) return;
+    
+    try {
+      const projectId = taskData.task.project._id;
+      let roleAssignments = [];
+      let assignees = [];
+      let useRoleWorkflow = false;
+
+      if (taskData.workflowType === 'role' && taskData.steps?.current?.role) {
+        roleAssignments = [{
+          role: taskData.steps.current.role._id || taskData.steps.current.role,
+          assignees: [user._id],
+          order: 1
+        }];
+        useRoleWorkflow = true;
+      } else {
+        assignees = [user._id];
+      }
+
+      const promises = generatedSubtasks.map(st => {
+        const payload = {
+          title: st.title,
+          description: st.description,
+          parent: taskId,
+          project: projectId,
+          roleAssignments,
+          assignees,
+          useRoleWorkflow,
+          priority: taskData.task.priority
+        };
+        return taskAPI.create(projectId, payload);
+      });
+
+      await Promise.all(promises);
+      toast?.showToast?.('AI subtasks created successfully', 'success');
+      fetchTaskDetails();
+    } catch (err) {
+      console.error("AI Subtasks creation error:", err);
+      toast?.showToast?.('Failed to create AI subtasks', 'error');
     }
   };
 
@@ -363,7 +424,10 @@ const MyTaskDetails = () => {
               <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                   <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Subtasks ({taskData.subtasks.length})</h3>
-                  <button onClick={() => setShowSubtaskForm(!showSubtaskForm)} className="text-indigo-600 text-xs font-bold bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition border border-indigo-100 shadow-sm">+ Add Subtask</button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setShowAISubtasksModal(true)} className="text-purple-600 text-xs font-bold bg-purple-50 px-3 py-1.5 rounded-lg hover:bg-purple-100 transition border border-purple-100 shadow-sm">✨ Generate AI Subtasks</button>
+                    <button onClick={() => setShowSubtaskForm(!showSubtaskForm)} className="text-indigo-600 text-xs font-bold bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition border border-indigo-100 shadow-sm">+ Add Subtask</button>
+                  </div>
                 </div>
 
                 {showSubtaskForm && (
@@ -444,11 +508,13 @@ const MyTaskDetails = () => {
                       const isActive = !isCompleted && !isPaused && (['active', 'inprogress'].includes(stStatusNorm) || Boolean(st.activeUser));
                       const isAssignedToThisSt = isUserAssignedToSubtask(st);
 
+                      const completionActivity = taskData.activity?.find(a => a.task?._id === st._id && a.action === 'completed');
+
                       const currentUserIdStr = (user?.id || user?._id)?.toString();
                       const activeUserObj = st.activeUser || st.activeStartedBy;
                       const activeUserId = (activeUserObj?._id || activeUserObj?.id || activeUserObj)?.toString();
-                      const isRunningByMe = isActive && Boolean(activeUserId && currentUserIdStr && activeUserId === currentUserIdStr);
-                      const isRunningByOther = isActive && Boolean(activeUserId && currentUserIdStr && activeUserId !== currentUserIdStr);
+                      const isRunningByMe = isActive && isAssignedToThisSt && (!activeUserId || activeUserId === currentUserIdStr);
+                      const isRunningByOther = isActive && activeUserId && activeUserId !== currentUserIdStr;
 
                       const subtaskAssignees = getSubtaskAssignees(st);
 
@@ -479,7 +545,7 @@ const MyTaskDetails = () => {
                                   const aId = (a._id || a.id)?.toString();
                                   const isThisActive = isActive && activeUserId && aId === activeUserId;
                                   const isThisPaused = isPaused && activeUserId && aId === activeUserId;
-                                  const isThisCompleter = isCompleted && st.completedBy && aId === st.completedBy._id.toString();
+                                  const isThisCompleter = isCompleted && (st.completedBy ? aId === st.completedBy._id?.toString() : true);
                                   return (
                                     <div key={aId} className={`flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full border ${isThisActive ? 'border-emerald-300 bg-emerald-50' : isThisPaused ? 'border-amber-300 bg-amber-50' : isThisCompleter ? 'border-emerald-400 bg-emerald-100' : 'border-slate-200 bg-slate-50'}`}>
                                       <div className={`w-5 h-5 rounded-full ${isThisCompleter ? 'bg-emerald-500' : colorFor(aId)} text-white text-[9px] font-bold flex items-center justify-center`}>
@@ -538,6 +604,46 @@ const MyTaskDetails = () => {
                                     {isStLoading === 'starting' ? 'Starting...' : isPaused ? 'Resume' : 'Start'}
                                   </button>
                                 )}
+                                {isCompleted && (
+                                  <div className="px-3.5 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold shadow-sm flex items-center gap-1.5 cursor-default">
+                                    <span>✓</span>
+                                    <span>Completed</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {isCompleted && completionActivity && (
+                            <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                              <div className="flex items-center justify-between mb-3 border-b border-slate-200 pb-2">
+                                <h5 className="text-xs font-bold text-slate-700">Completion Details</h5>
+                                {(completionActivity.performedBy?._id || completionActivity.performedBy)?.toString() === (user?._id || user?.id)?.toString() && (
+                                  <button 
+                                    onClick={() => handleEditActivityClick(completionActivity)}
+                                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2 py-1 rounded"
+                                  >
+                                    Edit
+                                  </button>
+                                )}
+                              </div>
+                              {completionActivity.note && (
+                                <div className="text-xs text-slate-600 prose max-w-none mb-3" dangerouslySetInnerHTML={{ __html: completionActivity.note }} />
+                              )}
+                              {completionActivity.message && (
+                                <div className="text-xs text-slate-600 italic bg-white p-2 rounded border border-slate-100 mb-3">"{completionActivity.message}"</div>
+                              )}
+                              <div className="flex flex-wrap gap-2">
+                                {completionActivity.metadata?.link && (
+                                  <a href={completionActivity.metadata.link} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-white border border-slate-200 rounded text-[10px] font-bold text-indigo-600 hover:bg-slate-50 transition-colors">
+                                    View Reference ↗
+                                  </a>
+                                )}
+                                {completionActivity.documents?.map((doc, dIdx) => (
+                                  <a key={dIdx} href={getAssetUrl(doc.path)} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded text-[10px] font-bold text-emerald-700 hover:bg-emerald-100 transition-colors">
+                                    📄 {doc.originalName}
+                                  </a>
+                                ))}
                               </div>
                             </div>
                           )}
@@ -798,14 +904,21 @@ const MyTaskDetails = () => {
           <div className="bg-white rounded-2xl w-full max-w-4xl p-8 lg:p-10 shadow-xl border border-slate-200 overflow-hidden">
             <div className="flex justify-between items-center mb-8">
               <div className="flex items-center gap-4">
-                <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${actionModal === 'complete' || actionModal === 'completeSubtask' ? 'bg-indigo-100 text-indigo-700' : 'bg-rose-100 text-rose-700'}`}>
-                  {actionModal === 'complete' || actionModal === 'completeSubtask' ? '✓' : '↩'}
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner ${actionModal === 'complete' || actionModal === 'completeSubtask' || actionModal === 'editActivity' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                  {actionModal === 'complete' || actionModal === 'completeSubtask' || actionModal === 'editActivity' ? '✅' : '↩️'}
                 </div>
-                <h3 className="text-xl font-semibold text-slate-800">
-                  {actionModal === 'complete' || actionModal === 'completeSubtask' ? 'Submit Task Completion' : 'Request Revision'}
-                </h3>
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-900">
+                    {actionModal === 'complete' ? 'Complete Task' : actionModal === 'completeSubtask' ? 'Complete Subtask' : actionModal === 'editActivity' ? 'Edit Completion Details' : 'Send Task Back'}
+                  </h3>
+                  <p className="text-sm text-slate-500 font-medium">
+                    {actionModal === 'complete' || actionModal === 'completeSubtask' ? 'Submit your final deliverables and notes.' : actionModal === 'editActivity' ? 'Update your previously submitted completion details.' : 'Return the task to the previous assignee for revisions.'}
+                  </p>
+                </div>
               </div>
-              <button onClick={() => { setActionModal(null); setActiveSubtaskId(null); }} className="w-9 h-9 flex items-center justify-center bg-slate-100 rounded-lg text-slate-500 hover:bg-slate-200 transition-colors">×</button>
+              <button onClick={() => setActionModal(null)} className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-slate-200 transition-colors">
+                ✕
+              </button>
             </div>
 
             <div className="space-y-8 max-h-[60vh] overflow-y-auto pr-2">
@@ -846,6 +959,16 @@ const MyTaskDetails = () => {
           </div>
         </div>
       )}
+
+      <GenerateAITasksModal
+        isOpen={showAISubtasksModal}
+        onClose={() => setShowAISubtasksModal(false)}
+        onGenerate={handleGenerateAISubtasksSubmit}
+        projectTitle={task?.title}
+        projectDescription={task?.description}
+        modalTitle="Generate AI Subtasks"
+        modalSubtitle="Auto-generate essential subtasks based on this task's title and description"
+      />
     </Layout>
   );
 };

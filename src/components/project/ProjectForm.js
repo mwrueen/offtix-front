@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { getAssetUrl } from '../../services/api';
+import { getAssetUrl, generateProjectDescription } from '../../services/api';
 
 
 const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
@@ -14,6 +14,28 @@ const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
   });
   const [logo, setLogo] = useState(null);
   const [logoPreview, setLogoPreview] = useState(initialData?.logo ? getAssetUrl(initialData.logo) : null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerateDescription = async () => {
+    if (!formData.title) {
+      alert("Please enter a project title first to generate a description.");
+      return;
+    }
+    
+    setIsGenerating(true);
+    try {
+      const response = await generateProjectDescription(formData.title);
+      setFormData(prev => ({
+        ...prev,
+        description: response.data.description
+      }));
+    } catch (error) {
+      console.error('Error generating description:', error);
+      alert('Failed to generate description. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
@@ -122,7 +144,18 @@ const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-700 ml-1">Description</label>
+          <div className="flex justify-between items-center ml-1">
+            <label className="text-xs font-bold text-slate-700">Description</label>
+            <button
+              type="button"
+              onClick={handleGenerateDescription}
+              disabled={isGenerating}
+              className="text-xs font-bold text-indigo-600 flex items-center gap-1 hover:text-indigo-800 disabled:opacity-50"
+            >
+              <span>✨</span>
+              {isGenerating ? 'Generating...' : 'Generate AI Description'}
+            </button>
+          </div>
           <div className="rounded-xl border border-slate-200 overflow-hidden bg-white focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all [&_.ql-toolbar]:border-none [&_.ql-toolbar]:bg-slate-50 [&_.ql-container]:border-none [&_.ql-editor]:text-sm [&_.ql-editor]:text-slate-700 [&_.ql-editor]:min-h-[160px]">
             <ReactQuill
               theme="snow"

@@ -59,9 +59,9 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
 
   const userOptions = useMemo(() => {
     if (!users) return [];
-    const available = users.filter(user => !project.members?.some(m => (m.user?._id || m.user) === user._id) && project.owner?._id !== user._id && project.owner !== user._id);
+    const available = users.filter(user => !project.members?.some(m => (m.user?._id || m.user) === user._id));
     return available.map(u => ({ value: u._id, label: `${u.name} (${u.email})`, user: u }));
-  }, [users, project.members, project.owner]);
+  }, [users, project.members]);
 
   const currentPMId = project.projectManager?._id || project.projectManager;
 

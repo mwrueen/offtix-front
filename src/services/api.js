@@ -20,6 +20,9 @@ const getAssetUrl = (path) => {
 
 export { API_BASE_URL, BASE_SERVER_URL, getAssetUrl };
 
+export const generateProjectDescription = (title) => api.post('/ai/generate-project-description', { title });
+export const generateProjectTasks = (title, description, existingTasks = []) => api.post('/ai/generate-tasks', { title, description, existingTasks });
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -388,6 +391,17 @@ export const myTasksAPI = {
     }
     return api.post(`/my-tasks/${taskId}/sequential/send-back`, formData);
   },
+  // Edit Activity
+  editActivity: (activityId, note, message, link, files) => {
+    const formData = new FormData();
+    if (note !== undefined) formData.append('note', note);
+    if (message !== undefined) formData.append('message', message);
+    if (link !== undefined) formData.append('link', link);
+    if (files && files.length > 0) {
+      files.forEach(file => formData.append('files', file));
+    }
+    return api.put(`/my-tasks/activity/${activityId}`, formData);
+  }
 };
 
 export const currencyAPI = {

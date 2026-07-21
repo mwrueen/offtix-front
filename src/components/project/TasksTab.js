@@ -12,6 +12,7 @@ import BoardView from './views/BoardView';
 import CalendarView from './views/CalendarView';
 import { autoScheduleAllTasks } from '../../utils/ganttScheduler';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
+import GenerateAITasksModal from './GenerateAITasksModal';
 
 const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onRefresh: onProjectRefresh }) => {
     const { id } = useParams();
@@ -36,6 +37,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const [selectedPhase] = useState('');
     const [currentView, setCurrentView] = useState('list');
     const [showInlineCreator, setShowInlineCreator] = useState(false);
+    const [showAITasksModal, setShowAITasksModal] = useState(false);
 
     // Filter states
     const [selectedAssignee, setSelectedAssignee] = useState('');
@@ -185,6 +187,34 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
             if (onProjectRefresh) onProjectRefresh();
         } catch (error) {
             console.error('Failed to create task', error);
+        }
+    };
+
+    const handleGenerateAITasksSubmit = async (generatedTasks) => {
+        try {
+            const maxOrder = tasks.length > 0 ? Math.max(...tasks.map(t => t.order || 0)) : 0;
+            const defaultStatus = project?.settings?.defaultTaskStatus || taskStatuses[0]?._id;
+            
+            // We use Promise.all to submit all tasks to the backend at once.
+            // If the array is very large, consider a chunked approach, but for 5-10 tasks this is fine.
+            const promises = generatedTasks.map((t, index) => {
+                const data = {
+                    title: t.title,
+                    description: t.description,
+                    sprint: selectedSprint || undefined,
+                    phase: selectedPhase || undefined,
+                    status: defaultStatus,
+                    order: maxOrder + index + 1
+                };
+                return taskAPI.create(id, data);
+            });
+            
+            await Promise.all(promises);
+            fetchProjectData();
+            if (onProjectRefresh) onProjectRefresh();
+        } catch (error) {
+            console.error('Failed to create bulk tasks', error);
+            alert('Failed to submit all tasks.');
         }
     };
 
@@ -406,6 +436,14 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                     >
                         <span>⚡</span>
                         Auto Schedule
+                    </button>
+
+                    <button
+                        onClick={() => setShowAITasksModal(true)}
+                        className="px-4 py-2 bg-purple-50 text-purple-600 border border-purple-100 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-purple-100 transition-colors shadow-sm"
+                    >
+                        <span>✨</span>
+                        Generate AI Tasks
                     </button>
 
                     <button
@@ -686,6 +724,14 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                     </div>
                 </div>
             )}
+
+            <GenerateAITasksModal
+                isOpen={showAITasksModal}
+                onClose={() => setShowAITasksModal(false)}
+                onGenerate={handleGenerateAITasksSubmit}
+                projectTitle={project?.title}
+                projectDescription={project?.description}
+            />
         </div>
     );
 };
