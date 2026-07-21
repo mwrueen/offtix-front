@@ -26,12 +26,12 @@ const Company = () => {
     setLoading(true);
     try {
       const token = getCookie('authToken');
-      if (selectedCompany.id === 'personal') {
+      if ((selectedCompany.id || selectedCompany._id) === 'personal') {
         setCompany(null);
         setLoading(false);
         return;
       }
-      const response = await fetch(`/api/companies/${selectedCompany.id}`, {
+      const response = await fetch(`/api/companies/${selectedCompany.id || selectedCompany._id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -99,17 +99,17 @@ const Company = () => {
     <Layout>
       <div className="max-w-2xl mx-auto my-32 bg-white rounded-3xl p-16 shadow-sm border border-slate-200 text-center animate-in zoom-in-95 duration-500">
         <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-4xl mx-auto mb-8">
-          {selectedCompany?.id === 'personal' ? '👤' : '🏢'}
+          {(selectedCompany?.id || selectedCompany?._id) === 'personal' ? '👤' : '🏢'}
         </div>
         <h2 className="text-2xl font-bold text-slate-900 mb-4">
-          {selectedCompany?.id === 'personal' ? 'Personal Workspace' : 'Company not found'}
+          {((selectedCompany?.id || selectedCompany?._id) === 'personal') ? 'Personal Workspace' : 'Company not found'}
         </h2>
         <p className="text-slate-500 mb-10 text-sm leading-relaxed max-w-md mx-auto">
-          {selectedCompany?.id === 'personal'
+          {((selectedCompany?.id || selectedCompany?._id) === 'personal')
             ? 'Access to company features is restricted to organization workspaces. Switch to a company to continue.'
             : 'We could not find the requested company profile. Please ensure you have the necessary access.'}
         </p>
-        {selectedCompany?.id === 'personal' && (
+        {((selectedCompany?.id || selectedCompany?._id) === 'personal') && (
           <button
             onClick={() => navigate('/create-company')}
             className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"

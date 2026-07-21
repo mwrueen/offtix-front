@@ -28,7 +28,7 @@ const Footer = () => {
                 <a href="#features" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Architecture</a>
               </li>
               <li>
-                <Link to="/careers" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Career Node</Link>
+                <Link to="/" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Career Node</Link>
               </li>
               <li>
                 <a href="#deployment" className="text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">Deployment Log</a>

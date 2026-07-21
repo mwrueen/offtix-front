@@ -6,7 +6,6 @@ import { ProjectProvider } from './context/ProjectContext';
 import { CompanyProvider } from './context/CompanyContext';
 import { ToastProvider } from './context/ToastContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
-import LandingPage from './components/landing/LandingPage';
 import SignIn from './components/auth/SignIn';
 import SignUp from './components/auth/SignUp';
 import AuthCallback from './components/auth/AuthCallback';
@@ -72,11 +71,10 @@ function App() {
                     <SocketProvider>
                       <RealTimeNotifications />
                       <Routes>
-                        <Route path="/" element={<LandingPage />} />
+                        <Route path="/" element={<PublicCareers />} />
                         <Route path="/signin" element={<SignIn />} />
                         <Route path="/signup" element={<SignUp />} />
                         <Route path="/auth/callback" element={<AuthCallback />} />
-                        <Route path="/careers" element={<PublicCareers />} />
                         <Route path="/careers/:id" element={<JobDetails />} />
                         <Route path="/dashboard" element={
                           <ProtectedRoute>

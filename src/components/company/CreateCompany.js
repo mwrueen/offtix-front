@@ -56,8 +56,20 @@ const CreateCompany = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Company name is required.';
     if (!formData.description.trim()) newErrors.description = 'Description is required.';
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email address.';
-    if (formData.website && !/^https?:\/\/.+/.test(formData.website)) newErrors.website = 'Website must start with http/https.';
+    if (!formData.industry) newErrors.industry = 'Industry is required.';
+    if (!formData.companySize) newErrors.companySize = 'Company size is required.';
+    if (!formData.foundedYear) newErrors.foundedYear = 'Founded year is required.';
+    else if (formData.foundedYear < 1800 || formData.foundedYear > new Date().getFullYear()) newErrors.foundedYear = 'Invalid year.';
+    if (!formData.email.trim()) newErrors.email = 'Email is required.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email address.';
+    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required.';
+    if (formData.website && !/^https?:\/\/.+/.test(formData.website)) newErrors.website = 'Must start with http/https.';
+    if (!formData.address.trim()) newErrors.address = 'Address is required.';
+    if (!formData.city.trim()) newErrors.city = 'City is required.';
+    if (!formData.state.trim()) newErrors.state = 'State is required.';
+    if (!formData.country.trim()) newErrors.country = 'Country is required.';
+    if (!formData.zipCode.trim()) newErrors.zipCode = 'ZIP Code is required.';
+    if (!formData.founderRole.trim()) newErrors.founderRole = 'Job title is required.';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -160,9 +172,9 @@ const CreateCompany = () => {
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Input label="Industry" name="industry" type="select" value={formData.industry} onChange={handleChange} options={industryOptions} variant="standard" />
-                  <Input label="Company Size" name="companySize" type="select" value={formData.companySize} onChange={handleChange} options={companySizeOptions} variant="standard" />
-                  <Input label="Founded Year" name="foundedYear" type="number" value={formData.foundedYear} onChange={handleChange} placeholder="YYYY" min="1800" max={new Date().getFullYear()} variant="standard" />
+                  <Input label="Industry" name="industry" type="select" value={formData.industry} onChange={handleChange} options={industryOptions} required error={errors.industry} variant="standard" />
+                  <Input label="Company Size" name="companySize" type="select" value={formData.companySize} onChange={handleChange} options={companySizeOptions} required error={errors.companySize} variant="standard" />
+                  <Input label="Founded Year" name="foundedYear" type="number" value={formData.foundedYear} onChange={handleChange} placeholder="YYYY" min="1800" max={new Date().getFullYear()} required error={errors.foundedYear} variant="standard" />
                 </div>
               </div>
             </section>
@@ -174,8 +186,8 @@ const CreateCompany = () => {
                   <h3 className="text-sm font-semibold text-slate-900">Contact Details</h3>
                 </div>
                 <div className="p-6 space-y-4">
-                  <Input label="Email Address" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="contact@company.com" error={errors.email} variant="standard" />
-                  <Input label="Phone Number" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="+1 (555) 000-0000" variant="standard" />
+                  <Input label="Email Address" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="contact@company.com" required error={errors.email} variant="standard" />
+                  <Input label="Phone Number" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="+1 (555) 000-0000" required error={errors.phone} variant="standard" />
                   <Input label="Website" name="website" type="url" value={formData.website} onChange={handleChange} placeholder="https://company.com" error={errors.website} variant="standard" />
                 </div>
               </section>
@@ -185,14 +197,14 @@ const CreateCompany = () => {
                   <h3 className="text-sm font-semibold text-slate-900">Address</h3>
                 </div>
                 <div className="p-6 space-y-4">
-                  <Input label="Street Address" name="address" value={formData.address} onChange={handleChange} placeholder="123 Business St" variant="standard" />
+                  <Input label="Street Address" name="address" value={formData.address} onChange={handleChange} placeholder="123 Business St" required error={errors.address} variant="standard" />
                   <div className="grid grid-cols-2 gap-4">
-                    <Input label="City" name="city" value={formData.city} onChange={handleChange} placeholder="City" variant="standard" />
-                    <Input label="State" name="state" value={formData.state} onChange={handleChange} placeholder="State" variant="standard" />
+                    <Input label="City" name="city" value={formData.city} onChange={handleChange} placeholder="City" required error={errors.city} variant="standard" />
+                    <Input label="State" name="state" value={formData.state} onChange={handleChange} placeholder="State" required error={errors.state} variant="standard" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <Input label="Country" name="country" value={formData.country} onChange={handleChange} placeholder="Country" variant="standard" />
-                    <Input label="ZIP Code" name="zipCode" value={formData.zipCode} onChange={handleChange} placeholder="ZIP" variant="standard" />
+                    <Input label="Country" name="country" value={formData.country} onChange={handleChange} placeholder="Country" required error={errors.country} variant="standard" />
+                    <Input label="ZIP Code" name="zipCode" value={formData.zipCode} onChange={handleChange} placeholder="ZIP" required error={errors.zipCode} variant="standard" />
                   </div>
                 </div>
               </section>
@@ -206,13 +218,14 @@ const CreateCompany = () => {
                   You will be the primary administrator for this company.
                 </p>
                 <div className="max-w-md">
-                  <Input 
+                    <Input 
                     label="Your Job Title" 
                     name="founderRole" 
                     value={formData.founderRole} 
                     onChange={handleChange} 
                     placeholder="e.g. CEO" 
                     required 
+                    error={errors.founderRole}
                     variant="standard"
                     labelClassName="text-slate-300"
                     inputClassName="bg-white/5 border-white/10 text-white placeholder:text-white/20" 

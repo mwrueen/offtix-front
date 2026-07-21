@@ -145,7 +145,7 @@ const JobDetails = () => {
             markAppliedInBrowser(id);
             setAlreadyApplied(true);
             toast.showToast('Application submitted successfully!', 'success');
-            navigate('/careers');
+            navigate('/');
         } catch (error) {
             if (error.response?.status === 409) {
                 markAppliedInBrowser(id);
@@ -266,7 +266,7 @@ const JobDetails = () => {
                                         <p className="text-sm font-bold text-slate-800">You have already applied for this role.</p>
                                         <p className="text-xs text-slate-500 leading-relaxed">We have your application on file. You will hear from the team if there is a fit.</p>
                                         <Link
-                                            to="/careers"
+                                            to="/"
                                             className="inline-block w-full text-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-lg text-sm transition-all"
                                         >
                                             Back to openings

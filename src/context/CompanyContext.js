@@ -58,7 +58,7 @@ export const CompanyProvider = ({ children }) => {
           if (savedCompany) {
             try {
               const parsedCompany = JSON.parse(savedCompany);
-              const matchingCompany = companies.find(c => c.id === parsedCompany.id);
+              const matchingCompany = companies.find(c => (c.id || c._id) === (parsedCompany.id || parsedCompany._id));
               if (matchingCompany) {
                 dispatch({ type: 'SET_SELECTED_COMPANY', payload: matchingCompany });
                 dispatch({ type: 'SET_LOADING', payload: false });
@@ -101,9 +101,11 @@ export const CompanyProvider = ({ children }) => {
       });
 
       if (response.ok) {
-        const newCompany = await response.json();
+        const data = await response.json();
+        const newCompany = { ...data, id: data.id || data._id };
         dispatch({ type: 'SET_COMPANIES', payload: [...state.companies, newCompany] });
         dispatch({ type: 'SET_SELECTED_COMPANY', payload: newCompany });
+        localStorage.setItem('selectedCompany', JSON.stringify(newCompany));
         return newCompany;
       } else {
         const errorData = await response.json();

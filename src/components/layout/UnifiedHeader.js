@@ -28,7 +28,7 @@ const UnifiedHeader = () => {
 
     const { isAuthenticated, user } = state;
     const selectedCompany = companyState.selectedCompany;
-    const isPersonal = selectedCompany?.id === 'personal';
+    const isPersonal = (selectedCompany?.id || selectedCompany?._id) === 'personal';
 
     const getLogoUrl = getAssetUrl;
 
@@ -100,7 +100,6 @@ const UnifiedHeader = () => {
 
                     <nav className="hidden md:flex items-center gap-8">
                         <Link to="/" className={`text-sm font-semibold ${location.pathname === '/' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-800'} transition-all`}>Home</Link>
-                        <Link to="/careers" className={`text-sm font-semibold ${location.pathname.startsWith('/careers') ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-800'} transition-all`}>Careers</Link>
                     </nav>
                 </div>
 
@@ -133,7 +132,7 @@ const UnifiedHeader = () => {
                                             <button
                                                 key={c.id}
                                                 onClick={() => { selectCompany(c); setIsCompanyOpen(false); }}
-                                                className={`w-full flex items-center gap-3 p-2 rounded-xl text-left transition-all ${selectedCompany?.id === c.id ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-slate-50 text-slate-600'}`}
+                                                className={`w-full flex items-center gap-3 p-2 rounded-xl text-left transition-all ${(selectedCompany?.id || selectedCompany?._id) === (c.id || c._id) ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-slate-50 text-slate-600'}`}
                                             >
                                                 <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold overflow-hidden">
                                                     {c.logo ? (
