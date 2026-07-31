@@ -131,7 +131,7 @@ const TaskDetailsSidebar = ({
             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 italic underline underline-offset-8">Project Hub Overview</h3>
             <div className="p-8 bg-white rounded-3xl border border-slate-200 shadow-sm space-y-2">
               <h2 className="text-xl font-bold text-slate-900 uppercase italic tracking-tight">{project.title}</h2>
-              <p className="text-xs text-slate-500 italic leading-relaxed">{project.description}</p>
+              <div className="text-xs text-slate-500 italic leading-relaxed" dangerouslySetInnerHTML={{ __html: project.description || '' }} />
             </div>
           </div>
 

@@ -9,6 +9,7 @@ import { useCompanyFilter } from '../../hooks/useCompanyFilter';
 import { useToast } from '../../context/ToastContext';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 import { getCookie } from '../../utils/cookies';
+import { generateJobDescription, generateJobBenefits } from '../../services/api';
 
 const EditCircular = () => {
     const { id } = useParams();
@@ -19,6 +20,55 @@ const EditCircular = () => {
     const [step, setStep] = useState(1);
     const [designations, setDesignations] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
+    const [isGeneratingBenefits, setIsGeneratingBenefits] = useState(false);
+
+    const handleGenerateDescription = async () => {
+        if (!formData.title && !formData.role) {
+            toast.showToast("Please enter a job title or select a designation level first.", "error");
+            return;
+        }
+        setIsGeneratingDesc(true);
+        try {
+            const response = await generateJobDescription({
+                title: formData.title,
+                role: formData.role,
+                experience: formData.experience,
+                jobNature: formData.jobNature,
+                companyName: selectedCompany?.name
+            });
+            setFormData(prev => ({ ...prev, description: response.data.description }));
+            toast.showToast("Job description generated with AI", "success");
+        } catch (error) {
+            console.error("Error generating job description:", error);
+            toast.showToast("Failed to generate job description", "error");
+        } finally {
+            setIsGeneratingDesc(false);
+        }
+    };
+
+    const handleGenerateBenefits = async () => {
+        if (!formData.title && !formData.role) {
+            toast.showToast("Please enter a job title or select a designation level first.", "error");
+            return;
+        }
+        setIsGeneratingBenefits(true);
+        try {
+            const response = await generateJobBenefits({
+                title: formData.title,
+                role: formData.role,
+                jobNature: formData.jobNature,
+                companyName: selectedCompany?.name
+            });
+            setFormData(prev => ({ ...prev, benefits: response.data.benefits }));
+            toast.showToast("Perks & benefits generated with AI", "success");
+        } catch (error) {
+            console.error("Error generating benefits:", error);
+            toast.showToast("Failed to generate perks & benefits", "error");
+        } finally {
+            setIsGeneratingBenefits(false);
+        }
+    };
 
     const canManageRecruitment = hasPermission(PERMISSIONS.MANAGE_RECRUITMENT);
 
@@ -293,13 +343,35 @@ const EditCircular = () => {
                             <div className="space-y-10 animate-in fade-in">
                                 <div className="grid grid-cols-1 gap-12">
                                     <div className="space-y-4">
-                                        <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Job Description</label>
+                                        <div className="flex justify-between items-center">
+                                            <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Job Description</label>
+                                            <button
+                                                type="button"
+                                                onClick={handleGenerateDescription}
+                                                disabled={isGeneratingDesc}
+                                                className="text-xs font-bold text-indigo-600 flex items-center gap-1 hover:text-indigo-800 disabled:opacity-50 transition-all"
+                                            >
+                                                <span>✨</span>
+                                                {isGeneratingDesc ? 'Generating...' : 'Write with AI'}
+                                            </button>
+                                        </div>
                                         <div className="h-64 mb-12">
                                             <ReactQuill theme="snow" value={formData.description} onChange={val => setFormData({ ...formData, description: val })} className="h-48" />
                                         </div>
                                     </div>
                                     <div className="space-y-4">
-                                        <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Benefits & Compensation</label>
+                                        <div className="flex justify-between items-center">
+                                            <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1">Benefits & Compensation</label>
+                                            <button
+                                                type="button"
+                                                onClick={handleGenerateBenefits}
+                                                disabled={isGeneratingBenefits}
+                                                className="text-xs font-bold text-indigo-600 flex items-center gap-1 hover:text-indigo-800 disabled:opacity-50 transition-all"
+                                            >
+                                                <span>✨</span>
+                                                {isGeneratingBenefits ? 'Generating...' : 'Write with AI'}
+                                            </button>
+                                        </div>
                                         <div className="h-64 mb-12">
                                             <ReactQuill theme="snow" value={formData.benefits} onChange={val => setFormData({ ...formData, benefits: val })} className="h-48" />
                                         </div>

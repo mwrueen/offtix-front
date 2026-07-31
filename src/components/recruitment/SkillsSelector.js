@@ -30,8 +30,13 @@ const SkillsSelector = ({ selectedSkills, setSelectedSkills, label, placeholder 
             const response = await axios.get('/api/skills', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setAllSkills(response.data);
-            setFilteredSkills(response.data);
+            if (Array.isArray(response.data) && response.data.length > 0) {
+                setAllSkills(response.data);
+                setFilteredSkills(response.data);
+            } else {
+                setAllSkills([]);
+                setFilteredSkills([]);
+            }
         } catch (error) {
             console.error('Error fetching skills:', error);
         }
@@ -59,34 +64,40 @@ const SkillsSelector = ({ selectedSkills, setSelectedSkills, label, placeholder 
         setSearchTerm('');
     };
 
-    const handleAddNewSkill = async () => {
-        if (!searchTerm.trim()) return;
+    const handleAddNewSkill = async (customName) => {
+        const nameToUse = (typeof customName === 'string' ? customName : searchTerm).trim();
+        if (!nameToUse) return;
 
-        // Optimistically add to UI if it doesn't exist
-        if (!selectedSkills.includes(searchTerm.trim())) {
-            const newSkillName = searchTerm.trim();
-
+        if (!selectedSkills.includes(nameToUse)) {
             try {
                 const token = getCookie('authToken');
                 const response = await axios.post('/api/skills', {
-                    name: newSkillName,
+                    name: nameToUse,
                     category: activeCategory === 'All' ? 'Other' : activeCategory
                 }, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
-                setAllSkills([...allSkills, response.data]);
-                setSelectedSkills([...selectedSkills, response.data.name]);
+                if (response.data && response.data.name) {
+                    if (!allSkills.some(s => s.name.toLowerCase() === response.data.name.toLowerCase())) {
+                        setAllSkills(prev => [...prev, response.data]);
+                    }
+                    setSelectedSkills(prev => [...prev, response.data.name]);
+                } else {
+                    setSelectedSkills(prev => [...prev, nameToUse]);
+                }
             } catch (error) {
                 if (error.response?.status === 400 && error.response?.data?.skill) {
                     const existingSkill = error.response.data.skill;
                     if (!allSkills.find(s => s._id === existingSkill._id)) {
-                        setAllSkills([...allSkills, existingSkill]);
+                        setAllSkills(prev => [...prev, existingSkill]);
                     }
-                    setSelectedSkills([...selectedSkills, existingSkill.name]);
+                    if (!selectedSkills.includes(existingSkill.name)) {
+                        setSelectedSkills(prev => [...prev, existingSkill.name]);
+                    }
                 } else {
                     console.error('Error saving new skill:', error);
-                    setSelectedSkills([...selectedSkills, newSkillName]);
+                    setSelectedSkills(prev => [...prev, nameToUse]);
                 }
             }
         }
@@ -97,12 +108,14 @@ const SkillsSelector = ({ selectedSkills, setSelectedSkills, label, placeholder 
         setSelectedSkills(selectedSkills.filter(s => s !== skillName));
     };
 
+    const exactMatchExists = searchTerm.trim() && allSkills.some(s => s.name.toLowerCase() === searchTerm.trim().toLowerCase());
+
     return (
         <div className="space-y-2 relative" ref={wrapperRef}>
             <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 px-1">{label}</label>
             <div
-                className={`min-h-[40px] w-full bg-slate-50 border ${isOpen ? 'border-indigo-500 ring-2 ring-indigo-500/5' : 'border-slate-200'} rounded-xl p-2 flex flex-wrap gap-2 transition-all duration-200 relative cursor-text pr-10`}
-                onClick={() => wrapperRef.current.querySelector('input').focus()}
+                className={`min-h-[44px] w-full bg-slate-50 border ${isOpen ? 'border-indigo-500 ring-2 ring-indigo-500/5' : 'border-slate-200'} rounded-xl p-2 flex flex-wrap gap-2 transition-all duration-200 relative cursor-text pr-10`}
+                onClick={() => wrapperRef.current?.querySelector('input')?.focus()}
             >
                 {selectedSkills.map(skill => (
                     <span key={skill} className="inline-flex items-center gap-1.5 bg-white text-indigo-700 px-2.5 py-1 rounded-lg text-sm font-semibold border border-indigo-100 shadow-sm group hover:border-indigo-300 transition-all cursor-default">
@@ -121,8 +134,8 @@ const SkillsSelector = ({ selectedSkills, setSelectedSkills, label, placeholder 
                 ))}
                 <input
                     type="text"
-                    className="flex-1 bg-transparent border-none outline-none ring-0 focus:ring-0 p-1.5 text-sm font-medium text-slate-700 placeholder:text-slate-300 min-w-[120px]"
-                    placeholder={selectedSkills.length === 0 ? placeholder : "Add more..."}
+                    className="flex-1 bg-transparent border-none outline-none ring-0 focus:ring-0 p-1.5 text-sm font-medium text-slate-700 placeholder:text-slate-400 min-w-[140px]"
+                    placeholder={selectedSkills.length === 0 ? (placeholder || "Type or search skills...") : "Add skill..."}
                     value={searchTerm}
                     onChange={(e) => {
                         setSearchTerm(e.target.value);
@@ -130,7 +143,7 @@ const SkillsSelector = ({ selectedSkills, setSelectedSkills, label, placeholder 
                     }}
                     onFocus={() => setIsOpen(true)}
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter' && searchTerm) {
+                        if (e.key === 'Enter' && searchTerm.trim()) {
                             e.preventDefault();
                             handleAddNewSkill();
                         }
@@ -176,7 +189,7 @@ const SkillsSelector = ({ selectedSkills, setSelectedSkills, label, placeholder 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-1 p-1">
                                 {filteredSkills.map(skill => (
                                     <button
-                                        key={skill._id}
+                                        key={skill._id || skill.name}
                                         type="button"
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -197,28 +210,57 @@ const SkillsSelector = ({ selectedSkills, setSelectedSkills, label, placeholder 
                                     </button>
                                 ))}
                             </div>
-                        ) : (
-                            searchTerm && (
-                                <button
-                                    type="button"
-                                    onClick={handleAddNewSkill}
-                                    className="w-full text-left px-4 py-8 rounded-xl bg-indigo-50/20 border-2 border-dashed border-indigo-100 text-indigo-600 group hover:bg-indigo-50 hover:border-indigo-200 transition-all text-center"
-                                >
-                                    <p className="font-bold text-base mb-1">Add "{searchTerm}"</p>
-                                    <p className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">Register as new {activeCategory === 'All' ? 'skill' : activeCategory}</p>
-                                </button>
-                            )
+                        ) : null}
+
+                        {/* Button to add custom skill if user typed something not matching exactly */}
+                        {searchTerm.trim() && !exactMatchExists && (
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAddNewSkill();
+                                }}
+                                className="w-full text-left px-4 py-3 my-1 rounded-xl bg-indigo-50/50 border border-indigo-200 text-indigo-700 group hover:bg-indigo-100 transition-all text-center flex items-center justify-center gap-2"
+                            >
+                                <span className="font-bold text-sm">+ Add "{searchTerm.trim()}"</span>
+                                <span className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">as new {activeCategory === 'All' ? 'skill' : activeCategory}</span>
+                            </button>
                         )}
 
-                        {!searchTerm && filteredSkills.length === 0 && (
-                            <div className="py-12 text-center text-slate-300">
-                                <p className="text-sm font-bold tracking-tight">No skills found</p>
+                        {/* Empty state when no skills in database and no search term */}
+                        {!searchTerm.trim() && filteredSkills.length === 0 && (
+                            <div className="py-8 px-4 text-center space-y-3">
+                                <p className="text-sm font-bold text-slate-600">No skills found in database</p>
+                                <p className="text-xs text-slate-400">Type a skill name in the box or enter one below to create it:</p>
+                                <div className="flex gap-2 max-w-xs mx-auto pt-1" onClick={(e) => e.stopPropagation()}>
+                                    <input
+                                        type="text"
+                                        className="flex-1 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:border-indigo-500 transition-all"
+                                        placeholder="e.g. Accounting, React..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && searchTerm.trim()) {
+                                                e.preventDefault();
+                                                handleAddNewSkill();
+                                            }
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => handleAddNewSkill()}
+                                        disabled={!searchTerm.trim()}
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 disabled:opacity-50 transition-all"
+                                    >
+                                        + Create
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
 
                     <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100 flex items-center justify-between">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest pl-2">Select skills for your recruitment</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest pl-2">Press Enter or click + to add custom skill</p>
                         <button
                             type="button"
                             onClick={() => setIsOpen(false)}

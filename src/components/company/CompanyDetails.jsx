@@ -274,9 +274,10 @@ const CompanyDetails = () => {
                                             </Badge>
                                         </div>
 
-                                        <p className="text-slate-500 text-sm leading-relaxed mb-6 line-clamp-2">
-                                            {project.description || 'No project description available.'}
-                                        </p>
+                                        <div
+                                            className="text-slate-500 text-sm leading-relaxed mb-6 line-clamp-2"
+                                            dangerouslySetInnerHTML={{ __html: project.description || 'No project description available.' }}
+                                        />
 
                                         <div className="flex justify-between items-center text-xs font-bold text-slate-400 pt-4 border-t border-slate-100">
                                             <div className="capitalize">

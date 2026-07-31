@@ -22,6 +22,8 @@ export { API_BASE_URL, BASE_SERVER_URL, getAssetUrl };
 
 export const generateProjectDescription = (title) => api.post('/ai/generate-project-description', { title });
 export const generateProjectTasks = (title, description, existingTasks = []) => api.post('/ai/generate-tasks', { title, description, existingTasks });
+export const generateJobDescription = (data) => api.post('/ai/generate-job-description', data);
+export const generateJobBenefits = (data) => api.post('/ai/generate-job-benefits', data);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
