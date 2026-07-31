@@ -6,7 +6,6 @@ import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 import Layout from '../layout/Layout';
 import Breadcrumb from '../project/Breadcrumb';
 import ProjectHeader from '../project/ProjectHeader';
-import ProjectOverview from '../project/ProjectOverview';
 import RequirementsTab from '../project/RequirementsTab';
 import MeetingNotesTab from '../project/MeetingNotesTab';
 import SprintsTab from '../project/SprintsTab';
@@ -32,13 +31,11 @@ const ProjectDetails = () => {
   const [error, setError] = useState(null);
 
   const searchParams = new URLSearchParams(location.search);
-  const activeTab = searchParams.get('tab') || 'overview';
+  const activeTab = searchParams.get('tab') || 'tasks';
   const [requirements, setRequirements] = useState([]);
   const [meetingNotes, setMeetingNotes] = useState([]);
   const [sprints, setSprints] = useState([]);
   const [phases, setPhases] = useState([]);
-
-
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchProjectData(); }, [id]);
@@ -53,7 +50,7 @@ const ProjectDetails = () => {
 
       setProject(projectRes.data);
       setUsers(usersRes.data);
-      await fetchTabData('overview');
+      await fetchTabData(searchParams.get('tab') || 'tasks');
     } catch (error) {
       console.error('Project Data Fetch Error', error);
       setError({ type: 'error', message: 'Failed to load project information.' });
@@ -72,7 +69,7 @@ const ProjectDetails = () => {
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (project && activeTab !== 'overview') fetchTabData(activeTab); }, [activeTab, project]);
+  useEffect(() => { if (project && activeTab !== 'tasks') fetchTabData(activeTab); }, [activeTab, project]);
 
   const isProjectOwner = authState.user && project && (project.owner?._id === authState.user.id || project.owner === authState.user.id || project.owner === authState.user._id || project.owner?._id === authState.user._id);
   const isProjectManager = authState.user && project && (
@@ -83,7 +80,7 @@ const ProjectDetails = () => {
   const canViewAnalytics = isProjectOwner || isSuperAdmin || hasPermission(PERMISSIONS.VIEW_PROJECT_ANALYTICS);
 
   if (loading) return (
-    <Layout>
+    <Layout wide>
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <div className="w-12 h-12 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin" />
         <p className="text-sm font-medium text-slate-500">Loading project details...</p>
@@ -92,7 +89,7 @@ const ProjectDetails = () => {
   );
 
   if (error || !project) return (
-    <Layout>
+    <Layout wide>
       <div className="max-w-2xl mx-auto my-20 bg-white rounded-3xl p-12 shadow-sm border border-rose-100 text-center space-y-6">
         <div className="text-7xl opacity-20">🚫</div>
         <div className="space-y-2">
@@ -107,7 +104,6 @@ const ProjectDetails = () => {
   );
 
   const projectTabs = [
-    { id: 'overview',      label: 'Overview',      icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z' },
     { id: 'tasks',         label: 'Tasks',         icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
     { id: 'team',          label: 'Team',          icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
     { id: 'chat',          label: 'Chat',          icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
@@ -123,13 +119,13 @@ const ProjectDetails = () => {
   ];
 
   return (
-    <Layout>
+    <Layout wide>
       <div className="transition-all duration-300 ease-in-out min-h-screen pb-20">
-        <div className="space-y-6 max-w-[1600px] mx-auto px-4 lg:px-6">
+        <div className="space-y-6 w-full px-4 lg:px-8">
           <Breadcrumb onNavigateToProjects={() => navigate('/projects')} projectTitle={project.title} />
 
-          <ProjectHeader project={project} onNavigateToTasks={() => navigate(`/projects/${id}?tab=tasks`)} isProjectOwner={isProjectOwner} onRefresh={fetchProjectData} />
-
+          <ProjectHeader project={project} users={users} onNavigateToTasks={() => navigate(`/projects/${id}?tab=tasks`)} isProjectOwner={isProjectOwner} onRefresh={fetchProjectData} />
+          
           {/* Navigation Tabs */}
           <div className="flex items-center justify-between border-b border-slate-200 bg-white/50 backdrop-blur-sm sticky top-0 z-20 px-2">
             <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
@@ -139,7 +135,7 @@ const ProjectDetails = () => {
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => navigate(tab.id === 'overview' ? `/projects/${id}` : `/projects/${id}?tab=${tab.id}`)}
+                    onClick={() => navigate(tab.id === 'tasks' ? `/projects/${id}` : `/projects/${id}?tab=${tab.id}`)}
                     className={`flex items-center gap-2 px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider transition-all relative shrink-0 ${
                       isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-800'
                     }`}
@@ -190,7 +186,6 @@ const ProjectDetails = () => {
           {/* Content Area */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm min-h-[600px] overflow-hidden">
             <div className="p-6 lg:p-8 h-full">
-              {activeTab === 'overview' && <ProjectOverview project={project} users={users} isProjectOwner={canEditProject} />}
               {activeTab === 'team' && <TeamTab projectId={id} project={project} users={users} isProjectOwner={isProjectOwner} isProjectManager={isProjectManager} onRefresh={fetchProjectData} />}
               {activeTab === 'chat' && <ChatTab projectId={id} project={project} />}
               {activeTab === 'analytics' && canViewAnalytics && <AnalyticsTab projectId={id} />}

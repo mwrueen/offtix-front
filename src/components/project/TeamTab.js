@@ -7,12 +7,11 @@ import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 import { useToast } from '../../context/ToastContext';
 import { Button, Badge } from '../ui';
 
-const getAvatarUrl = getAssetUrl;
-
 const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, onRefresh }) => {
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const { showToast } = useToast();
+
   const [showAddMember, setShowAddMember] = useState(false);
   const [showAddRole, setShowAddRole] = useState(false);
   const [selectedUserOption, setSelectedUserOption] = useState(null);
@@ -52,8 +51,8 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
     const projectSpecific = projectRoles.map(r => ({ value: r.name, label: r.name }));
     const standard = [{ value: 'Project Manager', label: 'Project Manager' }, ...companyRoles.map(r => ({ value: r, label: r }))];
     return [
-      { label: 'Project Specific Roles', options: projectSpecific },
-      { label: 'Standard Company Roles', options: standard }
+      { label: 'Project Roles', options: projectSpecific },
+      { label: 'Company Roles', options: standard }
     ];
   }, [projectRoles, companyRoles]);
 
@@ -63,15 +62,11 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
     return available.map(u => ({ value: u._id, label: `${u.name} (${u.email})`, user: u }));
   }, [users, project.members]);
 
-  const currentPMId = project.projectManager?._id || project.projectManager;
-
+  // Owner CAN be assigned as PM — no owner filter
   const pmOptions = useMemo(() => {
     if (!users) return [];
-    const ownerId = project.owner?._id || project.owner;
-    return users
-      .filter(user => user._id !== ownerId && user._id !== currentPMId)
-      .map(u => ({ value: u._id, label: `${u.name} (${u.email})`, user: u }));
-  }, [users, project.owner, currentPMId]);
+    return users.map(u => ({ value: u._id, label: `${u.name} (${u.email})`, user: u }));
+  }, [users]);
 
   const handleAssignPM = async () => {
     if (!selectedPMOption) return;
@@ -150,291 +145,336 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
 
   const selectStyles = {
     control: (base) => ({
-      ...base,
-      borderRadius: '12px',
-      padding: '4px 8px',
-      border: '1px solid #e2e8f0',
-      backgroundColor: '#f8fafc',
-      boxShadow: 'none',
-      '&:hover': { borderColor: '#cbd5e1' },
-      fontSize: '14px',
-      fontWeight: '500'
+      ...base, borderRadius: '12px', padding: '2px 6px', border: '1px solid #e2e8f0',
+      backgroundColor: '#f8fafc', boxShadow: 'none', '&:hover': { borderColor: '#a5b4fc' }, fontSize: '14px', fontWeight: '500'
     }),
     placeholder: (base) => ({ ...base, color: '#94a3b8' }),
-    menu: (base) => ({ ...base, borderRadius: '12px', overflow: 'hidden', border: '1px solid #f1f5f9', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }),
+    menu: (base) => ({ ...base, borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.12)' }),
     option: (base, state) => ({
-      ...base,
-      backgroundColor: state.isSelected ? '#4f46e5' : state.isFocused ? '#f1f5f9' : '#ffffff',
-      color: state.isSelected ? '#ffffff' : '#1e293b',
-      fontSize: '14px'
+      ...base, backgroundColor: state.isSelected ? '#4f46e5' : state.isFocused ? '#eef2ff' : '#ffffff',
+      color: state.isSelected ? '#ffffff' : '#1e293b', fontSize: '13px', fontWeight: '500'
     }),
   };
 
+  const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
+  const avatarColors = ['bg-indigo-500', 'bg-violet-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-sky-500', 'bg-pink-500', 'bg-teal-500'];
+  const getAvatarColor = (name) => avatarColors[(name?.charCodeAt(0) || 0) % avatarColors.length];
+
+  const currentPM = project.projectManager;
+  const owner = project.owner;
+  const totalCount = 1 + (project.members?.length || 0);
+
   return (
-    <div className="space-y-12 pb-20 animate-in fade-in duration-500">
-      {/* Roles Section */}
-      <section className="space-y-6">
-        <div className="flex justify-between items-end border-b border-slate-200 pb-4">
-          <div>
-            <h3 className="text-xl font-bold text-slate-900">Project Roles</h3>
-            <p className="text-sm text-slate-500 mt-1">Define specialization and workflow roles for project tasks</p>
-          </div>
+    <div className="space-y-10 pb-20 animate-in fade-in duration-300">
+
+      {/* ── Header strip ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Team</h2>
+          <p className="text-sm text-slate-500 mt-0.5">{totalCount} member{totalCount !== 1 ? 's' : ''} · {projectRoles.length} custom role{projectRoles.length !== 1 ? 's' : ''}</p>
+        </div>
+        <div className="flex items-center gap-2">
           {canManageRoles && (
-            <Button variant="primary" size="sm" onClick={() => setShowAddRole(true)}>
-              + Create Role
-            </Button>
+            <button
+              onClick={() => { setShowAddRole(v => !v); setShowAddMember(false); }}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all ${showAddRole ? 'bg-violet-600 text-white border-transparent' : 'bg-white border-slate-200 text-slate-700 hover:border-violet-300 hover:text-violet-700'}`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+              {showAddRole ? 'Cancel' : 'New Role'}
+            </button>
           )}
-        </div>
-
-        {showAddRole && (
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-md space-y-6 animate-in zoom-in-95">
-            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-widest">New Role Specification</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Role Title</label>
-                <input
-                  placeholder="e.g. Lead Architect"
-                  value={newRole.name}
-                  onChange={e => setNewRole({ ...newRole, name: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 transition-all"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Responsibilities</label>
-                <input
-                  placeholder="Brief description..."
-                  value={newRole.description}
-                  onChange={e => setNewRole({ ...newRole, description: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-400 transition-all"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Indicator Color</label>
-                <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl">
-                  <input type="color" value={newRole.color} onChange={e => setNewRole({ ...newRole, color: e.target.value })} className="h-6 w-10 border-none cursor-pointer rounded bg-transparent" />
-                  <span className="text-xs font-bold text-slate-600 uppercase font-mono">{newRole.color}</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-slate-50">
-              <Button variant="ghost" size="sm" onClick={() => setShowAddRole(false)}>Cancel</Button>
-              <Button variant="primary" size="sm" onClick={handleCreateRole} disabled={loading} loading={loading}>
-                Create Role
-              </Button>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {projectRoles.map(role => (
-            <div key={role._id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm relative group hover:shadow-md transition-all">
-              <div className="absolute top-0 left-0 w-1.5 h-full rounded-l-2xl" style={{ backgroundColor: role.color }} />
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" style={{ backgroundColor: `${role.color}15`, color: role.color }}>
-                  🎖️
-                </div>
-                {canManageRoles && (
-                  <Button variant="ghost" size="sm" onClick={() => setRoleToRemove(role)} className="text-slate-300 hover:text-rose-500 !p-1">×</Button>
-                )}
-              </div>
-              <h4 className="text-base font-bold text-slate-900 mb-1">{role.name}</h4>
-              <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2">{role.description || 'No description provided.'}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Team Members Section */}
-      <section className="space-y-6">
-        <div className="flex justify-between items-end border-b border-slate-200 pb-4">
-          <div>
-            <h3 className="text-xl font-bold text-slate-900">Project Team</h3>
-            <p className="text-sm text-slate-500 mt-1">Manage personnel and their specific roles within this project</p>
-          </div>
           {canAddMembers && (
-            <Button variant="primary" size="sm" onClick={() => setShowAddMember(true)}>
-              + Add Member
-            </Button>
+            <button
+              onClick={() => { setShowAddMember(v => !v); setShowAddRole(false); }}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all ${showAddMember ? 'bg-indigo-600 text-white border-transparent' : 'bg-indigo-600 text-white border-transparent hover:bg-indigo-700'}`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+              {showAddMember ? 'Cancel' : 'Add Member'}
+            </button>
           )}
         </div>
+      </div>
 
-        {showAddMember && (
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-md space-y-8 animate-in zoom-in-95">
-            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Integrate New Team Member</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">User Identity</label>
-                <Select options={userOptions} value={selectedUserOption} onChange={setSelectedUserOption} styles={selectStyles} placeholder="Search by name or email..." />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Assigned Project Roles</label>
-                <Select isMulti options={roleOptions} value={selectedRoleOptions} onChange={setSelectedRoleOptions} styles={selectStyles} placeholder="Select one or more roles..." />
-              </div>
+      {/* ── New Role Form ── */}
+      {showAddRole && (
+        <div className="bg-violet-50/60 border border-violet-100 rounded-2xl p-6 space-y-5 animate-in slide-in-from-top-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-base">🎖️</span>
+            <h4 className="text-sm font-bold text-slate-800">Create New Role</h4>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Role Name *</label>
+              <input
+                placeholder="e.g. Lead Designer"
+                value={newRole.name}
+                onChange={e => setNewRole({ ...newRole, name: e.target.value })}
+                className="w-full bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-medium outline-none focus:border-violet-400 transition-all"
+              />
             </div>
-            <div className="flex justify-end gap-3 pt-6 border-t border-slate-50">
-              <Button variant="ghost" size="sm" onClick={() => setShowAddMember(false)}>Cancel</Button>
-              <Button variant="primary" size="sm" onClick={handleAddMember} disabled={loading || !selectedUserOption} loading={loading}>
-                Add Member
-              </Button>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Description</label>
+              <input
+                placeholder="Brief responsibilities..."
+                value={newRole.description}
+                onChange={e => setNewRole({ ...newRole, description: e.target.value })}
+                className="w-full bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-medium outline-none focus:border-violet-400 transition-all"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Color</label>
+              <div className="flex items-center gap-3 bg-white border border-slate-200 px-4 py-2 rounded-xl">
+                <input type="color" value={newRole.color} onChange={e => setNewRole({ ...newRole, color: e.target.value })} className="h-6 w-10 border-none cursor-pointer rounded bg-transparent" />
+                <span className="text-xs font-bold text-slate-500 font-mono uppercase">{newRole.color}</span>
+              </div>
             </div>
           </div>
-        )}
+          <div className="flex justify-end gap-2 pt-3 border-t border-violet-100">
+            <button onClick={() => setShowAddRole(false)} className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
+            <Button variant="primary" size="sm" onClick={handleCreateRole} disabled={loading || !newRole.name.trim()} loading={loading}>Create Role</Button>
+          </div>
+        </div>
+      )}
 
-        <div className="space-y-4">
-          {/* Team Manager Identity - Only visible if project has a manager or the owner can assign one */}
-          {(project.projectManager || isProjectOwner) && (
-            <div className="bg-white p-6 rounded-3xl shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-2 border-indigo-100 bg-gradient-to-r from-indigo-50/30 to-transparent">
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-2xl bg-white border-2 border-indigo-200 flex items-center justify-center text-2xl font-black text-indigo-600 shadow-sm overflow-hidden">
-                  {getAvatarUrl(project.projectManager?.profile?.avatar || project.projectManager?.profile?.profilePicture) ? (
-                    <img src={getAvatarUrl(project.projectManager.profile.avatar || project.projectManager.profile.profilePicture)} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    project.projectManager?.name?.[0]?.toUpperCase() || '?'
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">Project Manager</span>
-                  <h4 className="text-lg font-bold text-slate-900 leading-tight">
-                    {project.projectManager?.name || (isProjectOwner ? 'Unassigned' : 'No Project Manager')}
-                  </h4>
-                  <p className="text-xs text-slate-500 font-medium">{project.projectManager?.email || 'Assign someone to manage this project'}</p>
-                </div>
+      {/* ── Add Member Form ── */}
+      {showAddMember && (
+        <div className="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-6 space-y-5 animate-in slide-in-from-top-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-base">👤</span>
+            <h4 className="text-sm font-bold text-slate-800">Add Team Member</h4>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Select User *</label>
+              <Select options={userOptions} value={selectedUserOption} onChange={setSelectedUserOption} styles={selectStyles} placeholder="Search by name or email..." isClearable />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Assign Roles *</label>
+              <Select isMulti options={roleOptions} value={selectedRoleOptions} onChange={setSelectedRoleOptions} styles={selectStyles} placeholder="Select one or more roles..." />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-3 border-t border-indigo-100">
+            <button onClick={() => setShowAddMember(false)} className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
+            <Button variant="primary" size="sm" onClick={handleAddMember} disabled={loading || !selectedUserOption || selectedRoleOptions.length === 0} loading={loading}>Add Member</Button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Leadership Cards ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Owner */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 flex items-center gap-4 shadow-lg">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/10 rounded-full translate-x-10 -translate-y-10 pointer-events-none" />
+          <div className={`w-14 h-14 rounded-xl ${getAvatarColor(owner?.name)} flex items-center justify-center text-lg font-black text-white shadow-md shrink-0`}>
+            {getInitials(owner?.name)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-0.5">Project Owner</div>
+            <h4
+              onClick={() => navigate(`/profile/view/${owner?._id || owner}`)}
+              className="text-base font-bold text-white cursor-pointer hover:text-indigo-300 transition-colors truncate"
+            >
+              {owner?.name}
+            </h4>
+            <p className="text-xs text-slate-400 truncate">{owner?.email}</p>
+          </div>
+          <div className="shrink-0 px-2.5 py-1 bg-indigo-500/20 rounded-lg text-[10px] font-bold text-indigo-300 border border-indigo-500/20 uppercase tracking-wide">
+            Owner
+          </div>
+        </div>
+
+        {/* Project Manager */}
+        <div className={`relative overflow-hidden rounded-2xl p-6 flex items-center gap-4 border-2 transition-all ${currentPM ? 'bg-white border-indigo-100 shadow-sm' : 'bg-slate-50 border-dashed border-slate-200'}`}>
+          {currentPM ? (
+            <>
+              <div className={`w-14 h-14 rounded-xl ${getAvatarColor(currentPM?.name)} flex items-center justify-center text-lg font-black text-white shadow-md shrink-0`}>
+                {getInitials(currentPM?.name)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mb-0.5">Project Manager</div>
+                <h4
+                  onClick={() => navigate(`/profile/view/${currentPM?._id || currentPM}`)}
+                  className="text-base font-bold text-slate-900 cursor-pointer hover:text-indigo-600 transition-colors truncate"
+                >
+                  {currentPM?.name}
+                </h4>
+                <p className="text-xs text-slate-400 truncate">{currentPM?.email}</p>
               </div>
               {isProjectOwner && (
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    variant={project.projectManager ? 'ghost' : 'primary'}
-                    size="sm"
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
                     onClick={() => { setShowPMSelector(v => !v); setSelectedPMOption(null); }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all"
                   >
-                    {project.projectManager ? 'Change' : '+ Assign PM'}
-                  </Button>
-                  {project.projectManager && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setConfirmUnassignPM(true)}
-                      className="text-rose-500 hover:bg-rose-50"
-                    >
-                      Unassign
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* PM Assignment Selector */}
-          {showPMSelector && isProjectOwner && (
-            <div className="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100 space-y-4 animate-in slide-in-from-top-4">
-              <div className="flex justify-between items-center">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-widest">
-                  {project.projectManager ? 'Change Project Manager' : 'Select Project Manager'}
-                </h4>
-                <button onClick={() => { setShowPMSelector(false); setSelectedPMOption(null); }} className="text-slate-400 hover:text-slate-600">×</button>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1">
-                  <Select
-                    options={pmOptions}
-                    value={selectedPMOption}
-                    onChange={setSelectedPMOption}
-                    styles={selectStyles}
-                    placeholder="Search a user by name or email..."
-                    isClearable
-                  />
-                </div>
-                <Button variant="primary" size="sm" onClick={handleAssignPM} disabled={pmLoading || !selectedPMOption} loading={pmLoading}>
-                  Confirm
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Owner Identity */}
-          <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-lg flex items-center justify-between border-4 border-slate-800">
-            <div className="flex items-center gap-6">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-600 border border-indigo-400/30 flex items-center justify-center text-2xl font-black italic shadow-inner">
-                {project.owner?.name?.[0].toUpperCase()}
-              </div>
-              <div>
-                <h4
-                  onClick={() => navigate(`/profile/view/${project.owner?._id || project.owner}`)}
-                  className="text-lg font-bold cursor-pointer hover:text-indigo-400 transition-colors"
-                >
-                  {project.owner?.name}
-                </h4>
-                <p className="text-xs text-slate-400 font-medium font-sans">{project.owner?.email}</p>
-                <div className="mt-2 text-[10px] font-bold uppercase tracking-widest text-indigo-400">Project Owner</div>
-              </div>
-            </div>
-            <div className="px-4 py-1.5 bg-slate-800 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-400 border border-white/5">
-              Mission Control
-            </div>
-          </div>
-
-          {/* Member List */}
-          <div className="grid grid-cols-1 gap-4">
-            {project.members?.map((member, i) => (
-              <div key={member._id || i} className="bg-white p-6 rounded-2xl border border-slate-200 flex items-center justify-between hover:shadow-md transition-all group">
-                <div className="flex items-center gap-6">
-                  <div className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-xl font-bold text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-400 transition-colors">
-                    {member.user?.name?.[0].toUpperCase() || '?'}
-                  </div>
-                  <div>
-                    <h4
-                      onClick={() => navigate(`/profile/view/${member.user?._id || member.user}`)}
-                      className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors cursor-pointer hover:underline"
-                    >
-                      {member.user?.name || 'Unknown User'}
-                    </h4>
-                    <p className="text-xs text-slate-400 font-medium mt-0.5">{member.user?.email}</p>
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {member.role?.split(',').map((r, idx) => (
-                        <Badge key={idx} variant="primary" size="sm">{r.trim()}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                {canRemoveMembers && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setMemberToRemove(member)}
-                    className="text-rose-500 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                    Change
+                  </button>
+                  <button
+                    onClick={() => setConfirmUnassignPM(true)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-all"
                   >
                     Remove
-                  </Button>
-                )}
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="w-14 h-14 rounded-xl bg-slate-200 flex items-center justify-center text-2xl shrink-0">👤</div>
+              <div className="flex-1">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Project Manager</div>
+                <p className="text-sm font-semibold text-slate-500">No manager assigned yet</p>
+                <p className="text-xs text-slate-400 mt-0.5">Assign someone to lead this project</p>
+              </div>
+              {isProjectOwner && (
+                <button
+                  onClick={() => { setShowPMSelector(v => !v); setSelectedPMOption(null); }}
+                  className="shrink-0 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm"
+                >
+                  + Assign PM
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* PM Selector inline */}
+      {showPMSelector && isProjectOwner && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-5 space-y-3 animate-in slide-in-from-top-4">
+          <div className="flex items-center justify-between mb-1">
+            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+              {currentPM ? 'Change Project Manager' : 'Assign Project Manager'}
+            </h4>
+            <button onClick={() => { setShowPMSelector(false); setSelectedPMOption(null); }} className="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
+          </div>
+          <p className="text-xs text-slate-500">The project owner can also be assigned as the project manager.</p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <Select
+                options={pmOptions}
+                value={selectedPMOption}
+                onChange={setSelectedPMOption}
+                styles={selectStyles}
+                placeholder="Search user by name or email..."
+                isClearable
+              />
+            </div>
+            <Button variant="primary" size="sm" onClick={handleAssignPM} disabled={pmLoading || !selectedPMOption} loading={pmLoading}>
+              Confirm
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Project Roles ── */}
+      {projectRoles.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Project Roles</h3>
+            <span className="text-xs text-slate-400 font-medium">{projectRoles.length} role{projectRoles.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {projectRoles.map(role => (
+              <div key={role._id} className="group relative bg-white border border-slate-200 rounded-xl px-4 py-3 hover:shadow-md transition-all" style={{ borderLeftColor: role.color, borderLeftWidth: '3px' }}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-bold text-slate-900 truncate">{role.name}</h4>
+                    {role.description && <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">{role.description}</p>}
+                  </div>
+                  {canManageRoles && (
+                    <button
+                      onClick={() => setRoleToRemove(role)}
+                      className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 transition-all shrink-0 text-lg leading-none"
+                    >×</button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         </div>
-      </section>
+      )}
 
+      {/* ── Members List ── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Members</h3>
+          <span className="text-xs text-slate-400 font-medium">{project.members?.length || 0} member{(project.members?.length || 0) !== 1 ? 's' : ''}</span>
+        </div>
+
+        {(!project.members || project.members.length === 0) ? (
+          <div className="py-16 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+            <div className="text-5xl mb-3 opacity-30">👥</div>
+            <p className="text-sm font-semibold text-slate-500">No members yet</p>
+            {canAddMembers && <p className="text-xs text-slate-400 mt-1">Click "Add Member" to invite people to this project.</p>}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {project.members.map((member, i) => {
+              const name = member.user?.name || 'Unknown User';
+              const roles = member.role ? member.role.split(',').map(r => r.trim()).filter(Boolean) : [];
+              return (
+                <div key={member._id || i} className="group bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-4 hover:border-indigo-200 hover:shadow-md transition-all">
+                  <div className={`w-11 h-11 rounded-xl ${getAvatarColor(name)} flex items-center justify-center text-sm font-black text-white shrink-0`}>
+                    {getInitials(name)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4
+                      onClick={() => navigate(`/profile/view/${member.user?._id || member.user}`)}
+                      className="text-sm font-bold text-slate-900 cursor-pointer hover:text-indigo-600 transition-colors truncate"
+                    >
+                      {name}
+                    </h4>
+                    <p className="text-[11px] text-slate-400 truncate">{member.user?.email}</p>
+                    {roles.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {roles.map((r, idx) => (
+                          <span key={idx} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-md border border-indigo-100">
+                            {r}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {canRemoveMembers && (
+                    <button
+                      onClick={() => setMemberToRemove(member)}
+                      className="shrink-0 opacity-0 group-hover:opacity-100 p-2 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                      title="Remove member"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Modals */}
       <DeleteConfirmModal
         isOpen={!!memberToRemove}
         onClose={() => setMemberToRemove(null)}
         onConfirm={handleRemoveMember}
         title="Remove Team Member"
-        message={`Are you sure you want to remove ${memberToRemove?.user?.name} from this project? They will no longer have access to mission assets.`}
+        message={`Remove ${memberToRemove?.user?.name} from this project? They will lose access to all project assets.`}
       />
-
       <DeleteConfirmModal
         isOpen={!!roleToRemove}
         onClose={() => setRoleToRemove(null)}
         onConfirm={handleDeleteRole}
         title="Delete Project Role"
-        message={`Are you sure you want to delete the role: ${roleToRemove?.name}? Active assignments to this role will remain but lose their reference.`}
+        message={`Delete the role "${roleToRemove?.name}"? Existing assignments using this role will remain but lose their reference.`}
       />
-
       <DeleteConfirmModal
         isOpen={confirmUnassignPM}
         onClose={() => setConfirmUnassignPM(false)}
         onConfirm={handleUnassignPM}
-        title="Unassign Project Manager"
-        message={`Are you sure you want to unassign ${project.projectManager?.name || 'the current Project Manager'} from this project? Management privileges will be revoked.`}
-        confirmButtonText="Yes, Unassign"
+        title="Remove Project Manager"
+        message={`Remove ${currentPM?.name || 'the current Project Manager'} from their management role? Their membership (if any) will remain unaffected.`}
+        confirmButtonText="Yes, Remove"
       />
     </div>
   );

@@ -5,8 +5,9 @@ import { useToast } from '../../context/ToastContext';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 import { getCurrencySymbol } from '../../utils/currency';
 import { Button, Badge, Modal } from '../ui';
+import ProjectOverview from './ProjectOverview';
 
-const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }) => {
+const ProjectHeader = ({ project, users = [], onNavigateToTasks, isProjectOwner, onRefresh }) => {
   const { state: companyState } = useCompany();
   const toast = useToast();
   const { hasPermission, isSuperAdmin } = usePermissions();
@@ -15,6 +16,8 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
   const canEditStatus = isProjectOwner || isSuperAdmin || hasPermission(PERMISSIONS.EDIT_PROJECT);
 
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [infoModalTab, setInfoModalTab] = useState('overview');
   const [isUpdating, setIsUpdating] = useState(false);
 
   const getStatusConfig = (status) => {
@@ -144,16 +147,31 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
                     </Badge>
                   </div>
                 </div>
-                {project.description ? (
-                  <div
-                    className="text-slate-500 text-sm leading-relaxed max-w-2xl prose prose-slate prose-sm"
-                    dangerouslySetInnerHTML={{ __html: project.description }}
-                  />
-                ) : (
-                  <p className="text-slate-500 text-sm leading-relaxed max-w-2xl italic">
-                    No description provided for this project.
-                  </p>
-                )}
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <button
+                    onClick={() => { setInfoModalTab('overview'); setShowInfoModal(true); }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50/90 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition-all border border-indigo-100 shadow-sm group"
+                  >
+                    <span>📊</span>
+                    <span>View Overview</span>
+                    <svg className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </button>
+
+                  {project.description && (
+                    <button
+                      onClick={() => { setInfoModalTab('description'); setShowInfoModal(true); }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200/70 text-slate-700 rounded-xl text-xs font-bold transition-all border border-slate-200 shadow-sm group"
+                    >
+                      <span>📄</span>
+                      <span>View Description</span>
+                      <svg className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -236,6 +254,66 @@ const ProjectHeader = ({ project, onNavigateToTasks, isProjectOwner, onRefresh }
         </div>
         <div className="mt-4 flex justify-end">
           <Button variant="ghost" size="sm" onClick={() => setShowStatusModal(false)}>Cancel</Button>
+        </div>
+      </Modal>
+
+      {/* Information Modal (Overview & Description) */}
+      <Modal
+        isOpen={showInfoModal}
+        onClose={() => setShowInfoModal(false)}
+        title={infoModalTab === 'overview' ? 'Project Overview' : 'Project Description'}
+        size="2xl"
+      >
+        <div className="space-y-5 max-h-[75vh] overflow-y-auto pr-1">
+          {/* Modal Tab Switcher */}
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setInfoModalTab('overview')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  infoModalTab === 'overview'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                📊 Overview & Metrics
+              </button>
+              {project.description && (
+                <button
+                  onClick={() => setInfoModalTab('description')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    infoModalTab === 'description'
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  📄 Project Description
+                </button>
+              )}
+            </div>
+            <Badge variant={getPriorityVariant(project.priority)} size="sm">
+              {project.priority ? project.priority.charAt(0).toUpperCase() + project.priority.slice(1) : 'Medium'} Priority
+            </Badge>
+          </div>
+
+          {infoModalTab === 'overview' ? (
+            <div className="space-y-4">
+              <ProjectOverview project={project} users={users} isProjectOwner={canEditStatus} />
+            </div>
+          ) : (
+            <div className="p-6 bg-white rounded-xl border border-slate-200">
+              <div
+                className="text-slate-700 text-sm leading-relaxed prose prose-slate prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: project.description }}
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end pt-2 border-t border-slate-100">
+            <Button variant="secondary" size="sm" onClick={() => setShowInfoModal(false)}>
+              Close
+            </Button>
+          </div>
         </div>
       </Modal>
     </>

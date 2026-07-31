@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { meetingNoteAPI } from '../../services/api';
+import { meetingNoteAPI, transcribeMeetingAudio, taskAPI } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import { Button, Badge } from '../ui';
 import ReactQuill from 'react-quill';
@@ -12,6 +12,11 @@ const MeetingNotesTab = ({ projectId, meetingNotes, users, isProjectOwner, onRef
   const [viewingMeeting, setViewingMeeting] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [audioFile, setAudioFile] = useState(null);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [generatedTasks, setGeneratedTasks] = useState([]);
+  const [isCreatingTasks, setIsCreatingTasks] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -70,8 +75,97 @@ const MeetingNotesTab = ({ projectId, meetingNotes, users, isProjectOwner, onRef
       actionItems: [],
       decisions: []
     });
+    setAudioFile(null);
+    setAudioUrl(null);
+    setGeneratedTasks([]);
     setShowForm(false);
     setEditingMeeting(null);
+  };
+
+  const handleAudioChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 25 * 1024 * 1024) {
+        alert('Audio file size too large. Maximum size is 25MB.');
+        return;
+      }
+      setAudioFile(file);
+      setAudioUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const handleTranscribeAudio = async () => {
+    if (!audioFile) return;
+
+    setIsTranscribing(true);
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(audioFile);
+      reader.onload = async () => {
+        try {
+          const response = await transcribeMeetingAudio({
+            audioBase64: reader.result,
+            mimeType: audioFile.type || 'audio/mp3',
+            projectId
+          });
+
+          const data = response.data;
+          if (data) {
+            setFormData(prev => ({
+              ...prev,
+              title: prev.title || data.title || 'Meeting Record',
+              notes: data.notesHtml || (data.transcript ? `<p>${data.transcript}</p>` : prev.notes),
+              actionItems: data.actionItems && data.actionItems.length > 0
+                ? data.actionItems.map(item => (typeof item === 'string' ? { description: item, status: 'pending' } : item))
+                : prev.actionItems,
+              decisions: data.decisions && data.decisions.length > 0
+                ? data.decisions.map(dec => (typeof dec === 'string' ? { description: dec } : dec))
+                : prev.decisions
+            }));
+
+            if (data.generatedTasks && data.generatedTasks.length > 0) {
+              setGeneratedTasks(data.generatedTasks.map(t => ({ ...t, selected: true })));
+            }
+          }
+        } catch (err) {
+          console.error('Error in audio transcription API:', err);
+          alert('Failed to transcribe audio. Please try again.');
+        } finally {
+          setIsTranscribing(false);
+        }
+      };
+    } catch (error) {
+      console.error('Error reading audio file:', error);
+      alert('Failed to read audio file.');
+      setIsTranscribing(false);
+    }
+  };
+
+  const handleCreateSelectedTasks = async () => {
+    const selected = generatedTasks.filter(t => t.selected);
+    if (selected.length === 0) {
+      alert('Please select at least one task to create.');
+      return;
+    }
+
+    setIsCreatingTasks(true);
+    try {
+      for (const t of selected) {
+        await taskAPI.create(projectId, {
+          title: t.title,
+          description: t.description,
+          priority: t.priority || 'medium'
+        });
+      }
+      alert(`Successfully created ${selected.length} new task(s) in the project!`);
+      setGeneratedTasks([]);
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Error creating tasks in project:', err);
+      alert('Failed to create some tasks.');
+    } finally {
+      setIsCreatingTasks(false);
+    }
   };
 
   const handleEdit = (meeting) => {
@@ -247,6 +341,135 @@ const MeetingNotesTab = ({ projectId, meetingNotes, users, isProjectOwner, onRef
                 />
               </div>
             </div>
+
+            {/* AI Speech-to-Text & Task Generation Section */}
+            <div className="p-6 bg-gradient-to-r from-indigo-50/80 via-purple-50/60 to-slate-50 border border-indigo-100 rounded-2xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-lg font-bold shadow-md shrink-0">🎙️</div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800">AI Speech-to-Text & Task Generator</h4>
+                    <p className="text-xs text-slate-500 font-medium">Upload audio recording to generate notes, decisions, and new project tasks via AI.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    id="meeting-audio-upload"
+                    className="hidden"
+                    onChange={handleAudioChange}
+                  />
+                  <label
+                    htmlFor="meeting-audio-upload"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:border-indigo-300 rounded-xl text-xs font-bold text-slate-700 cursor-pointer shadow-sm transition-all"
+                  >
+                    <span>📁</span> {audioFile ? audioFile.name : 'Select Audio Recording (.mp3, .wav, .m4a)'}
+                  </label>
+
+                  {audioFile && (
+                    <Button
+                      type="button"
+                      onClick={handleTranscribeAudio}
+                      disabled={isTranscribing}
+                      className="!bg-indigo-600 !text-white text-xs font-bold shadow-md hover:!bg-indigo-700 disabled:opacity-50"
+                    >
+                      {isTranscribing ? '✨ Transcribing...' : '✨ Transcribe & Generate Tasks'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {audioUrl && (
+                <div className="pt-2 border-t border-indigo-100/50 flex items-center gap-3">
+                  <span className="text-[10px] font-bold uppercase text-slate-400">Audio Preview:</span>
+                  <audio src={audioUrl} controls className="h-8 max-w-md flex-1" />
+                </div>
+              )}
+            </div>
+
+            {/* Generated Tasks Review Card */}
+            {generatedTasks.length > 0 && (
+              <div className="p-6 bg-white border-2 border-indigo-200 rounded-2xl shadow-md space-y-4 animate-in fade-in">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <span>🤖</span> Recommended Tasks (Analyzed from Audio & Previous Tasks)
+                    </h4>
+                    <p className="text-xs text-slate-500 font-medium">Select the tasks you want to create directly in this project.</p>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handleCreateSelectedTasks}
+                    disabled={isCreatingTasks}
+                    className="!bg-emerald-600 !text-white text-xs font-bold shadow-md hover:!bg-emerald-700"
+                  >
+                    {isCreatingTasks ? 'Creating...' : `➕ Create Selected (${generatedTasks.filter(t => t.selected).length}) Tasks`}
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  {generatedTasks.map((t, idx) => (
+                    <div key={idx} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={t.selected}
+                          onChange={e => {
+                            const next = [...generatedTasks];
+                            next[idx].selected = e.target.checked;
+                            setGeneratedTasks(next);
+                          }}
+                          className="mt-1 w-4 h-4 text-indigo-600 rounded cursor-pointer"
+                        />
+                        <div className="flex-1 space-y-2">
+                          <input
+                            type="text"
+                            value={t.title}
+                            onChange={e => {
+                              const next = [...generatedTasks];
+                              next[idx].title = e.target.value;
+                              setGeneratedTasks(next);
+                            }}
+                            className="w-full bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 outline-none"
+                            placeholder="Task Title"
+                          />
+                          <textarea
+                            value={t.description}
+                            onChange={e => {
+                              const next = [...generatedTasks];
+                              next[idx].description = e.target.value;
+                              setGeneratedTasks(next);
+                            }}
+                            rows={2}
+                            className="w-full bg-white border border-slate-200 p-2 rounded-lg text-xs text-slate-600 outline-none resize-none"
+                            placeholder="Task Description"
+                          />
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Priority:</span>
+                            <select
+                              value={t.priority || 'medium'}
+                              onChange={e => {
+                                const next = [...generatedTasks];
+                                next[idx].priority = e.target.value;
+                                setGeneratedTasks(next);
+                              }}
+                              className="bg-white border border-slate-200 px-2 py-1 rounded text-xs font-semibold text-slate-700 outline-none"
+                            >
+                              <option value="low">Low</option>
+                              <option value="medium">Medium</option>
+                              <option value="high">High</option>
+                              <option value="urgent">Urgent</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-700 ml-1">Meeting Notes</label>
