@@ -48,17 +48,30 @@ const ProfilePreview = () => {
         try {
             toast?.showToast?.('Generating resume PDF...', 'info');
             const response = await api.get(`/users/${id}/export-pdf`, { responseType: 'blob' });
-            const url = window.URL.createObjectURL(new Blob([response.data]));
+
+            if (response.data.type === 'application/json' || response.data.type.includes('json')) {
+                const text = await response.data.text();
+                let errMsg = 'Export failed';
+                try {
+                    const parsed = JSON.parse(text);
+                    errMsg = parsed.message || parsed.error || errMsg;
+                } catch (e) {}
+                throw new Error(errMsg);
+            }
+
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `${user.name.replace(/\s+/g, '_')}_Resume.pdf`);
+            link.setAttribute('download', `${(user?.name || 'User').replace(/\s+/g, '_')}_Resume.pdf`);
             document.body.appendChild(link);
             link.click();
             link.remove();
+            window.URL.revokeObjectURL(url);
             toast?.showToast?.('Download complete.', 'success');
         } catch (error) {
             console.error('Export error:', error);
-            toast?.showToast?.('Export failed. Please check your data.', 'error');
+            toast?.showToast?.(error.message || 'Export failed. Please check your data.', 'error');
         }
     };
 
@@ -166,15 +179,25 @@ const ProfilePreview = () => {
                         {profile.projects && profile.projects.length > 0 && (
                             <div className="space-y-6">
                                 <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest px-2">Key Projects</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
                                     {profile.projects.map((proj, i) => (
                                         <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-indigo-100 transition-colors">
-                                            <div className="flex justify-between items-start mb-4">
-                                                <h3 className="text-base font-bold text-slate-900">{proj.name}</h3>
-                                                {proj.url && <a href={proj.url} target="_blank" rel="noreferrer" className="text-indigo-600 font-bold text-[10px] uppercase hover:underline">Link 🔗</a>}
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-slate-900">{proj.name}</h3>
+                                                    {(proj.startDate || proj.endDate) && (
+                                                        <div className="text-[10px] font-bold text-slate-400 mt-0.5">
+                                                            {formatDate(proj.startDate)} — {formatDate(proj.endDate)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {proj.url && (
+                                                    <a href={proj.url.startsWith('http') ? proj.url : `https://${proj.url}`} target="_blank" rel="noreferrer" className="px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-lg text-indigo-600 font-bold text-xs hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-1">
+                                                        <span>Link</span> 🔗
+                                                    </a>
+                                                )}
                                             </div>
-                                            <div className="text-sm text-slate-500 font-medium mb-4 line-clamp-3" dangerouslySetInnerHTML={{ __html: proj.description }} />
-                                            <div className="text-[10px] font-bold text-slate-400">{formatDate(proj.startDate)} — {formatDate(proj.endDate)}</div>
+                                            <div className="text-sm text-slate-600 font-medium leading-relaxed border-t border-slate-100 pt-3 mt-3" dangerouslySetInnerHTML={{ __html: proj.description }} />
                                         </div>
                                     ))}
                                 </div>
@@ -185,12 +208,12 @@ const ProfilePreview = () => {
                         {profile.achievements && profile.achievements.length > 0 && (
                             <div className="space-y-6">
                                 <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest px-2">Achievements</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
                                     {profile.achievements.map((ach, i) => (
                                         <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                                             <h3 className="text-base font-bold text-slate-900 mb-1">{ach.title}</h3>
                                             <p className="text-[10px] font-bold text-indigo-600 uppercase mb-3">{ach.issuer} {ach.date && `• ${formatDate(ach.date)}`}</p>
-                                            <div className="text-sm text-slate-500 font-medium line-clamp-3" dangerouslySetInnerHTML={{ __html: ach.description }} />
+                                            <div className="text-sm text-slate-600 font-medium leading-relaxed border-t border-slate-100 pt-3 mt-2" dangerouslySetInnerHTML={{ __html: ach.description }} />
                                         </div>
                                     ))}
                                 </div>

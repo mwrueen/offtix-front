@@ -374,13 +374,13 @@ const Layout = ({ children, wide }) => {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Careers Portal Link */}
+            {/* Landing / Careers Page Link */}
             <button
-              onClick={() => navigate('/careers')}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-all border border-indigo-100 shadow-sm mr-2"
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 shadow-xs mr-2 group"
             >
-              <span>💼</span>
-              <span className="hidden sm:inline">Careers Portal</span>
+              <span className="text-sm">🌐</span>
+              <span className="hidden sm:inline">Landing Page</span>
             </button>
 
             {/* Chat Icon */}

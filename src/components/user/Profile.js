@@ -44,6 +44,9 @@ const mapApiUserToState = (data) => {
       coverPosition: typeof profileData.coverPosition === 'number' ? profileData.coverPosition : 50,
       phone: profileData.phone || '',
       location: profileData.location || '',
+      address: profileData.address || profileData.location || '',
+      fatherName: profileData.fatherName || '',
+      motherName: profileData.motherName || '',
       title: profileData.title || '',
       summary: profileData.summary || '',
       experience: Array.isArray(profileData.experience) ? profileData.experience : [],
@@ -76,6 +79,9 @@ const Profile = () => {
       coverPosition: 50,
       phone: '',
       location: '',
+      address: '',
+      fatherName: '',
+      motherName: '',
       title: '',
       summary: '',
       experience: [],
@@ -91,8 +97,54 @@ const Profile = () => {
   const [localImages, setLocalImages] = useState({ profilePicture: '', coverPhoto: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generatingAiKey, setGeneratingAiKey] = useState(null);
   const [activeSection, setActiveSection] = useState('basic');
   const [skillInput, setSkillInput] = useState('');
+
+  const handleWriteWithAi = async (type, index = null) => {
+    const key = index !== null ? `${type}-${index}` : type;
+    setGeneratingAiKey(key);
+    try {
+      let payload = { type, name: profile.name, title: profile.profile.title };
+
+      if (type === 'summary') {
+        payload.currentText = profile.profile.summary || '';
+      } else if (type === 'experience' && index !== null) {
+        const exp = profile.profile.experience[index] || {};
+        payload.company = exp.company;
+        payload.position = exp.position;
+        payload.currentText = exp.description || '';
+      } else if (type === 'project' && index !== null) {
+        const proj = profile.profile.projects[index] || {};
+        payload.title = proj.name;
+        payload.currentText = proj.description || '';
+      } else if (type === 'achievement' && index !== null) {
+        const ach = profile.profile.achievements[index] || {};
+        payload.title = ach.title;
+        payload.currentText = ach.description || '';
+      }
+
+      const res = await api.post('/ai/generate-profile-text', payload);
+      const generatedText = res.data?.text || '';
+
+      if (type === 'summary') {
+        setProfile(p => ({ ...p, profile: { ...p.profile, summary: generatedText } }));
+      } else if (type === 'experience' && index !== null) {
+        updateItem('experience', index, 'description', generatedText);
+      } else if (type === 'project' && index !== null) {
+        updateItem('projects', index, 'description', generatedText);
+      } else if (type === 'achievement' && index !== null) {
+        updateItem('achievements', index, 'description', generatedText);
+      }
+
+      toast?.showToast?.('✨ Content enhanced with AI!', 'success');
+    } catch (err) {
+      console.error('Error generating AI text:', err);
+      toast?.showToast?.('Failed to generate AI text.', 'error');
+    } finally {
+      setGeneratingAiKey(null);
+    }
+  };
 
   const [isRepositioning, setIsRepositioning] = useState(false);
   const [dragStart, setDragStart] = useState(null);
@@ -154,17 +206,30 @@ const Profile = () => {
     try {
       toast?.showToast?.('Generating resume PDF...', 'info');
       const response = await api.get(`/users/${profile.id}/export-pdf`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+
+      if (response.data.type === 'application/json' || response.data.type.includes('json')) {
+        const text = await response.data.text();
+        let errMsg = 'Export failed';
+        try {
+          const parsed = JSON.parse(text);
+          errMsg = parsed.message || parsed.error || errMsg;
+        } catch (e) {}
+        throw new Error(errMsg);
+      }
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${profile.name.replace(/\s+/g, '_')}_Resume.pdf`);
+      link.setAttribute('download', `${(profile?.name || 'User').replace(/\s+/g, '_')}_Resume.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
       toast?.showToast?.('Resume downloaded successfully.', 'success');
     } catch (error) {
       console.error('Export failed:', error);
-      toast?.showToast?.('Could not generate PDF. Please try again.', 'error');
+      toast?.showToast?.(error.message || 'Could not generate PDF. Please try again.', 'error');
     }
   };
 
@@ -463,8 +528,16 @@ const Profile = () => {
                       <input type="text" value={profile.profile.title} onChange={e => setProfile({ ...profile, profile: { ...profile.profile, title: e.target.value } })} placeholder="e.g. Senior Product Designer" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-indigo-400 transition-all" />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Location</label>
-                      <input type="text" value={profile.profile.location} onChange={e => setProfile({ ...profile, profile: { ...profile.profile, location: e.target.value } })} placeholder="e.g. New York, NY" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-indigo-400 transition-all" />
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Father's Name <span className="text-rose-500">*</span></label>
+                      <input type="text" value={profile.profile.fatherName || ''} onChange={e => setProfile({ ...profile, profile: { ...profile.profile, fatherName: e.target.value } })} placeholder="Father's full name" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-indigo-400 transition-all" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Mother's Name <span className="text-rose-500">*</span></label>
+                      <input type="text" value={profile.profile.motherName || ''} onChange={e => setProfile({ ...profile, profile: { ...profile.profile, motherName: e.target.value } })} placeholder="Mother's full name" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-indigo-400 transition-all" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Full Address <span className="text-rose-500">*</span></label>
+                      <input type="text" value={profile.profile.address || profile.profile.location || ''} onChange={e => setProfile({ ...profile, profile: { ...profile.profile, address: e.target.value, location: e.target.value } })} placeholder="House/Street, City, Postal Code, Country" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-indigo-400 transition-all" />
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Phone</label>
@@ -475,7 +548,26 @@ const Profile = () => {
                       <input type="url" value={profile.profile.linkedin} onChange={e => setProfile({ ...profile, profile: { ...profile.profile, linkedin: e.target.value } })} placeholder="linkedin.com/in/username" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-semibold outline-none focus:bg-white focus:border-indigo-400 transition-all" />
                     </div>
                     <div className="md:col-span-2 space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Summary</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Summary</label>
+                        <button
+                          type="button"
+                          onClick={() => handleWriteWithAi('summary')}
+                          disabled={generatingAiKey === 'summary'}
+                          className="px-3 py-1 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-lg font-bold text-[11px] flex items-center gap-1.5 shadow-2xs transition-all disabled:opacity-50"
+                        >
+                          {generatingAiKey === 'summary' ? (
+                            <>
+                              <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <span>Writing with AI...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>✨ Write with AI</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                       <div className="rounded-xl overflow-hidden border border-slate-200">
                         <ReactQuill
                           theme="snow"
@@ -519,6 +611,26 @@ const Profile = () => {
                             </div>
                             <span className="text-[10px] font-bold text-slate-500 uppercase">I currently work here</span>
                           </div>
+                        </div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Responsibilities & Accomplishments</label>
+                          <button
+                            type="button"
+                            onClick={() => handleWriteWithAi('experience', idx)}
+                            disabled={generatingAiKey === `experience-${idx}`}
+                            className="px-3 py-1 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-lg font-bold text-[11px] flex items-center gap-1.5 shadow-2xs transition-all disabled:opacity-50"
+                          >
+                            {generatingAiKey === `experience-${idx}` ? (
+                              <>
+                                <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <span>Writing with AI...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>✨ Write Responsibilities with AI</span>
+                              </>
+                            )}
+                          </button>
                         </div>
                         <ReactQuill
                           theme="snow"
@@ -626,6 +738,26 @@ const Profile = () => {
                           <input type="text" value={proj.name} onChange={e => updateItem('projects', idx, 'name', e.target.value)} placeholder="Project Title" className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:bg-white focus:border-indigo-400" />
                           <input type="text" value={proj.url} onChange={e => updateItem('projects', idx, 'url', e.target.value)} placeholder="Link / URL" className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:bg-white focus:border-indigo-400" />
                         </div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Project Description</label>
+                          <button
+                            type="button"
+                            onClick={() => handleWriteWithAi('project', idx)}
+                            disabled={generatingAiKey === `project-${idx}`}
+                            className="px-3 py-1 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-lg font-bold text-[11px] flex items-center gap-1.5 shadow-2xs transition-all disabled:opacity-50"
+                          >
+                            {generatingAiKey === `project-${idx}` ? (
+                              <>
+                                <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <span>Writing with AI...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>✨ Write Description with AI</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                         <ReactQuill
                           theme="snow"
                           value={proj.description ?? ''}
@@ -673,6 +805,26 @@ const Profile = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <input type="text" value={ach.title} onChange={e => updateItem('achievements', idx, 'title', e.target.value)} placeholder="Title" className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:bg-white focus:border-indigo-400" />
                           <input type="text" value={ach.issuer} onChange={e => updateItem('achievements', idx, 'issuer', e.target.value)} placeholder="Issuer" className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:bg-white focus:border-indigo-400" />
+                        </div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Achievement Description</label>
+                          <button
+                            type="button"
+                            onClick={() => handleWriteWithAi('achievement', idx)}
+                            disabled={generatingAiKey === `achievement-${idx}`}
+                            className="px-3 py-1 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-lg font-bold text-[11px] flex items-center gap-1.5 shadow-2xs transition-all disabled:opacity-50"
+                          >
+                            {generatingAiKey === `achievement-${idx}` ? (
+                              <>
+                                <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <span>Writing with AI...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>✨ Write Description with AI</span>
+                              </>
+                            )}
+                          </button>
                         </div>
                         <ReactQuill
                           theme="snow"

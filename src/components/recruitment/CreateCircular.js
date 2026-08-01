@@ -301,35 +301,70 @@ const CreateCircular = () => {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Salary Range (Monthly)</label>
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Salary Range & Payment Frequency</label>
+                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
                                         <div className="grid grid-cols-2 gap-3">
-                                            <input
-                                                type="number"
-                                                className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold shadow-inner text-sm"
-                                                placeholder="Min"
-                                                value={formData.salaryRange.min}
-                                                onChange={e => setFormData({ ...formData, salaryRange: { ...formData.salaryRange, min: e.target.value } })}
-                                            />
-                                            <input
-                                                type="number"
-                                                className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold shadow-inner text-sm"
-                                                placeholder="Max"
-                                                value={formData.salaryRange.max}
-                                                onChange={e => setFormData({ ...formData, salaryRange: { ...formData.salaryRange, max: e.target.value } })}
-                                            />
+                                            <div className="space-y-1">
+                                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Currency</label>
+                                                <select
+                                                    className="w-full bg-white border border-slate-200 p-2.5 rounded-xl outline-none font-bold text-slate-700 text-xs"
+                                                    value={formData.salaryRange?.currency || 'USD'}
+                                                    onChange={e => setFormData({ ...formData, salaryRange: { ...formData.salaryRange, currency: e.target.value } })}
+                                                >
+                                                    <option value="USD">USD ($)</option>
+                                                    <option value="BDT">BDT (৳)</option>
+                                                    <option value="EUR">EUR (€)</option>
+                                                    <option value="GBP">GBP (£)</option>
+                                                    <option value="CAD">CAD ($)</option>
+                                                    <option value="AUD">AUD ($)</option>
+                                                </select>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Pay Period / Frequency</label>
+                                                <select
+                                                    className="w-full bg-white border border-slate-200 p-2.5 rounded-xl outline-none font-bold text-slate-700 text-xs"
+                                                    value={formData.salaryRange?.period || 'yearly'}
+                                                    onChange={e => setFormData({ ...formData, salaryRange: { ...formData.salaryRange, period: e.target.value } })}
+                                                >
+                                                    <option value="yearly">Per Year / Annual</option>
+                                                    <option value="monthly">Per Month</option>
+                                                    <option value="hourly">Per Hour</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Minimum Amount</label>
+                                                <input
+                                                    type="number"
+                                                    className="w-full bg-white border border-slate-200 p-2.5 rounded-xl outline-none font-bold shadow-xs text-xs text-slate-800"
+                                                    placeholder="Min e.g. 50000"
+                                                    value={formData.salaryRange?.min || ''}
+                                                    onChange={e => setFormData({ ...formData, salaryRange: { ...formData.salaryRange, min: e.target.value } })}
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Maximum Amount</label>
+                                                <input
+                                                    type="number"
+                                                    className="w-full bg-white border border-slate-200 p-2.5 rounded-xl outline-none font-bold shadow-xs text-xs text-slate-800"
+                                                    placeholder="Max e.g. 75000"
+                                                    value={formData.salaryRange?.max || ''}
+                                                    onChange={e => setFormData({ ...formData, salaryRange: { ...formData.salaryRange, max: e.target.value } })}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Min Experience (Years)</label>
-                                        <input
-                                            type="number"
-                                            className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold shadow-inner text-sm"
-                                            value={formData.experience}
-                                            onChange={e => setFormData({ ...formData, experience: Number(e.target.value) })}
-                                        />
-                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Min Experience (Years)</label>
+                                    <input
+                                        type="number"
+                                        className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold shadow-inner text-sm"
+                                        value={formData.experience}
+                                        onChange={e => setFormData({ ...formData, experience: Number(e.target.value) })}
+                                    />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-6">

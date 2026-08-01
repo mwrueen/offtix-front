@@ -98,9 +98,29 @@ const Notifications = () => {
       return;
     }
 
-    if (notif.type === 'job_application' && notif.relatedId) {
-      navigate(`/recruitment/applications/${notif.relatedId}`);
-      return;
+    if (notif.type === 'job_application' || notif.relatedModel === 'Application') {
+      let circularId = notif.metadata?.circularId;
+      if (circularId) {
+        navigate(`/recruitment/circulars/${circularId}/applicants`);
+        return;
+      }
+      if (notif.relatedId) {
+        // Fetch application to resolve circularId if not directly stored in notification metadata
+        fetch(`/api/recruitment/applications/${notif.relatedId}`, { headers: authHeaders() })
+          .then((res) => res.ok ? res.json() : null)
+          .then((appData) => {
+            const resolvedCircularId = appData?.jobCircular?._id || appData?.jobCircular;
+            if (resolvedCircularId) {
+              navigate(`/recruitment/circulars/${resolvedCircularId}/applicants`);
+            } else {
+              navigate(`/recruitment/applications/${notif.relatedId}`);
+            }
+          })
+          .catch(() => {
+            navigate(`/recruitment/applications/${notif.relatedId}`);
+          });
+        return;
+      }
     }
 
     const taskId = notif.metadata?.taskId || notif.relatedId;

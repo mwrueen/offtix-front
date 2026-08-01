@@ -136,8 +136,14 @@ const RecruitmentOverview = () => {
 
                                     <div className="space-y-2 py-4 border-y border-slate-50 my-1">
                                         <div className="flex items-center text-slate-500 font-bold text-[9px] uppercase tracking-widest gap-3">
-                                            <span className="w-6 h-6 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold border border-emerald-100 italic shrink-0">P</span>
-                                            ${circular.salaryRange.min.toLocaleString()} — ${circular.salaryRange.max.toLocaleString()}
+                                            <span className="w-6 h-6 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold border border-emerald-100 shrink-0">💰</span>
+                                            {(() => {
+                                                const symbolMap = { USD: '$', BDT: '৳', EUR: '€', GBP: '£', CAD: 'CA$', AUD: 'A$' };
+                                                const symbol = symbolMap[circular.salaryRange?.currency] || circular.salaryRange?.currency || '$';
+                                                const periodMap = { yearly: 'Per Year', monthly: 'Per Month', hourly: 'Per Hour' };
+                                                const period = periodMap[circular.salaryRange?.period] || 'Per Year';
+                                                return `${symbol}${Number(circular.salaryRange?.min || 0).toLocaleString()} – ${symbol}${Number(circular.salaryRange?.max || 0).toLocaleString()} (${period})`;
+                                            })()}
                                         </div>
                                         <div className="flex items-center text-slate-500 font-bold text-[9px] uppercase tracking-widest gap-3">
                                             <span className="w-6 h-6 rounded bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold border border-indigo-100 italic shrink-0">E</span>

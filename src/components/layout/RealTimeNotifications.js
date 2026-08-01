@@ -58,8 +58,13 @@ const ToastItem = ({ notification, index, onDismiss }) => {
             navigate(`/invitations/${notification.relatedId}`);
         } else if (notification.type === 'job_offer' && notification.relatedId) {
             navigate(`/recruitment/offer/${notification.relatedId}`);
-        } else if (notification.type === 'job_application' && notification.relatedId) {
-            navigate(`/recruitment/applications/${notification.relatedId}`);
+        } else if (notification.type === 'job_application' || notification.relatedModel === 'Application') {
+            const circularId = notification.metadata?.circularId || notification.circularId;
+            if (circularId) {
+                navigate(`/recruitment/circulars/${circularId}/applicants`);
+            } else {
+                navigate('/notifications');
+            }
         } else if (notification.taskId) {
             navigate(`/my-tasks/${notification.taskId}`);
         } else if (notification.relatedId && (notification.type?.startsWith('task_') || notification.relatedModel === 'Task')) {

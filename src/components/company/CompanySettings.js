@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { companyAPI } from '../../services/api';
+import api, { companyAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { currencies } from '../../utils/currency';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
@@ -30,6 +30,75 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
   const [showHolidayForm, setShowHolidayForm] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
   const [saving, setSaving] = useState(false);
+
+  // AI Country Holidays Generator State
+  const [showAiHolidayModal, setShowAiHolidayModal] = useState(false);
+  const [aiCountry, setAiCountry] = useState('Bangladesh');
+  const [aiYear, setAiYear] = useState(2026);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiHolidays, setAiHolidays] = useState([]);
+  const [selectedAiHolidayIndexes, setSelectedAiHolidayIndexes] = useState([]);
+
+  const handleFetchAiHolidays = async () => {
+    setAiLoading(true);
+    try {
+      const res = await api.post('/ai/fetch-country-holidays', { country: aiCountry, year: aiYear });
+      const fetched = res.data?.holidays || [];
+      setAiHolidays(fetched);
+      setSelectedAiHolidayIndexes(fetched.map((_, i) => i)); // Select all by default
+      if (fetched.length === 0) {
+        toast.error('No holidays found for selected country.');
+      } else {
+        toast.success(`Found ${fetched.length} official holidays for ${aiCountry}!`);
+      }
+    } catch (err) {
+      console.error('Error fetching AI holidays:', err);
+      toast.error('Failed to fetch holidays with AI.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleImportSelectedHolidays = async () => {
+    if (selectedAiHolidayIndexes.length === 0) {
+      toast.error('Please select at least one holiday to import.');
+      return;
+    }
+    const toImport = selectedAiHolidayIndexes.map(i => aiHolidays[i]);
+    const updatedHolidays = [...settings.holidays];
+
+    let addedCount = 0;
+    toImport.forEach(h => {
+      const exists = updatedHolidays.some(existing => 
+        existing.date === h.date || existing.name.toLowerCase() === h.name.toLowerCase()
+      );
+      if (!exists) {
+        updatedHolidays.push({
+          date: h.date,
+          name: h.name,
+          description: h.description || ''
+        });
+        addedCount++;
+      }
+    });
+
+    const newSettings = { ...settings, holidays: updatedHolidays };
+    setSettings(newSettings);
+
+    try {
+      setSaving(true);
+      await companyAPI.updateSettings(company._id, newSettings);
+      await onRefresh();
+      toast.success(`✨ Successfully registered & saved ${addedCount} national holidays for ${aiCountry}!`);
+      setShowAiHolidayModal(false);
+      setAiHolidays([]);
+    } catch (err) {
+      console.error('Error saving holidays:', err);
+      toast.error('Failed to save imported holidays.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (company?.settings) {
@@ -333,12 +402,21 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
                 </div>
               </div>
               {isOwner && !showHolidayForm && (
-                <button
-                  onClick={() => setShowHolidayForm(true)}
-                  className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-md hover:bg-indigo-700 transition-all active:scale-95"
-                >
-                  + Register Holiday
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowAiHolidayModal(true)}
+                    className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-md hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center gap-2 active:scale-95"
+                  >
+                    <span>✨ Auto-Fetch Holidays with AI</span>
+                  </button>
+                  <button
+                    onClick={() => setShowHolidayForm(true)}
+                    className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-md hover:bg-slate-800 transition-all active:scale-95"
+                  >
+                    + Register Single Holiday
+                  </button>
+                </div>
               )}
             </div>
 
@@ -437,6 +515,138 @@ const CompanySettings = ({ company, isOwner, onRefresh }) => {
           </div>
         )}
       </div>
+
+      {showAiHolidayModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 space-y-6 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-lg font-bold">✨</div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Auto-Fetch Country Holidays with AI</h3>
+                  <p className="text-xs text-slate-500 font-medium">Search official national holidays for any country and import all at once.</p>
+                </div>
+              </div>
+              <button onClick={() => setShowAiHolidayModal(false)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+              <div className="sm:col-span-2 space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Select Country</label>
+                <select
+                  value={aiCountry}
+                  onChange={e => setAiCountry(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-purple-500"
+                >
+                  <option value="Bangladesh">Bangladesh 🇧🇩</option>
+                  <option value="United States">United States 🇺🇸</option>
+                  <option value="United Kingdom">United Kingdom 🇬🇧</option>
+                  <option value="India">India 🇮🇳</option>
+                  <option value="United Arab Emirates">United Arab Emirates 🇦🇪</option>
+                  <option value="Canada">Canada 🇨🇦</option>
+                  <option value="Australia">Australia 🇦🇺</option>
+                  <option value="Germany">Germany 🇩🇪</option>
+                  <option value="Singapore">Singapore 🇸🇬</option>
+                  <option value="Japan">Japan 🇯🇵</option>
+                  <option value="Saudi Arabia">Saudi Arabia 🇸🇦</option>
+                  <option value="Malaysia">Malaysia 🇲🇾</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Year</label>
+                <select
+                  value={aiYear}
+                  onChange={e => setAiYear(Number(e.target.value))}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-purple-500"
+                >
+                  <option value={2026}>2026</option>
+                  <option value={2027}>2027</option>
+                  <option value={2025}>2025</option>
+                </select>
+              </div>
+            </div>
+
+            <button
+              onClick={handleFetchAiHolidays}
+              disabled={aiLoading}
+              className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {aiLoading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  <span>Searching Official Holidays with AI...</span>
+                </>
+              ) : (
+                <span>✨ Search Holidays with AI</span>
+              )}
+            </button>
+
+            {aiHolidays.length > 0 && (
+              <div className="flex-1 overflow-y-auto space-y-3 min-h-[180px] max-h-[320px] pr-1">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-bold text-slate-700">{aiHolidays.length} Holidays Found for {aiCountry} ({aiYear})</span>
+                  <button
+                    onClick={() => {
+                      if (selectedAiHolidayIndexes.length === aiHolidays.length) {
+                        setSelectedAiHolidayIndexes([]);
+                      } else {
+                        setSelectedAiHolidayIndexes(aiHolidays.map((_, i) => i));
+                      }
+                    }}
+                    className="text-[10px] font-bold text-purple-600 uppercase hover:underline"
+                  >
+                    {selectedAiHolidayIndexes.length === aiHolidays.length ? 'Deselect All' : 'Select All'}
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {aiHolidays.map((h, i) => {
+                    const isChecked = selectedAiHolidayIndexes.includes(i);
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => {
+                          setSelectedAiHolidayIndexes(prev =>
+                            prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i]
+                          );
+                        }}
+                        className={`p-3.5 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${isChecked ? 'bg-purple-50/50 border-purple-200' : 'bg-slate-50 border-slate-200/80 opacity-60'}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {}}
+                          className="w-4 h-4 text-purple-600 rounded"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-slate-900 truncate">{h.name}</h4>
+                            <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded font-mono">{h.date}</span>
+                          </div>
+                          <p className="text-[10px] text-slate-500 truncate mt-0.5">{h.description}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+              <button onClick={() => setShowAiHolidayModal(false)} className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-900">Close</button>
+              {aiHolidays.length > 0 && (
+                <button
+                  onClick={handleImportSelectedHolidays}
+                  disabled={saving || selectedAiHolidayIndexes.length === 0}
+                  className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-md transition-all disabled:opacity-50"
+                >
+                  {saving ? 'Importing & Saving...' : `✨ Import & Save (${selectedAiHolidayIndexes.length}) Holidays`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <DeleteConfirmModal
         isOpen={deleteModal.isOpen}

@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import UnifiedHeader from '../layout/UnifiedHeader';
 import { getCookie } from '../../utils/cookies';
+import { getAssetUrl } from '../../services/api';
 
 const APPLIED_JOBS_KEY = 'offtix_careers_applied_jobs';
 
@@ -19,6 +20,7 @@ const JobDetails = () => {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [alreadyApplied, setAlreadyApplied] = useState(false);
+    const [showCompanyModal, setShowCompanyModal] = useState(false);
 
     const authHeaders = useCallback(() => {
         const token = getCookie('authToken');
@@ -60,8 +62,67 @@ const JobDetails = () => {
         answers: []
     });
 
+    const [userProfile, setUserProfile] = useState(null);
+    const [profileLoading, setProfileLoading] = useState(false);
+
+    const checkProfileCompleteness = useCallback((data) => {
+        if (!data) return { isComplete: false, checks: { fatherName: false, motherName: false, address: false, education: false, skills: false } };
+        const p = data.profile || {};
+
+        const hasFatherName = Boolean((p.fatherName || '').trim());
+        const hasMotherName = Boolean((p.motherName || '').trim());
+        const hasAddress = Boolean((p.address || p.location || '').trim());
+        
+        const hasEducation = Array.isArray(p.education) && p.education.length > 0 && p.education.some(e => Boolean((e.institution || e.degree || '').trim()));
+        const hasSkills = (Array.isArray(p.skills) && p.skills.length > 0) || (typeof p.skills === 'string' && p.skills.trim().length > 0);
+
+        const isComplete = hasFatherName && hasMotherName && hasAddress && hasEducation && hasSkills;
+
+        return {
+            isComplete,
+            checks: {
+                fatherName: hasFatherName,
+                motherName: hasMotherName,
+                address: hasAddress,
+                education: hasEducation,
+                skills: hasSkills
+            }
+        };
+    }, []);
+
     useEffect(() => {
-        if (user) {
+        if (!isAuthenticated) return;
+        let isMounted = true;
+        const fetchProfile = async () => {
+            setProfileLoading(true);
+            try {
+                const res = await axios.get('/api/users/profile', { headers: authHeaders() });
+                if (!isMounted) return;
+                setUserProfile(res.data);
+                const prof = res.data?.profile || {};
+                setFormData(prev => ({
+                    ...prev,
+                    applicant: {
+                        ...prev.applicant,
+                        name: res.data.name || user?.name || '',
+                        email: res.data.email || user?.email || '',
+                        phone: prof.phone || user?.phone || '',
+                        experience: Array.isArray(prof.experience) ? prof.experience.length : (user?.experience || 0),
+                        skills: Array.isArray(prof.skills) ? prof.skills.join(', ') : (prof.skills || '')
+                    }
+                }));
+            } catch (err) {
+                console.error('Error fetching profile in JobDetails:', err);
+            } finally {
+                if (isMounted) setProfileLoading(false);
+            }
+        };
+        fetchProfile();
+        return () => { isMounted = false; };
+    }, [isAuthenticated, authHeaders, user]);
+
+    useEffect(() => {
+        if (user && !userProfile) {
             setFormData(prev => ({
                 ...prev,
                 applicant: {
@@ -74,7 +135,7 @@ const JobDetails = () => {
                 }
             }));
         }
-    }, [user]);
+    }, [user, userProfile]);
 
     useEffect(() => {
         const fetchCircular = async () => {
@@ -123,6 +184,14 @@ const JobDetails = () => {
             navigate('/signin', { state: { from: { pathname: `/careers/${id}` } } });
             return;
         }
+
+        const profileStatus = checkProfileCompleteness(userProfile);
+        if (!profileStatus.isComplete) {
+            toast.showToast('Please complete your profile details (Basic Info, Education, and Skills) before applying.', 'warning');
+            navigate('/profile', { state: { from: { pathname: `/careers/${id}` } } });
+            return;
+        }
+
         setSubmitting(true);
         try {
             const payload = {
@@ -171,6 +240,8 @@ const JobDetails = () => {
         </div>
     );
 
+    const profileCompleteness = checkProfileCompleteness(userProfile);
+
     return (
         <div className="min-h-screen bg-slate-50/30 text-slate-800 font-sans pb-32">
             <UnifiedHeader />
@@ -179,6 +250,48 @@ const JobDetails = () => {
                 {/* Content */}
                 <div className="lg:col-span-8 space-y-8">
                     <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-6">
+                        {/* Hiring Company Header Bar */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100">
+                            <div className="flex items-center gap-3.5">
+                                <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
+                                    {circular.company?.logo ? (
+                                        <img src={getAssetUrl(circular.company.logo)} alt={circular.company.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-xl font-black text-indigo-600">
+                                            {(circular.company?.name || 'O').charAt(0).toUpperCase()}
+                                        </span>
+                                    )}
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-base font-bold text-slate-900 leading-tight">
+                                            {circular.company?.name || 'Hiring Organization'}
+                                        </h3>
+                                        <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold flex items-center gap-1">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                            Verified Employer
+                                        </span>
+                                    </div>
+                                    {circular.company?.industries && (
+                                        <p className="text-xs text-slate-500 font-medium mt-0.5">
+                                            {Array.isArray(circular.company.industries) ? circular.company.industries.join(' • ') : circular.company.industries}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setShowCompanyModal(true)}
+                                className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs transition-all border border-indigo-100 flex items-center gap-2 shadow-2xs"
+                            >
+                                <span>🏢 View Company Profile</span>
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </div>
+
                         <div className="flex flex-wrap gap-2">
                             <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase tracking-wider rounded border border-indigo-100">
                                 {circular.role}
@@ -194,8 +307,15 @@ const JobDetails = () => {
 
                         <div className="grid grid-cols-3 gap-6 pt-2 border-t border-slate-100 mt-6">
                             <div className="pt-4">
-                                <p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1">Salary Range</p>
-                                <p className="text-sm font-bold text-slate-900">${Number(circular.salaryRange.min).toLocaleString()} — ${Number(circular.salaryRange.max).toLocaleString()}</p>
+                                <p className="text-sm font-bold text-slate-900">
+                                    {(() => {
+                                        const symbolMap = { USD: '$', BDT: '৳', EUR: '€', GBP: '£', CAD: 'CA$', AUD: 'A$' };
+                                        const symbol = symbolMap[circular.salaryRange.currency] || circular.salaryRange.currency || '$';
+                                        const periodMap = { yearly: 'Per Year', monthly: 'Per Month', hourly: 'Per Hour' };
+                                        const period = periodMap[circular.salaryRange.period] || 'Per Year';
+                                        return `${symbol}${Number(circular.salaryRange.min || 0).toLocaleString()} — ${symbol}${Number(circular.salaryRange.max || 0).toLocaleString()} (${period})`;
+                                    })()}
+                                </p>
                             </div>
                             <div className="pt-4 border-l border-slate-100 pl-6">
                                 <p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1">Work Location</p>
@@ -293,6 +413,100 @@ const JobDetails = () => {
                                             </Link>
                                         </p>
                                     </div>
+                                ) : profileLoading ? (
+                                    <div className="py-12 text-center space-y-3">
+                                        <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                        <p className="text-xs font-semibold text-slate-400">Verifying candidate profile...</p>
+                                    </div>
+                                ) : !profileCompleteness.isComplete ? (
+                                    <div className="space-y-5 py-2">
+                                        <div className="bg-amber-50/90 border border-amber-200/80 rounded-xl p-4 flex gap-3 items-start shadow-2xs">
+                                            <span className="text-xl">⚠️</span>
+                                            <div>
+                                                <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wider">Complete Profile Required</h4>
+                                                <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                                                    Before applying for <strong className="text-amber-950">{circular.title}</strong>, please complete your profile information.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Requirements Checklist */}
+                                        <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200/90 text-xs">
+                                            <h5 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Required Qualifications</h5>
+                                            
+                                            {/* Basic Information */}
+                                            <div className="space-y-1.5 pb-3 border-b border-slate-200/70">
+                                                <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                                                    <span>👤</span> Basic Information
+                                                </div>
+                                                <div className="pl-6 space-y-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-slate-600">Address</span>
+                                                        {profileCompleteness.checks.address ? (
+                                                            <span className="text-emerald-600 font-bold text-[11px]">✓ Complete</span>
+                                                        ) : (
+                                                            <span className="text-rose-600 font-bold text-[11px]">✕ Missing</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-slate-600">Father's Name</span>
+                                                        {profileCompleteness.checks.fatherName ? (
+                                                            <span className="text-emerald-600 font-bold text-[11px]">✓ Complete</span>
+                                                        ) : (
+                                                            <span className="text-rose-600 font-bold text-[11px]">✕ Missing</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-slate-600">Mother's Name</span>
+                                                        {profileCompleteness.checks.motherName ? (
+                                                            <span className="text-emerald-600 font-bold text-[11px]">✓ Complete</span>
+                                                        ) : (
+                                                            <span className="text-rose-600 font-bold text-[11px]">✕ Missing</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Education */}
+                                            <div className="flex items-center justify-between py-2 border-b border-slate-200/70">
+                                                <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                                                    <span>🎓</span> Education History
+                                                </div>
+                                                {profileCompleteness.checks.education ? (
+                                                    <span className="text-emerald-600 font-bold text-[11px]">✓ Complete</span>
+                                                ) : (
+                                                    <span className="text-rose-600 font-bold text-[11px]">✕ Missing</span>
+                                                )}
+                                            </div>
+
+                                            {/* Skills */}
+                                            <div className="flex items-center justify-between py-2 border-b border-slate-200/70">
+                                                <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                                                    <span>⚡</span> Skills & Competencies
+                                                </div>
+                                                {profileCompleteness.checks.skills ? (
+                                                    <span className="text-emerald-600 font-bold text-[11px]">✓ Complete</span>
+                                                ) : (
+                                                    <span className="text-rose-600 font-bold text-[11px]">✕ Missing</span>
+                                                )}
+                                            </div>
+
+                                            {/* Experience (Optional) */}
+                                            <div className="flex items-center justify-between pt-1">
+                                                <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                                                    <span>📂</span> Professional Experience
+                                                </div>
+                                                <span className="text-slate-400 font-bold text-[10px] uppercase">Optional</span>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={() => navigate('/profile', { state: { from: { pathname: `/careers/${id}` } } })}
+                                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-wider"
+                                        >
+                                            Complete Profile Now ➔
+                                        </button>
+                                    </div>
                                 ) : (
                                 <form onSubmit={handleApply} className="space-y-6">
                                     <div className="space-y-5">
@@ -313,16 +527,18 @@ const JobDetails = () => {
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-1">
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Contact</p>
-                                                    <p className="text-xs font-bold text-slate-700">{user?.phone || 'N/A'}</p>
+                                                    <p className="text-xs font-bold text-slate-700">{userProfile?.profile?.phone || user?.phone || 'N/A'}</p>
                                                 </div>
                                                 <div className="space-y-1">
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Experience</p>
-                                                    <p className="text-xs font-bold text-slate-700">{formData.applicant.experience || 0} Years</p>
+                                                    <p className="text-xs font-bold text-slate-700">{userProfile?.profile?.experience?.length || 0} Records</p>
                                                 </div>
                                             </div>
 
                                             <div className="pt-4 border-t border-slate-100">
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">Identity confirmed from profile</p>
+                                                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-2 text-center flex items-center justify-center gap-1">
+                                                    <span>✓</span> Profile verified & complete
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -405,6 +621,97 @@ const JobDetails = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Hiring Company Profile Modal */}
+            {showCompanyModal && (
+                <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-xl w-full p-6 space-y-6 max-h-[90vh] flex flex-col relative overflow-hidden">
+                        <button
+                            onClick={() => setShowCompanyModal(false)}
+                            className="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 flex items-center justify-center text-lg font-bold transition-colors"
+                        >
+                            ✕
+                        </button>
+
+                        <div className="flex items-start gap-4 pr-8">
+                            <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-2xl font-black text-indigo-600 shrink-0 overflow-hidden shadow-sm">
+                                {circular.company?.logo ? (
+                                    <img src={getAssetUrl(circular.company.logo)} alt={circular.company?.name} className="w-full h-full object-cover" />
+                                ) : (
+                                    (circular.company?.name || 'C').charAt(0).toUpperCase()
+                                )}
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-snug">{circular.company?.name || 'Offtix Organization'}</h2>
+                                <div className="flex flex-wrap items-center gap-2 mt-1">
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold">
+                                        ✓ Verified Employer
+                                    </span>
+                                    {circular.company?.address && (
+                                        <span className="text-xs font-medium text-slate-500 flex items-center gap-1">
+                                            📍 {circular.company.address}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 flex-1 overflow-y-auto pr-1">
+                            {circular.company?.description ? (
+                                <div className="space-y-2">
+                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">About Organization</h4>
+                                    <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                                        {circular.company.description}
+                                    </p>
+                                </div>
+                            ) : (
+                                <p className="text-xs text-slate-400 italic bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                                    No additional company overview provided.
+                                </p>
+                            )}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                                {circular.company?.industries && (
+                                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Industry</span>
+                                        <span className="text-xs font-bold text-slate-800">
+                                            {Array.isArray(circular.company.industries) ? circular.company.industries.join(', ') : circular.company.industries}
+                                        </span>
+                                    </div>
+                                )}
+                                {circular.company?.email && (
+                                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Contact Email</span>
+                                        <span className="text-xs font-bold text-slate-800 truncate block">{circular.company.email}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+                            {circular.company?.website ? (
+                                <a
+                                    href={circular.company.website.startsWith('http') ? circular.company.website : `https://${circular.company.website}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2"
+                                >
+                                    <span>🌐 Visit Official Website</span>
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                </a>
+                            ) : (
+                                <div></div>
+                            )}
+                            <button
+                                onClick={() => setShowCompanyModal(false)}
+                                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
