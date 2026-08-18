@@ -46,7 +46,7 @@ const ProjectDetails = () => {
       const projectRes = await projectAPI.getById(id);
       let usersRes;
       if (projectRes.data.company) usersRes = await userAPI.getCompanyEmployees(projectRes.data.company._id || projectRes.data.company);
-      else usersRes = await userAPI.getAll(null);
+      else usersRes = { data: [] };
 
       setProject(projectRes.data);
       setUsers(usersRes.data);

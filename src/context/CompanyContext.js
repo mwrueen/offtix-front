@@ -51,24 +51,28 @@ export const CompanyProvider = ({ children }) => {
         const companies = await response.json();
         dispatch({ type: 'SET_COMPANIES', payload: companies });
 
-        // Set default company (first one or Personal)
-        if (companies.length > 0) {
-          // Check if there's a saved company in localStorage that matches
-          const savedCompany = localStorage.getItem('selectedCompany');
-          if (savedCompany) {
-            try {
-              const parsedCompany = JSON.parse(savedCompany);
-              const matchingCompany = companies.find(c => (c.id || c._id) === (parsedCompany.id || parsedCompany._id));
-              if (matchingCompany) {
-                dispatch({ type: 'SET_SELECTED_COMPANY', payload: matchingCompany });
-                dispatch({ type: 'SET_LOADING', payload: false });
-                return;
-              }
-            } catch (error) {
-              console.error('Error parsing saved company:', error);
+        // Set default company (check saved company first including Personal, or fallback to first company)
+        const savedCompany = localStorage.getItem('selectedCompany');
+        if (savedCompany) {
+          try {
+            const parsedCompany = JSON.parse(savedCompany);
+            if (parsedCompany.id === 'personal') {
+              dispatch({ type: 'SET_SELECTED_COMPANY', payload: { id: 'personal', name: 'Personal' } });
+              dispatch({ type: 'SET_LOADING', payload: false });
+              return;
             }
+            const matchingCompany = companies.find(c => (c.id || c._id) === (parsedCompany.id || parsedCompany._id));
+            if (matchingCompany) {
+              dispatch({ type: 'SET_SELECTED_COMPANY', payload: matchingCompany });
+              dispatch({ type: 'SET_LOADING', payload: false });
+              return;
+            }
+          } catch (error) {
+            console.error('Error parsing saved company:', error);
           }
-          // Default to first company
+        }
+        // Default to first company if available, or Personal
+        if (companies.length > 0) {
           dispatch({ type: 'SET_SELECTED_COMPANY', payload: companies[0] });
         } else {
           dispatch({ type: 'SET_SELECTED_COMPANY', payload: { id: 'personal', name: 'Personal' } });

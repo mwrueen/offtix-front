@@ -110,7 +110,12 @@ const Sidebar = ({ collapsed, onToggle }) => {
           menuItems={menuItems}
           collapsed={collapsed}
           currentPath={location.pathname}
-          onNavigate={navigate}
+          onNavigate={(path) => {
+            if (typeof window !== 'undefined' && window.innerWidth < 1024 && onToggle && !collapsed) {
+              onToggle();
+            }
+            navigate(path);
+          }}
           dark={true}
         />
       </div>

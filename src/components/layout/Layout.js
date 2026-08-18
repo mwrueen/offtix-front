@@ -20,7 +20,12 @@ const Layout = ({ children, wide }) => {
   const { hasPermission, companyData, designationName } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024;
+    }
+    return false;
+  });
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
   const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
   const [recentNotifications, setRecentNotifications] = useState([]);
@@ -35,6 +40,16 @@ const Layout = ({ children, wide }) => {
   const canViewDesignations = hasPermission(PERMISSIONS.VIEW_DESIGNATIONS);
   const canViewEmployees = hasPermission(PERMISSIONS.VIEW_EMPLOYEE_LIST);
   const canManageRecruitment = hasPermission(PERMISSIONS.MANAGE_RECRUITMENT);
+
+  const closeMobileSidebar = React.useCallback(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setSidebarCollapsed(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    closeMobileSidebar();
+  }, [location.pathname, closeMobileSidebar]);
 
   useEffect(() => {
     const mu = (e) => {
@@ -164,7 +179,7 @@ const Layout = ({ children, wide }) => {
     return () => { cancelled = true; };
   }, [companyIds, isCompanyDropdownOpen]);
 
-  const handleLogout = () => { dispatch({ type: 'LOGOUT' }); navigate('/'); };
+  const handleLogout = () => { closeMobileSidebar(); dispatch({ type: 'LOGOUT' }); navigate('/'); };
 
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: 'dashboard', category: 'Main' },
@@ -197,6 +212,7 @@ const Layout = ({ children, wide }) => {
   ];
 
   const handleCompanySelect = async (c) => {
+    closeMobileSidebar();
     if (c === 'Create Company') {
       navigate('/create-company');
       setIsCompanyDropdownOpen(false);
@@ -240,9 +256,17 @@ const Layout = ({ children, wide }) => {
   const BellHeaderIcon = getIcon('bell');
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden">
+    <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden relative">
+      {/* Mobile Backdrop */}
+      {!sidebarCollapsed && (
+        <div
+          onClick={() => setSidebarCollapsed(true)}
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[999] lg:hidden transition-opacity"
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-72'} h-screen bg-white text-slate-700 flex flex-col fixed left-0 top-0 transition-all duration-300 ease-in-out shadow-[0_0_20px_rgba(0,0,0,0.03)] z-[1000] border-r border-slate-200/60`}>
+      <aside className={`fixed left-0 top-0 h-screen bg-white text-slate-700 flex flex-col transition-all duration-300 ease-in-out shadow-[0_0_20px_rgba(0,0,0,0.03)] z-[1000] border-r border-slate-200/60 ${sidebarCollapsed ? '-translate-x-full lg:translate-x-0 lg:w-20' : 'translate-x-0 w-72'}`}>
         <SidebarHeader
           sidebarCollapsed={sidebarCollapsed}
           setSidebarCollapsed={setSidebarCollapsed}
@@ -309,6 +333,7 @@ const Layout = ({ children, wide }) => {
                 {showCat && <div className={`px-4 ${idx === 0 ? 'mt-0' : 'mt-8'} mb-3 text-[10px] font-bold text-slate-400 uppercase tracking-[2px]`}>{item.category}</div>}
                 <Link
                   to={item.path}
+                  onClick={closeMobileSidebar}
                   className={`group flex items-center gap-4 cursor-pointer rounded-xl transition-all duration-200 relative ${sidebarCollapsed ? 'p-3 justify-center mb-1' : 'p-3 px-4 mb-0.5'} 
                     ${active
                       ? 'bg-slate-100 text-slate-900 shadow-none'
@@ -330,7 +355,7 @@ const Layout = ({ children, wide }) => {
           {!sidebarCollapsed ? (
             <div className="space-y-4">
               <div
-                onClick={() => navigate('/profile')}
+                onClick={() => { closeMobileSidebar(); navigate('/profile'); }}
                 className="group flex items-center gap-3.5 p-2 rounded-xl cursor-pointer hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all"
               >
                 <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-indigo-700 text-white flex items-center justify-center font-bold text-lg shadow-md group-hover:scale-105 transition-transform overflow-hidden">
@@ -352,7 +377,7 @@ const Layout = ({ children, wide }) => {
             </div>
           ) : (
             <div className="flex flex-col items-center gap-4">
-              <div onClick={() => navigate('/profile')} className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-indigo-700 text-white flex items-center justify-center font-bold text-lg cursor-pointer hover:scale-110 transition-transform shadow-md overflow-hidden">
+              <div onClick={() => { closeMobileSidebar(); navigate('/profile'); }} className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-indigo-700 text-white flex items-center justify-center font-bold text-lg cursor-pointer hover:scale-110 transition-transform shadow-md overflow-hidden">
                 {(state.user?.profilePicture || state.user?.profile?.profilePicture) ? (
                   <img src={getLogoUrl(state.user.profilePicture || state.user.profile?.profilePicture)} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 ) : state.user?.name?.charAt(0)}
@@ -367,10 +392,19 @@ const Layout = ({ children, wide }) => {
 
 
       {/* Main Content Area */}
-      <main className={`flex flex-col flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-72'} transition-all duration-300 ease-in-out h-screen overflow-hidden`}>
-        <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between shadow-sm">
-          <div>
-            <h1 className="text-xl font-bold text-slate-800"> {getPageTitle()} </h1>
+      <main className={`flex flex-col flex-1 ${sidebarCollapsed ? 'ml-0 lg:ml-20' : 'ml-0 lg:ml-72'} transition-all duration-300 ease-in-out h-screen overflow-hidden`}>
+        <header className="h-16 bg-white border-b border-slate-200 px-4 lg:px-8 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="lg:hidden p-2 -ml-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-indigo-600 transition-colors"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <h1 className="text-lg lg:text-xl font-bold text-slate-800 truncate"> {getPageTitle()} </h1>
           </div>
 
           <div className="flex items-center gap-3">
@@ -404,7 +438,7 @@ const Layout = ({ children, wide }) => {
                 )}
               </div>
               {isNotifDropdownOpen && (
-                <div className="absolute top-full mt-2 right-0 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-[1000] animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                <div className="absolute top-full mt-2 right-0 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-[1000] animate-in fade-in zoom-in-95 duration-200 origin-top-right">
                   <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Recent Activity</h4>
                     <button onClick={() => { setIsNotifDropdownOpen(false); navigate('/notifications'); }} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors">View All</button>

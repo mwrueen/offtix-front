@@ -246,14 +246,18 @@ const JobDetails = () => {
         <div className="min-h-screen bg-slate-50/30 text-slate-800 font-sans pb-32">
             <UnifiedHeader />
 
-            <div className="max-w-[1100px] mx-auto px-6 pt-32 pb-16 grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-12 sm:pb-20 grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
                 {/* Content */}
-                <div className="lg:col-span-8 space-y-8">
-                    <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-6">
+                <div className="lg:col-span-8 space-y-6 sm:space-y-8">
+                    <div className="bg-white p-4 sm:p-8 rounded-2xl border border-slate-200 shadow-xs space-y-6">
                         {/* Hiring Company Header Bar */}
-                        <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100">
-                            <div className="flex items-center gap-3.5">
-                                <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+                            <div
+                                onClick={() => navigate(`/careers/company/${circular.company?._id || circular.company}`)}
+                                className="flex items-center gap-3.5 cursor-pointer group"
+                                title="Click to view company profile"
+                            >
+                                <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200/80 group-hover:border-indigo-400 group-hover:shadow-md transition-all flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
                                     {circular.company?.logo ? (
                                         <img src={getAssetUrl(circular.company.logo)} alt={circular.company.name} className="w-full h-full object-cover" />
                                     ) : (
@@ -263,9 +267,12 @@ const JobDetails = () => {
                                     )}
                                 </div>
                                 <div>
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="text-base font-bold text-slate-900 leading-tight">
-                                            {circular.company?.name || 'Hiring Organization'}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors leading-tight flex items-center gap-1.5">
+                                            <span>{circular.company?.name || 'Hiring Organization'}</span>
+                                            <svg className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
                                         </h3>
                                         <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold flex items-center gap-1">
                                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -279,17 +286,6 @@ const JobDetails = () => {
                                     )}
                                 </div>
                             </div>
-
-                            <button
-                                type="button"
-                                onClick={() => setShowCompanyModal(true)}
-                                className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs transition-all border border-indigo-100 flex items-center gap-2 shadow-2xs"
-                            >
-                                <span>🏢 View Company Profile</span>
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                            </button>
                         </div>
 
                         <div className="flex flex-wrap gap-2">
@@ -301,13 +297,14 @@ const JobDetails = () => {
                             </span>
                         </div>
 
-                        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
                             {circular.title}
                         </h1>
 
-                        <div className="grid grid-cols-3 gap-6 pt-2 border-t border-slate-100 mt-6">
-                            <div className="pt-4">
-                                <p className="text-sm font-bold text-slate-900">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 pt-4 border-t border-slate-100 mt-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+                            <div className="pt-2 sm:pt-0">
+                                <p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1">Salary Range</p>
+                                <p className="text-sm font-bold text-slate-900 leading-snug">
                                     {(() => {
                                         const symbolMap = { USD: '$', BDT: '৳', EUR: '€', GBP: '£', CAD: 'CA$', AUD: 'A$' };
                                         const symbol = symbolMap[circular.salaryRange.currency] || circular.salaryRange.currency || '$';
@@ -317,18 +314,18 @@ const JobDetails = () => {
                                     })()}
                                 </p>
                             </div>
-                            <div className="pt-4 border-l border-slate-100 pl-6">
+                            <div className="pt-3 sm:pt-0 sm:pl-6">
                                 <p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1">Work Location</p>
                                 <p className="text-sm font-bold text-slate-900">{circular.location || 'Remote'}</p>
                             </div>
-                            <div className="pt-4 border-l border-slate-100 pl-6">
+                            <div className="pt-3 sm:pt-0 sm:pl-6">
                                 <p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1">Experience Required</p>
                                 <p className="text-sm font-bold text-slate-900">{circular.experience}+ Years</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-10">
+                    <div className="bg-white p-4 sm:p-8 rounded-2xl border border-slate-200 shadow-xs space-y-8 sm:space-y-10">
                         <div className="max-w-none">
                             <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-3">
                                 <div className="w-1.5 h-6 bg-indigo-600 rounded-full" />

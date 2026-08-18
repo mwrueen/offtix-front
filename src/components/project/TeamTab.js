@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
-import { projectAPI, companyAPI, taskRoleAPI, getAssetUrl } from '../../services/api';
+import { projectAPI, companyAPI, taskRoleAPI, userAPI, getAssetUrl } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 import { useToast } from '../../context/ToastContext';
-import { Button, Badge } from '../ui';
+import { Button } from '../ui';
 
 const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, onRefresh }) => {
   const navigate = useNavigate();
@@ -27,16 +27,75 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
   const [pmLoading, setPmLoading] = useState(false);
   const [confirmUnassignPM, setConfirmUnassignPM] = useState(false);
 
+  // Email search states for Personal Account
+  const [emailSearch, setEmailSearch] = useState('');
+  const [searchingUser, setSearchingUser] = useState(false);
+  const [matchedUser, setMatchedUser] = useState(null);
+  const [emailLookupMsg, setEmailLookupMsg] = useState('');
+
+  const isPersonal = !project?.company || project?.company === 'personal' || (typeof project?.company === 'object' && project?.company?.id === 'personal');
+
   const canAddMembers = isProjectOwner || isProjectManager || hasPermission(PERMISSIONS.ASSIGN_EMPLOYEE_TO_PROJECT);
   const canRemoveMembers = isProjectOwner || isProjectManager || hasPermission(PERMISSIONS.REMOVE_EMPLOYEE_FROM_PROJECT);
   const canManageRoles = isProjectOwner || isProjectManager;
+
+  // Debounced search for user by email in database
+  useEffect(() => {
+    if (!isPersonal) return;
+    const query = emailSearch.trim();
+    if (!query || query.length < 3) {
+      setMatchedUser(null);
+      setSelectedUserOption(null);
+      setEmailLookupMsg(query ? 'Type full user email to search...' : '');
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setSearchingUser(true);
+      setEmailLookupMsg('Searching database...');
+      try {
+        const res = await userAPI.getAll(null, null, null, query);
+        const userList = res.data?.users || res.data || [];
+        // Find exact or closest match by email
+        const exactMatch = userList.find(u => u.email?.toLowerCase() === query.toLowerCase());
+        const bestMatch = exactMatch || (userList.length === 1 ? userList[0] : null);
+
+        if (bestMatch && (bestMatch.email?.toLowerCase().includes(query.toLowerCase()) || bestMatch.name?.toLowerCase().includes(query.toLowerCase()))) {
+          // Check if user is already a project member
+          const alreadyIn = project?.members?.some(m => (m.user?._id || m.user) === bestMatch._id);
+          if (alreadyIn) {
+            setMatchedUser(null);
+            setSelectedUserOption(null);
+            setEmailLookupMsg('This user is already a member of this project.');
+          } else {
+            setMatchedUser(bestMatch);
+            setSelectedUserOption({ value: bestMatch._id, label: `${bestMatch.name} (${bestMatch.email})`, user: bestMatch });
+            setEmailLookupMsg('');
+          }
+        } else {
+          setMatchedUser(null);
+          setSelectedUserOption(null);
+          setEmailLookupMsg('No registered user found with this email address.');
+        }
+      } catch (err) {
+        console.error('User email search error', err);
+        setMatchedUser(null);
+        setSelectedUserOption(null);
+        setEmailLookupMsg('Error searching user.');
+      } finally {
+        setSearchingUser(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [emailSearch, isPersonal, project?.members]);
 
   const fetchRoles = useCallback(async () => {
     try {
       const projectRolesRes = await taskRoleAPI.getAll(projectId);
       setProjectRoles(projectRolesRes.data || []);
-      if (project?.company) {
-        const companyId = typeof project.company === 'object' ? project.company._id : project.company;
+      if (project?.company && typeof project.company === 'object') {
+        const companyId = project.company._id || project.company.id;
         const response = await companyAPI.getById(companyId);
         if (response.data?.designations) {
           setCompanyRoles(response.data.designations.sort((a, b) => a.level - b.level).map(d => d.name));
@@ -58,9 +117,9 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
 
   const userOptions = useMemo(() => {
     if (!users) return [];
-    const available = users.filter(user => !project.members?.some(m => (m.user?._id || m.user) === user._id));
+    const available = users.filter(user => !project?.members?.some(m => (m.user?._id || m.user) === user._id));
     return available.map(u => ({ value: u._id, label: `${u.name} (${u.email})`, user: u }));
-  }, [users, project.members]);
+  }, [users, project?.members]);
 
   // Owner CAN be assigned as PM — no owner filter
   const pmOptions = useMemo(() => {
@@ -112,7 +171,11 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
     try {
       const combinedRoles = selectedRoleOptions.map(opt => opt.value).join(', ');
       await projectAPI.addTeamMember(projectId, selectedUserOption.value, combinedRoles);
-      setSelectedUserOption(null); setSelectedRoleOptions([]); setShowAddMember(false);
+      setSelectedUserOption(null);
+      setSelectedRoleOptions([]);
+      setMatchedUser(null);
+      setEmailSearch('');
+      setShowAddMember(false);
       showToast('Team member added successfully', 'success');
       onRefresh();
     } catch (e) { showToast('Failed to add team member', 'error'); }
@@ -185,7 +248,7 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
           )}
           {canAddMembers && (
             <button
-              onClick={() => { setShowAddMember(v => !v); setShowAddRole(false); }}
+              onClick={() => { setShowAddMember(v => !v); setShowAddRole(false); setEmailSearch(''); setMatchedUser(null); setSelectedUserOption(null); }}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all ${showAddMember ? 'bg-indigo-600 text-white border-transparent' : 'bg-indigo-600 text-white border-transparent hover:bg-indigo-700'}`}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
@@ -243,16 +306,65 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
             <span className="text-base">👤</span>
             <h4 className="text-sm font-bold text-slate-800">Add Team Member</h4>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Select User *</label>
-              <Select options={userOptions} value={selectedUserOption} onChange={setSelectedUserOption} styles={selectStyles} placeholder="Search by name or email..." isClearable />
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                {isPersonal ? 'Find User by Email *' : 'Select User *'}
+              </label>
+              {isPersonal ? (
+                <div>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      placeholder="Type full user email (e.g. user@example.com)..."
+                      value={emailSearch}
+                      onChange={(e) => setEmailSearch(e.target.value)}
+                      className="w-full bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-medium outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-400"
+                    />
+                    {searchingUser && (
+                      <span className="absolute right-3 top-3 text-xs text-indigo-600 font-bold animate-pulse">Searching...</span>
+                    )}
+                  </div>
+                  {emailLookupMsg && !matchedUser && (
+                    <p className="text-xs font-semibold text-slate-500 mt-1.5 leading-snug">{emailLookupMsg}</p>
+                  )}
+                </div>
+              ) : (
+                <Select options={userOptions} value={selectedUserOption} onChange={setSelectedUserOption} styles={selectStyles} placeholder="Search by name or email..." isClearable />
+              )}
             </div>
+
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Assign Roles *</label>
               <Select isMulti options={roleOptions} value={selectedRoleOptions} onChange={setSelectedRoleOptions} styles={selectStyles} placeholder="Select one or more roles..." />
             </div>
           </div>
+
+          {/* Matched User Preview Card for Personal Account */}
+          {isPersonal && matchedUser && (
+            <div className="p-3.5 bg-white border border-indigo-200 rounded-xl flex items-center justify-between shadow-xs animate-in fade-in duration-200">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 text-white flex items-center justify-center font-bold text-sm overflow-hidden shrink-0 shadow-sm">
+                  {(matchedUser.profilePicture || matchedUser.profile?.profilePicture) ? (
+                    <img src={getAssetUrl(matchedUser.profilePicture || matchedUser.profile?.profilePicture)} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    getInitials(matchedUser.name)
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-slate-900 truncate leading-snug">{matchedUser.name}</p>
+                    <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-extrabold rounded uppercase tracking-wider">
+                      Matched
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 truncate">{matchedUser.email}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 pt-3 border-t border-indigo-100">
             <button onClick={() => setShowAddMember(false)} className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
             <Button variant="primary" size="sm" onClick={handleAddMember} disabled={loading || !selectedUserOption || selectedRoleOptions.length === 0} loading={loading}>Add Member</Button>

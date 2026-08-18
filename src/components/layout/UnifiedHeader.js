@@ -86,15 +86,15 @@ const UnifiedHeader = () => {
     const initials = user?.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
 
     return (
-        <header className="fixed top-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 z-[1000] flex items-center px-10">
-            <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
+        <header className="fixed top-0 left-0 right-0 h-14 sm:h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 z-[1000]">
+            <div className="max-w-7xl mx-auto h-full w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
                 {/* Logo & Main Nav */}
-                <div className="flex items-center gap-10">
+                <div className="flex items-center gap-2 sm:gap-6 lg:gap-10">
                     <Link to="/" className="flex items-center group">
                         <img
                             src="/offtix-logo.png"
                             alt="Offtix Logo"
-                            className="h-9 w-auto object-contain transition-transform group-hover:scale-105"
+                            className="h-6 sm:h-9 w-auto object-contain transition-transform group-hover:scale-105"
                         />
                     </Link>
 
@@ -104,29 +104,29 @@ const UnifiedHeader = () => {
                 </div>
 
                 {/* Right Actions */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5 sm:gap-4">
                     {isAuthenticated ? (
                         <>
                             {/* Company Selector */}
                             <div className="relative" ref={compRef}>
                                 <button
                                     onClick={() => setIsCompanyOpen(!isCompanyOpen)}
-                                    className="flex items-center gap-3 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-all text-left group"
+                                    className="flex items-center gap-1.5 sm:gap-3 px-2 sm:px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-all text-left group"
                                 >
-                                    <div className="w-6 h-6 rounded-md bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700 overflow-hidden">
+                                    <div className="w-6 h-6 rounded-md bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700 overflow-hidden flex-shrink-0">
                                         {isPersonal ? '👤' : (selectedCompany?.logo ? (
                                             <img src={getLogoUrl(selectedCompany.logo)} alt="" className="w-full h-full object-cover" />
                                         ) : selectedCompany?.name?.charAt(0))}
                                     </div>
                                     <div className="hidden sm:block">
                                         <p className="text-[10px] font-bold text-slate-500 leading-none">Workspace</p>
-                                        <p className="text-[11px] font-bold text-slate-700 leading-tight truncate max-w-[120px]">{selectedCompany?.name || 'Personal'}</p>
+                                        <p className="text-[11px] font-bold text-slate-700 leading-tight truncate max-w-[90px] md:max-w-[120px]">{selectedCompany?.name || 'Personal'}</p>
                                     </div>
                                     <svg className={`w-3 h-3 text-slate-400 transition-transform ${isCompanyOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
                                 </button>
 
                                 {isCompanyOpen && (
-                                    <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 space-y-1 animate-in fade-in slide-in-from-top-2">
+                                    <div className="absolute top-full right-0 mt-2 w-64 max-w-[calc(100vw-2rem)] bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 space-y-1 animate-in fade-in slide-in-from-top-2 z-50">
                                         <div className="px-3 py-2 text-[10px] font-bold text-slate-400">Select Workspace</div>
                                         {companyState.companies.map(c => (
                                             <button
@@ -139,7 +139,7 @@ const UnifiedHeader = () => {
                                                         <img src={getLogoUrl(c.logo)} alt="" className="w-full h-full object-cover" />
                                                     ) : c.name.charAt(0)}
                                                 </div>
-                                                <span className="text-xs font-bold">{c.name}</span>
+                                                <span className="text-xs font-bold truncate">{c.name}</span>
                                             </button>
                                         ))}
                                         <button
@@ -157,9 +157,9 @@ const UnifiedHeader = () => {
                             <button
                                 type="button"
                                 onClick={() => toggleGlobalChat()}
-                                className="relative w-10 h-10 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all border border-slate-100"
+                                className="relative w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all border border-slate-100"
                             >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
                                 {unreadCounts.total > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">{unreadCounts.total > 9 ? '9+' : unreadCounts.total}</span>}
                             </button>
 
@@ -167,14 +167,14 @@ const UnifiedHeader = () => {
                             <div className="relative" ref={notifRef}>
                                 <button
                                     onClick={() => { setIsNotifOpen(!isNotifOpen); if (!isNotifOpen) fetchNotifs(); }}
-                                    className="relative w-10 h-10 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all border border-slate-100"
+                                    className="relative w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all border border-slate-100"
                                 >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                                     {totalUnreadCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">{totalUnreadCount > 9 ? '9+' : totalUnreadCount}</span>}
                                 </button>
 
                                 {isNotifOpen && (
-                                    <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 origin-top-right">
+                                    <div className="absolute top-full right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 origin-top-right z-50">
                                         <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                                             <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Recent Activity</span>
                                             <Link to="/notifications" onClick={() => setIsNotifOpen(false)} className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700">View All</Link>
@@ -227,13 +227,13 @@ const UnifiedHeader = () => {
                                 )}
                             </div>
 
-                            <div className="w-px h-6 bg-slate-200 mx-2" />
+                            <div className="w-px h-4 sm:h-6 bg-slate-200 mx-0.5 sm:mx-2" />
 
                             {/* User Menu */}
                             <div className="relative" ref={userRef}>
                                 <button
                                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                                    className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs hover:ring-4 hover:ring-indigo-50 transition-all border-2 border-white shadow-sm overflow-hidden"
+                                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs hover:ring-4 hover:ring-indigo-50 transition-all border-2 border-white shadow-sm overflow-hidden"
                                 >
                                     {(user?.profilePicture || user?.profile?.profilePicture) ? (
                                         <img src={getLogoUrl(user.profilePicture || user.profile?.profilePicture)} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -241,7 +241,7 @@ const UnifiedHeader = () => {
                                 </button>
 
                                 {isUserMenuOpen && (
-                                    <div className="absolute top-full right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 animate-in fade-in slide-in-from-top-2">
+                                    <div className="absolute top-full right-0 mt-2 w-56 max-w-[calc(100vw-2rem)] bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 animate-in fade-in slide-in-from-top-2 z-50">
                                         <div className="px-4 py-3 border-b border-slate-50 mb-1">
                                             <p className="text-xs font-black text-slate-800 truncate">{user?.name}</p>
                                             <p className="text-[10px] font-bold text-slate-400 truncate mt-0.5">{user?.role}</p>
@@ -263,9 +263,9 @@ const UnifiedHeader = () => {
                             </div>
                         </>
                     ) : (
-                        <div className="flex items-center gap-2">
-                            <Link to="/signin" className="px-5 py-2.5 text-sm font-semibold text-slate-500 hover:text-indigo-600 transition-all">Sign In</Link>
-                            <Link to="/signup" className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/10">Get Started</Link>
+                        <div className="flex items-center gap-1 sm:gap-2">
+                            <Link to="/signin" className="px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-all">Sign In</Link>
+                            <Link to="/signup" className="px-3 sm:px-5 py-1.5 sm:py-2 bg-indigo-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-indigo-500 transition-all shadow-md shadow-indigo-600/10">Get Started</Link>
                         </div>
                     )}
                 </div>

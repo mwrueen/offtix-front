@@ -51,6 +51,9 @@ import JobDetails from './components/recruitment/JobDetails';
 import EditCircular from './components/recruitment/EditCircular';
 import JobOfferAccept from './components/recruitment/JobOfferAccept';
 import CurrencyList from './components/currency/CurrencyList';
+import PrivacyPolicy from './components/legal/PrivacyPolicy';
+import TermsOfService from './components/legal/TermsOfService';
+import PublicCompanyDetails from './components/company/PublicCompanyDetails';
 
 function GlobalChatPortal() {
   const { isGlobalChatOpen, closeGlobalChat } = useChat();
@@ -76,6 +79,13 @@ function App() {
                         <Route path="/signup" element={<SignUp />} />
                         <Route path="/auth/callback" element={<AuthCallback />} />
                         <Route path="/careers/:id" element={<JobDetails />} />
+                        <Route path="/careers/company/:id" element={<PublicCompanyDetails />} />
+                        <Route path="/company/public/:id" element={<PublicCompanyDetails />} />
+                        <Route path="/companies/public/:id" element={<PublicCompanyDetails />} />
+                        <Route path="/privacy" element={<PrivacyPolicy />} />
+                        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                        <Route path="/terms" element={<TermsOfService />} />
+                        <Route path="/terms-of-service" element={<TermsOfService />} />
                         <Route path="/dashboard" element={
                           <ProtectedRoute>
                             <Dashboard />

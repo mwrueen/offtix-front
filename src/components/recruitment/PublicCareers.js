@@ -206,26 +206,34 @@ const PublicCareers = () => {
         <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col selection:bg-indigo-50 font-sans">
             <UnifiedHeader />
 
-            {/* Container aligned with consistent pt-24 (96px) to match fixed header height */}
-            <div className="pt-24 pb-20 max-w-7xl mx-auto w-full px-4 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Container aligned with header height */}
+            <div className="pt-16 sm:pt-24 pb-12 sm:pb-20 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
 
                 {/* Left Sidebar: Filters */}
-                <aside className={`lg:col-span-3 sticky top-24 space-y-4 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
+                <aside className={`lg:col-span-3 lg:sticky lg:top-24 space-y-4 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
                     
                     {/* Filter Card Header */}
-                    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
+                    <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                                 <span>Filter Positions</span>
                             </h3>
-                            {hasActiveFilters && (
+                            <div className="flex items-center gap-2">
+                                {hasActiveFilters && (
+                                    <button
+                                        onClick={handleResetFilters}
+                                        className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+                                    >
+                                        Reset All
+                                    </button>
+                                )}
                                 <button
-                                    onClick={handleResetFilters}
-                                    className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+                                    onClick={() => setShowMobileFilters(false)}
+                                    className="lg:hidden text-slate-400 hover:text-slate-600 text-xs font-bold px-2 py-0.5 bg-slate-100 rounded"
                                 >
-                                    Reset All
+                                    ✕
                                 </button>
-                            )}
+                            </div>
                         </div>
 
                         {/* Workplace Nature Filter */}
@@ -267,7 +275,7 @@ const PublicCareers = () => {
                     </div>
 
                     {/* Salary Filter Card */}
-                    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
+                    <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs">
                         <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
                             Min Expected Salary
                         </h3>
@@ -300,7 +308,7 @@ const PublicCareers = () => {
                     </div>
 
                     {/* Experience Filter Card */}
-                    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
+                    <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs">
                         <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
                             Max Required Experience
                         </h3>
@@ -355,7 +363,7 @@ const PublicCareers = () => {
                 <main className="lg:col-span-6 space-y-4">
                     
                     {/* Search & Sorting Controls Box */}
-                    <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-3">
+                    <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-4 shadow-xs space-y-3">
                         
                         {/* Search inputs row */}
                         <div className="flex flex-col sm:flex-row gap-2.5">
@@ -390,38 +398,32 @@ const PublicCareers = () => {
                             </div>
                         </div>
 
-                        {/* Filter Bar Sub-Header: Active count, Sort dropdown, Mobile filter button */}
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-                            <div className="flex items-center gap-2 text-slate-500 font-semibold text-[11px]">
-                                <span>Showing <strong className="text-slate-900">{filteredCirculars.length}</strong> {filteredCirculars.length === 1 ? 'position' : 'positions'}</span>
-                                {hasActiveFilters && (
-                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                                )}
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                                {/* Sort Dropdown */}
-                                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
-                                    <span>Sort:</span>
-                                    <select
-                                        value={sortBy}
-                                        onChange={(e) => setSortBy(e.target.value)}
-                                        className="bg-slate-50 border border-slate-200 text-slate-800 text-[11px] font-bold rounded-md px-2 py-1 outline-none focus:border-indigo-500 transition-colors cursor-pointer"
-                                    >
-                                        <option value="newest">Newest First</option>
-                                        <option value="salary-high">Highest Salary</option>
-                                        <option value="experience-low">Experience: Low to High</option>
-                                    </select>
-                                </div>
-
-                                {/* Mobile Filter Toggle */}
-                                <button
-                                    onClick={() => setShowMobileFilters(!showMobileFilters)}
-                                    className="lg:hidden text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded border border-indigo-100"
+                        {/* Filter Bar Sub-Header: Clean responsive layout */}
+                        <div className="pt-2 border-t border-slate-100 text-xs flex items-center justify-between">
+                            {/* Sort Dropdown */}
+                            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+                                <span>Sort:</span>
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    className="bg-slate-50 border border-slate-200 text-slate-800 text-[11px] font-bold rounded-md px-2 py-1 outline-none focus:border-indigo-500 transition-colors cursor-pointer"
                                 >
-                                    {showMobileFilters ? 'Hide Filters' : 'Filters'}
-                                </button>
+                                    <option value="newest">Newest First</option>
+                                    <option value="salary-high">Highest Salary</option>
+                                    <option value="experience-low">Experience: Low to High</option>
+                                </select>
                             </div>
+
+                            {/* Filter Toggle Button for mobile & tablet */}
+                            <button
+                                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                                className="lg:hidden text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded border border-indigo-100 flex items-center gap-1.5"
+                            >
+                                <span>{showMobileFilters ? 'Hide Filters' : 'Filters'}</span>
+                                {hasActiveFilters && (
+                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                                )}
+                            </button>
                         </div>
 
                     </div>
@@ -431,9 +433,9 @@ const PublicCareers = () => {
                         /* Skeleton Loading Cards */
                         <div className="space-y-4">
                             {[1, 2, 3].map((n) => (
-                                <div key={n} className="bg-white border border-slate-200 rounded-xl p-5 space-y-4 animate-pulse">
+                                <div key={n} className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-4 animate-pulse">
                                     <div className="flex gap-4 items-center">
-                                        <div className="w-12 h-12 rounded bg-slate-200"></div>
+                                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded bg-slate-200"></div>
                                         <div className="flex-1 space-y-2">
                                             <div className="h-4 bg-slate-200 rounded w-1/3"></div>
                                             <div className="h-3 bg-slate-100 rounded w-1/4"></div>
@@ -446,12 +448,12 @@ const PublicCareers = () => {
                         </div>
                     ) : filteredCirculars.length === 0 ? (
                         /* No Results State */
-                        <div className="bg-white border border-slate-200 rounded-xl p-16 text-center space-y-4 shadow-xs">
+                        <div className="bg-white border border-slate-200 rounded-xl p-8 sm:p-16 text-center space-y-4 shadow-xs">
                             <div className="w-16 h-16 bg-slate-50 rounded-full border border-slate-100 flex items-center justify-center mx-auto text-2xl">
                                 🔎
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-slate-800">No Positions Match Your Criteria</h3>
+                                <h3 className="text-base sm:text-lg font-bold text-slate-800">No Positions Match Your Criteria</h3>
                                 <p className="text-slate-400 text-xs font-medium mt-1 max-w-sm mx-auto">
                                     Try clearing your keyword search or adjusting workplace filters to explore more opportunities.
                                 </p>
@@ -475,16 +477,16 @@ const PublicCareers = () => {
                                 <Link
                                     key={circular._id}
                                     to={`/careers/${circular._id}`}
-                                    className="block bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md hover:border-indigo-200 transition-all duration-200 group relative"
+                                    className="block bg-white border border-slate-200 rounded-xl p-4 sm:p-5 hover:shadow-md hover:border-indigo-200 transition-all duration-200 group relative"
                                 >
-                                    <div className="flex gap-4 items-start">
+                                    <div className="flex gap-3 sm:gap-4 items-start">
                                         
                                         {/* Company Logo / Gradient Avatar */}
-                                        <div className="w-12 h-12 rounded-lg border border-slate-200 flex-shrink-0 overflow-hidden bg-gradient-to-tr from-slate-50 to-slate-100 flex items-center justify-center shadow-2xs">
+                                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg border border-slate-200 flex-shrink-0 overflow-hidden bg-gradient-to-tr from-slate-50 to-slate-100 flex items-center justify-center shadow-2xs">
                                             {circular.company?.logo ? (
                                                 <img src={getLogoUrl(circular.company.logo)} alt={circular.company.name} className="w-full h-full object-contain p-1" />
                                             ) : (
-                                                <span className="text-lg font-bold text-slate-400 italic">
+                                                <span className="text-base sm:text-lg font-bold text-slate-400 italic">
                                                     {circular.company?.name?.charAt(0) || 'O'}
                                                 </span>
                                             )}
@@ -496,17 +498,22 @@ const PublicCareers = () => {
                                             {/* Header Title & Bookmark Button */}
                                             <div className="flex justify-between items-start gap-2">
                                                 <div>
-                                                    <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1">
+                                                    <h3 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1">
                                                         {circular.title}
                                                     </h3>
-                                                    <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-500 font-medium">
+                                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-[11px] sm:text-xs text-slate-500 font-medium">
                                                         <span className="font-semibold text-slate-800">{circular.company?.name || 'Offtix Organization'}</span>
-                                                        <span className="text-slate-300">•</span>
-                                                        <span className="flex items-center gap-1">📍 {circular.location || 'Remote'}</span>
-                                                        <span className="text-slate-300">•</span>
-                                                        <span className="capitalize px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-bold text-[10px]">
-                                                            {circular.jobNature}
-                                                        </span>
+                                                        {circular.location && (
+                                                            <span className="flex items-center gap-1">
+                                                                <span className="text-slate-300">•</span>
+                                                                <span>📍 {circular.location}</span>
+                                                            </span>
+                                                        )}
+                                                        {circular.jobNature && (
+                                                            <span className="capitalize px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-bold text-[10px]">
+                                                                {circular.jobNature}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
 
@@ -527,9 +534,9 @@ const PublicCareers = () => {
                                             </div>
 
                                             {/* Skill Pills & Compensation Badges */}
-                                            <div className="flex flex-wrap items-center gap-2 mt-3">
+                                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-2.5 sm:mt-3">
                                                 {circular.salaryRange?.max > 0 && (
-                                                    <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100 flex items-center gap-1">
+                                                    <span className="text-[10px] sm:text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md border border-emerald-100 flex items-center gap-1">
                                                         💰 {(() => {
                                                             const symbolMap = { USD: '$', BDT: '৳', EUR: '€', GBP: '£', CAD: 'CA$', AUD: 'A$' };
                                                             const symbol = symbolMap[circular.salaryRange.currency] || circular.salaryRange.currency || '$';
@@ -540,12 +547,12 @@ const PublicCareers = () => {
                                                     </span>
                                                 )}
                                                 {circular.experience !== undefined && (
-                                                    <span className="text-[11px] font-semibold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200 flex items-center gap-1">
+                                                    <span className="text-[10px] sm:text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md border border-slate-200 flex items-center gap-1">
                                                         ⚡ {circular.experience} {circular.experience === 1 ? 'yr' : 'yrs'} exp
                                                     </span>
                                                 )}
                                                 {circular.mandatorySkills?.slice(0, 3).map((skill, i) => (
-                                                    <span key={i} className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100">
+                                                    <span key={i} className="text-[10px] sm:text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md border border-indigo-100">
                                                         #{skill}
                                                     </span>
                                                 ))}
@@ -553,15 +560,19 @@ const PublicCareers = () => {
 
                                             {/* Short Description Preview */}
                                             {cleanDesc && (
-                                                <p className="mt-2.5 text-xs text-slate-600 line-clamp-2 leading-relaxed font-normal">
+                                                <p className="mt-2 text-xs text-slate-600 line-clamp-2 leading-relaxed font-normal">
                                                     {cleanDesc}
                                                 </p>
                                             )}
 
                                             {/* Footer metadata */}
-                                            <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
-                                                <span>Posted {getTimeAge(circular.createdAt)} • Actively Recruiting</span>
-                                                <span className="text-indigo-600 font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                                            <div className="mt-3 sm:mt-3.5 pt-2.5 sm:pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] sm:text-xs text-slate-500 font-medium">
+                                                <div className="flex items-center gap-1.5 truncate">
+                                                    <span>Posted {getTimeAge(circular.createdAt)}</span>
+                                                    <span className="hidden sm:inline text-slate-300">•</span>
+                                                    <span className="hidden sm:inline">Actively Recruiting</span>
+                                                </div>
+                                                <span className="text-indigo-600 font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1 flex-shrink-0 ml-2">
                                                     View Role →
                                                 </span>
                                             </div>
@@ -572,10 +583,63 @@ const PublicCareers = () => {
                             );
                         })
                     )}
+
+                    {/* Mobile Trending Skills Section */}
+                    <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs block lg:hidden">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                                Trending Skills
+                            </h3>
+                            {searchTerm && (
+                                <button
+                                    onClick={() => setSearchTerm('')}
+                                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800"
+                                >
+                                    Clear Filter
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                            {topSkills.length > 0 ? (
+                                topSkills.map(([skill, count]) => {
+                                    const isSelected = searchTerm.toLowerCase() === skill.toLowerCase();
+                                    return (
+                                        <button
+                                            key={skill}
+                                            onClick={() => setSearchTerm(isSelected ? '' : skill)}
+                                            className={`text-[11px] font-semibold px-2.5 py-1 rounded-full transition-all flex items-center gap-1.5 border ${
+                                                isSelected
+                                                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600'
+                                            }`}
+                                        >
+                                            <span>#{skill}</span>
+                                            <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${
+                                                isSelected ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-200 text-slate-600'
+                                            }`}>
+                                                {count}
+                                            </span>
+                                        </button>
+                                    );
+                                })
+                            ) : (
+                                ['React', 'Node.js', 'Python', 'TypeScript', 'Tailwind', 'UI/UX', 'DevOps'].map((skill) => (
+                                    <button
+                                        key={skill}
+                                        onClick={() => setSearchTerm(searchTerm === skill ? '' : skill)}
+                                        className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-50 text-slate-600 border border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                                    >
+                                        #{skill}
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
                 </main>
 
                 {/* Right Sidebar: Realistic & Dynamic Career Hub */}
-                <aside className="lg:col-span-3 sticky top-24 space-y-4 hidden lg:block">
+                <aside className="lg:col-span-3 lg:sticky lg:top-24 space-y-4 hidden lg:block">
 
                     {/* 1. Candidate / User Quick Status Card */}
                     <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs hover:shadow-sm transition-shadow">
@@ -784,12 +848,12 @@ const PublicCareers = () => {
             </div>
 
             {/* Simple Footer Bar */}
-            <footer className="py-12 border-t border-slate-200 bg-white px-10">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">
-                    <div className="mb-4 md:mb-0 opacity-50">© 2026 Offtix Organization</div>
-                    <div className="flex space-x-8">
-                        <a href="#privacy" className="hover:text-indigo-600 transition-colors">Privacy Policy</a>
-                        <a href="#terms" className="hover:text-indigo-600 transition-colors">Terms of Service</a>
+            <footer className="py-8 sm:py-12 border-t border-slate-200 bg-white">
+                <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                    <div className="mb-2 sm:mb-0 opacity-50">© 2026 Offtix Organization</div>
+                    <div className="flex space-x-6 sm:space-x-8">
+                        <Link to="/privacy" className="hover:text-indigo-600 transition-colors">Privacy Policy</Link>
+                        <Link to="/terms" className="hover:text-indigo-600 transition-colors">Terms of Service</Link>
                     </div>
                 </div>
             </footer>

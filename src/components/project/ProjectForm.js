@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { getAssetUrl, generateProjectDescription } from '../../services/api';
 
 
 const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
+  const quillRef = useRef(null);
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     description: initialData?.description || '',
@@ -158,6 +159,7 @@ const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
           </div>
           <div className="rounded-xl border border-slate-200 overflow-hidden bg-white focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all [&_.ql-toolbar]:border-none [&_.ql-toolbar]:bg-slate-50 [&_.ql-container]:border-none [&_.ql-editor]:text-sm [&_.ql-editor]:text-slate-700 [&_.ql-editor]:min-h-[160px]">
             <ReactQuill
+              ref={quillRef}
               theme="snow"
               value={formData.description}
               onChange={(val) => setFormData({ ...formData, description: val })}

@@ -231,6 +231,7 @@ export const phaseAPI = {
 export const companyAPI = {
   // Company management
   getById: (id) => api.get(`/companies/${id}`),
+  getPublic: (id) => api.get(`/companies/public/${id}`),
   updateProfile: (id, profileData) => api.put(`/companies/${id}/profile`, profileData),
   // Settings management
   updateSettings: (id, settings) => api.put(`/companies/${id}/settings`, { settings }),

@@ -74,8 +74,8 @@ const Footer = () => {
             © 2026 Offtix Analytics Protocol. Built for architectural precision.
           </p>
           <div className="flex gap-10">
-            <a href="#privacy" className="hover:text-white transition-colors">Privacy Infrastructure</a>
-            <a href="#terms" className="hover:text-white transition-colors">Service Terms</a>
+            <Link to="/privacy" className="hover:text-white transition-colors">Privacy Infrastructure</Link>
+            <Link to="/terms" className="hover:text-white transition-colors">Service Terms</Link>
           </div>
         </div>
       </div>
