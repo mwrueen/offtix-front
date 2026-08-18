@@ -39,8 +39,12 @@ const RecruitmentOverview = () => {
                     axios.get('/api/recruitment/stats', { headers })
                 ]);
 
-                setCirculars(circRes.data);
-                setStats(statsRes.data);
+                const rawCirc = circRes.data;
+                const circData = Array.isArray(rawCirc)
+                    ? rawCirc
+                    : (Array.isArray(rawCirc?.data) ? rawCirc.data : (Array.isArray(rawCirc?.circulars) ? rawCirc.circulars : []));
+                setCirculars(circData);
+                setStats(statsRes.data || {});
             } catch (error) {
                 console.error('Error fetching recruitment data:', error);
             } finally {

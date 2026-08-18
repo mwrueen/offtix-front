@@ -36,10 +36,16 @@ const PublicCareers = () => {
         const fetchCirculars = async () => {
             try {
                 const res = await axios.get('/api/recruitment/public/circulars');
-                setCirculars(res.data);
-                setFilteredCirculars(res.data);
+                const raw = res.data;
+                const data = Array.isArray(raw)
+                    ? raw
+                    : (Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw?.circulars) ? raw.circulars : []));
+                setCirculars(data);
+                setFilteredCirculars(data);
             } catch (error) {
                 console.error('Error fetching circulars:', error);
+                setCirculars([]);
+                setFilteredCirculars([]);
             } finally {
                 setLoading(false);
             }
@@ -53,7 +59,8 @@ const PublicCareers = () => {
     }, [searchTerm]);
 
     useEffect(() => {
-        let result = [...circulars];
+        const safeList = Array.isArray(circulars) ? circulars : [];
+        let result = [...safeList];
 
         if (debouncedSearch) {
             const lowSearch = debouncedSearch.toLowerCase();
@@ -97,8 +104,9 @@ const PublicCareers = () => {
     }, [debouncedSearch, locationSearch, filterNature, minSalary, maxExperience, sortBy, circulars]);
 
     const natureCounts = useMemo(() => {
-        const counts = { all: circulars.length, 'on-site': 0, remote: 0, hybrid: 0 };
-        circulars.forEach(c => {
+        const safeList = Array.isArray(circulars) ? circulars : [];
+        const counts = { all: safeList.length, 'on-site': 0, remote: 0, hybrid: 0 };
+        safeList.forEach(c => {
             const nat = (c.jobNature || '').toLowerCase();
             if (counts[nat] !== undefined) {
                 counts[nat]++;
@@ -108,8 +116,9 @@ const PublicCareers = () => {
     }, [circulars]);
 
     const topSkills = useMemo(() => {
+        const safeList = Array.isArray(circulars) ? circulars : [];
         const counts = {};
-        circulars.forEach(c => {
+        safeList.forEach(c => {
             [...(c.mandatorySkills || []), ...(c.niceToHaveSkills || [])].forEach(s => {
                 if (s && typeof s === 'string') {
                     const normalized = s.trim();
@@ -123,18 +132,20 @@ const PublicCareers = () => {
     }, [circulars]);
 
     const metrics = useMemo(() => {
-        if (!circulars.length) return { remotePct: 0, avgExp: 0, maxSalary: 0 };
-        const remoteCount = circulars.filter(c => c.jobNature === 'remote' || c.jobNature === 'hybrid').length;
-        const remotePct = Math.round((remoteCount / circulars.length) * 100);
-        const totalExp = circulars.reduce((acc, c) => acc + (Number(c.experience) || 0), 0);
-        const avgExp = (totalExp / circulars.length).toFixed(1);
-        const maxSalary = Math.max(...circulars.map(c => c.salaryRange?.max || 0));
+        const safeList = Array.isArray(circulars) ? circulars : [];
+        if (!safeList.length) return { remotePct: 0, avgExp: 0, maxSalary: 0 };
+        const remoteCount = safeList.filter(c => c.jobNature === 'remote' || c.jobNature === 'hybrid').length;
+        const remotePct = Math.round((remoteCount / safeList.length) * 100);
+        const totalExp = safeList.reduce((acc, c) => acc + (Number(c.experience) || 0), 0);
+        const avgExp = (totalExp / safeList.length).toFixed(1);
+        const maxSalary = Math.max(...safeList.map(c => c.salaryRange?.max || 0));
         return { remotePct, avgExp, maxSalary };
     }, [circulars]);
 
     const recommendedJobs = useMemo(() => {
-        if (!circulars.length) return [];
-        return [...circulars]
+        const safeList = Array.isArray(circulars) ? circulars : [];
+        if (!safeList.length) return [];
+        return [...safeList]
             .sort((a, b) => (b.salaryRange?.max || 0) - (a.salaryRange?.max || 0))
             .slice(0, 3);
     }, [circulars]);
@@ -739,7 +750,7 @@ const PublicCareers = () => {
                         
                         <div className="grid grid-cols-2 gap-3">
                             <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 text-center">
-                                <span className="text-lg font-bold text-slate-900">{circulars.length}</span>
+                                <span className="text-lg font-bold text-slate-900">{(Array.isArray(circulars) ? circulars : []).length}</span>
                                 <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Active Roles</span>
                             </div>
                             <div className="p-3 bg-indigo-50/60 rounded-lg border border-indigo-100 text-center">
