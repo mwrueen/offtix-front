@@ -18,7 +18,21 @@ const getAssetUrl = (path) => {
   return `${assetBase}${path.startsWith('/') ? '' : '/'}${path}`;
 };
 
-export { API_BASE_URL, BASE_SERVER_URL, getAssetUrl };
+/**
+ * Helper to get the correct Socket.IO connection URL.
+ * Automatically uses window.location.origin in production if REACT_APP_SOCKET_URL points to localhost or is missing.
+ */
+const getSocketUrl = () => {
+  if (process.env.REACT_APP_SOCKET_URL && !process.env.REACT_APP_SOCKET_URL.includes('localhost')) {
+    return process.env.REACT_APP_SOCKET_URL;
+  }
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return window.location.origin;
+  }
+  return process.env.REACT_APP_SOCKET_URL || BASE_SERVER_URL || 'http://localhost:5000';
+};
+
+export { API_BASE_URL, BASE_SERVER_URL, getAssetUrl, getSocketUrl };
 
 export const generateProjectDescription = (title) => api.post('/ai/generate-project-description', { title });
 export const generateProjectTasks = (title, description, existingTasks = []) => api.post('/ai/generate-tasks', { title, description, existingTasks });

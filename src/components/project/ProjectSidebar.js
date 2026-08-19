@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { io } from 'socket.io-client';
+import { getSocketUrl } from '../../services/api';
 
 const SIDEBAR_COLLAPSED_WIDTH = 64;
 const SIDEBAR_EXPANDED_WIDTH = 240;
@@ -53,7 +54,7 @@ const ProjectSidebar = ({ projectId, project, onWidthChange }) => {
     const token = getCookie('authToken');
     if (!token || !projectId) return;
 
-    const socket = io('http://localhost:5000', {
+    const socket = io(getSocketUrl(), {
       auth: { token },
       transports: ['websocket', 'polling']
     });

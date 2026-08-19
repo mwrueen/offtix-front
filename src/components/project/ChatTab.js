@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
-import { chatAPI } from '../../services/api';
+import { chatAPI, getSocketUrl } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { getCookie } from '../../utils/cookies';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
@@ -29,7 +29,7 @@ const ChatTab = ({ projectId, project }) => {
     const token = getCookie('authToken');
     if (!token) return;
 
-    const newSocket = io('http://localhost:5000', {
+    const newSocket = io(getSocketUrl(), {
       auth: { token },
       transports: ['websocket', 'polling']
     });

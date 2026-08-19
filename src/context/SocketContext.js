@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import { getCookie } from '../utils/cookies';
 import { useCompany } from './CompanyContext';
 import { invitationIdsCoveredByNotifications } from '../utils/invitationNotificationDedupe';
+import { getSocketUrl } from '../services/api';
 
 const SocketContext = createContext(null);
 
@@ -68,7 +69,7 @@ export const SocketProvider = ({ children }) => {
             return;
         }
 
-        const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000', {
+        const socket = io(getSocketUrl(), {
             auth: { token },
             transports: ['websocket', 'polling'],
             reconnection: true,

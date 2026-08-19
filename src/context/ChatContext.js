@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { io } from 'socket.io-client';
-import { chatAPI } from '../services/api';
+import { chatAPI, getSocketUrl } from '../services/api';
 import { useAuth } from './AuthContext';
 import { getCookie } from '../utils/cookies';
 import { useCompany } from './CompanyContext';
@@ -48,7 +48,7 @@ export const ChatProvider = ({ children }) => {
             fetchUnreadCounts(selectedCompanyId);
 
             const token = getCookie('authToken');
-            const newSocket = io('http://localhost:5000', {
+            const newSocket = io(getSocketUrl(), {
                 auth: { token },
                 transports: ['websocket', 'polling']
             });
