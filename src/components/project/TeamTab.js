@@ -176,9 +176,9 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
       setMatchedUser(null);
       setEmailSearch('');
       setShowAddMember(false);
-      showToast('Team member added successfully', 'success');
+      showToast(isPersonal ? 'Member invited to project successfully' : 'Team member added successfully', 'success');
       onRefresh();
-    } catch (e) { showToast('Failed to add team member', 'error'); }
+    } catch (e) { showToast(isPersonal ? 'Failed to invite member' : 'Failed to add team member', 'error'); }
     finally { setLoading(false); }
   };
 
@@ -252,7 +252,7 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all ${showAddMember ? 'bg-indigo-600 text-white border-transparent' : 'bg-indigo-600 text-white border-transparent hover:bg-indigo-700'}`}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-              {showAddMember ? 'Cancel' : 'Add Member'}
+              {showAddMember ? 'Cancel' : (isPersonal ? 'Invite Member' : 'Add Member')}
             </button>
           )}
         </div>
@@ -299,12 +299,12 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
         </div>
       )}
 
-      {/* ── Add Member Form ── */}
+      {/* ── Add / Invite Member Form ── */}
       {showAddMember && (
         <div className="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-6 space-y-5 animate-in slide-in-from-top-4">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-base">👤</span>
-            <h4 className="text-sm font-bold text-slate-800">Add Team Member</h4>
+            <h4 className="text-sm font-bold text-slate-800">{isPersonal ? 'Invite Team Member' : 'Add Team Member'}</h4>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -345,13 +345,27 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
           {isPersonal && matchedUser && (
             <div className="p-3.5 bg-white border border-indigo-200 rounded-xl flex items-center justify-between shadow-xs animate-in fade-in duration-200">
               <div className="flex items-center gap-3.5 min-w-0">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 text-white flex items-center justify-center font-bold text-sm overflow-hidden shrink-0 shadow-sm">
-                  {(matchedUser.profilePicture || matchedUser.profile?.profilePicture) ? (
-                    <img src={getAssetUrl(matchedUser.profilePicture || matchedUser.profile?.profilePicture)} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    getInitials(matchedUser.name)
-                  )}
-                </div>
+                {(() => {
+                  const pic = matchedUser.profilePicture || matchedUser.profile?.profilePicture || matchedUser.avatar;
+                  return (
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 text-white flex items-center justify-center font-bold text-sm overflow-hidden shrink-0 shadow-sm relative">
+                      {pic ? (
+                        <img
+                          src={getAssetUrl(pic)}
+                          alt={matchedUser.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <span className={`w-full h-full flex items-center justify-center font-bold ${pic ? 'hidden' : ''}`}>
+                        {getInitials(matchedUser.name)}
+                      </span>
+                    </div>
+                  );
+                })()}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-bold text-slate-900 truncate leading-snug">{matchedUser.name}</p>
@@ -367,7 +381,9 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
 
           <div className="flex justify-end gap-2 pt-3 border-t border-indigo-100">
             <button onClick={() => setShowAddMember(false)} className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
-            <Button variant="primary" size="sm" onClick={handleAddMember} disabled={loading || !selectedUserOption || selectedRoleOptions.length === 0} loading={loading}>Add Member</Button>
+            <Button variant="primary" size="sm" onClick={handleAddMember} disabled={loading || !selectedUserOption || selectedRoleOptions.length === 0} loading={loading}>
+              {isPersonal ? 'Invite Member' : 'Add Member'}
+            </Button>
           </div>
         </div>
       )}
@@ -517,17 +533,32 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
           <div className="py-16 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
             <div className="text-5xl mb-3 opacity-30">👥</div>
             <p className="text-sm font-semibold text-slate-500">No members yet</p>
-            {canAddMembers && <p className="text-xs text-slate-400 mt-1">Click "Add Member" to invite people to this project.</p>}
+            {canAddMembers && <p className="text-xs text-slate-400 mt-1">Click "{isPersonal ? 'Invite Member' : 'Add Member'}" to invite people to this project.</p>}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {project.members.map((member, i) => {
               const name = member.user?.name || 'Unknown User';
+              const userObj = typeof member.user === 'object' ? member.user : {};
+              const pic = userObj.profilePicture || userObj.profile?.profilePicture || userObj.avatar;
               const roles = member.role ? member.role.split(',').map(r => r.trim()).filter(Boolean) : [];
               return (
                 <div key={member._id || i} className="group bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-4 hover:border-indigo-200 hover:shadow-md transition-all">
-                  <div className={`w-11 h-11 rounded-xl ${getAvatarColor(name)} flex items-center justify-center text-sm font-black text-white shrink-0`}>
-                    {getInitials(name)}
+                  <div className={`w-11 h-11 rounded-xl ${getAvatarColor(name)} flex items-center justify-center text-sm font-black text-white shrink-0 overflow-hidden relative`}>
+                    {pic ? (
+                      <img
+                        src={getAssetUrl(pic)}
+                        alt={name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <span className={`w-full h-full flex items-center justify-center font-bold ${pic ? 'hidden' : ''}`}>
+                      {getInitials(name)}
+                    </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4
