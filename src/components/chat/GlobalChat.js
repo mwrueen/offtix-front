@@ -129,12 +129,40 @@ const GlobalChat = ({ onClose }) => {
                 const projectsList = Array.isArray(projectsRes.data) ? projectsRes.data : [];
                 const employeesList = Array.isArray(employeesRes.data) ? employeesRes.data : [];
 
-                setProjects(projectsList);
-                setEmployees(employeesList.filter(e => {
-                    const currentUserId = currentUser?.id || currentUser?._id;
-                    const employeeId = e.id || e._id;
-                    return employeeId?.toString() !== currentUserId?.toString();
-                }));
+                const currentUserIdStr = (currentUser?.id || currentUser?._id)?.toString();
+
+                // Projects where current user is owner, project manager, or member
+                const myProjects = projectsList.filter(p => {
+                    const ownerId = (p.owner?._id || p.owner?.id || p.owner)?.toString();
+                    const pmId = (p.projectManager?._id || p.projectManager?.id || p.projectManager)?.toString();
+                    const memberIds = (p.members || []).map(m => (m.user?._id || m.user?.id || m.user)?.toString());
+
+                    return ownerId === currentUserIdStr || pmId === currentUserIdStr || memberIds.includes(currentUserIdStr);
+                });
+
+                // Collect all user IDs assigned to those projects
+                const connectedUserIds = new Set();
+                myProjects.forEach(p => {
+                    const ownerId = (p.owner?._id || p.owner?.id || p.owner)?.toString();
+                    if (ownerId) connectedUserIds.add(ownerId);
+
+                    const pmId = (p.projectManager?._id || p.projectManager?.id || p.projectManager)?.toString();
+                    if (pmId) connectedUserIds.add(pmId);
+
+                    (p.members || []).forEach(m => {
+                        const mId = (m.user?._id || m.user?.id || m.user)?.toString();
+                        if (mId) connectedUserIds.add(mId);
+                    });
+                });
+
+                // Filter employees to only include connected users assigned to projects (excluding current user)
+                const connectedEmployees = employeesList.filter(e => {
+                    const employeeId = (e.id || e._id)?.toString();
+                    return employeeId && employeeId !== currentUserIdStr && connectedUserIds.has(employeeId);
+                });
+
+                setProjects(myProjects);
+                setEmployees(connectedEmployees);
             } catch (err) {
                 console.error('Error fetching chat nav data:', err);
             } finally {

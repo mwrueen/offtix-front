@@ -35,7 +35,20 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const [selectedTask, setSelectedTask] = useState(null);
     const [selectedSprint] = useState('');
     const [selectedPhase] = useState('');
-    const [currentView, setCurrentView] = useState('list');
+    const [currentView, setCurrentView] = useState(() => {
+        try {
+            return localStorage.getItem(`project_task_view_${id}`) || 'list';
+        } catch (e) {
+            return 'list';
+        }
+    });
+
+    const handleSetCurrentView = (view) => {
+        setCurrentView(view);
+        try {
+            localStorage.setItem(`project_task_view_${id}`, view);
+        } catch (e) {}
+    };
     const [showInlineCreator, setShowInlineCreator] = useState(false);
     const [showAITasksModal, setShowAITasksModal] = useState(false);
 
@@ -230,12 +243,19 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     };
 
     const handleUpdateTaskStatus = async (taskId, statusId) => {
+        const newStatusObj = taskStatuses.find(s => s._id === statusId) || (statusId ? { _id: statusId } : null);
+        setTasks(prevTasks => prevTasks.map(t => {
+            if (t._id === taskId) {
+                return { ...t, status: newStatusObj };
+            }
+            return t;
+        }));
+
         try {
             await taskAPI.update(id, taskId, { status: statusId });
-            fetchProjectData();
-            if (onProjectRefresh) onProjectRefresh();
         } catch (error) {
             console.error('Failed to update task status', error);
+            fetchProjectData();
         }
     };
 
@@ -396,7 +416,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                     ].map(view => (
                         <button
                             key={view.id}
-                            onClick={() => setCurrentView(view.id)}
+                            onClick={() => handleSetCurrentView(view.id)}
                             className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${currentView === view.id ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'}`}
                         >
                             <span>{view.icon}</span>

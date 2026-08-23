@@ -255,6 +255,11 @@ export const companyAPI = {
   getWorkforce: (id) => api.get(`/companies/${id}/workforce`),
 };
 
+export const invitationAPI = {
+  send: (companyId, invitationData) => api.post(`/invitations/company/${companyId}/invite`, invitationData),
+  getCompanyInvitations: (companyId) => api.get(`/invitations/company/${companyId}`),
+};
+
 export const employeeAPI = {
   // Get all employees for a company
   getAll: (companyId) => api.get(`/companies/${companyId}/employees`),
@@ -363,61 +368,65 @@ export const myTasksAPI = {
   start: (taskId) => api.post(`/my-tasks/${taskId}/start`),
   // Pause task step
   pause: (taskId) => api.post(`/my-tasks/${taskId}/pause`),
-  // Complete task step
-  complete: (taskId, note, message, link, files) => {
+  // Helper to safely construct FormData for task completions/returns
+  buildFormData: (note, message, link, files) => {
     const formData = new FormData();
-    if (note) formData.append('note', note);
-    if (message) formData.append('message', message);
-    if (link) formData.append('link', link);
-    if (files && files.length > 0) {
-      files.forEach(file => formData.append('files', file));
+    if (note !== undefined && note !== null) formData.append('note', note);
+    
+    // Safely append text message
+    if (typeof message === 'string' && message !== '[object File]') {
+      formData.append('message', message);
+    } else if (message instanceof File || message instanceof Blob) {
+      formData.append('files', message);
+    } else if (Array.isArray(message)) {
+      message.forEach(f => { if (f instanceof File || f instanceof Blob) formData.append('files', f); });
     }
+
+    // Safely append link
+    if (typeof link === 'string' && link !== '[object File]') {
+      formData.append('link', link);
+    } else if (link instanceof File || link instanceof Blob) {
+      formData.append('files', link);
+    } else if (Array.isArray(link)) {
+      link.forEach(f => { if (f instanceof File || f instanceof Blob) formData.append('files', f); });
+    }
+
+    // Safely append files array or single file
+    if (files) {
+      if (Array.isArray(files)) {
+        files.forEach(file => { if (file instanceof File || file instanceof Blob) formData.append('files', file); });
+      } else if (files instanceof File || files instanceof Blob) {
+        formData.append('files', files);
+      }
+    }
+    return formData;
+  },
+
+  // Complete task step
+  complete: function(taskId, note, message, link, files) {
+    const formData = this.buildFormData(note, message, link, files);
     return api.post(`/my-tasks/${taskId}/complete`, formData);
   },
   // Send back for fix
-  sendBack: (taskId, note, message, link, files) => {
-    const formData = new FormData();
-    if (note) formData.append('note', note);
-    if (message) formData.append('message', message);
-    if (link) formData.append('link', link);
-    if (files && files.length > 0) {
-      files.forEach(file => formData.append('files', file));
-    }
+  sendBack: function(taskId, note, message, link, files) {
+    const formData = this.buildFormData(note, message, link, files);
     return api.post(`/my-tasks/${taskId}/send-back`, formData);
   },
 
   // Sequential workflow operations
   startSequential: (taskId) => api.post(`/my-tasks/${taskId}/sequential/start`),
   pauseSequential: (taskId) => api.post(`/my-tasks/${taskId}/sequential/pause`),
-  completeSequential: (taskId, note, message, link, files) => {
-    const formData = new FormData();
-    if (note) formData.append('note', note);
-    if (message) formData.append('message', message);
-    if (link) formData.append('link', link);
-    if (files && files.length > 0) {
-      files.forEach(file => formData.append('files', file));
-    }
+  completeSequential: function(taskId, note, message, link, files) {
+    const formData = this.buildFormData(note, message, link, files);
     return api.post(`/my-tasks/${taskId}/sequential/complete`, formData);
   },
-  sendBackSequential: (taskId, note, message, link, files) => {
-    const formData = new FormData();
-    if (note) formData.append('note', note);
-    if (message) formData.append('message', message);
-    if (link) formData.append('link', link);
-    if (files && files.length > 0) {
-      files.forEach(file => formData.append('files', file));
-    }
+  sendBackSequential: function(taskId, note, message, link, files) {
+    const formData = this.buildFormData(note, message, link, files);
     return api.post(`/my-tasks/${taskId}/sequential/send-back`, formData);
   },
   // Edit Activity
-  editActivity: (activityId, note, message, link, files) => {
-    const formData = new FormData();
-    if (note !== undefined) formData.append('note', note);
-    if (message !== undefined) formData.append('message', message);
-    if (link !== undefined) formData.append('link', link);
-    if (files && files.length > 0) {
-      files.forEach(file => formData.append('files', file));
-    }
+  editActivity: function(activityId, note, message, link, files) {
+    const formData = this.buildFormData(note, message, link, files);
     return api.put(`/my-tasks/activity/${activityId}`, formData);
   }
 };

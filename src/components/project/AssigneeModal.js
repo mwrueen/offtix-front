@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { taskAPI } from '../../services/api';
+import { taskAPI, getAssetUrl } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
 const AssigneeModal = ({ task, projectId, users = [], taskRoles = [], onClose, onUpdate }) => {
   const { showToast } = useToast();
   const [roleAssignments, setRoleAssignments] = useState([]); // Array of { roleId, userIds }
-  const [selectedRoleId, setSelectedRoleId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -17,13 +16,8 @@ const AssigneeModal = ({ task, projectId, users = [], taskRoles = [], onClose, o
         userIds: ra.assignees?.map(a => a._id || a) || []
       })) || [];
       setRoleAssignments(initialAssignments);
-
-      if (taskRoles.length > 0 && !selectedRoleId) {
-        setSelectedRoleId(taskRoles[0]._id);
-      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [task, taskRoles]);
+  }, [task]);
 
   const getUserInitials = (user) => {
     if (!user || !user.name) return '?';
@@ -32,60 +26,74 @@ const AssigneeModal = ({ task, projectId, users = [], taskRoles = [], onClose, o
   };
 
   const getUserColor = (userId) => {
-    const colors = ['#0052cc', '#00875a', '#ff8b00', '#6554c0', '#00b8d9', '#ff5630'];
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899'];
     return colors[userId ? userId.charCodeAt(userId.length - 1) % colors.length : 0];
   };
 
-  const currentRole = taskRoles.find(r => r._id === selectedRoleId);
+  const getUserAvatarUrl = (user) => {
+    if (!user) return null;
+    const pic = user.profilePicture || user.profile?.profilePicture || user.avatar;
+    return pic ? getAssetUrl(pic) : null;
+  };
 
-  // Get all available users who aren't assigned to THIS role yet
-  const availableUsers = users.filter(user => {
-    const matchesSearch = (user.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (user.email || '').toLowerCase().includes(searchQuery.toLowerCase());
-
-    if (!selectedRoleId) return matchesSearch;
-
-    // Check if already assigned to THIS role
-    const currentRA = roleAssignments.find(ra => ra.roleId === selectedRoleId);
-    const isAlreadyAssignedToThisRole = currentRA?.userIds.includes(user._id);
-
-    return matchesSearch && !isAlreadyAssignedToThisRole;
+  // Filter available users by search query
+  const filteredUsers = users.filter(user => {
+    return (user.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (user.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (user.projectRole || '').toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  // Split into recommended (have the role name in projectRole) and others
-  const recommendedUsers = availableUsers.filter(user => {
-    if (!currentRole) return false;
-    const userRoles = (user.projectRole || '').split(',').map(r => r.trim());
-    return userRoles.includes(currentRole.name);
-  });
+  // Assign user to their matching project role or first available task role
+  const handleAssignUser = (user, targetRoleId = null) => {
+    let roleIdToUse = targetRoleId;
 
-  const otherUsers = availableUsers.filter(user => {
-    if (!currentRole) return true;
-    const userRoles = (user.projectRole || '').split(',').map(r => r.trim());
-    return !userRoles.includes(currentRole.name);
-  });
+    if (!roleIdToUse) {
+      // Auto-detect role matching user's projectRole
+      const userRoles = (user.projectRole || '').split(',').map(r => r.trim().toLowerCase());
+      const matchingRole = taskRoles.find(r => userRoles.includes(r.name.toLowerCase()));
+      if (matchingRole) {
+        roleIdToUse = matchingRole._id;
+      } else {
+        roleIdToUse = taskRoles[0]?._id;
+      }
+    }
 
-  const handleToggleUser = (userId) => {
-    if (!selectedRoleId) return;
+    if (!roleIdToUse) return;
 
     setRoleAssignments(prev => {
-      const existingIdx = prev.findIndex(ra => ra.roleId === selectedRoleId);
+      const existingIdx = prev.findIndex(ra => ra.roleId === roleIdToUse);
       if (existingIdx > -1) {
         const newRA = [...prev];
         const userIds = [...newRA[existingIdx].userIds];
-        if (userIds.includes(userId)) {
-          newRA[existingIdx].userIds = userIds.filter(id => id !== userId);
-        } else {
-          newRA[existingIdx].userIds.push(userId);
+        if (!userIds.includes(user._id)) {
+          userIds.push(user._id);
         }
-        return newRA.filter(ra => ra.userIds.length > 0);
+        newRA[existingIdx].userIds = userIds;
+        return newRA;
       } else {
-        return [...prev, { roleId: selectedRoleId, userIds: [userId] }];
+        return [...prev, { roleId: roleIdToUse, userIds: [user._id] }];
       }
     });
   };
 
-  const removeAssignment = (roleId, userId) => {
+  // Add an additional role for a user
+  const handleAddUserToRole = (targetRoleId, userId) => {
+    setRoleAssignments(prev => {
+      const existingIdx = prev.findIndex(ra => ra.roleId === targetRoleId);
+      if (existingIdx > -1) {
+        const newRA = [...prev];
+        if (!newRA[existingIdx].userIds.includes(userId)) {
+          newRA[existingIdx].userIds = [...newRA[existingIdx].userIds, userId];
+        }
+        return newRA;
+      } else {
+        return [...prev, { roleId: targetRoleId, userIds: [userId] }];
+      }
+    });
+  };
+
+  // Remove specific role assignment for a user
+  const removeUserRole = (userId, roleId) => {
     setRoleAssignments(prev => prev.map(ra => {
       if (ra.roleId === roleId) {
         return { ...ra, userIds: ra.userIds.filter(id => id !== userId) };
@@ -94,14 +102,46 @@ const AssigneeModal = ({ task, projectId, users = [], taskRoles = [], onClose, o
     }).filter(ra => ra.userIds.length > 0));
   };
 
+  // Remove user completely from all task roles
+  const removeUserCompletely = (userId) => {
+    setRoleAssignments(prev => prev.map(ra => ({
+      ...ra,
+      userIds: ra.userIds.filter(id => id !== userId)
+    })).filter(ra => ra.userIds.length > 0));
+  };
+
+  // Auto-assign all team members based on matching roles
+  const handleAutoAssignAll = () => {
+    const newAssignments = [...roleAssignments];
+    let addedCount = 0;
+
+    users.forEach(user => {
+      const userRoles = (user.projectRole || '').split(',').map(r => r.trim().toLowerCase());
+      taskRoles.forEach(tr => {
+        if (userRoles.includes(tr.name.toLowerCase())) {
+          let ra = newAssignments.find(a => a.roleId === tr._id);
+          if (!ra) {
+            ra = { roleId: tr._id, userIds: [] };
+            newAssignments.push(ra);
+          }
+          if (!ra.userIds.includes(user._id)) {
+            ra.userIds.push(user._id);
+            addedCount++;
+          }
+        }
+      });
+    });
+
+    setRoleAssignments(newAssignments.filter(ra => ra.userIds.length > 0));
+    showToast(`Auto-assigned ${addedCount} role membership(s) based on team project roles`, 'success');
+  };
+
   const handleSave = async () => {
     try {
       setIsSaving(true);
 
-      // Calculate flat assignees list (unique user IDs)
       const flatAssignees = [...new Set(roleAssignments.flatMap(ra => ra.userIds))];
 
-      // Format roleAssignments for backend
       const formattedRA = roleAssignments.map((ra, idx) => ({
         role: ra.roleId,
         assignees: ra.userIds,
@@ -127,154 +167,191 @@ const AssigneeModal = ({ task, projectId, users = [], taskRoles = [], onClose, o
 
   if (!task) return null;
 
+  // Aggregate unique assigned users and their roles for clean single-card user rendering
+  const assignedUserIds = [...new Set(roleAssignments.flatMap(ra => ra.userIds))];
+  const assignedUserList = assignedUserIds.map(uid => {
+    const userObj = users.find(u => u._id === uid);
+    const assignedRoles = roleAssignments
+      .filter(ra => ra.userIds.includes(uid))
+      .map(ra => taskRoles.find(tr => tr._id === ra.roleId))
+      .filter(Boolean);
+
+    return {
+      user: userObj,
+      userId: uid,
+      roles: assignedRoles
+    };
+  }).filter(item => item.user);
+
   return (
-    <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[2000]" onClick={onClose}>
-      <div className="bg-white rounded-xl w-[95%] max-w-[900px] h-[85vh] max-h-[750px] flex flex-col shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[2000] p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl w-full max-w-[960px] h-[82vh] max-h-[720px] flex flex-col shadow-2xl overflow-hidden border border-slate-100" onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white">
+        <div className="p-5 px-6 border-b border-slate-200/80 flex justify-between items-center bg-slate-50/50">
           <div>
-            <h3 className="m-0 text-xl font-bold text-gray-800 tracking-tight">Manage Role Assignments</h3>
-            <p className="mt-1.5 mb-0 text-sm text-gray-600">Assign specific team members to task roles for <strong>{task.title}</strong></p>
+            <h3 className="m-0 text-lg font-bold text-slate-800 tracking-tight">Manage Role Assignments</h3>
+            <p className="mt-0.5 mb-0 text-xs text-slate-500">Assign team members to task roles for <strong className="text-slate-700">{task.title}</strong></p>
           </div>
-          <button onClick={onClose} className="bg-transparent border-0 text-3xl cursor-pointer text-gray-500 p-2 leading-none rounded-full hover:bg-gray-100 transition-colors">×</button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleAutoAssignAll}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-xs font-semibold transition-all shadow-xs hover:shadow-md hover:from-blue-700 hover:to-indigo-700 cursor-pointer"
+              title="Automatically match project team members to task roles"
+            >
+              <span>⚡</span> Auto-Assign Team
+            </button>
+            <button onClick={onClose} className="bg-transparent border-0 text-xl cursor-pointer text-slate-400 hover:text-slate-600 p-1.5 leading-none rounded-lg hover:bg-slate-100 transition-colors">
+              ✕
+            </button>
+          </div>
         </div>
 
-        {/* Triple Column Layout */}
+        {/* Two Column Layout */}
         <div className="flex-1 flex overflow-hidden">
 
-          {/* Column 1: Roles Sidebar */}
-          <div className="w-[220px] border-r border-gray-200 bg-gray-50 flex flex-col">
-            <div className="px-5 py-4 text-xs font-bold text-gray-500 uppercase">Select Role</div>
-            <div className="flex-1 overflow-y-auto">
-              {taskRoles.map(role => (
-                <div
-                  key={role._id}
-                  onClick={() => setSelectedRoleId(role._id)}
-                  className={`p-3 px-5 cursor-pointer flex items-center gap-2.5 transition-all duration-200 ${
-                    selectedRoleId === role._id 
-                      ? 'bg-blue-50 border-l-4 border-l-blue-600' 
-                      : 'bg-transparent border-l-4 border-l-transparent hover:bg-gray-50'
-                  }`}
-                >
-                  <span className={`text-sm ${
-                    selectedRoleId === role._id 
-                      ? 'font-semibold text-blue-600' 
-                      : 'font-normal text-gray-700'
-                  }`}>{role.name}</span>
-                  {roleAssignments.find(ra => ra.roleId === role._id)?.userIds.length > 0 && (
-                    <span className="bg-blue-600 text-white rounded-full px-1.5 py-0.5 text-xs">
-                      {roleAssignments.find(ra => ra.roleId === role._id).userIds.length}
-                    </span>
-                  )}
-                </div>
-              ))}
+          {/* Column 1: Team Members */}
+          <div className="w-[360px] shrink-0 flex flex-col border-r border-slate-200/80 bg-slate-50/40">
+            <div className="p-4 px-5 border-b border-slate-200/80 bg-white">
+              <div className="mb-2.5 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Project Team</span>
+                <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">{users.length} Members</span>
+              </div>
+              <div className="relative">
+                <svg className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text" 
+                  placeholder="Search members by name or role..." 
+                  value={searchQuery} 
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full py-2 pl-9 pr-3 rounded-xl border border-slate-200 text-xs outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 transition-all placeholder:text-slate-400 bg-white"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Column 2: Available Members */}
-          <div className="flex-[1.2] flex flex-col border-r border-gray-200">
-            <div className="px-5 py-4 border-b border-gray-200">
-              <div className="mb-3 text-base font-semibold text-gray-800">Users with "{currentRole?.name}" Role</div>
-              <input
-                type="text" 
-                placeholder="Filter team members..." 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full py-2.5 px-3.5 rounded-md border-2 border-gray-200 text-sm outline-none transition-colors focus:border-blue-600"
-              />
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              {recommendedUsers.length > 0 && (
-                <>
-                  <div className="text-xs font-bold text-blue-600 mb-2 uppercase tracking-wider">Recommended Members</div>
-                  {recommendedUsers.map(user => (
-                    <div key={user._id} onClick={() => handleToggleUser(user._id)} className="flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors mb-1 border border-transparent hover:bg-gray-50">
-                      {user.profile?.profilePicture ? (
-                        <img src={user.profile.profilePicture} alt="" className="w-9 h-9 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-9 h-9 rounded-full text-white flex items-center justify-center text-sm font-semibold" style={{ backgroundColor: getUserColor(user._id) }}>{getUserInitials(user)}</div>
-                      )}
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-gray-800">{user.name}</div>
-                        <div className="text-xs text-gray-500">{user.projectRole || 'Team Member'}</div>
-                      </div>
-                      <div className="text-blue-600 font-bold text-lg">+</div>
-                    </div>
-                  ))}
-                  <div className="h-4" />
-                </>
-              )}
-
-              {otherUsers.length > 0 && (
-                <>
-                  <div className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">{recommendedUsers.length > 0 ? 'Other Team Members' : 'Available Members'}</div>
-                  {otherUsers.map(user => (
-                    <div key={user._id} onClick={() => handleToggleUser(user._id)} className="flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors mb-1 hover:bg-gray-50">
-                      {user.profile?.profilePicture ? (
-                        <img src={user.profile.profilePicture} alt="" className="w-9 h-9 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-9 h-9 rounded-full text-white flex items-center justify-center text-sm font-semibold" style={{ backgroundColor: getUserColor(user._id) }}>{getUserInitials(user)}</div>
-                      )}
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-gray-800">{user.name}</div>
-                        <div className="text-xs text-gray-500">{user.projectRole || 'Team Member'}</div>
-                      </div>
-                      <div className="text-blue-600 font-bold text-lg">+</div>
-                    </div>
-                  ))}
-                </>
-              )}
-
-              {availableUsers.length === 0 && (
-                <div className="text-center py-10 px-5 text-gray-500 text-sm">
-                  {searchQuery ? 'No matching users found' : 'All members have been assigned to this role.'}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Column 3: Current Assignments */}
-          <div className="flex-1 bg-gray-50 flex flex-col">
-            <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center">
-              <span className="text-xs font-bold text-gray-500 uppercase">All Assignments</span>
-              <span className="text-xs text-gray-600 bg-white py-0.5 px-2 rounded-full border border-gray-200">
-                {roleAssignments.reduce((acc, curr) => acc + curr.userIds.length, 0)} Total
-              </span>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              {roleAssignments.length > 0 ? (
-                roleAssignments.map(ra => {
-                  const roleObj = taskRoles.find(r => r._id === ra.roleId);
+            <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map(user => {
                   return (
-                    <div key={ra.roleId} className="mb-5">
-                      <div className="text-xs font-bold text-gray-500 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: roleObj?.color || '#0052cc' }}></span>
-                        {roleObj?.name}
-                      </div>
-                      {ra.userIds.map(uid => {
-                        const userObj = users.find(u => u._id === uid);
-                        const profilePicture = userObj?.profile?.profilePicture;
-                        return (
-                          <div key={uid} className="flex items-center gap-2.5 p-2 px-3 bg-white rounded-md border border-gray-200 mb-1.5 shadow-sm">
-                            {profilePicture ? (
-                              <img src={profilePicture} alt="" className="w-6 h-6 rounded-full object-cover" />
-                            ) : (
-                              <div className="w-6 h-6 rounded-full text-white flex items-center justify-center text-xs font-semibold" style={{ backgroundColor: getUserColor(uid) }}>{getUserInitials(userObj)}</div>
-                            )}
-                            <span className="text-sm flex-1 font-medium text-gray-800">{userObj?.name}</span>
-                            <button onClick={() => removeAssignment(ra.roleId, uid)} className="bg-transparent border-0 text-red-600 cursor-pointer text-base font-bold p-1 hover:bg-red-50 rounded">×</button>
+                    <div key={user._id} className="p-3 rounded-xl border border-slate-200/70 bg-white hover:border-indigo-300 hover:shadow-xs transition-all flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {getUserAvatarUrl(user) ? (
+                          <img src={getUserAvatarUrl(user)} alt="" className="w-9 h-9 rounded-full object-cover shrink-0 ring-1 ring-slate-200" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-2xs" style={{ backgroundColor: getUserColor(user._id) }}>
+                            {getUserInitials(user)}
                           </div>
-                        );
-                      })}
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-semibold text-slate-800 truncate" title={user.name}>{user.name}</div>
+                          <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-medium border border-slate-200/60">
+                            {user.projectRole || 'Team Member'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Single clean + Add button */}
+                      <button
+                        onClick={() => handleAssignUser(user)}
+                        className="px-3.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white text-xs font-semibold transition-all border border-indigo-100/80 cursor-pointer shadow-2xs shrink-0"
+                        title={`Assign as ${user.projectRole || 'default role'}`}
+                      >
+                        + Add
+                      </button>
                     </div>
                   );
                 })
               ) : (
-                <div className="text-center py-15 px-5 text-gray-500">
-                  <div className="text-[32px] mb-3">�</div>
-                  <div className="text-sm">No members assigned yet.</div>
-                  <div className="text-xs mt-1">Pick a role and add members from the lists.</div>
+                <div className="text-center py-12 text-slate-400 text-xs">
+                  {searchQuery ? 'No matching team members found' : 'No team members available.'}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Column 2: Assignees */}
+          <div className="flex-1 bg-white flex flex-col min-w-0">
+            <div className="p-4 px-5 border-b border-slate-200/80 flex justify-between items-center bg-white">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Assignees</span>
+              <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-full">
+                {assignedUserList.length} Total
+              </span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5 space-y-3">
+              {assignedUserList.length > 0 ? (
+                assignedUserList.map(({ user, userId, roles }) => (
+                  <div key={userId} className="p-3.5 bg-slate-50/60 rounded-xl border border-slate-200/80 shadow-2xs hover:border-slate-300 transition-all flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      {getUserAvatarUrl(user) ? (
+                        <img src={getUserAvatarUrl(user)} alt="" className="w-9 h-9 rounded-full object-cover shrink-0 ring-1 ring-slate-200 mt-0.5" />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-2xs mt-0.5" style={{ backgroundColor: getUserColor(userId) }}>
+                          {getUserInitials(user)}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-slate-800 truncate" title={user.name}>{user.name}</div>
+                        
+                        {/* Assigned Roles List under Name */}
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                          {roles.map(role => (
+                            <span key={role._id} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white text-slate-700 text-[11px] font-medium border border-slate-200/90 shadow-2xs">
+                              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: role.color || '#3b82f6' }}></span>
+                              <span>{role.name}</span>
+                              <button
+                                onClick={() => removeUserRole(userId, role._id)}
+                                className="hover:text-rose-600 text-slate-400 p-0.5 text-xs border-0 bg-transparent cursor-pointer font-bold leading-none ml-0.5"
+                                title={`Remove ${role.name} role`}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+
+                          {/* Add Another Role Selector Dropdown */}
+                          {taskRoles.filter(tr => !roles.some(r => r._id === tr._id)).length > 0 && (
+                            <select
+                              value=""
+                              onChange={(e) => {
+                                if (e.target.value) handleAddUserToRole(e.target.value, userId);
+                              }}
+                              className="text-[11px] font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 rounded-lg px-2.5 py-1 outline-none cursor-pointer transition-colors"
+                              title="Add another task role"
+                            >
+                              <option value="" disabled>+ Role</option>
+                              {taskRoles
+                                .filter(tr => !roles.some(r => r._id === tr._id))
+                                .map(tr => (
+                                  <option key={tr._id} value={tr._id}>+ {tr.name}</option>
+                                ))}
+                            </select>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Remove user completely from all task roles */}
+                    <button
+                      onClick={() => removeUserCompletely(userId)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer border-0 bg-transparent shrink-0"
+                      title="Remove all assignments for this user"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-16 px-4 text-slate-400">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3 text-xl">
+                    👤
+                  </div>
+                  <div className="text-xs font-semibold text-slate-600">No assignees added yet.</div>
+                  <div className="text-[11px] text-slate-400 mt-1">Click + Add on team members to assign them.</div>
                 </div>
               )}
             </div>
@@ -283,9 +360,11 @@ const AssigneeModal = ({ task, projectId, users = [], taskRoles = [], onClose, o
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-5 border-t border-gray-200 flex justify-end gap-3 bg-white">
-          <button onClick={onClose} disabled={isSaving} className="py-2.5 px-5 bg-white border border-gray-200 rounded-md text-sm font-semibold cursor-pointer text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button onClick={handleSave} disabled={isSaving} className="py-2.5 px-7 bg-blue-600 border-0 rounded-md text-sm font-semibold cursor-pointer text-white shadow-lg hover:bg-blue-700">
+        <div className="p-4 px-6 border-t border-slate-200/80 flex justify-end gap-3 bg-slate-50/50">
+          <button onClick={onClose} disabled={isSaving} className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={isSaving} className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-0 rounded-xl text-xs font-semibold text-white shadow-sm hover:shadow-md transition-all cursor-pointer">
             {isSaving ? 'Updating...' : 'Save Assignments'}
           </button>
         </div>

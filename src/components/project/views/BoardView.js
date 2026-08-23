@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { getAssetUrl } from '../../../services/api';
 
 const BoardView = ({ tasks, taskStatuses, onEditTask, onDeleteTask, onAddSubtask, onUpdateTaskStatus, teamActivity = [] }) => {
   const [activeTask, setActiveTask] = useState(null);
@@ -155,11 +156,14 @@ const TaskCard = ({ task, onEdit, isDragging }) => {
           <span className="text-[10px] font-medium text-slate-500">{task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date'}</span>
         </div>
         <div className="flex -space-x-1.5">
-          {task.assignees?.slice(0, 3).map((a, i) => (
-            <div key={i} className="w-6 h-6 rounded-md border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-700 shrink-0 shadow-sm overflow-hidden" title={a.name}>
-              {a.avatar ? <img src={a.avatar} alt="" className="w-full h-full object-cover" /> : a.name?.charAt(0)}
-            </div>
-          ))}
+          {task.assignees?.slice(0, 3).map((a, i) => {
+            const pic = a.avatar || a.profilePicture || a.profile?.profilePicture;
+            return (
+              <div key={i} className="w-6 h-6 rounded-md border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-700 shrink-0 shadow-sm overflow-hidden" title={a.name}>
+                {pic ? <img src={getAssetUrl(pic)} alt="" className="w-full h-full object-cover" /> : a.name?.charAt(0)}
+              </div>
+            );
+          })}
           {task.assignees?.length > 3 && <div className="w-6 h-6 rounded-md border-2 border-white bg-slate-900 text-white flex items-center justify-center text-[8px] font-bold shrink-0">+{task.assignees.length - 3}</div>}
         </div>
       </div>

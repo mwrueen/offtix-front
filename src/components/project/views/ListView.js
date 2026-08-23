@@ -3,6 +3,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useCompany } from '../../../context/CompanyContext';
+import { getAssetUrl } from '../../../services/api';
 
 /**
  * DurationInput — uses a key derived from the pre-existing value so React remounts
@@ -105,11 +106,14 @@ const TaskRowContent = ({ task, level, hasChildren, isExpanded, onToggleExpand, 
         className="flex -space-x-2 overflow-hidden items-center cursor-pointer"
         title="Manage members"
       >
-        {task.assignees?.slice(0, 3).map((a, i) => (
-          <div key={i} className="w-7 h-7 rounded-lg border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-700 shrink-0 shadow-sm overflow-hidden" title={a.name}>
-            {a.avatar ? <img src={a.avatar} alt="" className="w-full h-full object-cover" /> : a.name?.charAt(0)}
-          </div>
-        ))}
+        {task.assignees?.slice(0, 3).map((a, i) => {
+          const pic = a.avatar || a.profilePicture || a.profile?.profilePicture;
+          return (
+            <div key={i} className="w-7 h-7 rounded-lg border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-700 shrink-0 shadow-sm overflow-hidden" title={a.name}>
+              {pic ? <img src={getAssetUrl(pic)} alt="" className="w-full h-full object-cover" /> : a.name?.charAt(0)}
+            </div>
+          );
+        })}
         {(task.assignees?.length > 3) && <div className="w-7 h-7 rounded-lg border-2 border-white bg-slate-800 text-white flex items-center justify-center text-[8px] font-bold shrink-0">+{task.assignees.length - 3}</div>}
         {!task.assignees?.length && (
           <button

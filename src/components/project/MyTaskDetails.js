@@ -630,7 +630,7 @@ const MyTaskDetails = () => {
                               {completionActivity.note && (
                                 <div className="text-xs text-slate-600 prose max-w-none mb-3" dangerouslySetInnerHTML={{ __html: completionActivity.note }} />
                               )}
-                              {completionActivity.message && (
+                              {completionActivity.message && completionActivity.message !== '[object File]' && (
                                 <div className="text-xs text-slate-600 italic bg-white p-2 rounded border border-slate-100 mb-3">"{completionActivity.message}"</div>
                               )}
                               <div className="flex flex-wrap gap-2">
@@ -709,7 +709,7 @@ const MyTaskDetails = () => {
                           <div className="text-slate-600 text-sm font-medium leading-relaxed prose max-w-none" dangerouslySetInnerHTML={{ __html: item.note }} />
                         </div>
                       )}
-                      {item.message && <p className="p-4 bg-indigo-50 border-l-4 border-indigo-400 rounded-r-lg mb-4 text-sm text-indigo-900">"{item.message}"</p>}
+                      {item.message && item.message !== '[object File]' && <p className="p-4 bg-indigo-50 border-l-4 border-indigo-400 rounded-r-lg mb-4 text-sm text-indigo-900">"{item.message}"</p>}
                       <div className="flex flex-wrap gap-3">
                         {item.metadata?.link && <a href={item.metadata.link} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-slate-100 rounded-lg text-xs font-medium text-indigo-700 hover:bg-indigo-100 transition-colors">View Reference ↗</a>}
                         {item.documents?.map((doc, dIdx) => (

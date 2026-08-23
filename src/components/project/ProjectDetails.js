@@ -38,11 +38,11 @@ const ProjectDetails = () => {
   const [phases, setPhases] = useState([]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchProjectData(); }, [id]);
+  useEffect(() => { fetchProjectData(true); }, [id]);
 
-  const fetchProjectData = async () => {
+  const fetchProjectData = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading || !project) setLoading(true);
       const projectRes = await projectAPI.getById(id);
       let usersRes;
       if (projectRes.data.company) usersRes = await userAPI.getCompanyEmployees(projectRes.data.company._id || projectRes.data.company);
@@ -53,7 +53,7 @@ const ProjectDetails = () => {
       await fetchTabData(searchParams.get('tab') || 'tasks');
     } catch (error) {
       console.error('Project Data Fetch Error', error);
-      setError({ type: 'error', message: 'Failed to load project information.' });
+      if (!project) setError({ type: 'error', message: 'Failed to load project information.' });
     } finally { setLoading(false); }
   };
 

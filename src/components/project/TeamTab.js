@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
-import { projectAPI, companyAPI, taskRoleAPI, userAPI, getAssetUrl } from '../../services/api';
+import { projectAPI, companyAPI, taskRoleAPI, userAPI, invitationAPI, getAssetUrl } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 import { useToast } from '../../context/ToastContext';
@@ -27,11 +27,14 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
   const [pmLoading, setPmLoading] = useState(false);
   const [confirmUnassignPM, setConfirmUnassignPM] = useState(false);
 
-  // Email search states for Personal Account
+  // Email search states for Personal Account & Fallback Invite
   const [emailSearch, setEmailSearch] = useState('');
   const [searchingUser, setSearchingUser] = useState(false);
   const [matchedUser, setMatchedUser] = useState(null);
   const [emailLookupMsg, setEmailLookupMsg] = useState('');
+  const [selectInputValue, setSelectInputValue] = useState('');
+  const [customInviteEmail, setCustomInviteEmail] = useState('');
+  const [isCustomEmailInvite, setIsCustomEmailInvite] = useState(false);
 
   const isPersonal = !project?.company || project?.company === 'personal' || (typeof project?.company === 'object' && project?.company?.id === 'personal');
 
@@ -170,15 +173,35 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
     setLoading(true);
     try {
       const combinedRoles = selectedRoleOptions.map(opt => opt.value).join(', ');
-      await projectAPI.addTeamMember(projectId, selectedUserOption.value, combinedRoles);
+
+      if (selectedUserOption.isEmailInvite || isCustomEmailInvite) {
+        const inviteEmail = customInviteEmail || selectedUserOption.value;
+        const companyId = typeof project?.company === 'object' ? (project.company._id || project.company.id) : project?.company;
+
+        if (companyId && companyId !== 'personal') {
+          await invitationAPI.send(companyId, {
+            email: inviteEmail,
+            designation: selectedRoleOptions[0]?.value || 'Team Member'
+          });
+        }
+        showToast(`Invitation sent to ${inviteEmail} successfully!`, 'success');
+      } else {
+        await projectAPI.addTeamMember(projectId, selectedUserOption.value, combinedRoles);
+        showToast(isPersonal ? 'Member invited to project successfully' : 'Team member added successfully', 'success');
+      }
+
       setSelectedUserOption(null);
       setSelectedRoleOptions([]);
       setMatchedUser(null);
       setEmailSearch('');
+      setCustomInviteEmail('');
+      setIsCustomEmailInvite(false);
       setShowAddMember(false);
-      showToast(isPersonal ? 'Member invited to project successfully' : 'Team member added successfully', 'success');
       onRefresh();
-    } catch (e) { showToast(isPersonal ? 'Failed to invite member' : 'Failed to add team member', 'error'); }
+    } catch (e) {
+      const msg = e.response?.data?.error || e.message;
+      showToast(msg || (isPersonal ? 'Failed to invite member' : 'Failed to add team member'), 'error');
+    }
     finally { setLoading(false); }
   };
 
@@ -205,6 +228,42 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
     } catch (e) { showToast('Failed to delete role', 'error'); }
     finally { setLoading(false); }
   };
+
+  const CustomNoOptionsMessage = useCallback((props) => {
+    const typedValue = selectInputValue.trim();
+
+    return (
+      <div className="p-3 text-center space-y-2.5">
+        <p className="text-xs font-semibold text-slate-500">
+          {typedValue ? `No registered user found for "${typedValue}"` : 'No available users found'}
+        </p>
+
+        {typedValue && (
+          <button
+            type="button"
+            onClick={() => {
+              setCustomInviteEmail(typedValue);
+              setIsCustomEmailInvite(true);
+              setSelectedUserOption({ value: typedValue, label: `Invite ${typedValue} (by Email)`, isEmailInvite: true });
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition-all w-full justify-center border border-indigo-200"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+            Invite "{typedValue}" by Email
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() => navigate('/recruitment')}
+          className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all w-full justify-center border border-slate-200"
+        >
+          <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+          Go to Recruitment Page
+        </button>
+      </div>
+    );
+  }, [selectInputValue, navigate]);
 
   const selectStyles = {
     control: (base) => ({
@@ -237,6 +296,16 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
           <p className="text-sm text-slate-500 mt-0.5">{totalCount} member{totalCount !== 1 ? 's' : ''} · {projectRoles.length} custom role{projectRoles.length !== 1 ? 's' : ''}</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/recruitment')}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-700 hover:border-indigo-300 hover:text-indigo-600 transition-all shadow-xs"
+          >
+            <svg className="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Recruitment
+          </button>
+
           {canManageRoles && (
             <button
               onClick={() => { setShowAddRole(v => !v); setShowAddMember(false); }}
@@ -248,7 +317,7 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
           )}
           {canAddMembers && (
             <button
-              onClick={() => { setShowAddMember(v => !v); setShowAddRole(false); setEmailSearch(''); setMatchedUser(null); setSelectedUserOption(null); }}
+              onClick={() => { setShowAddMember(v => !v); setShowAddRole(false); setEmailSearch(''); setMatchedUser(null); setSelectedUserOption(null); setSelectInputValue(''); setIsCustomEmailInvite(false); setCustomInviteEmail(''); }}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all ${showAddMember ? 'bg-indigo-600 text-white border-transparent' : 'bg-indigo-600 text-white border-transparent hover:bg-indigo-700'}`}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
@@ -327,11 +396,42 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
                     )}
                   </div>
                   {emailLookupMsg && !matchedUser && (
-                    <p className="text-xs font-semibold text-slate-500 mt-1.5 leading-snug">{emailLookupMsg}</p>
+                    <div className="space-y-2 mt-2">
+                      <p className="text-xs font-semibold text-slate-500 leading-snug">{emailLookupMsg}</p>
+                      {emailSearch.includes('@') && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCustomInviteEmail(emailSearch);
+                            setIsCustomEmailInvite(true);
+                            setSelectedUserOption({ value: emailSearch, label: `Invite ${emailSearch} (by Email)`, isEmailInvite: true });
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-800 rounded-lg text-xs font-bold transition-all border border-indigo-300"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                          Invite "{emailSearch}" to Project
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               ) : (
-                <Select options={userOptions} value={selectedUserOption} onChange={setSelectedUserOption} styles={selectStyles} placeholder="Search by name or email..." isClearable />
+                <Select
+                  options={userOptions}
+                  value={selectedUserOption}
+                  onChange={(opt) => {
+                    setSelectedUserOption(opt);
+                    if (!opt?.isEmailInvite) {
+                      setIsCustomEmailInvite(false);
+                      setCustomInviteEmail('');
+                    }
+                  }}
+                  onInputChange={(val) => setSelectInputValue(val)}
+                  components={{ NoOptionsMessage: CustomNoOptionsMessage }}
+                  styles={selectStyles}
+                  placeholder="Search by name or email..."
+                  isClearable
+                />
               )}
             </div>
 
@@ -340,6 +440,28 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
               <Select isMulti options={roleOptions} value={selectedRoleOptions} onChange={setSelectedRoleOptions} styles={selectStyles} placeholder="Select one or more roles..." />
             </div>
           </div>
+
+          {/* Email Invite Selection Preview */}
+          {selectedUserOption?.isEmailInvite && (
+            <div className="p-3.5 bg-indigo-50 border border-indigo-200 rounded-xl flex items-center justify-between shadow-xs animate-in fade-in duration-200">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+                  ✉️
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-indigo-900 leading-snug">Invite by Email</p>
+                  <p className="text-xs text-indigo-700 font-medium">{selectedUserOption.value}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setSelectedUserOption(null); setIsCustomEmailInvite(false); setCustomInviteEmail(''); }}
+                className="text-xs font-bold text-slate-400 hover:text-slate-600"
+              >
+                Clear
+              </button>
+            </div>
+          )}
 
           {/* Matched User Preview Card for Personal Account */}
           {isPersonal && matchedUser && (
@@ -378,6 +500,7 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
               </div>
             </div>
           )}
+
 
           <div className="flex justify-end gap-2 pt-3 border-t border-indigo-100">
             <button onClick={() => setShowAddMember(false)} className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
