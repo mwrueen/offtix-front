@@ -6,7 +6,9 @@ import { ProjectProvider } from './context/ProjectContext';
 import { CompanyProvider } from './context/CompanyContext';
 import { ToastProvider } from './context/ToastContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import Layout from './components/layout/Layout';
 import SignIn from './components/auth/SignIn';
+
 import SignUp from './components/auth/SignUp';
 import AuthCallback from './components/auth/AuthCallback';
 import Dashboard from './components/dashboard/Dashboard';
@@ -52,14 +54,46 @@ import EditCircular from './components/recruitment/EditCircular';
 import JobOfferAccept from './components/recruitment/JobOfferAccept';
 import CurrencyList from './components/currency/CurrencyList';
 import PrivacyPolicy from './components/legal/PrivacyPolicy';
+
 import TermsOfService from './components/legal/TermsOfService';
 import PublicCompanyDetails from './components/company/PublicCompanyDetails';
+
+import PricingPage from './components/subscription/PricingPage';
+
+import SuperAdminSubscribersList from './components/admin/SuperAdminSubscribersList';
+import SuperAdminSubscriptionSettings from './components/admin/SuperAdminSubscriptionSettings';
+import UpgradeModal from './components/subscription/UpgradeModal';
+
+
+
+
+
+function GlobalUpgradeModalPortal() {
+  const [modalData, setModalData] = React.useState({ isOpen: false, featureKey: 'ai' });
+
+  React.useEffect(() => {
+    const handleOpen = (e) => {
+      setModalData({ isOpen: true, featureKey: e.detail?.featureKey || 'ai' });
+    };
+    window.addEventListener('open-upgrade-modal', handleOpen);
+    return () => window.removeEventListener('open-upgrade-modal', handleOpen);
+  }, []);
+
+  return (
+    <UpgradeModal
+      isOpen={modalData.isOpen}
+      featureKey={modalData.featureKey}
+      onClose={() => setModalData({ ...modalData, isOpen: false })}
+    />
+  );
+}
 
 function GlobalChatPortal() {
   const { isGlobalChatOpen, closeGlobalChat } = useChat();
   if (!isGlobalChatOpen) return null;
   return <GlobalChat onClose={closeGlobalChat} />;
 }
+
 
 function App() {
   return (
@@ -261,9 +295,36 @@ function App() {
                             <JobOfferAccept />
                           </ProtectedRoute>
                         } />
+                        <Route path="/pricing" element={<PricingPage />} />
+                        <Route path="/admin/subscribers" element={
+                          <ProtectedRoute>
+                            <Layout>
+                              <SuperAdminSubscribersList />
+                            </Layout>
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/admin/subscription" element={
+                          <ProtectedRoute>
+                            <Layout>
+                              <SuperAdminSubscriptionSettings />
+                            </Layout>
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/admin/subscription-settings" element={
+                          <ProtectedRoute>
+                            <Layout>
+                              <SuperAdminSubscriptionSettings />
+                            </Layout>
+                          </ProtectedRoute>
+                        } />
+
+
                       </Routes>
+
                       <GlobalChatPortal />
+                      <GlobalUpgradeModalPortal />
                     </SocketProvider>
+
                   </Router>
                 </ProjectProvider>
               </PermissionsProvider>

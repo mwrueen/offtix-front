@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
 import { generateProjectTasks } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { useCompany } from '../../context/CompanyContext';
 
 const GenerateAITasksModal = ({ isOpen, onClose, onGenerate, projectTitle, projectDescription, modalTitle = "Generate Tasks with AI", modalSubtitle = "Auto-generate essential tasks based on project details" }) => {
+    const { state: authState } = useAuth();
+    const { state: companyState } = useCompany();
+
+    const isPremiumUser = authState?.user?.role === 'superadmin' ||
+                          authState?.user?.subscription?.plan === 'premium' ||
+                          companyState?.selectedCompany?.subscription?.plan === 'premium';
+
     const [loading, setLoading] = useState(false);
     const [generatedTasks, setGeneratedTasks] = useState([]);
     const [submitting, setSubmitting] = useState(false);
@@ -9,6 +18,12 @@ const GenerateAITasksModal = ({ isOpen, onClose, onGenerate, projectTitle, proje
     if (!isOpen) return null;
 
     const handleGenerate = async (isAppending = false) => {
+        if (!isPremiumUser) {
+            onClose();
+            window.dispatchEvent(new CustomEvent('open-upgrade-modal', { detail: { featureKey: 'ai' } }));
+            return;
+        }
+
         setLoading(true);
         if (!isAppending) setGeneratedTasks([]);
         
@@ -23,11 +38,15 @@ const GenerateAITasksModal = ({ isOpen, onClose, onGenerate, projectTitle, proje
             }
         } catch (error) {
             console.error('Failed to generate tasks:', error);
-            alert('Failed to generate tasks using AI. Please try again.');
+            if (error.response?.status === 403 || error.response?.data?.error === 'PREMIUM_FEATURE_RESTRICTED') {
+                onClose();
+                window.dispatchEvent(new CustomEvent('open-upgrade-modal', { detail: { featureKey: 'ai' } }));
+            }
         } finally {
             setLoading(false);
         }
     };
+
 
     const handleSubmitAll = async () => {
         setSubmitting(true);

@@ -2,10 +2,20 @@ import React, { useState, useRef } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { getAssetUrl, generateProjectDescription } from '../../services/api';
-
+import { useAuth } from '../../context/AuthContext';
+import { useCompany } from '../../context/CompanyContext';
+import { useToast } from '../../context/ToastContext';
 
 const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
+  const { state: authState } = useAuth();
+  const { state: companyState } = useCompany();
+  const toast = useToast();
   const quillRef = useRef(null);
+
+  const isPremiumUser = authState?.user?.role === 'superadmin' ||
+                        authState?.user?.subscription?.plan === 'premium' ||
+                        companyState?.selectedCompany?.subscription?.plan === 'premium';
+
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     description: initialData?.description || '',
@@ -18,8 +28,13 @@ const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerateDescription = async () => {
+    if (!isPremiumUser) {
+      window.dispatchEvent(new CustomEvent('open-upgrade-modal', { detail: { featureKey: 'ai' } }));
+      return;
+    }
+
     if (!formData.title) {
-      alert("Please enter a project title first to generate a description.");
+      toast?.showToast?.("Please enter a project title first to generate a description.", "error");
       return;
     }
     
@@ -30,13 +45,19 @@ const ProjectForm = ({ onSubmit, initialData = null, onCancel }) => {
         ...prev,
         description: response.data.description
       }));
+      toast?.showToast?.("Project description generated with AI!", "success");
     } catch (error) {
       console.error('Error generating description:', error);
-      alert('Failed to generate description. Please try again.');
+      if (error.response?.status === 403 || error.response?.data?.error === 'PREMIUM_FEATURE_RESTRICTED') {
+        window.dispatchEvent(new CustomEvent('open-upgrade-modal', { detail: { featureKey: 'ai' } }));
+      } else {
+        toast?.showToast?.('Failed to generate description. Please try again.', 'error');
+      }
     } finally {
       setIsGenerating(false);
     }
   };
+
 
   const handleLogoChange = (e) => {
     const file = e.target.files[0];

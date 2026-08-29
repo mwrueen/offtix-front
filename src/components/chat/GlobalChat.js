@@ -16,6 +16,18 @@ const formatUserRole = (role) => {
     return role.charAt(0).toUpperCase() + role.slice(1);
 };
 
+const formatProjectStatus = (status) => {
+    if (!status) return 'Active';
+    const s = status.toString().toLowerCase().trim();
+    if (s === 'not_started') return 'Not Started';
+    if (s === 'in_progress') return 'In Progress';
+    if (s === 'completed') return 'Completed';
+    if (s === 'on_hold') return 'On Hold';
+    if (s === 'cancelled' || s === 'canceled') return 'Cancelled';
+    return s.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+};
+
+
 const GlobalChat = ({ onClose }) => {
     const { state: authState } = useAuth();
     const { state: companyState } = useCompany();
@@ -345,7 +357,8 @@ const GlobalChat = ({ onClose }) => {
         const isSelected = selectedChat?.id?.toString().trim().toLowerCase() === itemId;
         const displayName = item.name || item.title;
         const avatarUrl = getAvatarUrl(item.profile?.profilePicture);
-        const roleLabel = type === 'direct' ? formatUserRole(item.role) : (item.status ? `Status: ${item.status}` : 'Team Workspace');
+        const roleLabel = type === 'direct' ? formatUserRole(item.role) : (item.status ? `Status: ${formatProjectStatus(item.status)}` : 'Team Workspace');
+
 
         // Find unread count for this item with robust ID lookup
         const counts = type === 'projects' || type === 'project' ? (unreadCounts.projects || {}) : (unreadCounts.direct || {});

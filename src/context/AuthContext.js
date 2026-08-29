@@ -85,16 +85,36 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const refreshUser = async () => {
+    const { token } = getAuthCookies();
+    const activeToken = token || state.token;
+    if (!activeToken) return;
+    try {
+      const response = await fetch('/api/users/profile', {
+        headers: { 'Authorization': `Bearer ${activeToken}` }
+      });
+      if (response.ok) {
+        const userData = await response.json();
+        dispatch({ type: 'UPDATE_USER', payload: userData });
+        setAuthCookies(activeToken, userData);
+        return userData;
+      }
+    } catch (error) {
+      console.error('Error refreshing user profile:', error);
+    }
+  };
+
   const logout = () => {
     dispatch({ type: 'LOGOUT' });
   };
 
   return (
-    <AuthContext.Provider value={{ state, dispatch, logout }}>
+    <AuthContext.Provider value={{ state, dispatch, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

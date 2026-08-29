@@ -99,7 +99,6 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
         if (isDurationEntryMode && durationContext.roleId && durationContext.userId) {
             taskAPI.getBulkUserDurations(id, durationContext.userId, durationContext.roleId)
                 .then(res => {
-                    console.log(`Durations for user ${durationContext.userId}:`, res.data);
                     setExistingDurations(res.data || {});
                     setPendingDurations({});
                 })
@@ -559,7 +558,6 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                                     if (newRoleId && newUserId) {
                                         taskAPI.getBulkUserDurations(id, newUserId, newRoleId)
                                             .then(res => {
-                                                console.log('Fetched durations:', res.data);
                                                 setPendingDurations({});
                                                 setExistingDurations(res.data || {});
                                             })
@@ -587,7 +585,6 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                                         if (newUserId && durationContext.roleId) {
                                             taskAPI.getBulkUserDurations(id, newUserId, durationContext.roleId)
                                                 .then(res => {
-                                                    console.log('Fetched durations:', res.data);
                                                     setPendingDurations({});
                                                     setExistingDurations(res.data || {});
                                                 })

@@ -11,11 +11,16 @@ const BASE_SERVER_URL = API_BASE_URL.replace('/api', '');
  * @param {string} path File path (e.g. '/uploads/requirement-files/req-123.txt')
  * @returns {string} Fully qualified URL
  */
-const getAssetUrl = (path) => {
-  if (!path) return '';
-  if (path.startsWith('http') || path.startsWith('data:')) return path;
+const getAssetUrl = (filePath) => {
+  if (!filePath) return '';
+  if (filePath.startsWith('http') || filePath.startsWith('data:')) return filePath;
+  // Sanitize: if path is an absolute filesystem path, extract the /uploads/... part
+  const uploadsIdx = filePath.replace(/\\/g, '/').indexOf('uploads/');
+  if (uploadsIdx > 0) {
+    filePath = '/' + filePath.replace(/\\/g, '/').substring(uploadsIdx);
+  }
   const assetBase = process.env.REACT_APP_ASSET_URL || BASE_SERVER_URL;
-  return `${assetBase}${path.startsWith('/') ? '' : '/'}${path}`;
+  return `${assetBase}${filePath.startsWith('/') ? '' : '/'}${filePath}`;
 };
 
 /**
@@ -53,14 +58,26 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // When sending FormData, let the browser/Axios set Content-Type automatically
+  // (with correct multipart boundary). The default 'application/json' header
+  // would otherwise override it and break file uploads.
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
   return config;
 });
 
-// Handle token expiration
+
+// Handle token expiration & premium feature restrictions
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 403 && error.response?.data?.error === 'PREMIUM_FEATURE_RESTRICTED') {
+      const featureKey = error.response.data.feature || 'ai';
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('open-upgrade-modal', { detail: { featureKey } }));
+      }
+    } else if (error.response?.status === 401) {
       // Only redirect if it's not a signin/signup request (those should show errors)
       const isAuthRequest = error.config?.url?.includes('/auth/signin') ||
         error.config?.url?.includes('/auth/signup');
@@ -76,6 +93,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 
 export const authAPI = {
   signup: (userData) => api.post('/auth/signup', userData),
@@ -425,10 +443,14 @@ export const myTasksAPI = {
     return api.post(`/my-tasks/${taskId}/sequential/send-back`, formData);
   },
   // Edit Activity
-  editActivity: function(activityId, note, message, link, files) {
+  editActivity: function(activityId, note, message, link, files, keepDocIds) {
     const formData = this.buildFormData(note, message, link, files);
+    if (keepDocIds && keepDocIds.length > 0) {
+      formData.append('keepDocIds', JSON.stringify(keepDocIds));
+    }
     return api.put(`/my-tasks/activity/${activityId}`, formData);
   }
+
 };
 
 export const currencyAPI = {
@@ -440,5 +462,16 @@ export const currencyAPI = {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
 };
+
+export const subscriptionAPI = {
+  getPlanConfig: () => api.get('/subscription/plan-config'),
+  getStatus: () => api.get('/subscription/status'),
+  createCheckoutSession: () => api.post('/subscription/create-checkout-session'),
+  verifySession: (sessionId) => api.post('/subscription/verify-session', { sessionId }),
+  updatePlanConfig: (data) => api.put('/subscription/plan-config', data),
+  manualSetUserPlan: (data) => api.post('/subscription/manual-set-user-plan', data),
+  getSubscribers: () => api.get('/subscription/subscribers')
+};
+
 
 export default api;

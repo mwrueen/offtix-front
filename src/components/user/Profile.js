@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../layout/Layout';
 import api, { getAssetUrl } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useCompany } from '../../context/CompanyContext';
 import { useToast } from '../../context/ToastContext';
+
 import PageHeader from '../layout/PageHeader';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -62,9 +64,9 @@ const mapApiUserToState = (data) => {
 };
 
 const Profile = () => {
-  const { dispatch: authDispatch } = useAuth();
+  const { state: authState, dispatch: authDispatch } = useAuth();
+  const { state: companyState } = useCompany();
   const toast = useToast();
-
 
   const getImageUrl = getAssetUrl;
 
@@ -101,7 +103,17 @@ const Profile = () => {
   const [activeSection, setActiveSection] = useState('basic');
   const [skillInput, setSkillInput] = useState('');
 
+  const isPremiumUser = authState?.user?.role === 'superadmin' ||
+                        authState?.user?.subscription?.plan === 'premium' ||
+                        companyState?.selectedCompany?.subscription?.plan === 'premium';
+
   const handleWriteWithAi = async (type, index = null) => {
+    if (!isPremiumUser) {
+      window.dispatchEvent(new CustomEvent('open-upgrade-modal', { detail: { featureKey: 'ai' } }));
+      return;
+    }
+
+
     const key = index !== null ? `${type}-${index}` : type;
     setGeneratingAiKey(key);
     try {
@@ -140,11 +152,16 @@ const Profile = () => {
       toast?.showToast?.('✨ Content enhanced with AI!', 'success');
     } catch (err) {
       console.error('Error generating AI text:', err);
-      toast?.showToast?.('Failed to generate AI text.', 'error');
+      if (err.response?.status === 403 || err.response?.data?.error === 'PREMIUM_FEATURE_RESTRICTED') {
+        window.dispatchEvent(new CustomEvent('open-upgrade-modal', { detail: { featureKey: 'ai' } }));
+      } else {
+        toast?.showToast?.('Failed to generate AI text.', 'error');
+      }
     } finally {
       setGeneratingAiKey(null);
     }
   };
+
 
   const [isRepositioning, setIsRepositioning] = useState(false);
   const [dragStart, setDragStart] = useState(null);

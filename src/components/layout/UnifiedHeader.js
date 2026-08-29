@@ -100,8 +100,10 @@ const UnifiedHeader = () => {
 
                     <nav className="hidden md:flex items-center gap-8">
                         <Link to="/" className={`text-sm font-semibold ${location.pathname === '/' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-800'} transition-all`}>Home</Link>
+                        <Link to="/pricing" className={`text-sm font-semibold ${location.pathname === '/pricing' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-800'} transition-all`}>Pricing</Link>
                     </nav>
                 </div>
+
 
                 {/* Right Actions */}
                 <div className="flex items-center gap-1.5 sm:gap-4">
@@ -242,9 +244,19 @@ const UnifiedHeader = () => {
 
                                 {isUserMenuOpen && (
                                     <div className="absolute top-full right-0 mt-2 w-56 max-w-[calc(100vw-2rem)] bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 animate-in fade-in slide-in-from-top-2 z-50">
-                                        <div className="px-4 py-3 border-b border-slate-50 mb-1">
-                                            <p className="text-xs font-black text-slate-800 truncate">{user?.name}</p>
-                                            <p className="text-[10px] font-bold text-slate-400 truncate mt-0.5">{user?.role}</p>
+                                        <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 rounded-xl mb-1 flex items-center justify-between gap-2">
+                                             <div className="min-w-0">
+                                                 <p className="text-xs font-black text-slate-800 truncate">{user?.name}</p>
+                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate mt-0.5">{user?.role}</p>
+                                             </div>
+                                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0 ${
+                                                 (user?.role === 'superadmin' || user?.subscription?.plan === 'premium' || companyState?.selectedCompany?.subscription?.plan === 'premium')
+                                                     ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                                     : 'bg-slate-200 text-slate-600 border border-slate-300'
+                                             }`}>
+                                                 {(user?.role === 'superadmin' || user?.subscription?.plan === 'premium' || companyState?.selectedCompany?.subscription?.plan === 'premium') ? '⚡ Premium' : 'Free'}
+                                             </span>
+
                                         </div>
                                         <Link to="/dashboard" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-slate-50 transition-all text-slate-600">
                                             <span className="text-xs">🏠</span>
@@ -254,7 +266,13 @@ const UnifiedHeader = () => {
                                             <span className="text-xs">👤</span>
                                             <span className="text-sm font-semibold">My Profile</span>
                                         </Link>
+                                        <Link to="/pricing" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-indigo-50 transition-all text-indigo-600 font-bold">
+                                            <span className="text-xs">💎</span>
+                                            <span className="text-sm font-semibold">Pricing & Upgrade</span>
+                                        </Link>
+
                                         <button onClick={handleLogout} className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-rose-50 transition-all text-rose-500 mt-1">
+
                                             <span className="text-xs">🔒</span>
                                             <span className="text-sm font-semibold">Sign Out</span>
                                         </button>

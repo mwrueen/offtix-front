@@ -1,14 +1,32 @@
 import React, { useState } from 'react';
 import { projectAPI, getAssetUrl } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { useCompany } from '../../context/CompanyContext';
 import { useToast } from '../../context/ToastContext';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 
 const FilesTab = ({ project, isProjectOwner, onRefresh }) => {
+  const { state: authState } = useAuth();
+  const { state: companyState } = useCompany();
   const [uploading, setUploading] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, fileId: null, fileName: '' });
   const { showToast } = useToast();
 
+  const isPremiumUser = authState?.user?.role === 'superadmin' ||
+                        authState?.user?.subscription?.plan === 'premium' ||
+                        companyState?.selectedCompany?.subscription?.plan === 'premium';
+
+  const triggerUpgradeModal = () => {
+    window.dispatchEvent(new CustomEvent('open-upgrade-modal', { detail: { featureKey: 'allowProjectFiles' } }));
+  };
+
   const handleFileUpload = async (e) => {
+    if (!isPremiumUser) {
+      e.target.value = '';
+      triggerUpgradeModal();
+      return;
+    }
+
     const file = e.target.files[0];
     if (!file) return;
     try {
@@ -20,11 +38,16 @@ const FilesTab = ({ project, isProjectOwner, onRefresh }) => {
       onRefresh();
     } catch (error) {
       console.error('Upload Error', error);
-      showToast(error.response?.data?.error || 'Failed to upload file', 'error');
+      if (error.response?.status === 403 || error.response?.data?.error === 'PREMIUM_FEATURE_RESTRICTED') {
+        triggerUpgradeModal();
+      } else {
+        showToast(error.response?.data?.error || 'Failed to upload file', 'error');
+      }
     } finally {
       setUploading(false); e.target.value = '';
     }
   };
+
 
   const handleDeleteFile = async () => {
     try {
@@ -83,15 +106,27 @@ const FilesTab = ({ project, isProjectOwner, onRefresh }) => {
                 <span className="text-white font-bold text-sm">{attachments.length} Files Uploaded</span>
               </div>
 
-              <label className={`px-8 py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95 cursor-pointer whitespace-nowrap flex items-center gap-2 ${uploading ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-indigo-700'}`}>
-                {uploading ? (
-                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <span>↑</span>
-                )}
-                <span>{uploading ? 'Uploading...' : 'Upload File'}</span>
-                <input type="file" onChange={handleFileUpload} disabled={uploading} className="hidden" />
-              </label>
+              {!isPremiumUser ? (
+                <button
+                  type="button"
+                  onClick={triggerUpgradeModal}
+                  className="px-8 py-3 bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95 cursor-pointer whitespace-nowrap flex items-center gap-2"
+                >
+                  <span>⚡</span>
+                  <span>Upload File (Premium)</span>
+                </button>
+              ) : (
+                <label className={`px-8 py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95 cursor-pointer whitespace-nowrap flex items-center gap-2 ${uploading ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:bg-indigo-700'}`}>
+                  {uploading ? (
+                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <span>↑</span>
+                  )}
+                  <span>{uploading ? 'Uploading...' : 'Upload File'}</span>
+                  <input type="file" onChange={handleFileUpload} disabled={uploading} className="hidden" />
+                </label>
+              )}
+
             </div>
           </div>
         </div>

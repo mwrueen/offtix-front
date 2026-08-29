@@ -41,7 +41,11 @@ const EditCircular = () => {
             toast.showToast("Job description generated with AI", "success");
         } catch (error) {
             console.error("Error generating job description:", error);
-            toast.showToast("Failed to generate job description", "error");
+            if (error.response?.status === 403 || error.response?.data?.error === 'PREMIUM_FEATURE_RESTRICTED') {
+                window.dispatchEvent(new CustomEvent('open-upgrade-modal', { detail: { featureKey: 'ai' } }));
+            } else {
+                toast.showToast("Failed to generate job description", "error");
+            }
         } finally {
             setIsGeneratingDesc(false);
         }
@@ -64,11 +68,16 @@ const EditCircular = () => {
             toast.showToast("Perks & benefits generated with AI", "success");
         } catch (error) {
             console.error("Error generating benefits:", error);
-            toast.showToast("Failed to generate perks & benefits", "error");
+            if (error.response?.status === 403 || error.response?.data?.error === 'PREMIUM_FEATURE_RESTRICTED') {
+                window.dispatchEvent(new CustomEvent('open-upgrade-modal', { detail: { featureKey: 'ai' } }));
+            } else {
+                toast.showToast("Failed to generate perks & benefits", "error");
+            }
         } finally {
             setIsGeneratingBenefits(false);
         }
     };
+
 
     const canManageRecruitment = hasPermission(PERMISSIONS.MANAGE_RECRUITMENT);
 

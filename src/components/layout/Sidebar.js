@@ -51,8 +51,10 @@ const Sidebar = ({ collapsed, onToggle }) => {
       { path: '/companies', label: 'Companies', icon: 'companies', category: 'admin' }
     ] : []),
     ...(state.user?.role === 'superadmin' ? [
-      { path: '/currencies', label: 'Currencies', icon: 'currencies', category: 'admin' }
+      { path: '/currencies', label: 'Currencies', icon: 'currencies', category: 'admin' },
+      { path: '/admin/subscription', label: 'Subscriptions', icon: 'settings', category: 'admin' }
     ] : []),
+
     ...(canManageSettings && companyState.selectedCompany?.id !== 'personal' ? [
       { path: '/company-settings', label: 'Settings', icon: 'settings', category: 'company' }
     ] : [])
@@ -136,12 +138,23 @@ const Sidebar = ({ collapsed, onToggle }) => {
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-200 truncate group-hover:text-white transition-colors">{user?.name || 'User'}</p>
-              <p className="text-[11px] text-slate-500 truncate group-hover:text-slate-400 transition-colors uppercase tracking-tight font-medium">
+              <div className="flex items-center justify-between gap-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-200 truncate group-hover:text-white transition-colors">{user?.name || 'User'}</p>
+                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0 ${
+                  (user?.role === 'superadmin' || user?.subscription?.plan === 'premium' || companyState?.selectedCompany?.subscription?.plan === 'premium')
+                    ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-extrabold shadow-xs'
+                    : 'bg-slate-800 text-slate-400 border border-slate-700'
+                }`}>
+                  {(user?.role === 'superadmin' || user?.subscription?.plan === 'premium' || companyState?.selectedCompany?.subscription?.plan === 'premium') ? '⚡ Premium' : 'Free'}
+                </span>
+
+              </div>
+              <p className="text-[11px] text-slate-500 truncate group-hover:text-slate-400 transition-colors uppercase tracking-tight font-medium mt-0.5">
                 {designationName || (companyState.selectedCompany?.id === 'personal' ? (user?.role || 'User') : (user?.role || 'User'))}
               </p>
             </div>
           )}
+
           {!collapsed && (
             <svg className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />

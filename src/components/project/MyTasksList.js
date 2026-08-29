@@ -82,7 +82,7 @@ const MyTasksList = () => {
     finally { setActionLoading(prev => ({ ...prev, [taskId]: null })); }
   };
 
-  const handleFileChange = (e) => { if (e.target.files) setSelectedFiles(Array.from(e.target.files)); };
+
 
   const getStatusClasses = (status) => {
     const map = {
@@ -344,15 +344,60 @@ const MyTasksList = () => {
                       <input type="text" value={formData.link} onChange={e => setFormData({ ...formData, link: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:bg-white focus:border-indigo-400 transition-colors" placeholder="https://resource-link.com" />
                     </div>
                     <div className="space-y-3">
-                      <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider ml-1">Supporting Documents</label>
-                      <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 bg-slate-50 hover:bg-white hover:border-indigo-400 transition-colors cursor-pointer relative flex flex-col items-center justify-center gap-3 min-h-[140px]">
-                        <input type="file" multiple onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer z-20" />
-                        <div className="text-center px-4">
-                          <p className="text-sm font-medium text-slate-800 mb-1">{selectedFiles.length > 0 ? `${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'} selected` : 'Click to upload files'}</p>
-                          <p className="text-xs text-slate-500">Max 50MB per file</p>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider ml-1">Supporting Documents</label>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="border-2 border-dashed border-slate-300 rounded-xl p-5 bg-slate-50 hover:bg-white hover:border-indigo-400 transition-colors cursor-pointer relative flex flex-col items-center justify-center gap-2">
+                          <input 
+                            type="file" 
+                            multiple 
+                            onChange={(e) => {
+                              if (e.target.files?.length) {
+                                const newFiles = Array.from(e.target.files);
+                                setSelectedFiles(prev => [...prev, ...newFiles]);
+                                e.target.value = '';
+                              }
+                            }} 
+                            className="absolute inset-0 opacity-0 cursor-pointer z-20" 
+                          />
+                          <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg shadow-2xs">📂</div>
+                          <div className="text-center px-2">
+                            <p className="text-xs font-bold text-slate-700 block mb-0.5">Click or Drag Files to Upload</p>
+                            <p className="text-[10px] text-slate-400 font-medium">Max 50MB per file</p>
+                          </div>
                         </div>
+
+                        {selectedFiles.length > 0 && (
+                          <div className="space-y-1.5">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Selected Files ({selectedFiles.length}):</span>
+                            <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                              {selectedFiles.map((file, idx) => (
+                                <div key={idx} className="p-2 bg-indigo-50 border border-indigo-200 rounded-xl flex items-center justify-between gap-2 text-xs">
+                                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <span className="text-indigo-600 font-bold shrink-0">📁</span>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="font-semibold text-indigo-900 truncate" title={file.name}>{file.name}</div>
+                                      <div className="text-[10px] text-indigo-600/70 font-medium">{(file.size / 1024).toFixed(1)} KB</div>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
+                                    className="text-slate-400 hover:text-rose-600 p-0.5 hover:bg-rose-50 rounded transition-colors font-bold text-xs"
+                                    title="Remove file"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
+
                   </div>
                 </div>
               </div>

@@ -51,6 +51,25 @@ const SignIn = () => {
     }
   };
 
+  const handleQuickDemoLogin = async (email, password) => {
+    setFormData({ email, password });
+    setError('');
+    setIsLoading(true);
+    dispatch({ type: 'SET_LOADING', payload: true });
+
+    try {
+      const response = await authAPI.signin({ email, password });
+      dispatch({ type: 'LOGIN_SUCCESS', payload: response.data });
+      navigate(from, { replace: true });
+    } catch (err) {
+      let errorMessage = 'Failed to sign in. Please try again.';
+      if (err.response) errorMessage = err.response.data?.error || err.response.data?.message || 'Invalid credentials.';
+      setError(errorMessage);
+      dispatch({ type: 'SET_LOADING', payload: false });
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AuthLayout title="Welcome back" subtitle="Sign in to your account to continue.">
       {error && (
@@ -62,7 +81,45 @@ const SignIn = () => {
         </div>
       )}
 
+      {/* Quick Demo Login Panel */}
+      <div className="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-3.5 mb-5">
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-xs font-semibold uppercase tracking-wider text-indigo-900 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+            Quick Demo Login
+          </span>
+          <span className="text-[11px] font-medium text-indigo-600 bg-indigo-100/80 px-2 py-0.5 rounded-full">1-Click Test</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={() => handleQuickDemoLogin('admin@offtix.com', 'password123')}
+            className="px-2 py-2 bg-white hover:bg-indigo-600 hover:text-white border border-indigo-200 text-indigo-950 font-medium text-xs rounded-xl shadow-xs transition-all text-center flex flex-col items-center justify-center gap-0.5 cursor-pointer"
+          >
+            <span className="font-bold text-[11px]">Super Admin</span>
+            <span className="text-[10px] opacity-75">admin@offtix.com</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickDemoLogin('client@offtix.com', 'password123')}
+            className="px-2 py-2 bg-white hover:bg-indigo-600 hover:text-white border border-indigo-200 text-indigo-950 font-medium text-xs rounded-xl shadow-xs transition-all text-center flex flex-col items-center justify-center gap-0.5 cursor-pointer"
+          >
+            <span className="font-bold text-[11px]">Company/Client</span>
+            <span className="text-[10px] opacity-75">client@offtix.com</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickDemoLogin('user@offtix.com', 'password123')}
+            className="px-2 py-2 bg-white hover:bg-indigo-600 hover:text-white border border-indigo-200 text-indigo-950 font-medium text-xs rounded-xl shadow-xs transition-all text-center flex flex-col items-center justify-center gap-0.5 cursor-pointer"
+          >
+            <span className="font-bold text-[11px]">Employee/User</span>
+            <span className="text-[10px] opacity-75">user@offtix.com</span>
+          </button>
+        </div>
+      </div>
+
       <SocialLoginButtons />
+
 
       <div className="relative flex items-center my-6">
         <div className="flex-1 h-px bg-slate-200" />

@@ -150,10 +150,21 @@ const Header = ({ onMenuToggle, sidebarCollapsed }) => {
 
           {isUserMenuOpen && (
             <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100">
-                <p className="text-sm font-semibold text-slate-800 truncate">{user?.name}</p>
-                <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+              <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 rounded-xl mb-1 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 truncate">{user?.name}</p>
+                  <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+                </div>
+                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0 ${
+                  (user?.role === 'superadmin' || user?.subscription?.plan === 'premium' || companyState?.selectedCompany?.subscription?.plan === 'premium')
+                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                    : 'bg-slate-100 text-slate-600 border border-slate-200'
+                }`}>
+                  {(user?.role === 'superadmin' || user?.subscription?.plan === 'premium' || companyState?.selectedCompany?.subscription?.plan === 'premium') ? '⚡ Premium' : 'Free'}
+                </span>
+
               </div>
+
               <div className="py-1">
                 <button
                   onClick={() => { navigate('/profile'); setIsUserMenuOpen(false); }}

@@ -77,86 +77,95 @@ const CompanySelector = ({ collapsed, isOpen, onToggle, dark = false }) => {
 
       {isOpen && (
         <div className={`absolute top-full mt-2 rounded-2xl shadow-2xl border z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 
-          ${dark ? 'bg-slate-800 border-slate-700 w-64 -left-1' : 'bg-white border-slate-200 left-3 right-3'} 
-          ${collapsed && !dark ? 'left-16 w-56' : ''}`}>
+          ${dark ? 'bg-slate-900 border-slate-700/80 w-64 -left-1 ring-1 ring-slate-800' : 'bg-white border-slate-200/90 left-3 right-3 shadow-slate-900/10 ring-1 ring-slate-900/5'} 
+          ${collapsed && !dark ? 'left-16 w-60' : ''}`}>
 
-          {companyState.companies.length > 0 && (
-            <div className="px-4 pt-3 pb-1">
-              <p className={`text-[10px] font-bold uppercase tracking-widest ${dark ? 'text-slate-500' : 'text-slate-400'}`}>Workspaces</p>
+          {/* Header */}
+          <div className={`px-4 py-2.5 border-b flex items-center justify-between ${dark ? 'bg-slate-800/60 border-slate-700/60' : 'bg-slate-50/80 border-slate-100'}`}>
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider ${dark ? 'text-slate-400' : 'text-slate-400'}`}>Workspaces</span>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${dark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200/60 text-slate-500'}`}>
+              {(companyState.companies?.length || 0) + 1}
+            </span>
+          </div>
+
+          <div className="p-1.5 space-y-1 max-h-[280px] overflow-y-auto scrollbar-thin">
+            {/* Personal Workspace */}
+            <div
+              onClick={() => handleCompanySelect('Personal')}
+              className={`group flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all duration-200 border ${
+                currentCompany?.id === 'personal'
+                  ? (dark ? 'bg-indigo-950/80 border-indigo-500/40 text-white font-bold' : 'bg-indigo-50/90 border-indigo-200/80 text-indigo-900 font-bold shadow-xs')
+                  : (dark ? 'border-transparent hover:bg-slate-800 text-slate-300' : 'border-transparent hover:bg-slate-50 text-slate-700')
+              }`}
+            >
+              <div className="w-8 h-8 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center shrink-0 shadow-xs text-xs font-black text-white group-hover:scale-105 transition-transform">
+                P
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold truncate leading-tight">Personal Workspace</p>
+                <p className={`text-[10px] font-semibold uppercase tracking-tight mt-0.5 ${dark ? 'text-slate-400' : 'text-slate-400'}`}>Private Projects</p>
+              </div>
+              {currentCompany?.id === 'personal' && (
+                <div className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+              )}
             </div>
-          )}
 
-          <div className="py-1">
-            {companyState.companies.map((company) => (
-              <div
-                key={company.id}
-                onClick={() => handleCompanySelect(company)}
-                className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors 
-                  ${currentCompany?.id === company.id
-                    ? (dark ? 'bg-indigo-900/40' : 'bg-indigo-50')
-                    : (dark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-50')}`}
-              >
-                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm overflow-hidden">
-                  {company.logo ? (
-                    <img src={getLogoUrl(company.logo)} alt={company.name} className="w-full h-full object-cover" />
-                  ) : (
-                    company.name?.charAt(0)?.toUpperCase()
+            {/* Organization Workspaces */}
+            {companyState.companies.map((company) => {
+              const isSelected = currentCompany?.id === company.id;
+              return (
+                <div
+                  key={company.id}
+                  onClick={() => handleCompanySelect(company)}
+                  className={`group flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all duration-200 border ${
+                    isSelected
+                      ? (dark ? 'bg-indigo-950/80 border-indigo-500/40 text-white font-bold' : 'bg-indigo-50/90 border-indigo-200/80 text-indigo-900 font-bold shadow-xs')
+                      : (dark ? 'border-transparent hover:bg-slate-800 text-slate-300' : 'border-transparent hover:bg-slate-50 text-slate-700')
+                  }`}
+                >
+                  <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-xs overflow-hidden group-hover:scale-105 transition-transform">
+                    {company.logo ? (
+                      <img src={getLogoUrl(company.logo)} alt={company.name} className="w-full h-full object-cover" />
+                    ) : (
+                      company.name?.charAt(0)?.toUpperCase()
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate leading-tight">{company.name}</p>
+                    <p className={`text-[10px] font-semibold uppercase tracking-tight mt-0.5 ${dark ? 'text-slate-400' : 'text-slate-400'}`}>Organization</p>
+                  </div>
+                  {isSelected && (
+                    <div className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </div>
                   )}
                 </div>
-                <span className={`text-sm font-medium flex-1 truncate 
-                  ${currentCompany?.id === company.id
-                    ? (dark ? 'text-indigo-300' : 'text-indigo-700')
-                    : (dark ? 'text-slate-300' : 'text-slate-700')}`}>
-                  {company.name}
-                </span>
-
-                {currentCompany?.id === company.id && (
-                  <div className={`w-1.5 h-1.5 rounded-full ${dark ? 'bg-indigo-400' : 'bg-indigo-500'}`} />
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          <div className={`border-t ${dark ? 'border-slate-700/50' : 'border-slate-100'}`} />
-
-          <div
-            onClick={() => handleCompanySelect('Personal')}
-            className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors 
-              ${currentCompany?.id === 'personal'
-                ? (dark ? 'bg-indigo-900/40' : 'bg-indigo-50')
-                : (dark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-50')}`}
-          >
-            <div className="w-8 h-8 bg-gradient-to-tr from-violet-500 to-fuchsia-500 rounded-lg flex items-center justify-center shrink-0 shadow-sm">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          {/* Add New Organization CTA */}
+          <div className={`p-2 border-t ${dark ? 'bg-slate-800/60 border-slate-700/60' : 'bg-slate-50/80 border-slate-100'}`}>
+            <button
+              onClick={() => handleCompanySelect('Create Company')}
+              className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-            </div>
-            <span className={`text-sm font-medium flex-1 
-              ${currentCompany?.id === 'personal'
-                ? (dark ? 'text-indigo-300' : 'text-indigo-700')
-                : (dark ? 'text-slate-300' : 'text-slate-700')}`}>
-              Personal Workspace
-            </span>
-            {currentCompany?.id === 'personal' && (
-              <div className={`w-1.5 h-1.5 rounded-full ${dark ? 'bg-indigo-400' : 'bg-indigo-500'}`} />
-            )}
+              <span>Add New Organization</span>
+            </button>
           </div>
 
-          <div className={`border-t ${dark ? 'border-slate-700/50' : 'border-slate-100'}`} />
-
-          <div
-            onClick={() => handleCompanySelect('Create Company')}
-            className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${dark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-50'}`}
-          >
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border-2 border-dashed ${dark ? 'border-slate-600 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-              </svg>
-            </div>
-            <span className={`text-sm font-semibold ${dark ? 'text-indigo-400' : 'text-indigo-600'}`}>Create Workspace</span>
-          </div>
         </div>
       )}
+
     </div>
   );
 };

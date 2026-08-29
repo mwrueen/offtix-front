@@ -25,11 +25,18 @@ const MyTaskDetails = () => {
   const [actionModal, setActionModal] = useState(null); // 'complete', 'sendBack', 'completeSubtask', 'editActivity'
   const [activeSubtaskId, setActiveSubtaskId] = useState(null);
   const [editActivityId, setEditActivityId] = useState(null);
+  const [viewingActivity, setViewingActivity] = useState(null);
   const [formData, setFormData] = useState({ note: '', message: '', link: '' });
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [existingDocs, setExistingDocs] = useState([]);
 
   const { state: authState } = useAuth();
   const user = authState.user;
+
+  const isPremiumUser = user?.role === 'superadmin' ||
+                        user?.subscription?.plan === 'premium' ||
+                        companyState?.selectedCompany?.subscription?.plan === 'premium';
+
   const [showSubtaskForm, setShowSubtaskForm] = useState(false);
   const [showAISubtasksModal, setShowAISubtasksModal] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
@@ -184,9 +191,11 @@ const MyTaskDetails = () => {
       message: activity.message || '',
       link: activity.metadata?.link || ''
     });
-    setSelectedFiles([]); // Assuming existing files cannot be easily pre-populated in a standard file input
+    setExistingDocs(activity.documents || []);
+    setSelectedFiles([]);
     setActionModal('editActivity');
   };
+
 
   const handleModalSubmit = async () => {
     setActionLoading(actionModal);
@@ -202,7 +211,8 @@ const MyTaskDetails = () => {
         await myTasksAPI.complete(activeSubtaskId, formData.note || 'Completed', formData.message, formData.link, selectedFiles);
         toast?.showToast?.('Subtask completed successfully', 'success');
       } else if (actionModal === 'editActivity') {
-        await myTasksAPI.editActivity(editActivityId, formData.note, formData.message, formData.link, selectedFiles);
+        const keepDocIds = existingDocs.map(d => d._id || d.filename).filter(Boolean);
+        await myTasksAPI.editActivity(editActivityId, formData.note, formData.message, formData.link, selectedFiles, keepDocIds);
         toast?.showToast?.('Completion details updated successfully', 'success');
       } else {
         if (taskData.workflowType === 'sequential') {
@@ -225,11 +235,6 @@ const MyTaskDetails = () => {
     }
   };
 
-  const handleFileChange = (e) => {
-    if (e.target.files) {
-      setSelectedFiles(Array.from(e.target.files));
-    }
-  };
 
   const handleCreateSubtask = async () => {
     if (!newSubtaskTitle.trim() || !taskData?.task?.project?._id) return;
@@ -508,7 +513,15 @@ const MyTaskDetails = () => {
                       const isActive = !isCompleted && !isPaused && (['active', 'inprogress'].includes(stStatusNorm) || Boolean(st.activeUser));
                       const isAssignedToThisSt = isUserAssignedToSubtask(st);
 
-                      const completionActivity = taskData.activity?.find(a => a.task?._id === st._id && a.action === 'completed');
+                      const completionActivity = taskData.activity?.find(a => {
+                        const aTaskId = (a.task?._id || a.task)?.toString();
+                        const stId = (st._id || st.id)?.toString();
+                        return aTaskId === stId && a.action === 'completed';
+                      });
+
+                      const completionDocs = completionActivity?.documents || completionActivity?.files || st.documents || [];
+                      const completionLink = completionActivity?.metadata?.link || completionActivity?.link || st.link;
+
 
                       const currentUserIdStr = (user?.id || user?._id)?.toString();
                       const activeUserObj = st.activeUser || st.activeStartedBy;
@@ -614,39 +627,59 @@ const MyTaskDetails = () => {
                             </div>
                           )}
 
-                          {isCompleted && completionActivity && (
-                            <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                          {isCompleted && (completionActivity || completionDocs.length > 0 || completionLink) && (
+                            <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-2xs">
                               <div className="flex items-center justify-between mb-3 border-b border-slate-200 pb-2">
-                                <h5 className="text-xs font-bold text-slate-700">Completion Details</h5>
-                                {(completionActivity.performedBy?._id || completionActivity.performedBy)?.toString() === (user?._id || user?.id)?.toString() && (
-                                  <button 
-                                    onClick={() => handleEditActivityClick(completionActivity)}
-                                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2 py-1 rounded"
-                                  >
-                                    Edit
-                                  </button>
-                                )}
+                                <div className="flex items-center gap-2">
+                                  <h5 className="text-xs font-bold text-slate-800 uppercase tracking-tight">Completion Details</h5>
+                                  {completionDocs.length > 0 && (
+                                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-extrabold text-[10px] rounded-full border border-emerald-200">
+                                      📎 {completionDocs.length} File{completionDocs.length === 1 ? '' : 's'}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {completionActivity && (
+                                    <button
+                                      onClick={() => setViewingActivity({ title: st.title, activity: completionActivity, docs: completionDocs, link: completionLink })}
+                                      className="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md border border-indigo-200/80 transition-colors"
+                                    >
+                                      🔍 View Full Details
+                                    </button>
+                                  )}
+                                  {completionActivity && (completionActivity.performedBy?._id || completionActivity.performedBy)?.toString() === (user?._id || user?.id)?.toString() && (
+                                    <button 
+                                      onClick={() => handleEditActivityClick(completionActivity)}
+                                      className="text-[10px] font-bold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md transition-colors"
+                                    >
+                                      Edit
+                                    </button>
+                                  )}
+                                </div>
                               </div>
-                              {completionActivity.note && (
-                                <div className="text-xs text-slate-600 prose max-w-none mb-3" dangerouslySetInnerHTML={{ __html: completionActivity.note }} />
+                              {completionActivity?.note && (
+                                <div className="text-xs text-slate-700 prose max-w-none mb-3 bg-white p-3 rounded-lg border border-slate-200/60" dangerouslySetInnerHTML={{ __html: completionActivity.note }} />
                               )}
-                              {completionActivity.message && completionActivity.message !== '[object File]' && (
-                                <div className="text-xs text-slate-600 italic bg-white p-2 rounded border border-slate-100 mb-3">"{completionActivity.message}"</div>
+                              {completionActivity?.message && completionActivity.message !== '[object File]' && (
+                                <div className="text-xs text-slate-600 italic bg-white p-2.5 rounded-lg border border-slate-200/60 mb-3">"{completionActivity.message}"</div>
                               )}
-                              <div className="flex flex-wrap gap-2">
-                                {completionActivity.metadata?.link && (
-                                  <a href={completionActivity.metadata.link} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-white border border-slate-200 rounded text-[10px] font-bold text-indigo-600 hover:bg-slate-50 transition-colors">
-                                    View Reference ↗
+                              <div className="flex flex-wrap items-center gap-2 mt-3 pt-2 border-t border-slate-200/60">
+                                {completionLink && (
+                                  <a href={completionLink} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-[11px] font-bold shadow-xs hover:bg-indigo-700 transition-all flex items-center gap-1.5">
+                                    <span>🔗</span>
+                                    <span>View Deliverable Link ↗</span>
                                   </a>
                                 )}
-                                {completionActivity.documents?.map((doc, dIdx) => (
-                                  <a key={dIdx} href={getAssetUrl(doc.path)} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded text-[10px] font-bold text-emerald-700 hover:bg-emerald-100 transition-colors">
-                                    📄 {doc.originalName}
+                                {completionDocs.map((doc, dIdx) => (
+                                  <a key={dIdx} href={getAssetUrl(doc.path || doc.url)} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-[11px] font-bold shadow-xs hover:bg-emerald-700 transition-all flex items-center gap-1.5">
+                                    <span>📄</span>
+                                    <span>{doc.originalName || doc.filename || `Attachment ${dIdx + 1}`} ↗</span>
                                   </a>
                                 ))}
                               </div>
                             </div>
                           )}
+
                         </div>
                       );
                     });
@@ -900,15 +933,15 @@ const MyTaskDetails = () => {
 
       {/* Action Modals */}
       {actionModal && (
-        <div className="fixed inset-0 bg-slate-900/35 backdrop-blur-sm flex items-center justify-center z-[1000] p-6">
-          <div className="bg-white rounded-2xl w-full max-w-4xl p-8 lg:p-10 shadow-xl border border-slate-200 overflow-hidden">
-            <div className="flex justify-between items-center mb-8">
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner ${actionModal === 'complete' || actionModal === 'completeSubtask' || actionModal === 'editActivity' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+        <div className="fixed inset-0 bg-slate-900/35 backdrop-blur-sm flex items-center justify-center z-[1000] p-4 sm:p-6">
+          <div className="bg-white rounded-2xl w-full max-w-2xl p-6 lg:p-8 shadow-xl border border-slate-200 overflow-hidden">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-inner ${actionModal === 'complete' || actionModal === 'completeSubtask' || actionModal === 'editActivity' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
                   {actionModal === 'complete' || actionModal === 'completeSubtask' || actionModal === 'editActivity' ? '✅' : '↩️'}
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-slate-900">
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">
                     {actionModal === 'complete' ? 'Complete Task' : actionModal === 'completeSubtask' ? 'Complete Subtask' : actionModal === 'editActivity' ? 'Edit Completion Details' : 'Send Task Back'}
                   </h3>
                   <p className="text-sm text-slate-500 font-medium">
@@ -916,45 +949,145 @@ const MyTaskDetails = () => {
                   </p>
                 </div>
               </div>
-              <button onClick={() => setActionModal(null)} className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-slate-200 transition-colors">
+              <button onClick={() => setActionModal(null)} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-slate-200 transition-colors">
                 ✕
               </button>
             </div>
 
-            <div className="space-y-8 max-h-[60vh] overflow-y-auto pr-2">
-              <div className="space-y-3">
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider ml-1">Internal Notes (Private)</label>
+            <div className="space-y-5 max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Internal Notes (Private)</label>
                 <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
-                  <ReactQuill value={formData.note} onChange={(val) => setFormData({ ...formData, note: val })} className="h-40" theme="snow" placeholder="Document your progress or notes..." />
+                  <ReactQuill value={formData.note} onChange={(val) => setFormData({ ...formData, note: val })} className="h-32" theme="snow" placeholder="Document your progress or notes..." />
                   <div className="h-8" />
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider ml-1">Message for Next Person</label>
-                <textarea value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 outline-none focus:bg-white focus:border-indigo-400 transition-colors min-h-[100px] resize-none" placeholder="Add a message for the next person in the workflow..." />
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Message for Next Person</label>
+                <textarea value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 outline-none focus:bg-white focus:border-indigo-400 transition-colors min-h-[80px] resize-none" placeholder="Add a message for the next person in the workflow..." />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider ml-1">Resource Link</label>
-                  <input type="text" value={formData.link} onChange={(e) => setFormData({ ...formData, link: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium text-indigo-700 outline-none focus:bg-white focus:border-indigo-400 transition-colors" placeholder="https://link.com" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Resource Link</label>
+                  <input type="text" value={formData.link} onChange={(e) => setFormData({ ...formData, link: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-indigo-700 outline-none focus:bg-white focus:border-indigo-400 transition-colors" placeholder="https://link.com" />
                 </div>
-                <div className="space-y-3">
-                  <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider ml-1">Upload Documents</label>
-                  <div className="relative group/file">
-                    <input type="file" multiple onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                    <div className="px-6 py-3 bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl text-center group-hover/file:bg-indigo-50 group-hover/file:border-indigo-300 transition-colors">
-                      <span className="text-xs font-medium text-slate-600">{selectedFiles.length > 0 ? `${selectedFiles.length} files selected` : 'Click to upload'}</span>
-                    </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">Upload Documents / Attachments</label>
+                    {!isPremiumUser && (
+                      <span className="text-[9px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-200">
+                        ⚡ Premium Feature
+                      </span>
+                    )}
                   </div>
+
+                  {!isPremiumUser ? (
+                    <div
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-upgrade-modal', { detail: { featureKey: 'allowTaskCompletionDocs' } }))}
+                      className="border-2 border-dashed border-amber-300 bg-amber-50/60 hover:bg-amber-100/70 transition-all rounded-xl p-3 text-center cursor-pointer flex flex-col items-center justify-center gap-1.5"
+                    >
+                      <div className="w-6 h-6 rounded-md bg-amber-200/80 text-amber-800 flex items-center justify-center text-sm shadow-2xs">⚡</div>
+                      <span className="text-amber-800 text-[11px] font-bold">Upload Documents (Requires Premium)</span>
+                      <span className="text-slate-500 text-[10px]">Click to upgrade and attach proof files</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="relative group/file border-2 border-dashed border-slate-300 hover:border-indigo-400 bg-slate-50 hover:bg-indigo-50/40 rounded-xl p-3 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5">
+                        <input 
+                          type="file" 
+                          title=""
+                          multiple 
+                          onChange={(e) => {
+                            if (e.target.files?.length) {
+                              const newFiles = Array.from(e.target.files);
+                              setSelectedFiles(prev => [...prev, ...newFiles]);
+                              e.target.value = '';
+                            }
+                          }} 
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 text-transparent file:hidden" 
+                        />
+                        <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg shadow-2xs">📂</div>
+                        <div>
+                          <span className="text-xs font-bold text-slate-700 block">Click or Drag Files to Upload</span>
+                          <span className="text-[10px] text-slate-400 font-medium">Images, PDFs, Documents, ZIPs</span>
+                        </div>
+                      </div>
+
+                      {(selectedFiles.length > 0 || existingDocs.length > 0) && (
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                            Files ({selectedFiles.length + existingDocs.length}):
+                          </span>
+                          <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                            {existingDocs.map((doc, idx) => (
+                              <div key={`existing-${idx}`} className="p-2 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-2 text-xs">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <span className="text-emerald-700 font-bold shrink-0">📄</span>
+                                  <span className="font-semibold text-emerald-900 truncate" title={doc.originalName || doc.filename}>
+                                    {doc.originalName || doc.filename}
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setExistingDocs(prev => prev.filter((_, i) => i !== idx))}
+                                  className="text-slate-400 hover:text-rose-600 p-0.5 hover:bg-rose-50 rounded transition-colors font-bold text-xs"
+                                  title="Remove file"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+
+                            {selectedFiles.map((file, idx) => (
+                              <div key={`selected-${idx}`} className="p-2 bg-indigo-50 border border-indigo-200 rounded-xl flex items-center justify-between gap-2 text-xs">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <span className="text-indigo-600 font-bold shrink-0">📁</span>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="font-semibold text-indigo-900 truncate" title={file.name}>{file.name}</div>
+                                    <div className="text-[10px] text-indigo-600/70 font-medium">{(file.size / 1024).toFixed(1)} KB</div>
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== idx))}
+                                  className="text-slate-400 hover:text-rose-600 p-0.5 hover:bg-rose-50 rounded transition-colors font-bold text-xs"
+                                  title="Remove file"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
+
               </div>
             </div>
 
-            <div className="flex justify-end gap-4 pt-8 mt-8 border-t border-slate-100">
-              <button onClick={() => { setActionModal(null); setActiveSubtaskId(null); }} className="px-5 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
-              <button onClick={handleModalSubmit} disabled={actionLoading} className={`px-8 py-2.5 rounded-lg font-medium text-sm text-white transition-colors disabled:opacity-50 ${actionModal === 'complete' || actionModal === 'completeSubtask' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-rose-600 hover:bg-rose-700'}`}>{actionLoading ? 'Processing...' : (actionModal === 'complete' || actionModal === 'completeSubtask' ? 'Submit Completion' : 'Confirm Return')}</button>
+            <div className="flex justify-end gap-3 pt-5 mt-5 border-t border-slate-100">
+              <button 
+                onClick={() => setActionModal(null)} 
+                className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleModalSubmit} 
+                disabled={actionLoading}
+                className={`px-5 py-2.5 text-sm font-bold text-white rounded-xl shadow-sm transition-colors flex items-center gap-2 ${
+                  actionModal === 'complete' || actionModal === 'completeSubtask' || actionModal === 'editActivity' 
+                    ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200/50' 
+                    : 'bg-rose-600 hover:bg-rose-700 shadow-rose-200/50'
+                }`}
+              >
+                {actionLoading && <span className="animate-spin text-sm">⏳</span>}
+                {actionModal === 'complete' ? 'Confirm Completion' : actionModal === 'completeSubtask' ? 'Confirm Completion' : actionModal === 'editActivity' ? 'Save Changes' : 'Confirm Return'}
+              </button>
             </div>
           </div>
         </div>
@@ -969,6 +1102,68 @@ const MyTaskDetails = () => {
         modalTitle="Generate AI Subtasks"
         modalSubtitle="Auto-generate essential subtasks based on this task's title and description"
       />
+
+      {viewingActivity && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-[2500] p-4" onClick={() => setViewingActivity(null)}>
+          <div className="bg-white rounded-3xl w-full max-w-2xl p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-6" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start border-b border-slate-100 pb-4">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">Completed Deliverable</span>
+                <h3 className="text-xl font-bold text-slate-900 mt-1">{viewingActivity.title}</h3>
+              </div>
+              <button onClick={() => setViewingActivity(null)} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-lg">✕</button>
+            </div>
+
+            {viewingActivity.activity?.note && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Internal Notes</label>
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 text-xs text-slate-700 prose max-w-none" dangerouslySetInnerHTML={{ __html: viewingActivity.activity.note }} />
+              </div>
+            )}
+
+            {viewingActivity.activity?.message && viewingActivity.activity.message !== '[object File]' && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Communication Message</label>
+                <div className="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-100 text-xs text-indigo-900 italic">"{viewingActivity.activity.message}"</div>
+              </div>
+            )}
+
+            {viewingActivity.link && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Resource / Deliverable Link</label>
+                <div>
+                  <a href={viewingActivity.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors shadow-xs">
+                    <span>🔗</span>
+                    <span>{viewingActivity.link} ↗</span>
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {viewingActivity.docs && viewingActivity.docs.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Attached Proof Files ({viewingActivity.docs.length})</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {viewingActivity.docs.map((doc, idx) => (
+                    <a key={idx} href={getAssetUrl(doc.path || doc.url)} target="_blank" rel="noopener noreferrer" className="p-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-800 transition-colors group">
+                      <div className="w-9 h-9 rounded-lg bg-emerald-500 text-white flex items-center justify-center text-base shadow-xs shrink-0">📄</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold truncate group-hover:underline">{doc.originalName || doc.filename || `File ${idx + 1}`}</div>
+                        <div className="text-[10px] opacity-75 font-semibold mt-0.5">Click to Open / Download ↗</div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-4 border-t border-slate-100">
+              <button onClick={() => setViewingActivity(null)} className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </Layout>
   );
 };

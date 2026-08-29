@@ -164,7 +164,8 @@ const TeamTab = ({ projectId, project, users, isProjectOwner, isProjectManager, 
       setShowAddRole(false);
       showToast('Role created successfully', 'success');
       fetchRoles();
-    } catch (e) { showToast('Failed to create role', 'error'); }
+    } catch (e) { showToast(e.response?.data?.error || 'Failed to create role', 'error'); }
+
     finally { setLoading(false); }
   };
 
