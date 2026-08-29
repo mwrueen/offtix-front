@@ -93,11 +93,11 @@ const SignIn = () => {
         <div className="grid grid-cols-3 gap-2">
           <button
             type="button"
-            onClick={() => handleQuickDemoLogin('admin@offtix.com', 'password123')}
+            onClick={() => handleQuickDemoLogin('superadmin@offtix.com', 'superadmin123')}
             className="px-2 py-2 bg-white hover:bg-indigo-600 hover:text-white border border-indigo-200 text-indigo-950 font-medium text-xs rounded-xl shadow-xs transition-all text-center flex flex-col items-center justify-center gap-0.5 cursor-pointer"
           >
             <span className="font-bold text-[11px]">Super Admin</span>
-            <span className="text-[10px] opacity-75">admin@offtix.com</span>
+            <span className="text-[10px] opacity-75">superadmin@offtix.com</span>
           </button>
           <button
             type="button"
