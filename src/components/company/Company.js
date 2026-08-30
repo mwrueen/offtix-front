@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCookie } from '../../utils/cookies';
 import Layout from '../layout/Layout';
 import PageHeader from '../layout/PageHeader';
-import { companyAPI, getAssetUrl, currencyAPI } from '../../services/api';
+import { companyAPI, getAssetUrl, currencyAPI, API_BASE_URL } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { currencies } from '../../utils/currency';
 
@@ -31,7 +31,7 @@ const Company = () => {
         setLoading(false);
         return;
       }
-      const response = await fetch(`/api/companies/${selectedCompany.id || selectedCompany._id}`, {
+      const response = await fetch(`${API_BASE_URL}/companies/${selectedCompany.id || selectedCompany._id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -50,11 +50,12 @@ const Company = () => {
     }
   };
 
+  const userId = state.user?.id || state.user?._id;
   const isCompanyCreator = company && state.user && (
-    company.owner?._id === state.user.id ||
-    company.owner?.toString() === state.user.id?.toString() ||
-    company.owner === state.user.id ||
-    String(company.owner?._id) === String(state.user.id)
+    company.owner?._id === userId ||
+    company.owner?.toString() === userId?.toString() ||
+    company.owner === userId ||
+    String(company.owner?._id) === String(userId)
   );
 
   const getUserPermissions = () => {

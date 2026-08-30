@@ -4,7 +4,7 @@ import { getCookie } from '../../utils/cookies';
 import Layout from '../layout/Layout';
 import { useCompany } from '../../context/CompanyContext';
 import { useToast } from '../../context/ToastContext';
-import { getAssetUrl, currencyAPI } from '../../services/api';
+import { getAssetUrl, currencyAPI, API_BASE_URL } from '../../services/api';
 import { currencies } from '../../utils/currency';
 
 const EditCompanyInfo = () => {
@@ -65,7 +65,7 @@ const EditCompanyInfo = () => {
     setLoading(true);
     try {
       const token = getCookie('authToken');
-      const response = await fetch(`/api/companies/${selectedCompany.id}`, {
+      const response = await fetch(`${API_BASE_URL}/companies/${selectedCompany.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -134,7 +134,7 @@ const EditCompanyInfo = () => {
         const logoFormData = new FormData();
         logoFormData.append('logo', logoFile);
 
-        const logoResponse = await fetch(`/api/companies/${selectedCompany.id}/logo`, {
+        const logoResponse = await fetch(`${API_BASE_URL}/companies/${selectedCompany.id}/logo`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -148,7 +148,7 @@ const EditCompanyInfo = () => {
       }
 
       // Update company profile
-      const response = await fetch(`/api/companies/${selectedCompany.id}/profile`, {
+      const response = await fetch(`${API_BASE_URL}/companies/${selectedCompany.id}/profile`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

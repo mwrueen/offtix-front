@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import { getCookie } from '../../utils/cookies';
 import Layout from '../layout/Layout';
 import { getCurrencySymbol } from '../../utils/currency';
+import { API_BASE_URL } from '../../services/api';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -44,7 +45,7 @@ const AddEmployee = () => {
   const fetchDesignations = async () => {
     try {
       const token = getCookie('authToken');
-      const response = await fetch(`/api/companies/${selectedCompany.id}`, {
+      const response = await fetch(`${API_BASE_URL}/companies/${selectedCompany.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -114,7 +115,7 @@ const AddEmployee = () => {
     setLoading(true);
     try {
       const token = getCookie('authToken');
-      const response = await fetch(`/api/invitations/company/${selectedCompany.id}/invite`, {
+      const response = await fetch(`${API_BASE_URL}/invitations/company/${selectedCompany.id}/invite`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -139,6 +140,36 @@ const AddEmployee = () => {
       toast.showToast('Network error occurred.', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Generate content using AI for a specific field
+  const generateContent = async (field) => {
+    try {
+      const token = getCookie('authToken');
+      // Simple prompts based on field
+      const prompts = {
+        jobDescription: `Generate a concise job description for a ${formData.designation} role at ${selectedCompany.name}. Include responsibilities, reporting line, working hours, and location.`,
+        facilities: `List typical benefits and facilities for a ${formData.designation} position at a tech company.`,
+        termsAndPolicies: `Provide standard terms and policies (probation, confidentiality, code of conduct, notice period) for an employment offer.`
+      };
+      const resp = await fetch(`${API_BASE_URL}/ai/generate`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: prompts[field] })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const generated = data.text || '';
+        setFormData(prev => ({ ...prev, [field]: generated }));
+        toast.showToast('AI text generated.', 'success');
+      } else {
+        const err = await resp.json();
+        toast.showToast(err.message || 'AI generation failed.', 'error');
+      }
+    } catch (e) {
+      console.error('AI generation error:', e);
+      toast.showToast('AI generation error.', 'error');
     }
   };
 
@@ -310,6 +341,13 @@ const AddEmployee = () => {
                   className="bg-white rounded-xl overflow-hidden border border-slate-200 min-h-[150px]"
                   placeholder="Responsibilities, reporting line, working hours, location, etc."
                 />
+                <button
+                  type="button"
+                  onClick={() => generateContent('jobDescription')}
+                  className="mt-2 inline-flex items-center gap-1 rounded-md bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-100"
+                >
+                  🤖 Generate
+                </button>
               </div>
             </div>
 
@@ -325,6 +363,13 @@ const AddEmployee = () => {
                   className="bg-white rounded-xl overflow-hidden border border-slate-200 min-h-[120px]"
                   placeholder="Health cover, leave, equipment, remote policy, meals, transport…"
                 />
+                <button
+                  type="button"
+                  onClick={() => generateContent('facilities')}
+                  className="mt-2 inline-flex items-center gap-1 rounded-md bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-100"
+                >
+                  🤖 Generate
+                </button>
               </div>
             </div>
 
@@ -340,6 +385,13 @@ const AddEmployee = () => {
                   className="bg-white rounded-xl overflow-hidden border border-slate-200 min-h-[120px]"
                   placeholder="Probation, confidentiality, code of conduct, notice period, etc."
                 />
+                <button
+                  type="button"
+                  onClick={() => generateContent('termsAndPolicies')}
+                  className="mt-2 inline-flex items-center gap-1 rounded-md bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-100"
+                >
+                  🤖 Generate
+                </button>
               </div>
             </div>
           </fieldset>

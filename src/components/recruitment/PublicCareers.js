@@ -551,11 +551,11 @@ const PublicCareers = () => {
                                                         ⚡ {circular.experience} {circular.experience === 1 ? 'yr' : 'yrs'} exp
                                                     </span>
                                                 )}
-                                                {circular.mandatorySkills?.slice(0, 3).map((skill, i) => (
+                                                {Array.isArray(circular.mandatorySkills) ? circular.mandatorySkills.slice(0, 3).map((skill, i) => (
                                                     <span key={i} className="text-[10px] sm:text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md border border-indigo-100">
-                                                        #{skill}
+                                                        {'#' + skill}
                                                     </span>
-                                                ))}
+                                                )) : null}
                                             </div>
 
                                             {/* Short Description Preview */}
