@@ -101,10 +101,10 @@ export const SocketProvider = ({ children }) => {
 
     // Fetch unread count when company changes or socket connects
     useEffect(() => {
-        if (isConnected) {
+        if (isConnected && !companyState.loading) {
             fetchUnreadCount(selectedCompanyId);
         }
-    }, [isConnected, selectedCompanyId, fetchUnreadCount]);
+    }, [isConnected, selectedCompanyId, fetchUnreadCount, companyState.loading]);
 
     // Setup socket event listeners separately so they can access fresh state
     useEffect(() => {

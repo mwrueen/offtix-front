@@ -9,7 +9,7 @@ import { useCompanyFilter } from '../../hooks/useCompanyFilter';
 import { useToast } from '../../context/ToastContext';
 import { usePermissions, PERMISSIONS } from '../../context/PermissionsContext';
 import { getCookie } from '../../utils/cookies';
-import { generateJobDescription, generateJobBenefits } from '../../services/api';
+import { generateJobDescription, generateJobBenefits, getAssetUrl } from '../../services/api';
 
 const EditCircular = () => {
     const { id } = useParams();
@@ -80,6 +80,8 @@ const EditCircular = () => {
 
 
     const canManageRecruitment = hasPermission(PERMISSIONS.MANAGE_RECRUITMENT);
+
+    const [coverImageFile, setCoverImageFile] = useState(null);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -165,6 +167,18 @@ const EditCircular = () => {
             await axios.put(`/api/recruitment/circulars/${id}`, cleanedFormData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            
+            if (coverImageFile) {
+                const imageForm = new FormData();
+                imageForm.append('image', coverImageFile);
+                await axios.post(`/api/recruitment/circulars/${id}/image`, imageForm, {
+                    headers: { 
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+            }
+
             toast.showToast('Job circular updated successfully', 'success');
             navigate('/recruitment');
         } catch (error) {
@@ -318,6 +332,15 @@ const EditCircular = () => {
                                             className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none font-bold text-slate-700 text-sm"
                                             value={formData.deadline}
                                             onChange={e => setFormData({ ...formData, deadline: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-bold uppercase text-slate-400 tracking-widest ml-1">Cover Image</label>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl outline-none font-bold shadow-inner text-sm text-slate-700 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100"
+                                            onChange={e => setCoverImageFile(e.target.files[0])}
                                         />
                                     </div>
                                 </div>
@@ -560,34 +583,61 @@ const EditCircular = () => {
                     <div className="lg:col-span-4 space-y-6">
                         <div className="sticky top-10 space-y-6">
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Live Preview</p>
-                            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
-                                <div className="flex gap-4">
-                                    <div className="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center text-xl font-bold text-white shadow-md">
-                                        {formData.title ? formData.title.charAt(0) : '?'}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h2 className="text-lg font-bold text-indigo-600 line-clamp-1">{formData.title || 'Job Title'}</h2>
-                                        <p className="text-sm font-medium text-slate-900">{selectedCompany?.name || 'Offtix Organization'}</p>
-                                        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mt-0.5">
-                                            <span>{formData.location || 'Remote'}</span>
-                                            <span className="text-slate-300">•</span>
-                                            <span className="capitalize">{formData.jobNature}</span>
+                            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex gap-4">
+                                        <div className="w-12 h-12 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center bg-slate-50 shrink-0">
+                                            {selectedCompany?.logo ? (
+                                                <img src={getAssetUrl(selectedCompany.logo)} alt="Logo" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="text-xl font-black text-indigo-600">{(selectedCompany?.name || formData.title || 'O').charAt(0)}</span>
+                                            )}
                                         </div>
+                                        <div>
+                                            <h2 className="text-lg font-bold text-slate-900">{formData.title || 'Job Title'}</h2>
+                                            <div className="flex items-center gap-1.5 mt-1 text-[13px] text-slate-500 font-medium flex-wrap">
+                                                <span className="text-slate-800 font-bold">{selectedCompany?.name || 'Company Name'}</span>
+                                                <span className="text-slate-300">•</span>
+                                                <span className="flex items-center gap-1">
+                                                    <span className="text-rose-500">📍</span> {formData.location || 'Location'}
+                                                </span>
+                                                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[11px] font-bold ml-1 capitalize">
+                                                    {formData.jobNature || 'Job Nature'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 transition-colors shrink-0">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                                    </button>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <div className="px-3 py-1.5 bg-emerald-50/50 text-emerald-700 font-bold text-xs border border-emerald-100 rounded-lg flex items-center gap-1.5">
+                                        <span>💰</span> {(() => {
+                                            const symbolMap = { USD: '$', BDT: '৳', EUR: '€', GBP: '£', CAD: 'CA$', AUD: 'A$' };
+                                            const symbol = symbolMap[formData.salaryRange?.currency] || '৳';
+                                            return `${symbol}${Number(formData.salaryRange?.min || 0).toLocaleString()} - ${symbol}${Number(formData.salaryRange?.max || 0).toLocaleString()} / ${formData.salaryRange?.period === 'yearly' ? 'yr' : 'mo'}`;
+                                        })()}
+                                    </div>
+                                    <div className="px-3 py-1.5 bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200 rounded-lg flex items-center gap-1.5">
+                                        <span className="text-amber-500">⚡</span> {formData.experience || 0} yrs exp
                                     </div>
                                 </div>
 
-                                <div className="flex flex-wrap gap-2 pt-2">
-                                    {formData.mandatorySkills.slice(0, 2).map((s, i) => (
-                                        <span key={i} className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 italic">#{s}</span>
-                                    ))}
-                                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
-                                        💰 {formData.salaryRange.min ? `$${Number(formData.salaryRange.min).toLocaleString()}` : '—'}
-                                    </span>
+                                <div className="text-[13px] text-slate-600 leading-relaxed line-clamp-2">
+                                    <span className="font-bold text-slate-700">Role Summary</span> {formData.description ? formData.description.replace(/<[^>]+>/g, '') : 'No description provided yet.'}
                                 </div>
-                                <div className="pt-2">
-                                    <span className={`px-2 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md ${formData.status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-50 text-slate-500 border border-slate-200'}`}>
-                                        {formData.status}
-                                    </span>
+
+                                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-[13px] font-medium text-slate-500">
+                                        <span>Posted just now</span>
+                                        <span className="text-slate-300">•</span>
+                                        <span>Actively Recruiting</span>
+                                    </div>
+                                    <div className="text-[13px] font-bold text-indigo-600 flex items-center gap-1">
+                                        View Role <span>→</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

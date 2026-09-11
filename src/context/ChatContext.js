@@ -44,7 +44,7 @@ export const ChatProvider = ({ children }) => {
     }, [unreadCounts.byCompany, selectedCompanyId]);
 
     useEffect(() => {
-        if (authState.isAuthenticated) {
+        if (authState.isAuthenticated && !companyState.loading) {
             fetchUnreadCounts(selectedCompanyId);
 
             const token = getCookie('authToken');
@@ -67,7 +67,7 @@ export const ChatProvider = ({ children }) => {
                 newSocket.disconnect();
             };
         }
-    }, [authState.isAuthenticated, fetchUnreadCounts, selectedCompanyId]);
+    }, [authState.isAuthenticated, fetchUnreadCounts, selectedCompanyId, companyState.loading]);
 
     const markAsRead = useCallback(async (params) => {
         try {

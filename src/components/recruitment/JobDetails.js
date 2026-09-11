@@ -251,6 +251,13 @@ const JobDetails = () => {
                 <div className="lg:col-span-8 space-y-6 sm:space-y-8">
                     <div className="bg-white/70 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -z-10 translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+                        
+                        {circular.coverImage && (
+                            <div className="w-full h-48 md:h-64 rounded-2xl overflow-hidden mb-6 border border-slate-200">
+                                <img src={getAssetUrl(circular.coverImage)} alt="Cover" className="w-full h-full object-cover" />
+                            </div>
+                        )}
+                        
                         {/* Hiring Company Header Bar */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
                             <div

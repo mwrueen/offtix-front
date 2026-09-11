@@ -48,6 +48,7 @@ import RecruitmentOverview from './components/recruitment/RecruitmentOverview';
 import CreateCircular from './components/recruitment/CreateCircular';
 import ApplicantsList from './components/recruitment/ApplicantsList';
 import ApplicantProfile from './components/recruitment/ApplicantProfile';
+import CircularDetails from './components/recruitment/CircularDetails';
 import PublicCareers from './components/recruitment/PublicCareers';
 import JobDetails from './components/recruitment/JobDetails';
 import EditCircular from './components/recruitment/EditCircular';
@@ -273,6 +274,11 @@ function App() {
                         <Route path="/recruitment/create" element={
                           <ProtectedRoute>
                             <CreateCircular />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/recruitment/circulars/:id" element={
+                          <ProtectedRoute>
+                            <CircularDetails />
                           </ProtectedRoute>
                         } />
                         <Route path="/recruitment/circulars/:id/applicants" element={
