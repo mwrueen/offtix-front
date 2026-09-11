@@ -8,6 +8,7 @@ import { useToast } from '../../context/ToastContext';
 import PageHeader from '../layout/PageHeader';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import imageCompression from 'browser-image-compression';
 
 const EDUCATION_LEVEL_OPTIONS = [
   { value: '', label: 'Qualification level' },
@@ -279,13 +280,17 @@ const Profile = () => {
   };
 
   const handleFileUpload = async (e, type = 'profile') => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast?.showToast?.('File size exceeds 5MB limit.', 'error');
-        return;
-      }
+    const originalFile = e.target.files[0];
+    if (originalFile) {
+      toast?.showToast?.('Compressing image...', 'info');
       try {
+        const options = {
+          maxSizeMB: 0.1, // 100KB
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+        };
+        const file = await imageCompression(originalFile, options);
+
         const reader = new FileReader();
         reader.onload = (event) => {
           const fieldName = type === 'cover' ? 'coverPhoto' : 'profilePicture';
@@ -294,7 +299,7 @@ const Profile = () => {
         reader.readAsDataURL(file);
 
         const formData = new FormData();
-        formData.append(type === 'cover' ? 'coverPhoto' : 'profilePicture', file);
+        formData.append(type === 'cover' ? 'coverPhoto' : 'profilePicture', file, originalFile.name);
 
         const response = await api.post('/users/upload-photo', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
         const fieldName = type === 'cover' ? 'coverPhoto' : 'profilePicture';
@@ -307,8 +312,11 @@ const Profile = () => {
         const userRes = await api.get('/users/profile');
         authDispatch({ type: 'UPDATE_USER', payload: userRes.data });
 
-        toast?.showToast?.('Photo uploaded.', 'success');
-      } catch (error) { toast?.showToast?.('Upload failed.', 'error'); }
+        toast?.showToast?.('Photo uploaded successfully.', 'success');
+      } catch (error) {
+        console.error('Upload failed:', error);
+        toast?.showToast?.('Upload failed.', 'error');
+      }
     }
   };
 

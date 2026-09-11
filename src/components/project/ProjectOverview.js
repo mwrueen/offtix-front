@@ -49,54 +49,52 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20 font-sans">
-      {/* Top Section: Budget and Tags */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-10 font-sans">
+      {/* Financial and Tags Grid */}
+      <div className="grid grid-cols-1 gap-6">
         {/* Financial Section */}
-        <div className="lg:col-span-2 bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col group">
-          <div className="relative z-10">
-            <div className="flex justify-between items-start mb-10">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">Project Financial Health</h3>
-                <p className="text-xs text-slate-500 mt-1">Resource allocation and budget oversight</p>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-slate-900">{companyCurrency} {budget.amount.toLocaleString()}</div>
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mt-1">Total Project Budget</div>
-              </div>
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Project Financial Health</h3>
+              <p className="text-xs text-slate-500 mt-1">Resource allocation and budget oversight</p>
+            </div>
+            <div className="text-left sm:text-right">
+              <div className="text-xl font-bold text-slate-900">{companyCurrency} {budget.amount.toLocaleString()}</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mt-1">Total Project Budget</div>
+            </div>
+          </div>
+
+          <div className="space-y-5">
+            <div className="flex justify-between items-end mb-1.5">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Budget Utilization</span>
+              <span className={`text-sm font-bold ${budgetUtilization > 90 ? 'text-rose-600' : 'text-indigo-600'}`}>{budgetUtilization}%</span>
+            </div>
+            <div className="h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+              <div
+                className={`h-full transition-all duration-1000 ${budgetUtilization > 100 ? 'bg-rose-500' : 'bg-indigo-500'}`}
+                style={{ width: `${Math.min(100, budgetUtilization)}%` }}
+              />
             </div>
 
-            <div className="space-y-6">
-              <div className="flex justify-between items-end mb-2">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Budget Utilization</span>
-                <span className={`text-lg font-bold ${budgetUtilization > 90 ? 'text-rose-600' : 'text-indigo-600'}`}>{budgetUtilization}%</span>
+            <div className="grid grid-cols-2 gap-6 pt-5 border-t border-slate-100">
+              <div>
+                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Expenditure</div>
+                <div className="text-base font-bold text-slate-800">{companyCurrency} {actualCost.amount.toLocaleString()}</div>
               </div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                <div
-                  className={`h-full transition-all duration-1000 ${budgetUtilization > 100 ? 'bg-rose-500' : 'bg-indigo-500'}`}
-                  style={{ width: `${Math.min(100, budgetUtilization)}%` }}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-8 pt-8 border-t border-slate-100">
-                <div>
-                  <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Expenditure</div>
-                  <div className="text-lg font-bold text-slate-800">{companyCurrency} {actualCost.amount.toLocaleString()}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Available Funds</div>
-                  <div className="text-lg font-bold text-emerald-600">{companyCurrency} {(budget.amount - actualCost.amount).toLocaleString()}</div>
-                </div>
+              <div className="text-right">
+                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Available Funds</div>
+                <div className="text-base font-bold text-emerald-600">{companyCurrency} {(budget.amount - actualCost.amount).toLocaleString()}</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Tags Section */}
-        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col group">
-          <div className="flex justify-between items-start mb-8">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col">
+          <div className="flex justify-between items-start mb-6">
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Project Taxonomy</h3>
+              <h3 className="text-base font-bold text-slate-900">Project Taxonomy</h3>
               <p className="text-[10px] font-semibold text-slate-400 mt-1 uppercase tracking-wider">Categorization & Labels</p>
             </div>
             {isProjectOwner && (
@@ -105,13 +103,13 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
               </Button>
             )}
           </div>
-          <div className="flex flex-wrap gap-2.5">
+          <div className="flex flex-wrap gap-2">
             {tags.length > 0 ? tags.map((tag, i) => (
-              <span key={i} className="px-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600 uppercase tracking-wider hover:border-indigo-400 hover:text-indigo-600 transition-all cursor-default">
+              <span key={i} className="px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600 uppercase tracking-wider hover:border-indigo-400 hover:text-indigo-600 transition-all cursor-default">
                 {tag}
               </span>
             )) : (
-              <div className="w-full py-10 text-center text-[10px] font-semibold text-slate-400 border border-dashed border-slate-200 rounded-2xl uppercase tracking-wider">
+              <div className="w-full py-6 text-center text-[10px] font-semibold text-slate-400 border border-dashed border-slate-200 rounded-xl uppercase tracking-wider">
                 No labels assigned
               </div>
             )}
@@ -120,13 +118,72 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Risks and Dependencies Section */}
+        <div className="space-y-6 order-2 md:order-1">
+          {/* Recent Risks Preview */}
+          <section className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm group">
+            <h3 className="text-base font-bold text-slate-900 mb-6 uppercase italic tracking-tight border-b border-slate-50 pb-3">Key Risk Factors</h3>
+            <div className="space-y-3">
+              {risks.length > 0 ? risks.slice(0, 3).map((r, i) => (
+                <div key={i} className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between hover:bg-white hover:border-rose-100 hover:shadow-md transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${r.severity === 'critical' ? 'bg-rose-50 text-rose-600 font-bold' : 'bg-amber-50 text-amber-600 font-bold'}`}>
+                      !
+                    </div>
+                    <div>
+                      <h4 className="text-[10px] font-bold text-slate-900 uppercase italic leading-tight">{r.title}</h4>
+                      <p className="text-[9px] text-slate-400 mt-0.5 uppercase tracking-widest font-bold opacity-60">Status: Monitored</p>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest ${r.severity === 'critical' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white'}`}>
+                    {r.severity}
+                  </span>
+                </div>
+              )) : (
+                <div className="py-8 bg-emerald-50/20 rounded-xl border border-dashed border-emerald-100 text-center">
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">No critical risks logged</p>
+                </div>
+              )}
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button className="text-[9px] font-bold text-indigo-600 uppercase tracking-widest hover:translate-x-1 transition-transform italic underline underline-offset-8">View Full Registry</button>
+            </div>
+          </section>
+
+          {/* Recent Dependencies Preview */}
+          <section className="bg-slate-900 rounded-2xl p-6 shadow-md text-white group relative overflow-hidden italic">
+            <h3 className="text-base font-bold text-white mb-6 uppercase tracking-tight relative z-10 border-b border-white/5 pb-3">Operational Dependencies</h3>
+            <div className="space-y-3 relative z-10">
+              {dependencies.length > 0 ? dependencies.slice(0, 3).map((d, i) => (
+                <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/5 flex items-center gap-3 hover:bg-white/10 hover:border-indigo-400/30 transition-all">
+                  <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-sm border border-white/5 grayscale">
+                    {d.type === 'external' ? '🌐' : '🏢'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-[10px] font-bold text-white uppercase tracking-tight truncate italic">{d.title}</h4>
+                    <div className="flex items-center gap-3 mt-1.5">
+                      <span className="px-3 py-0.5 bg-indigo-600 rounded text-[9px] font-bold uppercase tracking-widest">{d.status}</span>
+                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest opacity-60">Connected</span>
+                    </div>
+                  </div>
+                </div>
+              )) : (
+                <div className="py-8 bg-white/5 rounded-xl border border-dashed border-white/10 text-center">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest opacity-40">No dependencies</p>
+                </div>
+              )}
+            </div>
+            <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+          </section>
+        </div>
+
         {/* Milestones Section */}
-        <section className="bg-white rounded-3xl p-8 lg:p-10 border border-slate-200 shadow-sm space-y-8">
-          <div className="flex justify-between items-center mb-10 pb-6 border-b border-slate-50">
+        <section className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6 order-1 md:order-2">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8 pb-4 border-b border-slate-50">
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Project Milestones</h3>
-              <p className="text-[10px] font-semibold text-slate-400 mt-1 uppercase tracking-wider">Key delivery targets and completion logs</p>
+              <h3 className="text-base font-bold text-slate-900">Project Milestones</h3>
+              <p className="text-[10px] font-semibold text-slate-400 mt-1 uppercase tracking-wider">Key delivery targets</p>
             </div>
             {isProjectOwner && (
               <Button variant="primary" size="sm" onClick={() => showToast('Milestones can be managed inside the Phases tab.', 'info')}>
@@ -135,92 +192,33 @@ const ProjectOverview = ({ project, users, isProjectOwner }) => {
             )}
           </div>
 
-          <div className="space-y-6 relative pl-4">
-            <div className="absolute left-[30px] top-6 bottom-6 w-px bg-slate-100" />
+          <div className="space-y-4 relative pl-3">
+            <div className="absolute left-[19px] top-4 bottom-4 w-px bg-slate-100" />
             {milestones.length > 0 ? milestones.map((m, i) => (
-              <div key={i} className="flex gap-8 relative group">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 z-10 border-2 border-white shadow-md text-[10px] font-bold ${m.status === 'completed' ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white'}`}>
+              <div key={i} className="flex gap-4 relative group">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 z-10 border-2 border-white shadow-sm text-[10px] font-bold ${m.status === 'completed' ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white'}`}>
                   {m.status === 'completed' ? '✓' : String(i + 1).padStart(2, '0')}
                 </div>
-                <div className={`flex-1 p-5 rounded-2xl border transition-all ${m.status === 'completed' ? 'bg-emerald-50/20 border-emerald-100' : 'bg-slate-50/50 border-slate-100 hover:bg-white hover:shadow-md hover:border-indigo-100'}`}>
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{m.title}</h4>
+                <div className={`flex-1 p-4 rounded-xl border transition-all ${m.status === 'completed' ? 'bg-emerald-50/20 border-emerald-100' : 'bg-slate-50/50 border-slate-100 hover:bg-white hover:shadow-md hover:border-indigo-100'}`}>
+                  <div className="flex justify-between items-start mb-1.5 gap-2">
+                    <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2">{m.title}</h4>
                     <Badge variant={getMilestoneStatusVariant(m.status)} size="sm">
                       {m.status}
                     </Badge>
                   </div>
-                  <p className="text-[11px] text-slate-500 leading-relaxed">{m.description}</p>
-                  <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    <span>📅</span> Targeted: {m.dueDate ? new Date(m.dueDate).toLocaleDateString() : 'Pending Date'}
+                  <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-2">{m.description}</p>
+                  <div className="mt-3 flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                    <span>📅</span> {m.dueDate ? new Date(m.dueDate).toLocaleDateString() : 'Pending'}
                   </div>
                 </div>
               </div>
             )) : (
-              <div className="py-20 text-center border-2 border-dashed border-slate-100 rounded-3xl opacity-50 italic text-[10px] font-bold uppercase tracking-widest uppercase">
-                Zero milestones identified.
+              <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-xl opacity-50 italic text-[10px] font-bold uppercase tracking-widest uppercase">
+                Zero milestones
               </div>
             )}
           </div>
         </section>
-
-        {/* Risks and Dependencies Section */}
-        <div className="space-y-8">
-          {/* Recent Risks Preview */}
-          <section className="bg-white rounded-3xl p-8 lg:p-10 border border-slate-200 shadow-sm group">
-            <h3 className="text-lg font-bold text-slate-900 mb-8 uppercase italic tracking-tight border-b border-slate-50 pb-4">Key Risk Factors</h3>
-            <div className="space-y-4">
-              {risks.length > 0 ? risks.slice(0, 3).map((r, i) => (
-                <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between hover:bg-white hover:border-rose-100 hover:shadow-md transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${r.severity === 'critical' ? 'bg-rose-50 text-rose-600 font-bold' : 'bg-amber-50 text-amber-600 font-bold'}`}>
-                      !
-                    </div>
-                    <div>
-                      <h4 className="text-[11px] font-bold text-slate-900 uppercase italic leading-tight">{r.title}</h4>
-                      <p className="text-[9px] text-slate-400 mt-1 uppercase tracking-widest font-bold opacity-60">Status: Monitored</p>
-                    </div>
-                  </div>
-                  <span className={`px-4 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest ${r.severity === 'critical' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white'}`}>
-                    {r.severity}
-                  </span>
-                </div>
-              )) : (
-                <div className="py-12 bg-emerald-50/20 rounded-2xl border border-dashed border-emerald-100 text-center">
-                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">No critical risks logged</p>
-                </div>
-              )}
-            </div>
-            <div className="mt-8 flex justify-end">
-              <button className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest hover:translate-x-1 transition-transform italic underline underline-offset-8">View Full Registry</button>
-            </div>
-          </section>
-
-          {/* Recent Dependencies Preview */}
-          <section className="bg-slate-900 rounded-3xl p-8 lg:p-10 shadow-xl text-white group relative overflow-hidden italic">
-            <h3 className="text-lg font-bold text-white mb-8 uppercase tracking-tight relative z-10 border-b border-white/5 pb-4">Operational Dependencies</h3>
-            <div className="space-y-4 relative z-10">
-              {dependencies.length > 0 ? dependencies.slice(0, 3).map((d, i) => (
-                <div key={i} className="p-4 bg-white/5 rounded-2xl border border-white/5 flex items-center gap-4 hover:bg-white/10 hover:border-indigo-400/30 transition-all">
-                  <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-xl border border-white/5 grayscale">
-                    {d.type === 'external' ? '🌐' : '🏢'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-white uppercase tracking-tight truncate italic">{d.title}</h4>
-                    <div className="flex items-center gap-4 mt-2">
-                      <span className="px-5 py-0.5 bg-indigo-600 rounded-lg text-[9px] font-bold uppercase tracking-widest">{d.status}</span>
-                      <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest opacity-60">Link Status: Connected</span>
-                    </div>
-                  </div>
-                </div>
-              )) : (
-                <div className="py-12 bg-white/5 rounded-2xl border border-dashed border-white/10 text-center">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest opacity-40">No critical dependencies</p>
-                </div>
-              )}
-            </div>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl pointer-events-none" />
-          </section>
-        </div>
       </div>
 
       {/* Tag Modal */}
