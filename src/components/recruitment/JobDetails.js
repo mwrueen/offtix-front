@@ -243,13 +243,14 @@ const JobDetails = () => {
     const profileCompleteness = checkProfileCompleteness(userProfile);
 
     return (
-        <div className="min-h-screen bg-slate-50/30 text-slate-800 font-sans pb-32">
+        <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-50 via-white to-emerald-50 text-slate-800 font-sans pb-32 selection:bg-indigo-100">
             <UnifiedHeader />
 
             <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-12 sm:pb-20 grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
                 {/* Content */}
                 <div className="lg:col-span-8 space-y-6 sm:space-y-8">
-                    <div className="bg-white p-4 sm:p-8 rounded-2xl border border-slate-200 shadow-xs space-y-6">
+                    <div className="bg-white/70 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-6 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -z-10 translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
                         {/* Hiring Company Header Bar */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
                             <div
@@ -289,19 +290,19 @@ const JobDetails = () => {
                         </div>
 
                         <div className="flex flex-wrap gap-2">
-                            <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase tracking-wider rounded border border-indigo-100">
+                            <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-wider rounded-lg border border-indigo-200 shadow-sm">
                                 {circular.role}
                             </span>
-                            <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wider rounded border border-slate-200">
+                            <span className="px-3 py-1 bg-white/80 backdrop-blur-sm text-slate-600 text-xs font-bold uppercase tracking-wider rounded-lg border border-slate-200 shadow-sm">
                                 {circular.jobNature}
                             </span>
                         </div>
 
-                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 leading-tight">
                             {circular.title}
                         </h1>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 pt-4 border-t border-slate-100 mt-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 pt-4 border-t border-slate-200/60 mt-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/60">
                             <div className="pt-2 sm:pt-0">
                                 <p className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1">Salary Range</p>
                                 <p className="text-sm font-bold text-slate-900 leading-snug">
@@ -325,26 +326,27 @@ const JobDetails = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white p-4 sm:p-8 rounded-2xl border border-slate-200 shadow-xs space-y-8 sm:space-y-10">
+                    <div className="bg-white/70 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-8 sm:space-y-10 relative overflow-hidden">
+                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -z-10 -translate-x-1/2 translate-y-1/2 pointer-events-none"></div>
                         <div className="max-w-none">
-                            <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-3">
-                                <div className="w-1.5 h-6 bg-indigo-600 rounded-full" />
+                            <h2 className="text-xl font-extrabold text-slate-900 mb-6 flex items-center gap-3">
+                                <div className="w-1.5 h-6 bg-gradient-to-b from-indigo-500 to-indigo-600 rounded-full shadow-sm" />
                                 Role Overview
                             </h2>
-                            <div dangerouslySetInnerHTML={{ __html: circular.description }} className="text-slate-600 leading-relaxed text-base space-y-4" />
+                            <div dangerouslySetInnerHTML={{ __html: circular.description }} className="text-slate-700 leading-relaxed text-base space-y-4 [&>p]:mb-4 [&>h1]:text-2xl [&>h1]:font-bold [&>h1]:text-slate-900 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-slate-900 [&>h3]:text-lg [&>h3]:font-bold [&>h3]:text-slate-900 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:mb-4 [&>ul>li]:mb-1.5 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:mb-4 [&>ol>li]:mb-1.5 [&>strong]:font-extrabold [&>strong]:text-indigo-950 [&>a]:text-indigo-600 [&>a]:underline hover:[&>a]:text-indigo-700 [&>blockquote]:border-l-4 [&>blockquote]:border-indigo-300 [&>blockquote]:pl-4 [&>blockquote]:italic [&>blockquote]:text-slate-500" />
                         </div>
 
                         {circular.benefits && (
-                            <div className="pt-6 border-t border-slate-50">
-                                <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-3">
-                                    <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+                            <div className="pt-8 border-t border-slate-200/60">
+                                <h3 className="text-xl font-extrabold text-slate-900 mb-6 flex items-center gap-3">
+                                    <div className="w-1.5 h-6 bg-gradient-to-b from-emerald-400 to-emerald-500 rounded-full shadow-sm" />
                                     Perks & Benefits
                                 </h3>
-                                <div dangerouslySetInnerHTML={{ __html: circular.benefits }} className="text-slate-600 leading-relaxed text-base space-y-4" />
+                                <div dangerouslySetInnerHTML={{ __html: circular.benefits }} className="text-slate-700 leading-relaxed text-base space-y-4 [&>p]:mb-4 [&>h1]:text-2xl [&>h1]:font-bold [&>h1]:text-slate-900 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-slate-900 [&>h3]:text-lg [&>h3]:font-bold [&>h3]:text-slate-900 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:mb-4 [&>ul>li]:mb-1.5 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:mb-4 [&>ol>li]:mb-1.5 [&>strong]:font-extrabold [&>strong]:text-indigo-950 [&>a]:text-indigo-600 [&>a]:underline hover:[&>a]:text-indigo-700 [&>blockquote]:border-l-4 [&>blockquote]:border-emerald-300 [&>blockquote]:pl-4 [&>blockquote]:italic [&>blockquote]:text-slate-500" />
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8 border-t border-slate-100">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-slate-200/60">
                             <div className="space-y-4">
                                 <h3 className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">Mandatory Competencies</h3>
                                 <div className="flex flex-wrap gap-2">
@@ -368,13 +370,14 @@ const JobDetails = () => {
                 {/* Apply Form */}
                 <div className="lg:col-span-4">
                     <div className="sticky top-32">
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                            <div className="bg-slate-50 p-6 border-b border-slate-200">
-                                <h2 className="text-xl font-bold tracking-tight text-slate-900">Application Formalities</h2>
-                                <p className="text-slate-500 text-[11px] mt-1 font-medium italic">Complete the assessment to finalize your interest.</p>
+                        <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden">
+                            <div className="bg-gradient-to-br from-slate-50 to-white p-6 sm:p-8 border-b border-slate-200/60 relative">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-bl-full -z-10 pointer-events-none"></div>
+                                <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">Application Formalities</h2>
+                                <p className="text-slate-500 text-xs mt-1.5 font-medium">Complete the assessment to finalize your interest.</p>
                             </div>
 
-                            <div className="p-6">
+                            <div className="p-6 sm:p-8">
                                 {alreadyApplied ? (
                                     <div className="space-y-4 text-center py-4">
                                         <div className="w-12 h-12 mx-auto bg-emerald-100 rounded-full flex items-center justify-center">
@@ -607,7 +610,7 @@ const JobDetails = () => {
                                     <button
                                         type="submit"
                                         disabled={submitting}
-                                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-lg shadow shadow-indigo-200/50 transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wide"
+                                        className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-extrabold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wide transform hover:-translate-y-0.5 active:translate-y-0"
                                     >
                                         {submitting ? 'Submitting...' : 'Apply Now'}
                                     </button>

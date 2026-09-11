@@ -35,7 +35,7 @@ const RecruitmentOverview = () => {
                 const headers = { Authorization: `Bearer ${token}` };
 
                 const [circRes, statsRes] = await Promise.all([
-                    axios.get('/api/recruitment/public/circulars', { headers }),
+                    axios.get('/api/recruitment/circulars', { headers }),
                     axios.get('/api/recruitment/stats', { headers })
                 ]);
 

@@ -90,30 +90,30 @@ const SignIn = () => {
           </span>
           <span className="text-[11px] font-medium text-indigo-600 bg-indigo-100/80 px-2 py-0.5 rounded-full">1-Click Test</span>
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="flex flex-col gap-2">
           <button
             type="button"
             onClick={() => handleQuickDemoLogin('superadmin@offtix.com', 'superadmin123')}
-            className="px-2 py-2 bg-white hover:bg-indigo-600 hover:text-white border border-indigo-200 text-indigo-950 font-medium text-xs rounded-xl shadow-xs transition-all text-center flex flex-col items-center justify-center gap-0.5 cursor-pointer"
+            className="px-4 py-2.5 bg-white hover:bg-indigo-600 hover:text-white border border-indigo-200 text-indigo-950 font-medium rounded-xl shadow-sm transition-all flex items-center justify-between cursor-pointer group"
           >
-            <span className="font-bold text-[11px]">Super Admin</span>
-            <span className="text-[10px] opacity-75">superadmin@offtix.com</span>
+            <span className="font-bold text-[12px]">Super Admin</span>
+            <span className="text-[11px] opacity-60 group-hover:opacity-90 font-medium">superadmin@offtix.com</span>
           </button>
           <button
             type="button"
             onClick={() => handleQuickDemoLogin('client@offtix.com', 'password123')}
-            className="px-2 py-2 bg-white hover:bg-indigo-600 hover:text-white border border-indigo-200 text-indigo-950 font-medium text-xs rounded-xl shadow-xs transition-all text-center flex flex-col items-center justify-center gap-0.5 cursor-pointer"
+            className="px-4 py-2.5 bg-white hover:bg-indigo-600 hover:text-white border border-indigo-200 text-indigo-950 font-medium rounded-xl shadow-sm transition-all flex items-center justify-between cursor-pointer group"
           >
-            <span className="font-bold text-[11px]">Company/Client</span>
-            <span className="text-[10px] opacity-75">client@offtix.com</span>
+            <span className="font-bold text-[12px]">Company/Client</span>
+            <span className="text-[11px] opacity-60 group-hover:opacity-90 font-medium">client@offtix.com</span>
           </button>
           <button
             type="button"
             onClick={() => handleQuickDemoLogin('user@offtix.com', 'password123')}
-            className="px-2 py-2 bg-white hover:bg-indigo-600 hover:text-white border border-indigo-200 text-indigo-950 font-medium text-xs rounded-xl shadow-xs transition-all text-center flex flex-col items-center justify-center gap-0.5 cursor-pointer"
+            className="px-4 py-2.5 bg-white hover:bg-indigo-600 hover:text-white border border-indigo-200 text-indigo-950 font-medium rounded-xl shadow-sm transition-all flex items-center justify-between cursor-pointer group"
           >
-            <span className="font-bold text-[11px]">Employee/User</span>
-            <span className="text-[10px] opacity-75">user@offtix.com</span>
+            <span className="font-bold text-[12px]">Employee/User</span>
+            <span className="text-[11px] opacity-60 group-hover:opacity-90 font-medium">user@offtix.com</span>
           </button>
         </div>
       </div>

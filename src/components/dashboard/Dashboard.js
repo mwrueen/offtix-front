@@ -12,7 +12,10 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [stats, setStats] = useState({ activeProjects: 0, completedTasks: 0, totalTasks: 0, pendingTasks: 0 });
-  const [adminStats, setAdminStats] = useState({ totalCompanies: 0, totalUsers: 0, activeUsers: 0, adminUsers: 0 });
+  const [adminStats, setAdminStats] = useState({ 
+    totalCompanies: 0, totalUsers: 0, activeUsers: 0, adminUsers: 0, 
+    mrr: 0, mrrCurrency: 'usd', currencyUsage: [], topCompaniesByEmployee: [], topCompaniesByUsage: [] 
+  });
   const [myTasks, setMyTasks] = useState({ completed: [], upcoming: [] });
   const [upcomingHolidays, setUpcomingHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -108,26 +111,95 @@ const Dashboard = () => {
 
         {/* System Administration (SuperAdmin Only) */}
         {state.user?.role === 'superadmin' && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-bold text-slate-800 px-1 flex items-center gap-2">
-              <span className="w-1.5 h-6 bg-rose-500 rounded-full" />
-              System Administration
-            </h2>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                { label: 'Total Companies', value: adminStats.totalCompanies, icon: '🏢' },
-                { label: 'Total Users', value: adminStats.totalUsers, icon: '👥' },
-                { label: 'Active Users', value: adminStats.activeUsers, icon: '🟢' },
-                { label: 'Administrators', value: adminStats.adminUsers, icon: '🛡️' }
-              ].map((as, i) => (
-                <div key={i} className="p-5 bg-slate-50 rounded-2xl border border-slate-200 shadow-sm group hover:bg-white transition-colors">
-                  <div className="flex justify-between items-center mb-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{as.label}</p>
-                    <span className="text-xs grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all">{as.icon}</span>
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-bold text-slate-800 px-1 flex items-center gap-2 mb-4">
+                <span className="w-1.5 h-6 bg-rose-500 rounded-full" />
+                System Administration Overview
+              </h2>
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                {[
+                  { label: 'Total MRR', value: `${adminStats.mrrCurrency.toUpperCase()} ${adminStats.mrr.toLocaleString()}`, icon: '💰', highlight: true },
+                  { label: 'Total Companies', value: adminStats.totalCompanies, icon: '🏢' },
+                  { label: 'Total Users', value: adminStats.totalUsers, icon: '👥' },
+                  { label: 'Active Users', value: adminStats.activeUsers, icon: '🟢' },
+                  { label: 'Administrators', value: adminStats.adminUsers, icon: '🛡️' }
+                ].map((as, i) => (
+                  <div key={i} className={`p-5 rounded-2xl border shadow-sm group transition-all ${as.highlight ? 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100' : 'bg-slate-50 border-slate-200 hover:bg-white'}`}>
+                    <div className="flex justify-between items-center mb-1">
+                      <p className={`text-[10px] font-bold uppercase tracking-widest ${as.highlight ? 'text-indigo-500' : 'text-slate-400'}`}>{as.label}</p>
+                      <span className="text-xs grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all">{as.icon}</span>
+                    </div>
+                    <p className={`text-2xl sm:text-3xl font-bold tracking-tight ${as.highlight ? 'text-indigo-700' : 'text-slate-800'}`}>{as.value}</p>
                   </div>
-                  <p className="text-3xl font-bold text-slate-800 tracking-tight">{as.value}</p>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Currency Usage */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <span className="text-lg">💱</span> Currency Distribution
+                </h3>
+                <div className="space-y-3">
+                  {adminStats.currencyUsage?.map((c, i) => (
+                    <div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">{c._id}</span>
+                      <span className="text-xs font-bold text-slate-800 bg-white px-2 py-1 rounded shadow-sm">{c.count} Orgs</span>
+                    </div>
+                  ))}
+                  {(!adminStats.currencyUsage || adminStats.currencyUsage.length === 0) && (
+                    <p className="text-xs text-slate-400 text-center py-4 italic">No data available</p>
+                  )}
                 </div>
-              ))}
+              </div>
+
+              {/* Top Companies by Employee */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <span className="text-lg">🚀</span> Top by Workforce
+                </h3>
+                <div className="space-y-3">
+                  {adminStats.topCompaniesByEmployee?.map((company, i) => (
+                    <div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-white hover:border-indigo-100 transition-all cursor-default">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center text-xs font-black text-indigo-600 border border-indigo-100 uppercase overflow-hidden">
+                           {company.logo ? <img src={company.logo} alt="" className="w-full h-full object-cover"/> : (company.name || 'C').charAt(0)}
+                        </div>
+                        <span className="text-xs font-bold text-slate-700 truncate max-w-[120px]">{company.name}</span>
+                      </div>
+                      <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">{company.employeeCount} Users</span>
+                    </div>
+                  ))}
+                  {(!adminStats.topCompaniesByEmployee || adminStats.topCompaniesByEmployee.length === 0) && (
+                    <p className="text-xs text-slate-400 text-center py-4 italic">No data available</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Top Companies by Usage */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <span className="text-lg">📈</span> Top by Project Usage
+                </h3>
+                <div className="space-y-3">
+                  {adminStats.topCompaniesByUsage?.map((company, i) => (
+                    <div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-white hover:border-emerald-100 transition-all cursor-default">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center text-xs font-black text-emerald-600 border border-emerald-100 uppercase overflow-hidden">
+                           {company.logo ? <img src={company.logo} alt="" className="w-full h-full object-cover"/> : (company.name || 'C').charAt(0)}
+                        </div>
+                        <span className="text-xs font-bold text-slate-700 truncate max-w-[120px]">{company.name}</span>
+                      </div>
+                      <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">{company.projectCount} Projects</span>
+                    </div>
+                  ))}
+                  {(!adminStats.topCompaniesByUsage || adminStats.topCompaniesByUsage.length === 0) && (
+                    <p className="text-xs text-slate-400 text-center py-4 italic">No data available</p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}

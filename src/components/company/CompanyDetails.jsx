@@ -309,8 +309,12 @@ const CompanyDetails = () => {
                                     const user = member.user;
                                     return (
                                         <Card key={user._id} className="text-center group hover:border-indigo-300 transition-all">
-                                            <div className="w-16 h-16 rounded-full bg-slate-100 mx-auto flex items-center justify-center text-2xl font-bold text-slate-400 mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                                                {user.name?.charAt(0)?.toUpperCase()}
+                                            <div className="w-16 h-16 rounded-full bg-slate-100 mx-auto flex items-center justify-center text-2xl font-bold text-slate-400 mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors overflow-hidden">
+                                                {user.profile?.profilePicture ? (
+                                                    <img src={getAssetUrl(user.profile.profilePicture)} alt={user.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    user.name?.charAt(0)?.toUpperCase()
+                                                )}
                                             </div>
 
                                             <h3 className="text-base font-bold text-slate-900 truncate px-2">{user.name}</h3>

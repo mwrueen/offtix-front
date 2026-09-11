@@ -188,9 +188,10 @@ const UserDetails = () => {
             {profile.summary && (
               <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-4 mb-6">About</h4>
-                <p className="text-base text-slate-600 font-medium leading-relaxed">
-                  {profile.summary}
-                </p>
+                <div 
+                  className="text-base text-slate-600 font-medium leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: profile.summary }}
+                />
               </div>
             )}
 
@@ -222,9 +223,10 @@ const UserDetails = () => {
                           {exp.startDate?.split('-')[0]} — {exp.current ? 'Present' : exp.endDate?.split('-')[0]}
                         </div>
                       </div>
-                      <p className="text-sm font-medium text-slate-600 leading-relaxed">
-                        {exp.description}
-                      </p>
+                      <div 
+                        className="text-sm font-medium text-slate-600 leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: exp.description }}
+                      />
                     </div>
                   ))}
                 </div>
