@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { projectAPI, taskAPI, taskStatusAPI, sprintAPI, phaseAPI, taskRoleAPI, companyAPI, leaveAPI, meetingNoteAPI } from '../../services/api';
+import { projectAPI, taskAPI, taskStatusAPI, taskRoleAPI, companyAPI, leaveAPI } from '../../services/api';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -122,25 +122,23 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const fetchProjectData = React.useCallback(async () => {
         try {
             setLoading(true);
-            const [projectRes, tasksRes, statusesRes, sprintsRes, phasesRes, rolesRes, meetingNoteNotesRes, activityRes] = await Promise.all([
-                projectAPI.getById(id).catch(() => ({ data: {} })),
+            const [tasksRes, statusesRes, rolesRes, activityRes] = await Promise.all([
                 taskAPI.getAll(id).catch(() => ({ data: [] })),
                 taskStatusAPI.getAll(id).catch(() => ({ data: [] })),
-                sprintAPI.getAll(id).catch(() => ({ data: [] })),
-                phaseAPI.getAll(id).catch(() => ({ data: [] })),
                 taskRoleAPI.getAll(id).catch(() => ({ data: [] })),
-                meetingNoteAPI.getAll(id).catch(() => ({ data: [] })),
                 api.get('/team-activity', { params: { projectId: id } }).catch(() => ({ data: [] }))
             ]);
 
-            setProject(projectRes.data);
             setTasks(tasksRes.data);
             setTeamActivity(activityRes.data || []);
             setTaskStatuses(statusesRes.data);
-            setSprints(sprintsRes.data);
-            setPhases(phasesRes.data);
             setTaskRoles(rolesRes.data || []);
-            setMeetingNotes(meetingNoteNotesRes.data || []);
+            
+            // Sprints, phases and meeting notes can be fetched on-demand when modals open,
+            // or left empty if they aren't critical for the initial view.
+            setSprints([]);
+            setPhases([]);
+            setMeetingNotes([]);
 
             try {
                 const costsRes = await projectAPI.getCosts(id);
@@ -153,12 +151,10 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                 console.error('Failed to load costs', e);
             }
 
-            if (projectRes.data.company) {
-                const companyId = projectRes.data.company._id || projectRes.data.company;
-                const companyRes = await companyAPI.getById(companyId);
-                setCompany(companyRes.data);
-                const leavesRes = await leaveAPI.getAll(companyId, { status: 'approved' }).catch(() => ({ data: { leaves: [] } }));
-                setEmployeeLeaves(leavesRes.data.leaves || []);
+            if (project?.company) {
+                const companyId = project.company._id || project.company;
+                companyAPI.getById(companyId).then(res => setCompany(res.data)).catch(console.error);
+                leaveAPI.getAll(companyId, { status: 'approved' }).then(res => setEmployeeLeaves(res.data.leaves || [])).catch(console.error);
             }
 
             if (user?._id) {
@@ -167,22 +163,34 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                     .catch(e => console.error('Failed to load personal durations', e));
             }
 
-            const projectTeam = [];
-            if (projectRes.data.owner) projectTeam.push({ ...projectRes.data.owner, projectRole: 'Owner' });
-            projectRes.data.members?.forEach(m => {
-                if (m.user && !projectTeam.find(u => u._id === m.user._id)) {
-                    projectTeam.push({ ...m.user, projectRole: m.role || 'Member' });
-                }
-            });
-            setUsers(projectTeam);
         } catch (error) {
             console.error('Failed to load project data', error);
         } finally {
             setLoading(false);
         }
-    }, [id, user?._id]);
+    }, [id, user?._id, project?.company]);
 
     useEffect(() => {
+        if (initialProject) setProject(initialProject);
+    }, [initialProject]);
+
+    useEffect(() => {
+        const projectTeam = [];
+        if (initialProject?.owner) projectTeam.push({ ...initialProject.owner, projectRole: 'Owner' });
+        initialProject?.members?.forEach(m => {
+            if (m.user && !projectTeam.find(u => u._id === m.user._id)) {
+                projectTeam.push({ ...m.user, projectRole: m.role || 'Member' });
+            }
+        });
+        setUsers(projectTeam.length > 0 ? projectTeam : initialUsers);
+    }, [initialProject, initialUsers]);
+
+    const fetchedIdRef = React.useRef(null);
+
+    useEffect(() => {
+        if (fetchedIdRef.current === id) return;
+        fetchedIdRef.current = id;
+        
         fetchProjectData();
         const intervalId = setInterval(fetchTeamActivity, 30000);
         return () => clearInterval(intervalId);

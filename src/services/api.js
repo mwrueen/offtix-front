@@ -357,7 +357,7 @@ export const chatAPI = {
   getProjectMessages: (projectId, params = {}) =>
     api.get(`/projects/${projectId}/chat/messages`, { params }),
   getProjectMembers: (projectId) =>
-    api.get(`/projects/${projectId}/chat/members`),
+    api.get('/chat/members', { params: { projectId } }),
 };
 
 export const myTasksAPI = {

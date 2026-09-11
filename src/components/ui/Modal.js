@@ -14,11 +14,15 @@ const Modal = ({
     sm: 'max-w-md',
     md: 'max-w-lg',
     lg: 'max-w-2xl',
-    xl: 'max-w-4xl'
+    xl: 'max-w-4xl',
+    '2xl': 'max-w-5xl',
+    '3xl': 'max-w-6xl',
+    '4xl': 'max-w-7xl',
+    full: 'max-w-full m-4'
   };
   
   return (
-    <div className="fixed inset-0 z-[500] overflow-y-auto">
+    <div className="fixed inset-0 z-[1050] overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         {/* Backdrop */}
         <div

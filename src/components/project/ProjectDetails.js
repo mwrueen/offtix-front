@@ -36,25 +36,39 @@ const ProjectDetails = () => {
   const [meetingNotes, setMeetingNotes] = useState([]);
   const [sprints, setSprints] = useState([]);
   const [phases, setPhases] = useState([]);
+  const fetchedIdRef = React.useRef(null);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchProjectData(true); }, [id]);
+  useEffect(() => { 
+    if (fetchedIdRef.current === id) return;
+    fetchedIdRef.current = id;
+    fetchProjectData(true); 
+  }, [id]);
 
   const fetchProjectData = async (showLoading = true) => {
     try {
       if (showLoading || !project) setLoading(true);
-      const projectRes = await projectAPI.getById(id);
-      let usersRes;
-      if (projectRes.data.company) usersRes = await userAPI.getCompanyEmployees(projectRes.data.company._id || projectRes.data.company);
-      else usersRes = { data: [] };
+      
+      const tab = searchParams.get('tab') || 'tasks';
+
+      const [projectRes] = await Promise.all([
+        projectAPI.getById(id),
+        fetchTabData(tab)
+      ]);
+      
+      let usersRes = { data: [] };
+      if (projectRes.data.company) {
+        usersRes = await userAPI.getCompanyEmployees(projectRes.data.company._id || projectRes.data.company);
+      }
 
       setProject(projectRes.data);
       setUsers(usersRes.data);
-      await fetchTabData(searchParams.get('tab') || 'tasks');
     } catch (error) {
-      console.error('Project Data Fetch Error', error);
-      if (!project) setError({ type: 'error', message: 'Failed to load project information.' });
-    } finally { setLoading(false); }
+      console.error('Failed to load project details', error);
+      setError('Failed to load project details');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchTabData = async (tab) => {
@@ -69,7 +83,13 @@ const ProjectDetails = () => {
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (project && activeTab !== 'tasks') fetchTabData(activeTab); }, [activeTab, project]);
+  useEffect(() => { 
+    // fetchProjectData already fetches the initial tab data.
+    // This effect handles subsequent tab switches.
+    if (project && activeTab !== 'tasks') {
+      fetchTabData(activeTab); 
+    }
+  }, [activeTab]);
 
   const isProjectOwner = authState.user && project && (project.owner?._id === authState.user.id || project.owner === authState.user.id || project.owner === authState.user._id || project.owner?._id === authState.user._id);
   const isProjectManager = authState.user && project && (
