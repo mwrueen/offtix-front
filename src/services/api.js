@@ -44,6 +44,7 @@ export const generateProjectTasks = (title, description, existingTasks = []) => 
 export const generateJobDescription = (data) => api.post('/ai/generate-job-description', data);
 export const generateJobBenefits = (data) => api.post('/ai/generate-job-benefits', data);
 export const transcribeMeetingAudio = (data) => api.post('/ai/transcribe-meeting-audio', data);
+export const generateRequirementAI = (formData) => api.post('/ai/generate-requirement', formData);
 
 const api = axios.create({
   baseURL: API_BASE_URL,

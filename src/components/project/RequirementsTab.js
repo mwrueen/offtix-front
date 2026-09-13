@@ -1,11 +1,13 @@
 import React, { useState, useRef } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { requirementAPI, getAssetUrl } from '../../services/api';
+import { requirementAPI, getAssetUrl, generateRequirementAI } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import { Button, Badge } from '../ui';
+import { useToast } from '../../context/ToastContext';
 
 const RequirementsTab = ({ projectId, requirements, setRequirements, users, isProjectOwner, onRefresh }) => {
+  const toast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingRequirement, setEditingRequirement] = useState(null);
   const [viewingRequirement, setViewingRequirement] = useState(null);
@@ -15,6 +17,17 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [pendingFiles, setPendingFiles] = useState([]);
   const fileInputRef = useRef(null);
+  
+  // AI Generator State
+  const [showAIForm, setShowAIForm] = useState(false);
+  const [aiFiles, setAiFiles] = useState([]);
+  const [aiTextPrompt, setAiTextPrompt] = useState('');
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const aiFileInputRef = useRef(null);
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -94,8 +107,98 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
       acceptanceCriteria: []
     });
     setShowForm(false);
+    setShowAIForm(false);
     setEditingRequirement(null);
     setPendingFiles([]);
+    setAiFiles([]);
+    setAiTextPrompt('');
+  };
+
+  const handleAIGenerate = async (e) => {
+    e.preventDefault();
+    if (aiFiles.length === 0 && !aiTextPrompt) {
+      toast.error("Please provide some files, audio, or text instructions.");
+      return;
+    }
+
+    try {
+      setIsGeneratingAI(true);
+      const formDataToSend = new FormData();
+      if (aiTextPrompt) {
+        formDataToSend.append('textPrompt', aiTextPrompt);
+      }
+      
+      aiFiles.forEach(file => {
+        formDataToSend.append('files', file);
+      });
+
+      const response = await generateRequirementAI(formDataToSend);
+      
+      if (response.data && Array.isArray(response.data)) {
+        for (const req of response.data) {
+          const reqData = {
+            title: req.title || 'Generated Requirement',
+            description: req.description || '',
+            type: req.type || 'functional',
+            priority: req.priority || 'medium',
+            status: 'draft'
+          };
+          await requirementAPI.create(projectId, reqData);
+        }
+        await onRefresh();
+        setShowAIForm(false);
+        setAiFiles([]);
+        setAiTextPrompt('');
+        toast.success(`Successfully generated and added ${response.data.length} requirements!`);
+      } else {
+        toast.error('Unexpected format from AI generator.');
+      }
+    } catch (error) {
+      console.error('Error generating AI requirement:', error);
+      toast.error(error.response?.data?.error || 'Failed to generate requirement. Please try again.');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioFile = new File([audioBlob], `recording-${Date.now()}.webm`, { type: 'audio/webm' });
+        setAiFiles(prev => [...prev, audioFile]);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      toast.error("Could not access microphone.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+  
+  const handleAiFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    setAiFiles(prev => [...prev, ...files]);
+    e.target.value = '';
   };
 
   const handleFileSelect = (e) => {
@@ -133,7 +236,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
   const handleDelete = (requirementId) => {
     const req = requirements.find(r => r._id === requirementId);
     if (req?.convertedToTask) {
-      alert("Cannot delete a requirement that has been converted to a task.");
+      toast.error("Cannot delete a requirement that has been converted to a task.");
       return;
     }
     setDeleteModal({
@@ -150,7 +253,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
       setViewingRequirement(null);
     } catch (error) {
       console.error('Error converting requirement to task:', error);
-      alert(error.response?.data?.error || 'Failed to convert to task');
+      toast.error(error.response?.data?.error || 'Failed to convert to task');
     }
   };
 
@@ -184,13 +287,23 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
           </p>
         </div>
         {isProjectOwner && (
-          <Button
-            variant={showForm ? 'secondary' : 'primary'}
-            size="sm"
-            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
-          >
-            {showForm ? 'Cancel' : '+ Add Requirement'}
-          </Button>
+          <div className="flex gap-3 items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setShowForm(false); setShowAIForm(!showAIForm); }}
+              className="bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100 font-bold shadow-sm"
+            >
+              ✨ Generate with AI
+            </Button>
+            <Button
+              variant={showForm ? 'secondary' : 'primary'}
+              size="sm"
+              onClick={() => { if (showForm) resetForm(); else { setShowForm(true); setShowAIForm(false); } }}
+            >
+              {showForm ? 'Cancel' : '+ Add Requirement'}
+            </Button>
+          </div>
         )}
       </div>
 
@@ -237,6 +350,83 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
           </div>
         </div>
       </div>
+
+      {showAIForm && (
+        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100 p-8 mb-8 shadow-md">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-xl shadow-sm">✨</div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-900">Generate Requirement with AI</h3>
+              <p className="text-sm text-slate-500">Upload documents, images, or record audio to instantly generate structured requirements.</p>
+            </div>
+          </div>
+          
+          <form onSubmit={handleAIGenerate} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <label className="text-xs font-bold text-slate-700 ml-1">Context & Materials</label>
+                <div
+                  className="border-2 border-dashed border-indigo-200 rounded-2xl p-6 flex flex-col items-center justify-center bg-white/50 hover:bg-white hover:border-indigo-400 transition-all cursor-pointer shadow-inner min-h-[140px]"
+                  onClick={() => aiFileInputRef.current?.click()}
+                >
+                  <input type="file" ref={aiFileInputRef} onChange={handleAiFileSelect} multiple className="hidden" />
+                  <span className="text-3xl mb-2">📄</span>
+                  <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest text-center">Upload Docs, PDF, PPT, Excel, Images, Audio</span>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-slate-200"></div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">OR</span>
+                  <div className="flex-1 h-px bg-slate-200"></div>
+                </div>
+
+                <div className="flex justify-center">
+                  {!isRecording ? (
+                    <Button type="button" onClick={startRecording} variant="outline" className="w-full border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300">
+                      🎤 Record Voice Instruction
+                    </Button>
+                  ) : (
+                    <Button type="button" onClick={stopRecording} variant="danger" className="w-full animate-pulse">
+                      ⏹ Stop Recording
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-4 flex flex-col">
+                <label className="text-xs font-bold text-slate-700 ml-1">Additional Instructions (Optional)</label>
+                <textarea
+                  value={aiTextPrompt}
+                  onChange={(e) => setAiTextPrompt(e.target.value)}
+                  placeholder="E.g. Focus specifically on the security requirements for the login module..."
+                  className="w-full flex-1 min-h-[140px] p-4 bg-white border border-slate-200 rounded-2xl text-sm font-medium outline-none focus:border-indigo-400 resize-none shadow-inner"
+                />
+              </div>
+            </div>
+
+            {aiFiles.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Selected Files</label>
+                <div className="flex flex-wrap gap-2">
+                  {aiFiles.map((file, idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm text-xs font-medium">
+                      <span className="truncate max-w-[150px]">{file.name}</span>
+                      <button type="button" onClick={() => setAiFiles(aiFiles.filter((_, i) => i !== idx))} className="text-rose-500 hover:text-rose-700">✕</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-indigo-100">
+              <Button type="button" variant="ghost" onClick={() => { setShowAIForm(false); setAiFiles([]); setAiTextPrompt(''); }}>Cancel</Button>
+              <Button type="submit" variant="primary" disabled={isGeneratingAI || (aiFiles.length === 0 && !aiTextPrompt)} loading={isGeneratingAI} className="!bg-indigo-600 hover:!bg-indigo-700 shadow-lg shadow-indigo-200">
+                {isGeneratingAI ? 'Generating...' : 'Generate Requirement'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {showForm && (
         <div className="bg-white rounded-2xl border border-slate-200 p-8 mb-8 shadow-md">
