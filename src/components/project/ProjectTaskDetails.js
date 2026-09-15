@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { taskAPI, projectAPI, taskStatusAPI, getAssetUrl } from '../../services/api';
+import { taskAPI, projectAPI, taskStatusAPI, requirementAPI, getAssetUrl } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import Layout from '../layout/Layout';
@@ -20,6 +20,7 @@ const ProjectTaskDetails = () => {
     const [subtasks, setSubtasks] = useState([]);
     const [users, setUsers] = useState([]);
     const [taskStatuses, setTaskStatuses] = useState([]);
+    const [requirements, setRequirements] = useState([]);
     const [loading, setLoading] = useState(true);
     
     const [showSubtaskForm, setShowSubtaskForm] = useState(false);
@@ -106,10 +107,11 @@ const ProjectTaskDetails = () => {
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const [taskRes, projRes, statusesRes] = await Promise.all([
+            const [taskRes, projRes, statusesRes, reqsRes] = await Promise.all([
                 taskAPI.getById(projectId, taskId).catch(() => ({ data: null })),
                 projectAPI.getById(projectId).catch(() => ({ data: null })),
-                taskStatusAPI.getAll(projectId).catch(() => ({ data: [] }))
+                taskStatusAPI.getAll(projectId).catch(() => ({ data: [] })),
+                requirementAPI.getAll(projectId).catch(() => ({ data: [] }))
             ]);
 
             setTask(taskRes.data);
@@ -118,7 +120,8 @@ const ProjectTaskDetails = () => {
             }
             setSubtasks(taskRes.data?.subtasks || []);
             setProject(projRes.data);
-            setTaskStatuses(statusesRes.data);
+            setTaskStatuses(statusesRes.data || []);
+            setRequirements(reqsRes.data || []);
 
             if (projRes.data) {
                 const projectTeam = [];
@@ -148,6 +151,16 @@ const ProjectTaskDetails = () => {
             fetchData();
         } catch (e) {
             toast?.showToast?.('Failed to update task status', 'error');
+        }
+    };
+
+    const handleUpdateTaskRequirement = async (requirementId) => {
+        try {
+            await taskAPI.update(projectId, taskId, { requirement: requirementId || null });
+            toast?.showToast?.('Task requirement updated', 'success');
+            fetchData();
+        } catch (e) {
+            toast?.showToast?.('Failed to update task requirement', 'error');
         }
     };
 
@@ -654,6 +667,45 @@ const ProjectTaskDetails = () => {
                                 >
                                     {taskStatuses.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
                                 </select>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                            <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200 pb-3 flex items-center justify-between">
+                                <span>Referenced Requirement</span>
+                                <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">Tagging</span>
+                            </h3>
+                            <div className="space-y-4">
+                                {task.requirement && (
+                                    <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl flex items-center justify-between shadow-sm">
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <span className="text-base shrink-0">📋</span>
+                                            <div className="min-w-0">
+                                                <span className="text-xs font-bold text-emerald-900 block truncate">{task.requirement.title || task.requirement}</span>
+                                                <span className="text-[9px] text-emerald-600 font-semibold uppercase tracking-wider">Linked Requirement</span>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => navigate(`/projects/${projectId}?tab=requirements`)}
+                                            className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 hover:underline shrink-0 ml-2 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-xs"
+                                        >
+                                            View Tab →
+                                        </button>
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Select Requirement</label>
+                                    <select 
+                                        value={task.requirement?._id || task.requirement || ''} 
+                                        onChange={e => handleUpdateTaskRequirement(e.target.value)}
+                                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none cursor-pointer focus:bg-white focus:border-indigo-400 transition-all"
+                                    >
+                                        <option value="">None (Unlinked)</option>
+                                        {requirements.map(req => (
+                                            <option key={req._id} value={req._id}>{req.title}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         

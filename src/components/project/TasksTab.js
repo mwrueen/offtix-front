@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { projectAPI, taskAPI, taskStatusAPI, taskRoleAPI, companyAPI, leaveAPI } from '../../services/api';
+import { projectAPI, taskAPI, taskStatusAPI, taskRoleAPI, companyAPI, leaveAPI, requirementAPI } from '../../services/api';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -28,6 +28,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const [sprints, setSprints] = useState([]);
     const [phases, setPhases] = useState([]);
     const [taskRoles, setTaskRoles] = useState([]);
+    const [requirements, setRequirements] = useState([]);
     const [meetingNotes, setMeetingNotes] = useState([]);
     const [employeeLeaves, setEmployeeLeaves] = useState([]);
     const [taskCosts, setTaskCosts] = useState({});
@@ -122,17 +123,19 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
     const fetchProjectData = React.useCallback(async () => {
         try {
             setLoading(true);
-            const [tasksRes, statusesRes, rolesRes, activityRes] = await Promise.all([
+            const [tasksRes, statusesRes, rolesRes, activityRes, reqsRes] = await Promise.all([
                 taskAPI.getAll(id).catch(() => ({ data: [] })),
                 taskStatusAPI.getAll(id).catch(() => ({ data: [] })),
                 taskRoleAPI.getAll(id).catch(() => ({ data: [] })),
-                api.get('/team-activity', { params: { projectId: id } }).catch(() => ({ data: [] }))
+                api.get('/team-activity', { params: { projectId: id } }).catch(() => ({ data: [] })),
+                requirementAPI.getAll(id).catch(() => ({ data: [] }))
             ]);
 
             setTasks(tasksRes.data);
             setTeamActivity(activityRes.data || []);
             setTaskStatuses(statusesRes.data);
             setTaskRoles(rolesRes.data || []);
+            setRequirements(reqsRes.data || []);
             
             // Sprints, phases and meeting notes can be fetched on-demand when modals open,
             // or left empty if they aren't critical for the initial view.
@@ -675,6 +678,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                     phases={phases}
                     taskRoles={taskRoles}
                     meetingNotes={meetingNotes}
+                    requirements={requirements}
                 />
             )}
 
@@ -702,6 +706,7 @@ const TasksTab = ({ projectId, project: initialProject, users: initialUsers, onR
                 sprints={sprints}
                 phases={phases}
                 meetingNotes={meetingNotes}
+                requirements={requirements}
             />
 
             <DeleteConfirmModal

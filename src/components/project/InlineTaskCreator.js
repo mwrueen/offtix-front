@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
-const InlineTaskCreator = ({ isOpen, onClose, onCreate, taskStatuses, users, sprints, phases, meetingNotes }) => {
+const InlineTaskCreator = ({ isOpen, onClose, onCreate, taskStatuses, users, sprints, phases, meetingNotes, requirements = [] }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [duration, setDuration] = useState('');
@@ -10,6 +10,7 @@ const InlineTaskCreator = ({ isOpen, onClose, onCreate, taskStatuses, users, spr
   const [status, setStatus] = useState('');
   const [priority, setPriority] = useState('medium');
   const [meeting, setMeeting] = useState('');
+  const [requirement, setRequirement] = useState('');
   const titleInputRef = useRef(null);
 
   if (!isOpen) return null;
@@ -23,7 +24,8 @@ const InlineTaskCreator = ({ isOpen, onClose, onCreate, taskStatuses, users, spr
       description: description.trim() || undefined,
       status: status || undefined,
       priority: priority || undefined,
-      meeting: meeting || undefined
+      meeting: meeting || undefined,
+      requirement: requirement || undefined
     };
 
     if (duration && parseFloat(duration) > 0) {
@@ -31,7 +33,7 @@ const InlineTaskCreator = ({ isOpen, onClose, onCreate, taskStatuses, users, spr
     }
 
     await onCreate(taskData);
-    setTitle(''); setDescription(''); setDuration(''); setStatus(''); setPriority('medium'); setMeeting('');
+    setTitle(''); setDescription(''); setDuration(''); setStatus(''); setPriority('medium'); setMeeting(''); setRequirement('');
     onClose();
   };
 
@@ -125,16 +127,30 @@ const InlineTaskCreator = ({ isOpen, onClose, onCreate, taskStatuses, users, spr
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500 ml-1">Reference Meeting</label>
-            <select
-              value={meeting}
-              onChange={e => setMeeting(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
-            >
-              <option value="">No Meeting Link</option>
-              {meetingNotes?.map(m => <option key={m._id} value={m._id}>{m.title}</option>)}
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 ml-1">Reference Meeting</label>
+              <select
+                value={meeting}
+                onChange={e => setMeeting(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+              >
+                <option value="">No Meeting Link</option>
+                {meetingNotes?.map(m => <option key={m._id} value={m._id}>{m.title}</option>)}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 ml-1">Referenced Requirement</label>
+              <select
+                value={requirement}
+                onChange={e => setRequirement(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+              >
+                <option value="">No Requirement Link</option>
+                {requirements?.map(r => <option key={r._id} value={r._id}>{r.title}</option>)}
+              </select>
+            </div>
           </div>
 
        

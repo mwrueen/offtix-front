@@ -10,6 +10,7 @@ const TaskDetailsSidebar = ({
   taskStatuses,
   sprints,
   phases,
+  requirements = [],
   onUpdateTask,
   onClose,
   isCollapsed,
@@ -33,6 +34,7 @@ const TaskDetailsSidebar = ({
         priority: selectedTask.priority || '',
         sprint: selectedTask.sprint?._id || '',
         phase: selectedTask.phase?._id || '',
+        requirement: selectedTask.requirement?._id || selectedTask.requirement || '',
         dueDate: selectedTask.dueDate ? new Date(selectedTask.dueDate).toISOString().split('T')[0] : '',
         duration: selectedTask.duration || { value: '', unit: 'hours' },
         assignees: selectedTask.assignees?.map(a => a._id) || []
@@ -73,6 +75,7 @@ const TaskDetailsSidebar = ({
       if (cleanedData.status === '') delete cleanedData.status;
       if (cleanedData.sprint === '') delete cleanedData.sprint;
       if (cleanedData.phase === '') delete cleanedData.phase;
+      if (cleanedData.requirement === '') cleanedData.requirement = null;
       if (cleanedData.dueDate === '') delete cleanedData.dueDate;
       if (cleanedData.duration && (!cleanedData.duration.value || cleanedData.duration.value === '')) delete cleanedData.duration;
       await onUpdateTask(selectedTask._id, cleanedData);
@@ -89,6 +92,7 @@ const TaskDetailsSidebar = ({
         priority: selectedTask.priority || '',
         sprint: selectedTask.sprint?._id || '',
         phase: selectedTask.phase?._id || '',
+        requirement: selectedTask.requirement?._id || selectedTask.requirement || '',
         dueDate: selectedTask.dueDate ? new Date(selectedTask.dueDate).toISOString().split('T')[0] : '',
         duration: selectedTask.duration || { value: '', unit: 'hours' },
         assignees: selectedTask.assignees?.map(a => a._id) || []
@@ -240,6 +244,19 @@ const TaskDetailsSidebar = ({
                 </div>
               )}
             </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Referenced Requirement</label>
+            <select
+              value={formData.requirement || ''}
+              onChange={(e) => handleFieldChange('requirement', e.target.value)}
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-900 outline-none focus:border-indigo-400 cursor-pointer shadow-sm transition-all"
+            >
+              <option value="">None (Unlinked)</option>
+              {requirements.map(req => (
+                <option key={req._id} value={req._id}>{req.title}</option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-6">

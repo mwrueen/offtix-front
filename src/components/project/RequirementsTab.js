@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { requirementAPI, getAssetUrl, generateRequirementAI } from '../../services/api';
+import { requirementAPI, taskAPI, getAssetUrl, generateRequirementAI } from '../../services/api';
 import DeleteConfirmModal from '../common/DeleteConfirmModal';
 import { Button, Badge } from '../ui';
 import { useToast } from '../../context/ToastContext';
@@ -14,6 +14,8 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterType, setFilterType] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [tasks, setTasks] = useState([]);
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [pendingFiles, setPendingFiles] = useState([]);
   const fileInputRef = useRef(null);
@@ -39,6 +41,75 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
     acceptanceCriteria: []
   });
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        if (projectId) {
+          const res = await taskAPI.getAll(projectId);
+          setTasks(res.data || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch tasks for requirements:', err);
+      }
+    };
+    fetchTasks();
+  }, [projectId, requirements]);
+
+  const isTaskCompleted = (task) => {
+    if (!task) return false;
+    if (task.useRoleWorkflow && task.roleAssignments?.length > 0) {
+      if (task.roleAssignments.every(ra => ra.status === 'completed' || ra.status === 'skipped')) {
+        return true;
+      }
+    }
+    if (task.useSequentialWorkflow && task.sequentialAssignees?.length > 0) {
+      if (task.sequentialAssignees.every(sa => sa.status === 'completed')) {
+        return true;
+      }
+    }
+    const statusName = (typeof task.status === 'object' ? task.status?.name : '') || '';
+    const statusSlug = (typeof task.status === 'object' ? task.status?.slug : '') || '';
+    const sLower = statusName.toLowerCase();
+    return sLower.includes('done') || sLower.includes('complete') || statusSlug === 'completed' || statusSlug === 'done' || !!task.status?.isCompleted;
+  };
+
+  const getRequirementCompletionInfo = (req, projectTasks) => {
+    const taggedTasks = (projectTasks || []).filter(t => {
+      const reqId = t.requirement?._id || t.requirement;
+      const convertedId = req.convertedToTask?._id || req.convertedToTask;
+      return (reqId && String(reqId) === String(req._id)) || (convertedId && String(convertedId) === String(t._id));
+    });
+
+    const completedTasks = taggedTasks.filter(isTaskCompleted);
+    const totalTagged = taggedTasks.length;
+    const completedCount = completedTasks.length;
+
+    const isAllTaggedCompleted = totalTagged > 0 && completedCount === totalTagged;
+    const isCompleted = req.status === 'completed' || isAllTaggedCompleted;
+
+    return {
+      taggedTasks,
+      totalTagged,
+      completedCount,
+      isAllTaggedCompleted,
+      isCompleted
+    };
+  };
+
+  const handleToggleRequirementComplete = async (req, e) => {
+    if (e) e.stopPropagation();
+    try {
+      const info = getRequirementCompletionInfo(req, tasks);
+      const newStatus = info.isCompleted ? 'in-progress' : 'completed';
+      await requirementAPI.update(projectId, req._id, { status: newStatus });
+      toast?.showToast?.(`Requirement marked as ${newStatus === 'completed' ? 'completed' : 'in progress'}`, 'success');
+      if (onRefresh) await onRefresh();
+    } catch (err) {
+      console.error('Error updating requirement status:', err);
+      toast?.showToast?.('Failed to update requirement status', 'error');
+    }
+  };
 
   const quillModules = {
     toolbar: [
@@ -274,7 +345,13 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
       req.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesPriority = filterPriority === 'all' || req.priority === filterPriority;
     const matchesType = filterType === 'all' || req.type === filterType;
-    return matchesSearch && matchesPriority && matchesType;
+    
+    const info = getRequirementCompletionInfo(req, tasks);
+    const matchesStatus = filterStatus === 'all' ||
+      (filterStatus === 'completed' && info.isCompleted) ||
+      (filterStatus === 'in-progress' && !info.isCompleted);
+
+    return matchesSearch && matchesPriority && matchesType && matchesStatus;
   });
 
   return (
@@ -308,7 +385,7 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6 shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="md:col-span-2 space-y-1.5">
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Search Requirements</label>
             <input
@@ -318,6 +395,18 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 transition-all font-medium"
             />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Status</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-400 cursor-pointer font-medium"
+            >
+              <option value="all">All Statuses</option>
+              <option value="completed">✓ Completed</option>
+              <option value="in-progress">In Progress / Pending</option>
+            </select>
           </div>
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Type</label>
@@ -540,132 +629,203 @@ const RequirementsTab = ({ projectId, requirements, setRequirements, users, isPr
 
       {!showForm && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredRequirements.map(req => (
-            <div
-              key={req._id}
-              className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all group cursor-pointer flex flex-col"
-              onClick={() => setViewingRequirement(req)}
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-lg shadow-inner ring-1 ring-slate-100 italic">RQ</div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 line-clamp-1 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{req.title}</h3>
-                    <div className="flex gap-2 mt-1 flex-wrap">
-                      {req.convertedToTask ? (
-                        <Badge variant="success" size="sm" className="font-black">✓ CONVERTED: {req.convertedToTask.title || 'TASK'}</Badge>
-                      ) : (
-                        <Badge variant="warning" size="sm">PENDING TASK</Badge>
-                      )}
-                      <Badge variant={req.priority === 'critical' ? 'danger' : req.priority === 'high' ? 'warning' : req.priority === 'medium' ? 'info' : 'default'} size="sm">{req.priority}</Badge>
-                      <Badge variant="default" size="sm">{req.type}</Badge>
+          {filteredRequirements.map(req => {
+            const reqInfo = getRequirementCompletionInfo(req, tasks);
+            return (
+              <div
+                key={req._id}
+                className={`bg-white rounded-2xl border ${reqInfo.isCompleted ? 'border-emerald-300 bg-emerald-50/20 shadow-sm' : 'border-slate-200'} p-6 shadow-sm hover:shadow-md transition-all group cursor-pointer flex flex-col`}
+                onClick={() => setViewingRequirement(req)}
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleRequirementComplete(req, e)}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all ring-1 ${
+                        reqInfo.isCompleted
+                          ? 'bg-emerald-600 text-white ring-emerald-600 shadow-md shadow-emerald-200 font-bold'
+                          : 'bg-slate-50 text-slate-400 ring-slate-200 hover:bg-slate-100 hover:text-slate-600'
+                      }`}
+                      title={reqInfo.isCompleted ? 'Mark as Incomplete' : 'Mark as Completed'}
+                    >
+                      {reqInfo.isCompleted ? '✓' : '☐'}
+                    </button>
+                    <div>
+                      <h3 className={`font-bold line-clamp-1 group-hover:text-indigo-600 transition-colors uppercase tracking-tight ${reqInfo.isCompleted ? 'text-emerald-950 line-through decoration-emerald-500/60' : 'text-slate-900'}`}>
+                        {req.title}
+                      </h3>
+                      <div className="flex gap-2 mt-1 flex-wrap items-center">
+                        {reqInfo.isCompleted ? (
+                          <Badge variant="success" size="sm" className="font-black flex items-center gap-1 bg-emerald-600 text-white shadow-sm">
+                            <span>✓</span> COMPLETED {reqInfo.totalTagged > 0 ? `(${reqInfo.completedCount}/${reqInfo.totalTagged} TASKS DONE)` : ''}
+                          </Badge>
+                        ) : reqInfo.totalTagged > 0 ? (
+                          <Badge variant="info" size="sm" className="font-bold">
+                            TAGGED TASKS: {reqInfo.completedCount}/{reqInfo.totalTagged} DONE
+                          </Badge>
+                        ) : req.convertedToTask ? (
+                          <Badge variant="success" size="sm" className="font-black">✓ CONVERTED: {req.convertedToTask.title || 'TASK'}</Badge>
+                        ) : (
+                          <Badge variant="warning" size="sm">PENDING TASK</Badge>
+                        )}
+                        <Badge variant={req.priority === 'critical' ? 'danger' : req.priority === 'high' ? 'warning' : req.priority === 'medium' ? 'info' : 'default'} size="sm">{req.priority}</Badge>
+                        <Badge variant="default" size="sm">{req.type}</Badge>
+                      </div>
                     </div>
                   </div>
+                  {isProjectOwner && (
+                    <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(req)} className="!text-slate-400 hover:!text-indigo-600 !p-1.5">✎</Button>
+                      {!req.convertedToTask && (
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(req._id)} className="!text-slate-400 hover:!text-rose-600 !p-1.5">✕</Button>
+                      )}
+                    </div>
+                  )}
                 </div>
-                {isProjectOwner && (
-                  <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(req)} className="!text-slate-400 hover:!text-indigo-600 !p-1.5">✎</Button>
-                    {!req.convertedToTask && (
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(req._id)} className="!text-slate-400 hover:!text-rose-600 !p-1.5">✕</Button>
-                    )}
+
+                <div className="text-sm text-slate-500 line-clamp-3 mb-6 leading-relaxed bg-slate-50 p-4 rounded-xl font-medium flex-1 overflow-hidden" dangerouslySetInnerHTML={{ __html: req.description || 'No detailed documentation' }} />
+
+                <div className="mt-auto pt-4 border-t border-slate-50 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    {req.assignedTo && <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 italic ring-1 ring-slate-100 px-2 py-1 rounded bg-white">👤 {req.assignedTo.name}</div>}
                   </div>
-                )}
-              </div>
-
-              <div className="text-sm text-slate-500 line-clamp-3 mb-6 leading-relaxed bg-slate-50 p-4 rounded-xl font-medium flex-1 overflow-hidden" dangerouslySetInnerHTML={{ __html: req.description || 'No detailed documentation' }} />
-
-              <div className="mt-auto pt-4 border-t border-slate-50 flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  {req.assignedTo && <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 italic ring-1 ring-slate-100 px-2 py-1 rounded bg-white">👤 {req.assignedTo.name}</div>}
+                  <div className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">See Details ⮕</div>
                 </div>
-                <div className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">See Details ⮕</div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {filteredRequirements.length === 0 && (
             <div className="col-span-full py-24 bg-white rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-center">
               <div className="text-4xl mb-4">📋</div>
               <h3 className="text-lg font-bold text-slate-900">No requirements found</h3>
               <p className="text-sm text-slate-500 mt-1">Adjust filters or create a new requirement.</p>
-              <Button variant="ghost" size="sm" onClick={() => { setSearchTerm(''); setFilterPriority('all'); setFilterType('all'); }} className="mt-6 !text-indigo-600 hover:underline">Clear Filters</Button>
+              <Button variant="ghost" size="sm" onClick={() => { setSearchTerm(''); setFilterPriority('all'); setFilterType('all'); setFilterStatus('all'); }} className="mt-6 !text-indigo-600 hover:underline">Clear Filters</Button>
             </div>
           )}
         </div>
       )}
 
-      {viewingRequirement && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[2000] p-4 font-sans" onClick={() => setViewingRequirement(null)}>
-          <div className="bg-white rounded-3xl p-10 w-full max-w-5xl shadow-2xl border border-slate-200 overflow-hidden relative max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-start mb-8 flex-shrink-0">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-2xl border border-slate-100">📋</div>
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900 leading-none">{viewingRequirement.title}</h2>
-                  <div className="flex items-center gap-3 mt-4">
-                    {viewingRequirement.convertedToTask ? (
-                      <Badge variant="success" size="sm" className="font-black animate-pulse">✓ CONVERTED: {viewingRequirement.convertedToTask.title || 'TASK'}</Badge>
-                    ) : (
-                      <Badge variant="warning" size="sm">PENDING TASK CONVERSION</Badge>
-                    )}
-                    <Badge variant={viewingRequirement.priority === 'critical' ? 'danger' : viewingRequirement.priority === 'high' ? 'warning' : viewingRequirement.priority === 'medium' ? 'info' : 'default'} size="sm">{viewingRequirement.priority}</Badge>
-                  </div>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => setViewingRequirement(null)} className="!text-slate-400 hover:!text-slate-900 !text-2xl !leading-none !p-2">✕</Button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin space-y-10">
-              <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Specifications</h4>
-                <div className="prose prose-slate prose-sm max-w-none bg-slate-50 p-8 rounded-2xl border border-slate-100 text-slate-700 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: viewingRequirement.description || 'No documentation provided.' }} />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Assignment & Estimates</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white border border-slate-100 p-4 rounded-xl">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Owner</span>
-                      <span className="text-sm font-bold text-slate-900">{viewingRequirement.assignedTo?.name || 'Unassigned'}</span>
-                    </div>
-                    <div className="bg-white border border-slate-100 p-4 rounded-xl">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Estimate</span>
-                      <span className="text-sm font-bold text-slate-900">{viewingRequirement.estimatedHours || 0} Hours</span>
-                    </div>
-                  </div>
-                </div>
-
-                {viewingRequirement.attachments?.length > 0 && (
+      {viewingRequirement && (() => {
+        const reqInfo = getRequirementCompletionInfo(viewingRequirement, tasks);
+        return (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[2000] p-4 font-sans" onClick={() => setViewingRequirement(null)}>
+            <div className="bg-white rounded-3xl p-10 w-full max-w-5xl shadow-2xl border border-slate-200 overflow-hidden relative max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-start mb-8 flex-shrink-0">
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={(e) => handleToggleRequirementComplete(viewingRequirement, e)}
+                    className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-all border ${
+                      reqInfo.isCompleted ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-200 font-bold' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
+                    }`}
+                    title={reqInfo.isCompleted ? 'Mark as Incomplete' : 'Mark as Completed'}
+                  >
+                    {reqInfo.isCompleted ? '✓' : '☐'}
+                  </button>
                   <div>
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Attachments</h4>
-                    <div className="grid grid-cols-1 gap-2">
-                      {viewingRequirement.attachments.map((file, i) => (
-                        <a key={i} href={getAssetUrl(file.path)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50 transition-all font-sans" download>
-                          <span className="text-lg">📄</span>
-                          <span className="text-[11px] font-bold text-slate-600 line-clamp-1">{file.originalName || file.name}</span>
-                        </a>
-                      ))}
+                    <h2 className={`text-2xl font-bold leading-none ${reqInfo.isCompleted ? 'text-emerald-950 line-through decoration-emerald-500/60' : 'text-slate-900'}`}>{viewingRequirement.title}</h2>
+                    <div className="flex items-center gap-3 mt-4 flex-wrap">
+                      {reqInfo.isCompleted ? (
+                        <Badge variant="success" size="sm" className="font-black bg-emerald-600 text-white shadow-sm">
+                          ✓ COMPLETED {reqInfo.totalTagged > 0 ? `(${reqInfo.completedCount}/${reqInfo.totalTagged} TASKS DONE)` : ''}
+                        </Badge>
+                      ) : reqInfo.totalTagged > 0 ? (
+                        <Badge variant="info" size="sm" className="font-bold">
+                          TAGGED TASKS: {reqInfo.completedCount}/{reqInfo.totalTagged} DONE
+                        </Badge>
+                      ) : viewingRequirement.convertedToTask ? (
+                        <Badge variant="success" size="sm" className="font-black animate-pulse">✓ CONVERTED: {viewingRequirement.convertedToTask.title || 'TASK'}</Badge>
+                      ) : (
+                        <Badge variant="warning" size="sm">PENDING TASK CONVERSION</Badge>
+                      )}
+                      <Badge variant={viewingRequirement.priority === 'critical' ? 'danger' : viewingRequirement.priority === 'high' ? 'warning' : viewingRequirement.priority === 'medium' ? 'info' : 'default'} size="sm">{viewingRequirement.priority}</Badge>
+                    </div>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setViewingRequirement(null)} className="!text-slate-400 hover:!text-slate-900 !text-2xl !leading-none !p-2">✕</Button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin space-y-8">
+                {reqInfo.totalTagged > 0 && (
+                  <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tagged Tasks Progress</h4>
+                      <span className="text-xs font-bold text-emerald-700">{reqInfo.completedCount} of {reqInfo.totalTagged} Completed</span>
+                    </div>
+                    <div className="space-y-2">
+                      {reqInfo.taggedTasks.map(t => {
+                        const done = isTaskCompleted(t);
+                        return (
+                          <div key={t._id} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl text-xs">
+                            <div className="flex items-center gap-3">
+                              <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${done ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                                {done ? '✓' : '•'}
+                              </span>
+                              <span className={`font-bold ${done ? 'text-slate-700 line-through' : 'text-slate-900'}`}>{t.title}</span>
+                            </div>
+                            <Badge variant={done ? 'success' : 'default'} size="sm">
+                              {done ? 'Completed' : (t.status?.name || 'In Progress')}
+                            </Badge>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
 
-            {isProjectOwner && (
-              <div className="mt-10 pt-8 border-t border-slate-100 flex gap-4 flex-shrink-0">
-                {!viewingRequirement.convertedToTask && (
-                  <Button variant="primary" onClick={() => handleConvertToTask(viewingRequirement._id)} className="flex-[2] !bg-emerald-600 hover:!bg-emerald-700">Convert to Task</Button>
-                )}
-                <Button variant="secondary" onClick={() => { handleEdit(viewingRequirement); }} className="flex-1">Edit</Button>
-                {!viewingRequirement.convertedToTask && (
-                  <Button variant="danger" onClick={() => { setViewingRequirement(null); handleDelete(viewingRequirement._id); }} className="flex-1">Delete</Button>
-                )}
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Specifications</h4>
+                  <div className="prose prose-slate prose-sm max-w-none bg-slate-50 p-8 rounded-2xl border border-slate-100 text-slate-700 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: viewingRequirement.description || 'No documentation provided.' }} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Assignment & Estimates</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-white border border-slate-100 p-4 rounded-xl">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Owner</span>
+                        <span className="text-sm font-bold text-slate-900">{viewingRequirement.assignedTo?.name || 'Unassigned'}</span>
+                      </div>
+                      <div className="bg-white border border-slate-100 p-4 rounded-xl">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Estimate</span>
+                        <span className="text-sm font-bold text-slate-900">{viewingRequirement.estimatedHours || 0} Hours</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {viewingRequirement.attachments?.length > 0 && (
+                    <div>
+                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Attachments</h4>
+                      <div className="grid grid-cols-1 gap-2">
+                        {viewingRequirement.attachments.map((file, i) => (
+                          <a key={i} href={getAssetUrl(file.path)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50 transition-all font-sans" download>
+                            <span className="text-lg">📄</span>
+                            <span className="text-[11px] font-bold text-slate-600 line-clamp-1">{file.originalName || file.name}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+
+              {isProjectOwner && (
+                <div className="mt-10 pt-8 border-t border-slate-100 flex gap-4 flex-shrink-0">
+                  {!viewingRequirement.convertedToTask && (
+                    <Button variant="primary" onClick={() => handleConvertToTask(viewingRequirement._id)} className="flex-[2] !bg-emerald-600 hover:!bg-emerald-700">Convert to Task</Button>
+                  )}
+                  <Button variant="secondary" onClick={() => { handleEdit(viewingRequirement); }} className="flex-1">Edit</Button>
+                  {!viewingRequirement.convertedToTask && (
+                    <Button variant="danger" onClick={() => { setViewingRequirement(null); handleDelete(viewingRequirement._id); }} className="flex-1">Delete</Button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       <DeleteConfirmModal
         isOpen={deleteModal.isOpen}

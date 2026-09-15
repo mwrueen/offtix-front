@@ -3,7 +3,7 @@ import { taskAPI } from '../../services/api';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
-const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, meetingNotes, onUpdateTask, onUpdate, onClose, onDelete }) => {
+const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, meetingNotes, requirements = [], onUpdateTask, onUpdate, onClose, onDelete }) => {
   const [formData, setFormData] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
   const [durationInputs, setDurationInputs] = useState({});
@@ -30,6 +30,7 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, meet
         status: task.status?._id || task.status || '',
         priority: task.priority || '',
         meeting: task.meeting?._id || task.meeting || '',
+        requirement: task.requirement?._id || task.requirement || '',
       });
       const initialAssignments = task.useRoleWorkflow
         ? (task.roleAssignments || [])
@@ -80,7 +81,8 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, meet
       }));
       const flatAssignees = [...new Set(formattedRoleAssignments.flatMap(ra => ra.assignees))];
       const cleanedData = { ...formData };
-      ['priority', 'status'].forEach(k => { if (cleanedData[k] === '') delete cleanedData[k]; });
+      ['priority', 'status', 'meeting'].forEach(k => { if (cleanedData[k] === '') delete cleanedData[k]; });
+      if (cleanedData.requirement === '') cleanedData.requirement = null;
       if (hasRoleChanges) {
         cleanedData.assignees = flatAssignees;
         cleanedData.roleAssignments = formattedRoleAssignments;
@@ -270,6 +272,18 @@ const TaskDetailModal = ({ task, projectId, users, taskStatuses, taskRoles, meet
                 >
                   <option value="">No Meeting Link</option>
                   {(meetingNotes || []).map(m => <option key={m._id} value={m._id}>{m.title}</option>)}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block ml-1">Referenced Requirement</label>
+                <select
+                  value={formData.requirement || ''}
+                  onChange={e => handleFieldChange('requirement', e.target.value)}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-indigo-400 transition-all cursor-pointer"
+                >
+                  <option value="">No Requirement Link</option>
+                  {(requirements || []).map(req => <option key={req._id} value={req._id}>{req.title}</option>)}
                 </select>
               </div>
             </div>

@@ -16,7 +16,8 @@ const TaskForm = ({
   isProjectOwner = false,
   users = [],
   sprints = [],
-  phases = []
+  phases = [],
+  requirements = []
 }) => {
   return (
     <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in duration-500 mb-8 font-sans">
@@ -148,6 +149,18 @@ const TaskForm = ({
                   >
                     <option value="">Backlog</option>
                     {sprints.map(sprint => <option key={sprint._id} value={sprint._id}>{sprint.name} (#{sprint.sprintNumber})</option>)}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Referenced Requirement</label>
+                  <select
+                    value={taskForm.requirement || ''}
+                    onChange={(e) => setTaskForm({ ...taskForm, requirement: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-bold text-slate-900 outline-none shadow-sm uppercase italic tracking-widest"
+                  >
+                    <option value="">None (Unlinked)</option>
+                    {requirements.map(req => <option key={req._id} value={req._id}>{req.title}</option>)}
                   </select>
                 </div>
 
